@@ -63,6 +63,11 @@ jobs:
       - name: Run Rust tests
         run: cargo test --workspace --all-targets --all-features --locked
 
+      - name: Run ephemeral session launcher synthetic checks
+        run: |
+          bash experiments/managed-rust-interop/session-launcher.test.sh
+          bash experiments/managed-rust-interop/session-launcher.sh --self-test
+
   managed-source:
     name: Managed source-only boundary
     runs-on: windows-latest

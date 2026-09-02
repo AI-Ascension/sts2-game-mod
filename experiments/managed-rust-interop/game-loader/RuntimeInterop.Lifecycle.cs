@@ -8,6 +8,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
+    private const string RuntimeSessionVariable = "STS2_RUNTIME_SESSION";
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int RuntimeStop();
 
@@ -29,7 +31,7 @@ public static partial class ModEntry
             return $"Applied now: {_runtimeListenerStatus}.";
         }
 
-        if (!StandaloneProfileSettings.RuntimeEnabled)
+        if (!StandaloneProfileSettings.RuntimeEnabled && !RuntimeSessionLaunchEnabled())
         {
             return "Applied now: Runtime API is disabled.";
         }
@@ -63,4 +65,9 @@ public static partial class ModEntry
             return false;
         }
     }
+
+    private static bool RuntimeSessionLaunchEnabled() => string.Equals(
+        System.Environment.GetEnvironmentVariable(RuntimeSessionVariable),
+        "1",
+        StringComparison.Ordinal);
 }

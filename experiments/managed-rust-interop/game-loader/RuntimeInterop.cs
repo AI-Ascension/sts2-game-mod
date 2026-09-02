@@ -49,7 +49,7 @@ public static partial class ModEntry
 
     private static void StartRuntimeServer(nint nativeLibrary)
     {
-        if (!StandaloneProfileSettings.RuntimeEnabled)
+        if (!StandaloneProfileSettings.RuntimeEnabled && !RuntimeSessionLaunchEnabled())
         {
             _runtimeListenerStatus = "Disabled in settings";
             GD.Print($"{LogPrefix} runtime HTTP listener disabled in settings");

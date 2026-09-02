@@ -5,6 +5,12 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
+  launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses
+  an already-running game, verifies unauthenticated rejection plus authenticated game/gateway and
+  harness readiness, and cleans up only its owned processes. Credentials are not placed in args,
+  files, logs, or CI artifacts; the launcher uses no additional settings-framework mod.
+
 - Added the owner-local Runtime-v2 release-like artifact copy pinned to schema digest
   `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and a bounded deterministic
   in-memory fake seam for `end_turn`, receipt replay, reconciliation, cancellation, and timeout

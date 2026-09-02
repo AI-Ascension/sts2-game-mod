@@ -109,6 +109,40 @@ they must remain outside the repository and package. Profile mutation and live l
 reconfiguration remain `unverified` unless separately exercised with disposable data in an
 authorized host test that records the exact host tuple, setup, observations, and cleanup.
 
+## Ephemeral session launcher
+
+The target-owned launcher tests can run without a game or provider source:
+
+~~~text
+bash experiments/managed-rust-interop/session-launcher.test.sh
+experiments/managed-rust-interop/session-launcher.sh --self-test
+~~
+
+They cover OS-CSPRNG output of at least 32 bytes, bounded whitespace-free encoding, per-launch
+credential difference, runtime/mod versus gateway role separation, argument-leakage absence,
+missing/wrong/correct authorization status handling, the already-running refusal predicate,
+bounded startup timeout, owned process-group cleanup, and the stdin-only WSL-to-Windows bridge
+contract. The bridge project is also built as a managed warning-as-error check. These are synthetic
+tests and do not prove that an external provider binary or the proprietary game accepts the
+environment.
+
+An authorized disposable live session uses the exact provider binaries or explicit source
+directories from their owning target revisions:
+
+~~~text
+experiments/managed-rust-interop/session-launcher.sh \
+  --game-dir "<STS2 install>" \
+  --gateway-binary "<sts2-gateway-runtime>" \
+  --harness-binary "<sts2-harness-runtime>" \
+  --mcp-binary "<sts2-mcp-server>"
+~~~
+
+The default one-shot run must observe listener enabled, unauthenticated rejection, authenticated
+game and gateway readiness, and successful harness/MCP completion, then observe owned-process
+cleanup and closed listeners. `--keep-alive` is reserved for manual inspection and must be
+interrupted before evidence is recorded. The command output is boolean-only; credentials, saves,
+host assemblies, private paths, and provider logs remain outside the repository and CI artifacts.
+
 ## Security and evidence language
 
 Security tests fail closed when a fixture or precondition is absent. Logs and fixtures contain no

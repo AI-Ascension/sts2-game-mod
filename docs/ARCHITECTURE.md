@@ -39,6 +39,24 @@ HTTP listener as part of the loader-only smoke path, access host game objects ou
 runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
 bridge described below owns the new host-visible probe.
 
+### Ephemeral session orchestration
+
+`experiments/managed-rust-interop/session-launcher.sh` is a development/test orchestrator owned by
+this target. It does not move gateway, harness, or MCP ownership into the mod. It receives explicit
+provider binaries or source directories, starts each provider in a dedicated POSIX process group,
+and starts the Windows game through the checked-in .NET bridge. The launcher generates a fresh
+runtime/mod credential and a different gateway credential with the OS CSPRNG for each session. The
+runtime credential is supplied to the game over bridge stdin and to the gateway as `STS2_MOD_TOKEN`;
+the gateway credential is supplied only as `STS2_GATEWAY_TOKEN` to the gateway and harness/MCP
+chain. No credential is persisted or placed in an argument or log.
+
+The bridge is the explicit WSL-to-Windows environment boundary. It sets `STS2_RUNTIME_TOKEN`, the
+selected loopback-default bind address and port, and the non-secret `STS2_RUNTIME_SESSION=1` on the
+game process. The session flag is accepted only as an ephemeral launch override; saved settings
+remain owned by the in-game panel. Readiness probes require unauthenticated rejection followed by
+authenticated success, use bounded timeouts, and cleanup targets only recorded child groups and
+the recorded game PID. An already-running game is refused rather than adopted or killed.
+
 ### Optional settings boundary
 
 The managed addon owns an optional settings boundary through `ModConfigBridge`. The bridge discovers
@@ -125,6 +143,7 @@ not reported as completed until the host reaches the corresponding result.
 | MCP target | thin MCP-to-gateway translation | host access, game rules, lifecycle ownership |
 | harness target | coordination, explicit instance context, experiments, artifacts | game authority or wire reinterpretation |
 | protocol target | only approved shared language/transport-neutral contracts | target-specific host or transport behavior |
+| session launcher | disposable process/env orchestration and readiness evidence | provider implementation, saved settings, credentials, gameplay |
 
 ## Dependency direction
 

@@ -115,6 +115,34 @@ directory. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect t
 not enable the addon in the game's Mods menu; that remains a one-time manual step if the profile has
 not already accepted the addon.
 
+## Ephemeral runtime session launcher
+
+`session-launcher.sh` is the target-owned disposable orchestration entrypoint for the authenticated
+runtime proof. It first refuses an already-running `SlayTheSpire2.exe` with a restart-required
+error, builds and installs only the three addon artifacts, and then creates two fresh 48-byte
+credentials with the operating system CSPRNG. One credential is used as both
+`STS2_RUNTIME_TOKEN` for the game and `STS2_MOD_TOKEN` for the gateway's downstream hop. The other
+is used only as `STS2_GATEWAY_TOKEN` by the gateway, harness, and MCP process.
+
+The launcher does not put credentials in arguments, Steam options, URLs, files, `.env` values, logs,
+screenshots, or CI artifacts. The Windows game is started through the checked-in
+`session-launcher/windows-bridge` helper: the token crosses the WSL boundary over stdin and the
+helper places it in the game's inherited environment. `STS2_RUNTIME_SESSION=1` is a non-secret,
+ephemeral opt-in that allows this launcher to enable the listener even when the saved UI toggle is
+off; it does not change the persisted setting. The default endpoint is loopback on port `15526`.
+
+Provider binaries remain owned by their gateway, harness, and MCP targets. Supply each existing
+binary with `--gateway-binary`, `--harness-binary`, and `--mcp-binary`, or supply its source
+directory with the corresponding `--*-dir` option so the launcher can build that target's runtime
+binary. The launcher never edits those repositories. A normal run reports only boolean readiness
+lines and cleans up its gateway, harness/MCP process group, game PID, and listeners before exiting.
+Use `--keep-alive` for an interactive disposable session, and interrupt it to perform the same
+owned-process cleanup. Run the synthetic checks with:
+
+```bash
+bash experiments/managed-rust-interop/session-launcher.test.sh
+```
+
 ## Optional automatic full unlock
 
 Pass `--ai-ascension-unlock-all` to `SlayTheSpire2.exe` when starting the game. Once the host has
@@ -139,7 +167,9 @@ normal invocation of `dev-cycle.sh` installs and starts the addon without changi
 ## Runtime probe
 
 When `STS2_RUNTIME_TOKEN` is supplied and `Runtime API` is enabled, initialization starts the bounded
-runtime adapter on the saved bind address and port (default `127.0.0.1:15526`).
+runtime adapter on the saved bind address and port (default `127.0.0.1:15526`). The ephemeral session
+launcher additionally supplies `STS2_RUNTIME_SESSION=1` for a non-persisted automation launch, so a
+saved-off UI toggle cannot silently prevent the session readiness check.
 `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. It exposes `/health/ready`,
 `/api/v1/runtime/state`, and `/api/v1/runtime/action` with bearer authentication. Requests are
 copied into a bounded managed queue and processed on the Godot main thread. The only admitted action
