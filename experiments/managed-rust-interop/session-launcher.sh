@@ -28,6 +28,7 @@ gateway_port=''
 game_probe_host=''
 tasklist_cmd=''
 taskkill_cmd=''
+session_launcher_caller_group=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
 game_started=0
 gateway_started=0
 harness_started=0
@@ -147,9 +148,13 @@ group_has_process() {
 record_process_identity() {
     local pid=$1
     local identity
+    local process_group
     identity=$(ps -o pgid=,sid= -p "$pid" 2>/dev/null | awk 'NF == 2 { print; exit }')
     [[ "$identity" =~ ^[[:space:]]*([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]] || return 1
-    printf '%s\n%s' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+    process_group=${BASH_REMATCH[1]}
+    [[ -n "$session_launcher_caller_group" && "$process_group" != "$session_launcher_caller_group" ]] \
+        || return 1
+    printf '%s\n%s' "$process_group" "${BASH_REMATCH[2]}"
 }
 
 stop_posix_group() {
@@ -160,6 +165,10 @@ stop_posix_group() {
 
     if [[ -z "$group" || -z "$session" ]]; then
         return 0
+    fi
+    if [[ -n "$session_launcher_caller_group" && "$group" == "$session_launcher_caller_group" ]]; then
+        cleanup_failed=1
+        return 1
     fi
     if ! group_has_process "$group" "$session"; then
         return 0
