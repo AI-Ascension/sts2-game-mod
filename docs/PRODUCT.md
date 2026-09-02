@@ -25,8 +25,8 @@ adds non-empty target-owned Rust seams for a host port, bounded main-thread queu
 versioned ABI validation, a transport-free bounded HTTP adapter, and their composition. The minimal
 POC additionally maps one copied artifact through a fake core port. Deterministic fake tests cover
 those seams. A narrow runtime slice now adds the managed loader entry point, unique Rust companion
-package, manifest, ABI smoke call, bounded loopback routes, managed main-thread queue, and manual
-staging path. It adds no game rules or gameplay mutation.
+package, manifest, ABI smoke call, bounded runtime routes (default loopback), managed main-thread
+queue, and manual staging path. It adds no game rules or gameplay mutation.
 
 ## Future scope
 
@@ -54,10 +54,12 @@ game rules, or fault isolation. See the dated runtime evidence reports for the p
 
 The first executable host-facing slice is intentionally a probe rather than a gameplay action. It
 accepts the canonical `runtime-v1` state request and the fixed `show_runtime_probe` action through a
-loopback-only, bearer-authenticated local adapter. The native listener owns bounded HTTP decoding;
-the managed bridge owns host access and queues work to the Godot main thread. An accepted action is
-reported only after a `CanvasLayer` status overlay is observed, and a stale generation is rejected
-with `sts2.game-mod/stale_generation`.
+bearer-authenticated local adapter whose default bind address is loopback. The native listener owns
+bounded HTTP decoding; the managed bridge owns host access and queues work to the Godot main thread.
+An accepted action is reported only after a `CanvasLayer` status overlay is observed, and a stale
+generation is rejected with `sts2.game-mod/stale_generation`. The built-in settings tab persists
+the listener's enablement, local bind address, and port for the next launch; the bearer token
+remains an environment-controlled secret.
 
 This slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The
 source, build, and exact-host probe gates are `confirmed`; gameplay mutation, process lifecycle, and

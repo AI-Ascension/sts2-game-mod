@@ -31,8 +31,21 @@ The built-in panel contains:
 
 | Label | Behavior |
 | --- | --- |
+| `Runtime API` | Enables the authenticated listener when a token is configured. The default is on; changes apply on the next launch. |
+| `Bind address` | Selects the local hostname or IP address for the runtime listener. The dropdown includes loopback, all interfaces, the detected machine hostname, and detected local IPv4 addresses. |
+| `Network port` | Selects a port from `1024` through `65535`; the default is `15526`. |
 | `Target profile` | Selects Profile 1, Profile 2, or Profile 3. The choice is persisted in the mod's own user-data settings file. |
+| `Apply on next launch` | Saves the staged runtime API, bind address, and port values. A game restart is required before they become active. |
+| `Reset` | Restores the runtime API default, loopback address, and port `15526`. |
 | `Apply full profile unlock` | Switches to the selected profile through the host save manager, then queues the guarded unlock operation. Only the selected profile is modified. |
+
+Network values are staged in the panel and saved by `Apply on next launch` in the mod's own
+user-data settings file. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain available as
+explicit environment-variable overrides for automation. The listener still requires
+`STS2_RUNTIME_TOKEN`; choosing `0.0.0.0` exposes the authenticated listener on all local interfaces
+and should only be used with an intentionally configured firewall and trusted network. The panel
+shows whether the token is configured and the listener's current startup status without displaying
+the token.
 
 The standalone, case-sensitive `--debug` argument remains an explicit developer diagnostic and
 continues to show the overlay. The profile selector and Apply action are available from the
@@ -56,9 +69,9 @@ targets the selected profile (1, 2, or 3) by using the host `SaveManager.SwitchP
 applying the guarded mutation. The standalone command-line argument continues to target the active
 profile.
 
-The settings feature does not add controls for runtime tokens, ports, bind addresses, HTTP routes,
-MCP actions, AI policy, seeds, or native mod enablement. The game's native Installed Mods checkbox
-continues to own enablement, and environment credentials remain outside the settings system.
+The settings feature does not add controls for runtime tokens, HTTP routes, MCP actions, AI policy,
+seeds, or native mod enablement. The game's native Installed Mods checkbox continues to own
+enablement, and environment credentials remain outside the settings system.
 
 The existing standalone, exact `--ai-ascension-unlock-all` command-line argument remains available
 as an explicit command-line path without any settings-framework mod. The argument comparison is case-insensitive, but the
@@ -125,8 +138,9 @@ normal invocation of `dev-cycle.sh` installs and starts the addon without changi
 
 ## Runtime probe
 
-When `STS2_RUNTIME_TOKEN` is supplied, initialization also starts the bounded loopback runtime
-adapter on `STS2_RUNTIME_PORT` (default `15526`). It exposes `/health/ready`,
+When `STS2_RUNTIME_TOKEN` is supplied and `Runtime API` is enabled, initialization starts the bounded
+runtime adapter on the saved bind address and port (default `127.0.0.1:15526`).
+`STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. It exposes `/health/ready`,
 `/api/v1/runtime/state`, and `/api/v1/runtime/action` with bearer authentication. Requests are
 copied into a bounded managed queue and processed on the Godot main thread. The only admitted action
 is `show_runtime_probe`; it displays the live status overlay and returns a fresh

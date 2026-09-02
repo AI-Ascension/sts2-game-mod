@@ -105,7 +105,7 @@ keeping the native Installed Mods checkbox as the sole enablement control.
 ## Follow-up
 
 A future decision and evidence set may evaluate `ModManagerSettings` or another maintained approach
-for a settings button directly on the native Installed Mods row. A separate runtime-controls
-change may later define settings for the listener, token handling, ports, or MCP actions, but only
-after that runtime slice is part of the packaged target and has project-owned contracts and host
-tests. Neither follow-up is part of this ADR or this PR.
+for a settings button directly on the native Installed Mods row. The runtime-controls follow-up is
+specified separately in [`0012-runtime-listener-settings.md`](0012-runtime-listener-settings.md);
+token handling and MCP actions remain outside that follow-up. It is not part of this historical
+settings-bridge decision.

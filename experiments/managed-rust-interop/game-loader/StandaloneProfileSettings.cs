@@ -128,6 +128,7 @@ internal static partial class StandaloneProfileSettings
     private static void PopulateProfileSettings(VBoxContainer content)
     {
         EnsureSelectionLoaded();
+        PopulateNetworkSettings(content);
 
         var section = new Label
         {

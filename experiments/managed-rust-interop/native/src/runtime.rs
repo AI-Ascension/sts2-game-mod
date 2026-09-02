@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread::{self, JoinHandle};
@@ -18,6 +18,8 @@ const STOP_FAILED: i32 = 5;
 
 #[path = "runtime_http.rs"]
 mod http;
+#[path = "runtime_listener.rs"]
+mod listener;
 
 pub type RuntimeRequestCallback = unsafe extern "C" fn(
     request: *const RuntimeRequest,
@@ -53,7 +55,7 @@ pub struct RuntimeRequest {
 }
 
 struct RuntimeHandle {
-    port: u16,
+    address: SocketAddr,
     stop: Arc<AtomicBool>,
     join: JoinHandle<()>,
 }
@@ -67,10 +69,25 @@ fn server_slot() -> &'static Mutex<Option<RuntimeHandle>> {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn sts2_game_mod_runtime_start(
     port: u16,
+    bind_address: *const u8,
+    bind_address_len: usize,
     token: *const u8,
     token_len: usize,
     callbacks: *const RuntimeCallbacks,
 ) -> i32 {
+    let bind_address = match unsafe {
+        copy_input(
+            bind_address,
+            bind_address_len,
+            listener::MAX_BIND_ADDRESS_BYTES,
+        )
+    }
+    .ok()
+    .and_then(|value| String::from_utf8(value).ok())
+    {
+        Some(value) if listener::valid_bind_address(&value) => value,
+        _ => return INVALID_ARGUMENT,
+    };
     let token = match unsafe { copy_input(token, token_len, 256) } {
         Ok(value) if !value.is_empty() && value.iter().all(|byte| !byte.is_ascii_whitespace()) => {
             value
@@ -89,7 +106,7 @@ pub unsafe extern "C" fn sts2_game_mod_runtime_start(
         return ALREADY_STARTED;
     }
 
-    let listener = match TcpListener::bind((Ipv4Addr::LOCALHOST, port)) {
+    let (listener, address) = match listener::bind(&bind_address, port) {
         Ok(value) => value,
         Err(_) => return BIND_FAILED,
     };
@@ -99,14 +116,19 @@ pub unsafe extern "C" fn sts2_game_mod_runtime_start(
 
     let stop = Arc::new(AtomicBool::new(false));
     let thread_stop = Arc::clone(&stop);
+    let listener_address = address.to_string();
     let join = match thread::Builder::new()
         .name(String::from("sts2-runtime-http"))
-        .spawn(move || serve(listener, token, callback, thread_stop))
+        .spawn(move || serve(listener, listener_address, token, callback, thread_stop))
     {
         Ok(value) => value,
         Err(_) => return THREAD_FAILED,
     };
-    *slot = Some(RuntimeHandle { port, stop, join });
+    *slot = Some(RuntimeHandle {
+        address: listener::shutdown_address(address),
+        stop,
+        join,
+    });
     STARTED
 }
 
@@ -119,7 +141,7 @@ pub extern "C" fn sts2_game_mod_runtime_stop() -> i32 {
         return STARTED;
     };
     handle.stop.store(true, Ordering::Release);
-    let _ = TcpStream::connect((Ipv4Addr::LOCALHOST, handle.port));
+    let _ = TcpStream::connect(handle.address);
     if handle.join.join().is_err() {
         return STOP_FAILED;
     }
@@ -128,6 +150,7 @@ pub extern "C" fn sts2_game_mod_runtime_stop() -> i32 {
 
 fn serve(
     listener: TcpListener,
+    listener_address: String,
     token: Vec<u8>,
     callback: RuntimeRequestCallback,
     stop: Arc<AtomicBool>,
@@ -135,7 +158,7 @@ fn serve(
     while !stop.load(Ordering::Acquire) {
         match listener.accept() {
             Ok((mut stream, _)) => {
-                let _ = handle_connection(&mut stream, &token, callback);
+                let _ = handle_connection(&mut stream, &listener_address, &token, callback);
             }
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                 thread::sleep(Duration::from_millis(5));
@@ -147,6 +170,7 @@ fn serve(
 
 fn handle_connection(
     stream: &mut TcpStream,
+    listener_address: &str,
     token: &[u8],
     callback: RuntimeRequestCallback,
 ) -> std::io::Result<()> {
@@ -166,11 +190,10 @@ fn handle_connection(
     }
 
     match (request.method.as_str(), request.path.as_str()) {
-        ("GET", "/health/ready") if request.body.is_empty() => http::write_response(
-            stream,
-            200,
-            b"{\"status\":\"ready\",\"listener\":\"loopback\"}",
-        ),
+        ("GET", "/health/ready") if request.body.is_empty() => {
+            let response = format!(r#"{{"status":"ready","listener":"{listener_address}"}}"#);
+            http::write_response(stream, 200, response.as_bytes())
+        }
         ("GET", "/api/v1/runtime/state") if request.body.is_empty() => {
             dispatch(callback, CALLBACK_STATE, &request, stream)
         }
