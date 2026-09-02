@@ -149,12 +149,25 @@ record_process_identity() {
     local pid=$1
     local identity
     local process_group
-    identity=$(ps -o pgid=,sid= -p "$pid" 2>/dev/null | awk 'NF == 2 { print; exit }')
-    [[ "$identity" =~ ^[[:space:]]*([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]] || return 1
-    process_group=${BASH_REMATCH[1]}
-    [[ -n "$session_launcher_caller_group" && "$process_group" != "$session_launcher_caller_group" ]] \
-        || return 1
-    printf '%s\n%s' "$process_group" "${BASH_REMATCH[2]}"
+    local process_session
+    local identity_attempt
+
+    # A freshly detached process may not be visible to ps on the first read.
+    # Keep the retry bounded while preserving the caller-group safety check.
+    for ((identity_attempt = 0; identity_attempt < 50; identity_attempt++)); do
+        identity=$(ps -o pgid=,sid= -p "$pid" 2>/dev/null | awk 'NF == 2 { print; exit }')
+        if [[ "$identity" =~ ^[[:space:]]*([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
+            process_group=${BASH_REMATCH[1]}
+            process_session=${BASH_REMATCH[2]}
+            if [[ -n "$session_launcher_caller_group" \
+                && "$process_group" != "$session_launcher_caller_group" ]]; then
+                printf '%s\n%s' "$process_group" "$process_session"
+                return 0
+            fi
+        fi
+        sleep 0.05
+    done
+    return 1
 }
 
 stop_posix_group() {
