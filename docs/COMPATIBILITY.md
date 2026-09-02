@@ -25,7 +25,7 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 
 | Managed/native target | Game host | Platform | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; see the dated runtime evidence report |
+| Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
 | Rust host/HTTP/game behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no live route or gameplay mutation is implemented |
 
 The project planning baseline names a host assembly identity, but this repository does not retain

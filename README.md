@@ -48,6 +48,8 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   witness for an accepted action.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) records the target boundary and dependency graph.
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records evidence levels and host claims.
+- [docs/evidence/runtime-addon-load-smoke-20260902.md](docs/evidence/runtime-addon-load-smoke-20260902.md)
+  records the exact installed-host load-smoke inputs and observed log marker.
 - [docs/decisions/](docs/decisions/) records the managed/native, ownership, scaffold, and
   sixth-target and Wave 2 initialization decisions.
 - [tools/repo-policy/](tools/repo-policy/) is the target-local Rust governance checker.
