@@ -20,6 +20,7 @@
 dist/
 artifacts/
 coverage/
+.sts2-dev/
 .env
 .env.*
 !.env.example
