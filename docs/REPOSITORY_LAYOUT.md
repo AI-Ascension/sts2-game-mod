@@ -17,6 +17,7 @@ sts2-game-mod/
 ├── schemas/game-http-v1              future owner-local HTTP schema
 ├── tests                             future component and host-test seams
 ├── experiments/managed-rust-interop/ managed load-smoke package and Rust companion source
+├── tools/workshop/                  deterministic Workshop staging and fixture checks
 ├── tools/repo-policy/                target-local governance checker
 ├── docs/                             architecture, policy, testing, and decisions
 └── .github/                          bounded read-only automation
@@ -51,6 +52,7 @@ the existing experiment directory and is packaged only by the explicit load-smok
 | conformance/cases/runtime-v2.json | protocol release consumer | inert copied Runtime-v2 conformance evidence |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
+| tools/workshop | mod and release maintainers | first-party Workshop package staging and checks |
 | experiments/managed-rust-interop | mod | managed loader package, native companion, and load-smoke staging |
 
 The protocol target, core target, gateway, MCP server, and harness remain separate trees. Do not

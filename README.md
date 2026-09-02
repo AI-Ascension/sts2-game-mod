@@ -65,6 +65,25 @@ The broader host adapter, gameplay action implementation, and game-rule mutation
 unimplemented. The POC's core port is still a fake seam in this repository, not the game
 implementation or a claim that the host can perform a gameplay action.
 
+## Steam Workshop package
+
+The target now contains a first-party Steam Workshop package boundary. The Rust
+sts2-game-mod module validates the sts2-workshop-manifest-v1 shape, exact compatibility metadata,
+file roles, path safety, and install-state decisions. The managed loader validates an installed
+package's exact allowlist, reparse-point status, file sizes, SHA-256 values, and deterministic
+content digest before the native companion is loaded.
+
+tools/workshop/package-item.sh stages the current three-file runtime payload, writes
+sts2-workshop-manifest.json and SHA256SUMS, and emits an operator-only VDF beside the Workshop
+content directory. It requires the consumer App ID, published file ID, game/package versions,
+source revision, and preview image as inputs; none are stored in this repository. The fixture-only
+self-test is bash tools/workshop/test-package-item.sh.
+
+The first-party package may contain executable mod files, but only the exact allowlisted files
+under the configured App ID and published file ID are accepted. Arbitrary third-party Workshop
+DLLs, native libraries, scripts, archives, and renamed executables are rejected. Steam publication,
+subscription/download callbacks, game discovery, and host compatibility remain unverified.
+
 The Runtime-v2 seam is also fake-only: it proves bounded admission, exactly-once in-memory
 application, retained receipts, and reconciliation for argument-free `end_turn`. No concrete host
 gameplay API exists in this repository; live host mutation and settlement are unverified.

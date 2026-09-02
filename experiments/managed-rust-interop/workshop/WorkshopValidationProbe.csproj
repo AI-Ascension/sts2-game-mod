@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>AiAscension.Sts2GameMod.WorkshopValidationProbe</AssemblyName>
+    <RootNamespace>AiAscension.Sts2GameMod.WorkshopValidationProbe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../game-loader/WorkshopContent.cs" Link="WorkshopContent.cs" />
+    <Compile Include="../game-loader/WorkshopContentModels.cs" Link="WorkshopContentModels.cs" />
+  </ItemGroup>
+</Project>

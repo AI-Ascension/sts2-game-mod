@@ -16,8 +16,12 @@ public static partial class ModEntry
     private const int ExpectedCheckedAddStatus = 0;
     private const int ExpectedCheckedAddResult = 42;
     private const string DebugArgument = "--debug";
-    private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
-    private const string StatusNodeName = "AIAscensionSTS2PocStatus";
+    private const string LogPrefix = "[AI-ASCENSION STS2 GAME MOD]";
+    private const string StatusNodeName = "AIAscensionSTS2GameModStatus";
+    private const string WorkshopAppIdVariable = "STS2_WORKSHOP_APP_ID";
+    private const string WorkshopItemIdVariable = "STS2_WORKSHOP_ITEM_ID";
+    private const string WorkshopGameVersionVariable = "STS2_WORKSHOP_GAME_VERSION";
+    private const string WorkshopPlatformVariable = "STS2_WORKSHOP_PLATFORM";
     private static readonly object Gate = new();
     private static nint _nativeLibrary;
     private static Action? _statusOverlayCallback;
@@ -46,6 +50,7 @@ public static partial class ModEntry
                 string assemblyPath = Assembly.GetExecutingAssembly().Location;
                 string directory = Path.GetDirectoryName(assemblyPath)
                     ?? throw new InvalidOperationException("The addon has no assembly directory.");
+                ValidateWorkshopPackageIfPresent(directory);
                 string nativePath = Path.Combine(directory, NativeLibraryFileName());
                 candidate = NativeLibrary.Load(nativePath);
 
@@ -102,6 +107,55 @@ public static partial class ModEntry
         }
 
         return false;
+    }
+
+    private static void ValidateWorkshopPackageIfPresent(string directory)
+    {
+        string manifestPath = Path.Combine(directory, WorkshopPackageValidator.ManifestFileName);
+        if (!File.Exists(manifestPath))
+        {
+            return;
+        }
+
+        uint appId = ReadPositiveUInt(WorkshopAppIdVariable);
+        ulong itemId = ReadPositiveULong(WorkshopItemIdVariable);
+        string gameVersion = ReadRequiredValue(WorkshopGameVersionVariable);
+        string platform = ReadRequiredValue(WorkshopPlatformVariable);
+        WorkshopPackageValidator.ValidateDirectory(directory, appId, itemId, gameVersion, platform);
+        GD.Print($"{LogPrefix} first-party Workshop package validated: app={appId}; item={itemId}");
+    }
+
+    private static uint ReadPositiveUInt(string variable)
+    {
+        string value = ReadRequiredValue(variable);
+        if (!uint.TryParse(value, out uint parsed) || parsed == 0)
+        {
+            throw new InvalidOperationException($"{variable} must be a positive decimal integer.");
+        }
+
+        return parsed;
+    }
+
+    private static ulong ReadPositiveULong(string variable)
+    {
+        string value = ReadRequiredValue(variable);
+        if (!ulong.TryParse(value, out ulong parsed) || parsed == 0)
+        {
+            throw new InvalidOperationException($"{variable} must be a positive decimal integer.");
+        }
+
+        return parsed;
+    }
+
+    private static string ReadRequiredValue(string variable)
+    {
+        string? value = System.Environment.GetEnvironmentVariable(variable);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"{variable} is required for a Workshop package.");
+        }
+
+        return value;
     }
 
     private static void InstallStatusOverlay(uint version, int sum)
@@ -163,7 +217,7 @@ public static partial class ModEntry
             Name = "Message",
             Text = runtimeAction
                 ? $"AI-ASCENSION STS2\nLIVE RUNTIME | ABI {version} | effect witnessed"
-                : $"AI-ASCENSION STS2 POC\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
+                : $"AI-ASCENSION STS2 GAME MOD\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
             Position = new Vector2(52, 48),
             Size = new Vector2(580, 76),
             MouseFilter = Control.MouseFilterEnum.Ignore
@@ -184,14 +238,14 @@ public static partial class ModEntry
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return "ai_ascension_sts2_poc.dll";
+            return "AIAscensionSTS2GameModNative.dll";
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return "libai_ascension_sts2_poc.dylib";
+            return "libAIAscensionSTS2GameModNative.dylib";
         }
 
-        return "libai_ascension_sts2_poc.so";
+        return "libAIAscensionSTS2GameModNative.so";
     }
 }
