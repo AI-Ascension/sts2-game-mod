@@ -128,10 +128,7 @@ internal static class AutoProfileUnlock
         try
         {
             SaveManager saveManager = SaveManager.Instance;
-            if (!saveManager.IsProfileInitialized)
-            {
-                return AttemptResult.NotReady;
-            }
+            if (!IsProfileReady(saveManager)) return AttemptResult.NotReady;
 
             ModelId[] cardIds = ModelDb.AllCards.Select(card => card.Id).ToArray();
             ModelId[] relicIds = ModelDb.AllRelics.Select(relic => relic.Id).ToArray();
@@ -181,6 +178,12 @@ internal static class AutoProfileUnlock
                 $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}");
             return AttemptResult.Failed;
         }
+    }
+
+    private static bool IsProfileReady(SaveManager saveManager)
+    {
+        try { _ = saveManager.CurrentProfileId; return true; }
+        catch (InvalidOperationException) { return false; }
     }
 
     private static void ClearLaunchSettingAfterSuccessfulSave()
