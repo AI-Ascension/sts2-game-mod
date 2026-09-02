@@ -1,5 +1,10 @@
 # Runtime addon visible-overlay evidence
 
+> Historical note: this report captures source revision `50eccb6d59a51ac9be561f23a67299017a55fca3`,
+> before the visible overlay became opt-in. Its normal-launch screenshot remains valid for that
+> revision; current source-derived behavior requires the standalone `--debug` argument. This PR
+> does not claim a new host/runtime reproduction.
+
 Date: 2026-09-02  
 Status: `confirmed` for loader smoke and visible overlay; gameplay behavior remains `unverified`.  
 Source revision: `50eccb6d59a51ac9be561f23a67299017a55fca3`
