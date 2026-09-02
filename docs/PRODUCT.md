@@ -45,6 +45,6 @@ make those runtime claims.
 
 ## Evidence boundary
 
-The current repository state is source-prepared and runtime-unverified. The initialized seams and
+The current repository state is source-prepared and has unverified runtime evidence. The initialized seams and
 existing interop experiment are not a product package and do not prove loader discovery, game
 start, main-thread execution, HTTP serving, mutation settlement, or fault isolation.

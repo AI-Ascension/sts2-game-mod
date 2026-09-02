@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Sts2Harness.ManagedInteropSpike;
+namespace Sts2.GameMod.ManagedInterop.Spike;
 
 internal static class Program
 {
@@ -20,7 +20,7 @@ internal static class Program
     {
         if (args.Length != 1)
         {
-            Console.Error.WriteLine("Usage: ManagedInteropSpike <absolute-native-library-path>");
+            Console.Error.WriteLine("Usage: Sts2.GameMod.ManagedInterop.Spike <absolute-native-library-path>");
             return 2;
         }
 
@@ -29,8 +29,8 @@ internal static class Program
 
         try
         {
-            AbiVersion getVersion = LoadExport<AbiVersion>(library, "sts2_harness_abi_version");
-            CheckedAdd checkedAdd = LoadExport<CheckedAdd>(library, "sts2_harness_checked_add");
+            AbiVersion getVersion = LoadExport<AbiVersion>(library, "sts2_game_mod_interop_abi_version");
+            CheckedAdd checkedAdd = LoadExport<CheckedAdd>(library, "sts2_game_mod_interop_checked_add");
 
             uint version = getVersion();
             if (version != ExpectedAbiVersion)
@@ -61,4 +61,3 @@ internal static class Program
         return Marshal.GetDelegateForFunctionPointer<T>(address);
     }
 }
-

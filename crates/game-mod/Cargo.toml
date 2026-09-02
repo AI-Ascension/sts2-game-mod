@@ -9,8 +9,8 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-sts2-mod-host = { path = "../host" }
-sts2-mod-http-adapter = { path = "../http-adapter" }
+sts2-game-mod-host = { path = "../host" }
+sts2-game-mod-http-adapter = { path = "../http-adapter" }
 
 [lints]
 workspace = true

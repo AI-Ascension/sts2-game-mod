@@ -55,3 +55,9 @@ move their implementation or evidence into this target.
 target, bin, obj, artifacts, coverage, host assemblies, saves, profiles, credentials, and local
 environment files are ignored or prohibited. Existing generated experiment output is preserved as
 local output and is not source or release material.
+
+## Naming authority
+
+Shared naming is defined by the aggregate NAMING_CONVENTIONS.md and naming-registry.yaml. The
+package, crate-import, managed namespace, and native export names in this target use the
+`sts2-game-mod` owner prefix; host-defined names and consumed contracts remain exact exceptions.

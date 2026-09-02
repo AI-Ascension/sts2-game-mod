@@ -14,8 +14,8 @@
 >
 > AI-Ascension is an independent project. It is not affiliated with or endorsed by Mega Crit or Valve and grants no rights to game files, assets, or marks.
 
-Status: Wave 2 codebase initialization complete. The target-owned boundary seams compile and have
-deterministic fake tests; no game behavior or game package is claimed.
+Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
+have tests; no game behavior or game package is claimed.
 
 Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
 have tests; no game behavior or game package is claimed.

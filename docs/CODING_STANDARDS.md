@@ -74,3 +74,10 @@ Changes affecting ownership, dependencies, public HTTP behavior, ABI, host strat
 security, or packaging require an architecture decision. Every change reports exact checks,
 compatibility classification, and unverified evidence. See [TESTING.md](TESTING.md) and
 [WORKFLOWS.md](WORKFLOWS.md).
+
+## Aggregate naming authority
+
+Use the aggregate NAMING_CONVENTIONS.md and naming-registry.yaml for owner
+prefixes, casing, identity namespaces, lifecycle vocabulary, evidence states, and exceptions. The
+managed/native experiment is game-mod-owned; host-required assembly, loader, manifest, and ABI
+spellings remain protected whenever the registry marks them external or consumed.
