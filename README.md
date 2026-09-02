@@ -17,6 +17,9 @@
 Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
 have tests; no game behavior or game package is claimed.
 
+Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
+have tests; no game behavior or game package is claimed.
+
 ## Responsibility and consumers
 
 The mod owner maintains the managed loader, host translation, main-thread boundary, authoritative

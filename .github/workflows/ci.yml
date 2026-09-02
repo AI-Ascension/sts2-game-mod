@@ -24,6 +24,33 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify copied POC artifact checksums
+        working-directory: protocol-artifact/poc-v1
+        run: sha256sum -c SHA256SUMS
+
+      - name: Validate copied POC JSON fixtures
+        run: |
+          cmp protocol-artifact/poc-v1/schema.json schemas/poc-v1.schema.json
+          jq -e '. as $schema |
+            ($schema["$id"] == "sts2-poc-v1" and
+              ($schema.oneOf | length == 4) and
+              $schema["$defs"].base.properties.generation.maximum == 9007199254740991 and
+              (["state_request", "state_response", "action_request", "action_response"]
+                | all(.[]; $schema["$defs"][.].unevaluatedProperties == false)))' \
+            protocol-artifact/poc-v1/schema.json > /dev/null
+          for file in protocol-artifact/poc-v1/schema.json \
+            schemas/poc-v1.schema.json \
+            protocol-artifact/poc-v1/manifest.json \
+            protocol-artifact/poc-v1/golden/state-request.json \
+            protocol-artifact/poc-v1/golden/state-response.json \
+            protocol-artifact/poc-v1/golden/action-request.json \
+            protocol-artifact/poc-v1/golden/action-accepted.json \
+            protocol-artifact/poc-v1/golden/action-rejected.json \
+            protocol-artifact/poc-v1/fixtures/invalid-action.json \
+            conformance/cases/poc-v1.json; do
+            jq -e 'type == "object"' "$file" > /dev/null
+          done
+
       - name: Install pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component clippy --component rustfmt --no-self-update
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::protocol_artifact::{
-    ArtifactError, POC_ARTIFACT, POC_GENERATOR, POC_MAX_SETTLED_EFFECTS, POC_MAX_UNITS,
+    POC_ARTIFACT, POC_GENERATOR, POC_MAX_GENERATION, POC_MAX_SETTLED_EFFECTS, POC_MAX_UNITS,
     POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST, POC_SCHEMA_SOURCE,
 };
 
@@ -32,6 +32,7 @@ pub enum PocStatus {
 
 /// The one typed action exposed by the POC seam.
 #[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq, serde::Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct PocAction {
     pub action_id: String,
     pub units: u16,
@@ -57,6 +58,7 @@ impl PocAction {
 
 /// The bounded observation translated at the mod/core boundary.
 #[derive(Clone, Copy, Debug, serde::Deserialize, Eq, PartialEq, serde::Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct PocObservation {
     pub available_units: u16,
     pub settled_effects: u16,
@@ -74,6 +76,7 @@ impl PocObservation {
 
 /// Provenance carried by every POC message.
 #[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq, serde::Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct PocProvenance {
     pub artifact: String,
     pub source: String,
@@ -104,6 +107,7 @@ impl PocProvenance {
 
 /// A complete request or response in the copied POC contract.
 #[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq, serde::Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct PocMessage {
     pub protocol_version: String,
     pub schema_digest: String,
@@ -196,7 +200,7 @@ impl PocMessage {
         self.provenance.validate()?;
         validate_identity(&self.correlation_id)?;
         validate_identity(&self.instance_id)?;
-        if self.generation > u64::MAX / 2 {
+        if self.generation > POC_MAX_GENERATION {
             return Err(PocValidationError::GenerationBounds);
         }
         if self.observation.is_some() || self.status.is_some() || self.error_code.is_some() {
@@ -241,6 +245,20 @@ pub struct PocCoreState {
     pub settled_effects: u16,
 }
 
+impl PocCoreState {
+    /// Validates the state projection before it crosses the mod-owned boundary.
+    pub fn validate(self) -> Result<(), PocValidationError> {
+        if self.generation > POC_MAX_GENERATION {
+            return Err(PocValidationError::GenerationBounds);
+        }
+        PocObservation {
+            available_units: self.available_units,
+            settled_effects: self.settled_effects,
+        }
+        .validate()
+    }
+}
+
 /// Core legality failures preserved as stable POC error identities.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PocCoreError {
@@ -271,29 +289,6 @@ pub trait PocCorePort {
         action: &PocAction,
     ) -> Result<PocCoreState, PocCoreError>;
 }
-
-/// Deterministic failures at the game-mod POC seam.
-#[derive(Debug, Eq, PartialEq)]
-pub enum PocModError {
-    ArtifactLoad(ArtifactError),
-    ArtifactMismatch,
-    MalformedRequest,
-    Encoding,
-}
-
-impl std::fmt::Display for PocModError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let message = match self {
-            Self::ArtifactLoad(_) => "the copied POC artifact could not be loaded",
-            Self::ArtifactMismatch => "the request does not use the copied POC artifact",
-            Self::MalformedRequest => "the POC request is malformed",
-            Self::Encoding => "the POC message could not be encoded",
-        };
-        formatter.write_str(message)
-    }
-}
-
-impl std::error::Error for PocModError {}
 
 /// A deterministic validation failure for a POC request.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
