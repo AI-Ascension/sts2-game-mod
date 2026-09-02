@@ -4,12 +4,17 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AssemblyName>Sts2.GameMod.ManagedInterop.GameLoaderProbe</AssemblyName>
+    <AssemblyName>AIAscensionSTS2Poc</AssemblyName>
+    <RootNamespace>AiAscension.Sts2GameMod.Runtime</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="sts2">
       <HintPath>$(STS2GameDataDir)/sts2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(STS2GameDataDir)/GodotSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

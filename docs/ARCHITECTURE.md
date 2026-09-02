@@ -6,9 +6,10 @@ sts2-game-mod is the game-facing translation boundary. It adapts the managed loa
 callbacks into owned Rust values, schedules host work on the game main thread, exposes the
 authoritative local HTTP surface, and composes the narrow native seam.
 
-This document records boundaries, the initialized source-level seams, and dependency direction.
-The current Rust source proves deterministic port composition plus one local fake `poc-v1` mapping;
-it does not claim a managed loader or game runtime path.
+This document records boundaries, the initialized source-level seams, the managed load-smoke
+package, and dependency direction. The Rust source proves deterministic port composition plus one
+local fake `poc-v1` mapping; the managed package separately proves loader discovery and the native
+ABI smoke call in one recorded game version.
 
 ## Initialized source seam
 
@@ -21,6 +22,19 @@ composition tests make those source-level invariants deterministic.
 
 This seam is intentionally opaque and preparatory. It is not the managed loader, a public HTTP
 schema, a game-rule implementation, or a native implementation copied from another repository.
+
+## Runtime addon package
+
+`experiments/managed-rust-interop/game-loader` is the loader-facing .NET 9 class library. It
+references only the operator-supplied `sts2.dll` and `GodotSharp.dll` at build time, carries the
+host's `ModInitializer` metadata, loads the adjacent unique native companion, verifies ABI version
+1, calls the checked-add smoke export, and logs a bounded success marker. The companion is built
+from the target-owned Rust crate as `ai_ascension_sts2_poc.dll` on Windows. The package script
+stages only the managed DLL, native DLL, and manifest; it never copies proprietary host assemblies
+into the repository or package.
+
+This is a load-smoke implementation, not the game behavior implementation. It does not expose an
+HTTP listener, access host game objects, mutate a run, or claim action/effect compatibility.
 
 ## Minimal POC mapping
 
@@ -105,6 +119,7 @@ never expose debug strings, panic text, private paths, save contents, or raw hos
 
 ## Evidence status
 
-The existing experiment provides source-level shape for managed-to-native calls. It does not prove
-game discovery, loader start, host API compatibility, main-thread behavior, HTTP serving, or safe
-fault isolation. Those require later tests in an authorized disposable environment.
+The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
+ABI call for one exact installed host. It does not prove host API compatibility beyond the loader
+references, main-thread behavior, HTTP serving, game mutation, effect settlement, or safe fault
+isolation. Those require later focused runtime tests.
