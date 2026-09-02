@@ -1,0 +1,261 @@
+// SPDX-License-Identifier: MIT
+
+use std::net::{Ipv4Addr, TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
+
+const CALLBACK_STATE: u32 = 1;
+const CALLBACK_ACTION: u32 = 2;
+const MAX_RESPONSE_BYTES: usize = 64 * 1024;
+const STARTED: i32 = 0;
+const INVALID_ARGUMENT: i32 = 1;
+const ALREADY_STARTED: i32 = 2;
+const BIND_FAILED: i32 = 3;
+const THREAD_FAILED: i32 = 4;
+const STOP_FAILED: i32 = 5;
+
+#[path = "runtime_http.rs"]
+mod http;
+
+pub type RuntimeRequestCallback = unsafe extern "C" fn(
+    request: *const RuntimeRequest,
+    output: *mut u8,
+    output_capacity: usize,
+    output_length: *mut usize,
+) -> i32;
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct RuntimeCallbacks {
+    pub request: Option<RuntimeRequestCallback>,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct RuntimeRequest {
+    pub kind: u32,
+    pub instance_id: *const u8,
+    pub instance_id_len: usize,
+    pub caller_id: *const u8,
+    pub caller_id_len: usize,
+    pub session_id: *const u8,
+    pub session_id_len: usize,
+    pub lease_id: *const u8,
+    pub lease_id_len: usize,
+    pub lease_epoch: *const u8,
+    pub lease_epoch_len: usize,
+    pub correlation_id: *const u8,
+    pub correlation_id_len: usize,
+    pub body: *const u8,
+    pub body_len: usize,
+}
+
+struct RuntimeHandle {
+    port: u16,
+    stop: Arc<AtomicBool>,
+    join: JoinHandle<()>,
+}
+
+static SERVER: OnceLock<Mutex<Option<RuntimeHandle>>> = OnceLock::new();
+
+fn server_slot() -> &'static Mutex<Option<RuntimeHandle>> {
+    SERVER.get_or_init(|| Mutex::new(None))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sts2_game_mod_runtime_start(
+    port: u16,
+    token: *const u8,
+    token_len: usize,
+    callbacks: *const RuntimeCallbacks,
+) -> i32 {
+    let token = match unsafe { copy_input(token, token_len, 256) } {
+        Ok(value) if !value.is_empty() && value.iter().all(|byte| !byte.is_ascii_whitespace()) => {
+            value
+        }
+        _ => return INVALID_ARGUMENT,
+    };
+    let callback = match unsafe { callbacks.as_ref() }.and_then(|value| value.request) {
+        Some(value) => value,
+        None => return INVALID_ARGUMENT,
+    };
+
+    let Ok(mut slot) = server_slot().lock() else {
+        return THREAD_FAILED;
+    };
+    if slot.is_some() {
+        return ALREADY_STARTED;
+    }
+
+    let listener = match TcpListener::bind((Ipv4Addr::LOCALHOST, port)) {
+        Ok(value) => value,
+        Err(_) => return BIND_FAILED,
+    };
+    if listener.set_nonblocking(true).is_err() {
+        return BIND_FAILED;
+    }
+
+    let stop = Arc::new(AtomicBool::new(false));
+    let thread_stop = Arc::clone(&stop);
+    let join = match thread::Builder::new()
+        .name(String::from("sts2-runtime-http"))
+        .spawn(move || serve(listener, token, callback, thread_stop))
+    {
+        Ok(value) => value,
+        Err(_) => return THREAD_FAILED,
+    };
+    *slot = Some(RuntimeHandle { port, stop, join });
+    STARTED
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn sts2_game_mod_runtime_stop() -> i32 {
+    let Ok(mut slot) = server_slot().lock() else {
+        return STOP_FAILED;
+    };
+    let Some(handle) = slot.take() else {
+        return STARTED;
+    };
+    handle.stop.store(true, Ordering::Release);
+    let _ = TcpStream::connect((Ipv4Addr::LOCALHOST, handle.port));
+    if handle.join.join().is_err() {
+        return STOP_FAILED;
+    }
+    STARTED
+}
+
+fn serve(
+    listener: TcpListener,
+    token: Vec<u8>,
+    callback: RuntimeRequestCallback,
+    stop: Arc<AtomicBool>,
+) {
+    while !stop.load(Ordering::Acquire) {
+        match listener.accept() {
+            Ok((mut stream, _)) => {
+                let _ = handle_connection(&mut stream, &token, callback);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(5));
+            }
+            Err(_) => thread::sleep(Duration::from_millis(10)),
+        }
+    }
+}
+
+fn handle_connection(
+    stream: &mut TcpStream,
+    token: &[u8],
+    callback: RuntimeRequestCallback,
+) -> std::io::Result<()> {
+    let request = match http::read_request(stream) {
+        Ok(value) => value,
+        Err(status) => {
+            return http::write_response(stream, status, b"{\"error_code\":\"malformed_request\"}");
+        }
+    };
+    if !http::headers_are_allowed(&request.headers) {
+        return http::write_response(stream, 400, b"{\"error_code\":\"unsupported_header\"}");
+    }
+    let mut auth = b"Bearer ".to_vec();
+    auth.extend_from_slice(token);
+    if request.headers.get("authorization").map(String::as_bytes) != Some(auth.as_slice()) {
+        return http::write_response(stream, 401, b"{\"error_code\":\"unauthorized\"}");
+    }
+
+    match (request.method.as_str(), request.path.as_str()) {
+        ("GET", "/health/ready") if request.body.is_empty() => http::write_response(
+            stream,
+            200,
+            b"{\"status\":\"ready\",\"listener\":\"loopback\"}",
+        ),
+        ("GET", "/api/v1/runtime/state") if request.body.is_empty() => {
+            dispatch(callback, CALLBACK_STATE, &request, stream)
+        }
+        ("POST", "/api/v1/runtime/action") if request.content_type_is_json() => {
+            dispatch(callback, CALLBACK_ACTION, &request, stream)
+        }
+        _ => http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}"),
+    }
+}
+
+fn dispatch(
+    callback: RuntimeRequestCallback,
+    kind: u32,
+    request: &http::Request,
+    stream: &mut TcpStream,
+) -> std::io::Result<()> {
+    let Some(instance_id) = request.headers.get("x-sts2-instance-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_instance_id\"}");
+    };
+    let Some(caller_id) = request.headers.get("x-sts2-caller-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_caller_id\"}");
+    };
+    let Some(session_id) = request.headers.get("x-sts2-session-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_session_id\"}");
+    };
+    let Some(lease_id) = request.headers.get("x-sts2-lease-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_id\"}");
+    };
+    let Some(lease_epoch) = request.headers.get("x-sts2-lease-epoch") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_epoch\"}");
+    };
+    let Some(correlation_id) = request.headers.get("x-sts2-correlation-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_correlation_id\"}");
+    };
+    if [
+        instance_id.as_str(),
+        caller_id.as_str(),
+        session_id.as_str(),
+        lease_id.as_str(),
+        lease_epoch.as_str(),
+        correlation_id.as_str(),
+    ]
+    .into_iter()
+    .any(|value| !http::safe_header_value(value))
+    {
+        return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_identity\"}");
+    }
+
+    let native_request = RuntimeRequest {
+        kind,
+        instance_id: instance_id.as_bytes().as_ptr(),
+        instance_id_len: instance_id.len(),
+        caller_id: caller_id.as_bytes().as_ptr(),
+        caller_id_len: caller_id.len(),
+        session_id: session_id.as_bytes().as_ptr(),
+        session_id_len: session_id.len(),
+        lease_id: lease_id.as_bytes().as_ptr(),
+        lease_id_len: lease_id.len(),
+        lease_epoch: lease_epoch.as_bytes().as_ptr(),
+        lease_epoch_len: lease_epoch.len(),
+        correlation_id: correlation_id.as_bytes().as_ptr(),
+        correlation_id_len: correlation_id.len(),
+        body: request.body.as_ptr(),
+        body_len: request.body.len(),
+    };
+    let mut output = vec![0_u8; MAX_RESPONSE_BYTES];
+    let mut output_length = 0_usize;
+    let status = unsafe {
+        callback(
+            &native_request,
+            output.as_mut_ptr(),
+            output.len(),
+            &mut output_length,
+        )
+    };
+    if !(200..600).contains(&status) || output_length > output.len() {
+        return http::write_response(stream, 500, b"{\"error_code\":\"callback_failed\"}");
+    }
+    http::write_response(stream, status as u16, &output[..output_length])
+}
+
+unsafe fn copy_input(pointer: *const u8, length: usize, maximum: usize) -> Result<Vec<u8>, i32> {
+    if pointer.is_null() || length > maximum {
+        return Err(INVALID_ARGUMENT);
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(pointer, length) };
+    Ok(bytes.to_vec())
+}

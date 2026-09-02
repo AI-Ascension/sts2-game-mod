@@ -69,3 +69,16 @@ For the repeated WSL build/install/relaunch flow, use the wrapper's shorthand:
 
 That shorthand passes the canonical `--ai-ascension-unlock-all` argument only on that relaunch. A
 normal invocation of `dev-cycle.sh` installs and starts the addon without changing profile progress.
+
+## Runtime probe
+
+When `STS2_RUNTIME_TOKEN` is supplied, initialization also starts the bounded loopback runtime
+adapter on `STS2_RUNTIME_PORT` (default `15526`). It exposes `/health/ready`,
+`/api/v1/runtime/state`, and `/api/v1/runtime/action` with bearer authentication. Requests are
+copied into a bounded managed queue and processed on the Godot main thread. The only admitted action
+is `show_runtime_probe`; it displays the live status overlay and returns a fresh
+`status_overlay_visible` witness. The action is an integration probe, not a gameplay mutation.
+
+The exact STS2 v0.107.1 Windows x86-64 host probe is recorded in the target evidence report. The
+package remains scoped to that focused runtime proof: the runtime token, host assemblies, game files,
+saves, and logs are not stored or packaged, and gameplay mutation is not implemented.

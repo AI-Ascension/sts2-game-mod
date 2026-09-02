@@ -26,7 +26,8 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 | Managed/native target | Game host | Platform | Evidence | Result |
 | --- | --- | --- | --- | --- |
 | Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
-| Rust host/HTTP/game behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no live route or gameplay mutation is implemented |
+| Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
+| Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
 
 The project planning baseline names a host assembly identity, but this repository does not retain
 that proprietary file. The recorded load-smoke uses the operator's installed host assembly without
@@ -37,9 +38,9 @@ macOS, or another architecture until an exact matrix row and evidence exist.
 
 The checked-in `protocol-artifact/poc-v1/` copy is consumed by exact protocol version, schema
 digest, and provenance. It is an offline release-like input, not a package or runtime compatibility
-claim. The game-mod POC mapping is source/test-confirmed only; host gameplay and HTTP compatibility
-remain unverified. Load-smoke proves only manifest discovery, managed initializer invocation, and
-the paired native ABI call in the exact recorded host.
+claim. The game-mod POC mapping remains source/test-confirmed only. The separate runtime-v1 probe
+has confirmed its HTTP contract, main-thread callback, and host-visible witness in the exact recorded
+host; gameplay compatibility remains unverified.
 
 HTTP and ABI changes are classified as internal, additive-compatible, safety correction,
 deprecated-compatible, or breaking. A route, field, status, error, ordering, ABI symbol, calling
@@ -56,3 +57,13 @@ Do not promote build-only evidence to load or runtime support. A deprecation nam
 warning, first deprecated release, earliest removal release, and compatibility tests. A breaking
 change needs explicit approval and coordinated updates to the adapter, schema, package, and
 consumers.
+
+## Runtime profile row
+
+| Managed/native target | Runtime profile | Evidence | Result |
+| --- | --- | --- | --- |
+| `AIAscensionSTS2Poc` plus native runtime listener | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
+
+The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
+reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
+another host version, another platform, or a valued profile.

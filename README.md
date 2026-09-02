@@ -7,7 +7,7 @@
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
-> **Status:** deterministic tests and managed load-smoke `confirmed` at the pinned commit · host gameplay, HTTP, and compatibility `unverified`.
+> **Status:** deterministic tests, managed load-smoke, and one exact-host runtime probe `confirmed` · host gameplay and broader compatibility `unverified`.
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
 > **Owner:** The mod owner is responsible for the managed loader package, host boundary, main-thread queue, ABI gate, HTTP admission, and Rust/native seam; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)
@@ -16,8 +16,8 @@
 
 Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
 have tests. A thin managed loader package now loads the Rust companion and has passed a real
-load-smoke launch against the recorded STS2 host; gameplay and HTTP behavior remain outside this
-slice.
+load-smoke launch against the recorded STS2 host; gameplay remains outside this slice. The bounded
+runtime probe has also passed in an authorized disposable profile.
 
 ## Responsibility and consumers
 
@@ -34,7 +34,7 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 
 - [experiments/managed-rust-interop/](experiments/managed-rust-interop/) contains the managed .NET 9
   loader package, its unique Rust companion library, the manifest, and the reproducible packaging
-  command. The package is intentionally limited to load-smoke and ABI evidence.
+  command. The package now contains the load-smoke/ABI path and the bounded runtime probe source.
 - [crates/host/](crates/host/) owns the host port, bounded main-thread queue, dispatcher, and
   versioned ABI descriptor validation.
 - [crates/http-adapter/](crates/http-adapter/) owns a transport-free HTTP request boundary and
@@ -50,14 +50,16 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records evidence levels and host claims.
 - [docs/evidence/runtime-addon-load-smoke-20260902.md](docs/evidence/runtime-addon-load-smoke-20260902.md)
   records the exact installed-host load-smoke inputs and observed log marker.
+- [docs/evidence/runtime-v1-host-live-20260902.md](docs/evidence/runtime-v1-host-live-20260902.md)
+  records the focused runtime probe against the exact installed host and disposable profile.
 - [docs/decisions/](docs/decisions/) records the managed/native, ownership, scaffold, and
   sixth-target and Wave 2 initialization decisions.
 - [tools/repo-policy/](tools/repo-policy/) is the target-local Rust governance checker.
 
-The managed loader and packaging are implemented for the load-smoke slice. The real host adapter,
-route catalog, and game action implementation remain unimplemented. The POC's core port is still
-a fake seam in this repository, not the game implementation or a claim that the host can perform
-the same action.
+The managed loader, packaging, and bounded runtime route source are implemented for this sprint.
+The broader host adapter, gameplay action implementation, and game-rule mutation remain
+unimplemented. The POC's core port is still a fake seam in this repository, not the game
+implementation or a claim that the host can perform a gameplay action.
 
 ## Evidence and provenance
 
@@ -68,9 +70,10 @@ uses the operator's installed host assembly without adding it to this repository
 
 The POC behavior is test-confirmed only for the local fake core port: a state read, one accepted
 action, and one zero-unit rejection preserve the bounded state and effect witness. The managed
-loader has also passed load-smoke in STS2 v0.107.1 and logged a successful Rust ABI call. Live HTTP,
-main-thread queue behavior, host state/action mutation, effect settlement, and broader compatibility
-remain unverified.
+loader has also passed load-smoke in STS2 v0.107.1 and logged a successful Rust ABI call. The
+runtime-v1 probe has confirmed live HTTP, managed main-thread dispatch, and a host-visible overlay
+witness in that exact host. Gameplay mutation, effect semantics beyond the probe, and broader
+compatibility remain unverified.
 
 ## Local validation
 
@@ -83,3 +86,17 @@ cargo run --locked --offline --package repo-policy -- --strict
 Then run formatting, Clippy, and workspace tests as documented in
 [docs/TESTING.md](docs/TESTING.md). These local gates prove repository and source-level invariants
 only; they do not promote host compatibility beyond the evidence level recorded above.
+
+## Bounded runtime slice
+
+The interop package now includes an authenticated loopback-only runtime adapter with two fixed
+routes: `GET /api/v1/runtime/state` and `POST /api/v1/runtime/action`. The native listener validates
+bounded HTTP input and identity headers, then invokes the managed bridge. Managed work is queued and
+executed from the Godot `SceneTree.ProcessFrame` callback. The only accepted action is the safe,
+host-visible `show_runtime_probe`; acceptance requires the status overlay to be observed and returns
+the fresh `status_overlay_visible` witness defined by the copied [`runtime-v1` artifact](protocol-artifact/runtime-v1/README.md).
+
+The listener requires `STS2_RUNTIME_TOKEN`, binds to loopback, and is disabled when its token is
+absent or its configured port is invalid. The exact STS2 v0.107.1 Windows x86-64 probe is recorded
+as confirmed in the dated host evidence; the package still does not implement gameplay mutation or
+claim compatibility with another host or platform.

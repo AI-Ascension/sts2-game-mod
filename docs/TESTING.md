@@ -22,7 +22,8 @@ cargo test --locked --offline --workspace --all-targets --all-features
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, and deterministic fake tests. They do not launch the game or prove host gameplay.
+artifact identity, and deterministic fake tests. The separate dated host report records the
+authorized runtime lane; these ordinary commands still do not launch the game or prove gameplay.
 
 ## Planned layers
 
@@ -35,9 +36,9 @@ artifact identity, and deterministic fake tests. They do not launch the game or 
 | host | loader, callbacks, main-thread and settlement behavior | exact disposable game |
 | release smoke | packaged bytes and install/start behavior | authorized clean host |
 
-Wave 2 claims unit/component coverage for the initialized ports, composition, and fake POC mapping
-only. The POC artifact test is a local conformance check for copied bytes and message shape; no
-host, integration, or release-smoke layer is claimed.
+Wave 2 claims unit/component coverage for the initialized ports, composition, and fake POC mapping.
+The runtime-v1 host report adds focused host and integration evidence for one exact disposable
+profile; it is not full conformance or a release-support claim.
 
 ## Required future behavior
 
@@ -70,7 +71,8 @@ manual host load-smoke may copy those three files into an authorized game's `mod
 launch the exact executable with a bounded `--quit-after` value. Include the standalone `--debug`
 argument when validating the optional visible debug banner; without it, the load-smoke should
 produce no in-game overlay. The observed marker, overlay state, and all host inputs must be
-recorded in a separate evidence report; this is not part of ordinary CI.
+recorded in a separate evidence report; this is not part of ordinary CI. The completed report is
+[`docs/evidence/runtime-v1-host-live-20260902.md`](evidence/runtime-v1-host-live-20260902.md).
 
 ## Security and evidence language
 
@@ -80,3 +82,16 @@ credentials, saves, private paths, multiplayer identifiers, or proprietary host 
 Use confirmed for reproduced results, source-derived for planning or inspected documents,
 proposed for future design, inferred for bounded reasoning, and unverified when the required
 runtime or external evidence was not run.
+
+## Runtime slice checks
+
+The native runtime crate has bounded parser/identity tests, Clippy coverage, and a Windows
+x86-64 release cross-build. The managed loader project builds against operator-supplied
+`sts2.dll` and `GodotSharp.dll` without copying those assemblies into the repository. The checked-in
+`protocol-artifact/runtime-v1/` copy is the canonical message reference.
+
+The authorized probe confirmed starting the listener inside STS2, authenticated state/action
+requests, main-thread queue execution, a visible overlay witness, and reversible disposable-profile
+cleanup for the recorded host. Gameplay mutation, process supervision/restart, multi-instance
+behavior, other host versions, and other platforms remain `unverified`. Do not count a successful
+build or ABI load-smoke as any of those remaining runtime results.
