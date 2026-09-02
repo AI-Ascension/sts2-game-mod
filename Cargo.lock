@@ -85,20 +85,20 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "serde_json",
- "sts2-mod-host",
- "sts2-mod-http-adapter",
+ "sts2-game-mod-host",
+ "sts2-game-mod-http-adapter",
 ]
 
 [[package]]
-name = "sts2-harness-interop"
+name = "sts2-game-mod-interop"
 version = "0.0.0"
 
 [[package]]
-name = "sts2-mod-host"
+name = "sts2-game-mod-host"
 version = "0.0.0"
 
 [[package]]
-name = "sts2-mod-http-adapter"
+name = "sts2-game-mod-http-adapter"
 version = "0.0.0"
 
 [[package]]

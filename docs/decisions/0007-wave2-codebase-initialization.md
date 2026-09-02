@@ -14,9 +14,9 @@ validation without a proprietary STS2 host assembly or a game launch.
 
 Initialize three target-local Rust crates:
 
-- `sts2-mod-host` owns owned host projections, a bounded FIFO main-thread queue, dispatch, and a
+- `sts2-game-mod-host` owns owned host projections, a bounded FIFO main-thread queue, dispatch, and a
   versioned pointer-width ABI descriptor gate.
-- `sts2-mod-http-adapter` owns a bounded, transport-free request adapter port. It does not open a
+- `sts2-game-mod-http-adapter` owns a bounded, transport-free request adapter port. It does not open a
   socket or define a public route catalog.
 - `sts2-game-mod` composes the ports and makes HTTP admission versus main-thread pumping explicit.
 

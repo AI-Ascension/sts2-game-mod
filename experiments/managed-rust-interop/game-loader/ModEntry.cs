@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using MegaCrit.Sts2.Core.Modding;
 
-namespace Sts2Harness.GameLoaderProbe;
+namespace Sts2.GameMod.ManagedInterop.GameLoaderProbe;
 
 [ModInitializer(nameof(Initialize))]
 public static class ModEntry
@@ -35,7 +35,7 @@ public static class ModEntry
 
             try
             {
-                nint export = NativeLibrary.GetExport(candidate, "sts2_harness_abi_version");
+                nint export = NativeLibrary.GetExport(candidate, "sts2_game_mod_interop_abi_version");
                 AbiVersion getVersion = Marshal.GetDelegateForFunctionPointer<AbiVersion>(export);
                 uint version = getVersion();
 
@@ -59,15 +59,14 @@ public static class ModEntry
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return "sts2_harness_interop.dll";
+            return "sts2_game_mod_interop.dll";
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return "libsts2_harness_interop.dylib";
+            return "libsts2_game_mod_interop.dylib";
         }
 
-        return "libsts2_harness_interop.so";
+        return "libsts2_game_mod_interop.so";
     }
 }
-

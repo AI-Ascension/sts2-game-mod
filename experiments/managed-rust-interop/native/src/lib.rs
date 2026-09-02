@@ -12,7 +12,7 @@ const STATUS_OVERFLOW: i32 = 2;
 
 /// Returns the version of the deliberately small native ABI.
 #[unsafe(no_mangle)]
-pub extern "C" fn sts2_harness_abi_version() -> u32 {
+pub extern "C" fn sts2_game_mod_interop_abi_version() -> u32 {
     ABI_VERSION
 }
 
@@ -22,7 +22,11 @@ pub extern "C" fn sts2_harness_abi_version() -> u32 {
 ///
 /// When non-null, `output` must be aligned, writable, and valid for one `i32`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn sts2_harness_checked_add(left: i32, right: i32, output: *mut i32) -> i32 {
+pub unsafe extern "C" fn sts2_game_mod_interop_checked_add(
+    left: i32,
+    right: i32,
+    output: *mut i32,
+) -> i32 {
     if output.is_null() {
         return STATUS_NULL_OUTPUT;
     }

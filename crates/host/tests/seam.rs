@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use sts2_mod_host::{
+use sts2_game_mod_host::{
     ABI_VERSION, AbiDescriptor, AbiError, AbiPort, HostDispatcher, HostError, HostPort,
     HostReceipt, HostRequest, HostSnapshot, MainThreadQueue, QueueError, validate_abi,
 };
@@ -9,19 +9,19 @@ use sts2_mod_host::{
 struct FakeHost {
     generation: u64,
     requests: Vec<HostRequest>,
-    ready: bool,
+    is_ready: bool,
 }
 
 impl HostPort for FakeHost {
     fn snapshot(&self) -> Result<HostSnapshot, HostError> {
         Ok(HostSnapshot {
             generation: self.generation,
-            ready: self.ready,
+            is_ready: self.is_ready,
         })
     }
 
     fn submit(&mut self, request: HostRequest) -> Result<HostReceipt, HostError> {
-        if !self.ready {
+        if !self.is_ready {
             return Err(HostError::NotReady);
         }
         self.generation += 1;
@@ -56,7 +56,7 @@ fn bounded_queue_rejects_overflow_and_preserves_fifo() {
 #[test]
 fn dispatcher_uses_fake_host_on_a_deterministic_budget() {
     let fake = FakeHost {
-        ready: true,
+        is_ready: true,
         ..FakeHost::default()
     };
     let mut dispatcher = HostDispatcher::new(fake, 4, 1);
