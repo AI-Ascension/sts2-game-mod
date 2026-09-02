@@ -9,8 +9,9 @@ sts2-game-mod/
 ├── crates/http-adapter               bounded transport-free HTTP adapter seam
 ├── crates/game-mod                   target-local composition root
 ├── protocol-artifact/poc-v1           offline copy consumed by the POC mapping
+├── schemas/poc-v1.schema.json         copied protocol source for artifact checksums
+├── conformance/cases/poc-v1.json      copied protocol conformance evidence
 ├── schemas/game-http-v1              future owner-local HTTP schema
-├── conformance                       future deterministic boundary fixtures
 ├── tests                             future component and host-test seams
 ├── experiments/managed-rust-interop/ preserved source-only experiment
 ├── tools/repo-policy/                target-local governance checker
@@ -19,8 +20,10 @@ sts2-game-mod/
 ~~~
 
 The initialized crates contain only boundary ports, bounded admission, and deterministic fake
-tests. `managed/loader`, `schemas`, `conformance`, and `tests` remain future responsibility
-markers; they must not receive empty manifests or speculative source.
+tests. `managed/loader`, `schemas/game-http-v1`, and `tests` remain future responsibility markers;
+they must not receive empty manifests or speculative source. The `poc-v1` schema and conformance
+case are inert, protocol-owner bytes copied at the repository-relative paths required by the
+artifact's exact checksum inventory.
 
 ## Workspace
 
@@ -38,6 +41,8 @@ under the experiment until a later implementation decision gives them a product 
 | crates/http-adapter | mod | mod composition; future owner-local HTTP listener |
 | crates/game-mod | mod | target-local composition and admission boundary |
 | protocol-artifact/poc-v1 | protocol release consumer | inert copied POC artifact and fixtures |
+| schemas/poc-v1.schema.json | protocol release consumer | inert copied source schema for checksums |
+| conformance/cases/poc-v1.json | protocol release consumer | inert copied conformance evidence |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
 | experiments/managed-rust-interop | mod research | build-level ABI investigation only |

@@ -12,6 +12,8 @@ Run from the target root:
 
 ~~~text
 cargo metadata --locked --no-deps --format-version 1
+sha256sum -c protocol-artifact/poc-v1/SHA256SUMS
+cargo test --locked --package sts2-game-mod --test poc
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings

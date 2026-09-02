@@ -10,11 +10,14 @@ mod poc;
 mod protocol_artifact;
 
 pub use poc::{
-    EffectWitness, PocAction, PocBoundaryRecord, PocCoreError, PocCorePort, PocCoreState,
-    PocMessage, PocMessageKind, PocMod, PocModError, PocObservation, PocProvenance, PocRoute,
-    PocStatus, PocValidationError,
+    EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
+    PocCoreError, PocCorePort, PocCoreState, PocMessage, PocMessageKind, PocMod, PocModError,
+    PocObservation, PocProvenance, PocRoute, PocStatus, PocValidationError,
 };
-pub use protocol_artifact::{ArtifactError, POC_ARTIFACT, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST};
+pub use protocol_artifact::{
+    ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
+    POC_SCHEMA_PACKAGE,
+};
 
 /// Target-owned composition of host admission, HTTP bounds, and ABI validation.
 #[derive(Debug)]
