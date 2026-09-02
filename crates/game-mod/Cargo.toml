@@ -1,0 +1,14 @@
+[package]
+name = "sts2-game-mod"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+license.workspace = true
+
+[dependencies]
+sts2-mod-host = { path = "../host" }
+sts2-mod-http-adapter = { path = "../http-adapter" }
+
+[lints]
+workspace = true

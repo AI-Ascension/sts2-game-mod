@@ -1,0 +1,11 @@
+{
+  "id": "STS2_HARNESS_INTEROP_PROBE",
+  "name": "STS2 Harness Interop Probe",
+  "author": "sts2-harness-rust contributors",
+  "description": "Build-only probe for the managed STS2 loader to Rust native ABI boundary",
+  "version": "0.0.0",
+  "has_pck": false,
+  "has_dll": true,
+  "affects_gameplay": false
+}
+
