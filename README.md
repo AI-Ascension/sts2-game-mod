@@ -40,7 +40,7 @@ replacement for the managed loader or a game implementation.
 
 The foundation and boundary seam are original target documentation and source tailored from the project
 standards. The interop experiment predates this foundation and is retained in place. No product
-implementation source was copied from sts2-harness-rust or any other implementation. No
+implementation source was copied from another implementation. No
 proprietary host file, save, credential, personal path, or generated output is distributed.
 
 Runtime behavior is unverified: the game has not been launched, the loader has not been discovered

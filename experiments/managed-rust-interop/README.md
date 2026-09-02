@@ -10,5 +10,4 @@ workspace created in Wave 2 so it remains a valid workspace member. The experime
 source-only; managed-host integration, runtime loading, and game behavior are unverified. Generated
 `bin/`, `obj/`, and `target/` output was excluded.
 
-The exact source snapshot remains at
-[`sts2-harness-rust/spikes/managed-rust-interop/`](../../../sts2-harness-rust/spikes/managed-rust-interop/).
+The experiment source is retained in this directory and is owned by the game-mod target.
