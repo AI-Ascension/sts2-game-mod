@@ -13,9 +13,9 @@ payload_dir="$temp_dir/payload"
 output_dir="$temp_dir/workshop-item"
 preview_file="$temp_dir/preview.jpg"
 mkdir -p "$payload_dir"
-printf 'synthetic managed payload\n' > "$payload_dir/AIAscensionSTS2Poc.dll"
-printf '{"id":"synthetic-loader"}\n' > "$payload_dir/AIAscensionSTS2Poc.json"
-printf 'synthetic native payload\n' > "$payload_dir/ai_ascension_sts2_poc.dll"
+printf 'synthetic managed payload\n' > "$payload_dir/AIAscensionSTS2GameMod.dll"
+printf '{"id":"synthetic-loader"}\n' > "$payload_dir/AIAscensionSTS2GameMod.json"
+printf 'synthetic native payload\n' > "$payload_dir/AIAscensionSTS2GameModNative.dll"
 printf 'synthetic preview\n' > "$preview_file"
 
 bash "$script_dir/package-item.sh" \
@@ -23,9 +23,9 @@ bash "$script_dir/package-item.sh" \
 
 [[ -f "$output_dir/sts2-workshop-manifest.json" ]]
 [[ -f "$output_dir/SHA256SUMS" ]]
-[[ -f "$output_dir/AIAscensionSTS2Poc.dll" ]]
-[[ -f "$output_dir/AIAscensionSTS2Poc.json" ]]
-[[ -f "$output_dir/ai_ascension_sts2_poc.dll" ]]
+[[ -f "$output_dir/AIAscensionSTS2GameMod.dll" ]]
+[[ -f "$output_dir/AIAscensionSTS2GameMod.json" ]]
+[[ -f "$output_dir/AIAscensionSTS2GameModNative.dll" ]]
 [[ -f "$output_dir.vdf" ]]
 
 file_count=$(find "$output_dir" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d '[:space:]')
@@ -43,9 +43,9 @@ assert manifest["consumer_app_id"] == 480
 assert manifest["published_file_id"] == 123456789
 assert manifest["content_kind"] == "first_party_executable"
 assert [item["path"] for item in manifest["files"]] == [
-    "AIAscensionSTS2Poc.dll",
-    "AIAscensionSTS2Poc.json",
-    "ai_ascension_sts2_poc.dll",
+    "AIAscensionSTS2GameMod.dll",
+    "AIAscensionSTS2GameMod.json",
+    "AIAscensionSTS2GameModNative.dll",
 ]
 assert all(len(item["sha256"]) == 64 for item in manifest["files"])
 assert len(manifest["content_digest"]) == 64

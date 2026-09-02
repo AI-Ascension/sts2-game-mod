@@ -24,9 +24,9 @@ mod. Runtime acceptance is restricted to an explicitly configured first-party Ap
 file ID, an exact package identity, the exact supported game/platform/loader contract, and the
 allowlisted files:
 
-- AIAscensionSTS2Poc.dll;
-- AIAscensionSTS2Poc.json; and
-- ai_ascension_sts2_poc.dll.
+- AIAscensionSTS2GameMod.dll;
+- AIAscensionSTS2GameMod.json; and
+- AIAscensionSTS2GameModNative.dll.
 
 The item also contains sts2-workshop-manifest.json and SHA256SUMS. These metadata files are
 required package material but are not executable payload. The manifest is

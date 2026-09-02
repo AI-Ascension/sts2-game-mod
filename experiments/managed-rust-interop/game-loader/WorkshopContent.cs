@@ -20,15 +20,15 @@ public static class WorkshopPackageValidator
     private const string PackageId = "ai-ascension.sts2-game-mod";
     private const string LoaderContract = "sts2-managed-loader-v1";
     private const string ContentKind = "first_party_executable";
-    private const string Entrypoint = "AIAscensionSTS2Poc.json";
+    private const string Entrypoint = "AIAscensionSTS2GameMod.json";
     private const int MaximumManifestBytes = 64 * 1024;
     private const long MaximumPayloadBytes = 256 * 1024 * 1024;
 
     private static readonly (string Path, string Role)[] ExpectedPayload =
     [
-        ("AIAscensionSTS2Poc.dll", "managed_assembly"),
-        ("AIAscensionSTS2Poc.json", "loader_manifest"),
-        ("ai_ascension_sts2_poc.dll", "native_library")
+        ("AIAscensionSTS2GameMod.dll", "managed_assembly"),
+        ("AIAscensionSTS2GameMod.json", "loader_manifest"),
+        ("AIAscensionSTS2GameModNative.dll", "native_library")
     ];
 
     private static readonly string[] ExpectedEntries =

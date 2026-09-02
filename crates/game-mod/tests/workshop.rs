@@ -31,22 +31,22 @@ fn manifest() -> WorkshopManifest {
         platform: PLATFORM.to_owned(),
         loader_contract: WORKSHOP_LOADER_CONTRACT.to_owned(),
         content_kind: WorkshopContentKind::FirstPartyExecutable,
-        entrypoint: "AIAscensionSTS2Poc.json".to_owned(),
+        entrypoint: "AIAscensionSTS2GameMod.json".to_owned(),
         files: vec![
             WorkshopFile {
-                path: "AIAscensionSTS2Poc.dll".to_owned(),
+                path: "AIAscensionSTS2GameMod.dll".to_owned(),
                 role: WorkshopFileRole::ManagedAssembly,
                 size_bytes: 12,
                 sha256: digest('a'),
             },
             WorkshopFile {
-                path: "AIAscensionSTS2Poc.json".to_owned(),
+                path: "AIAscensionSTS2GameMod.json".to_owned(),
                 role: WorkshopFileRole::LoaderManifest,
                 size_bytes: 12,
                 sha256: digest('b'),
             },
             WorkshopFile {
-                path: "ai_ascension_sts2_poc.dll".to_owned(),
+                path: "AIAscensionSTS2GameModNative.dll".to_owned(),
                 role: WorkshopFileRole::NativeLibrary,
                 size_bytes: 12,
                 sha256: digest('c'),
@@ -65,15 +65,15 @@ fn policy() -> WorkshopPolicy {
         PLATFORM,
         vec![
             AllowedWorkshopFile {
-                path: "AIAscensionSTS2Poc.dll".to_owned(),
+                path: "AIAscensionSTS2GameMod.dll".to_owned(),
                 role: WorkshopFileRole::ManagedAssembly,
             },
             AllowedWorkshopFile {
-                path: "AIAscensionSTS2Poc.json".to_owned(),
+                path: "AIAscensionSTS2GameMod.json".to_owned(),
                 role: WorkshopFileRole::LoaderManifest,
             },
             AllowedWorkshopFile {
-                path: "ai_ascension_sts2_poc.dll".to_owned(),
+                path: "AIAscensionSTS2GameModNative.dll".to_owned(),
                 role: WorkshopFileRole::NativeLibrary,
             },
         ],
@@ -128,21 +128,21 @@ fn malformed_unknown_and_oversized_manifests_fail_closed() -> Result<(), Box<dyn
 #[test]
 fn unsafe_paths_duplicates_and_bad_file_shapes_are_rejected() {
     let mut traversal = manifest();
-    traversal.files[0].path = "../AIAscensionSTS2Poc.dll".to_owned();
+    traversal.files[0].path = "../AIAscensionSTS2GameMod.dll".to_owned();
     assert_eq!(
         traversal.validate(),
         Err(WorkshopManifestError::InvalidFilePath)
     );
 
     let mut absolute = manifest();
-    absolute.files[0].path = "/tmp/AIAscensionSTS2Poc.dll".to_owned();
+    absolute.files[0].path = "/tmp/AIAscensionSTS2GameMod.dll".to_owned();
     assert_eq!(
         absolute.validate(),
         Err(WorkshopManifestError::InvalidFilePath)
     );
 
     let mut duplicate = manifest();
-    duplicate.files[1].path = "aIAscensionSTS2Poc.dll".to_owned();
+    duplicate.files[1].path = "aIAscensionSTS2GameMod.dll".to_owned();
     duplicate.files[1].role = WorkshopFileRole::ManagedAssembly;
     assert_eq!(
         duplicate.validate(),
@@ -157,7 +157,7 @@ fn unsafe_paths_duplicates_and_bad_file_shapes_are_rejected() {
     );
 
     let mut wrong_extension = manifest();
-    wrong_extension.files[0].path = "AIAscensionSTS2Poc.json".to_owned();
+    wrong_extension.files[0].path = "AIAscensionSTS2GameMod.json".to_owned();
     assert_eq!(
         wrong_extension.validate(),
         Err(WorkshopManifestError::InvalidFilePath)

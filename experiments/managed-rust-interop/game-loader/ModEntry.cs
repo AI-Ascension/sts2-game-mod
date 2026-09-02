@@ -16,8 +16,8 @@ public static partial class ModEntry
     private const int ExpectedCheckedAddStatus = 0;
     private const int ExpectedCheckedAddResult = 42;
     private const string DebugArgument = "--debug";
-    private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
-    private const string StatusNodeName = "AIAscensionSTS2PocStatus";
+    private const string LogPrefix = "[AI-ASCENSION STS2 GAME MOD]";
+    private const string StatusNodeName = "AIAscensionSTS2GameModStatus";
     private const string WorkshopAppIdVariable = "STS2_WORKSHOP_APP_ID";
     private const string WorkshopItemIdVariable = "STS2_WORKSHOP_ITEM_ID";
     private const string WorkshopGameVersionVariable = "STS2_WORKSHOP_GAME_VERSION";
@@ -215,7 +215,7 @@ public static partial class ModEntry
             Name = "Message",
             Text = runtimeAction
                 ? $"AI-ASCENSION STS2\nLIVE RUNTIME | ABI {version} | effect witnessed"
-                : $"AI-ASCENSION STS2 POC\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
+                : $"AI-ASCENSION STS2 GAME MOD\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
             Position = new Vector2(52, 48),
             Size = new Vector2(580, 76),
             MouseFilter = Control.MouseFilterEnum.Ignore
@@ -236,14 +236,14 @@ public static partial class ModEntry
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return "ai_ascension_sts2_poc.dll";
+            return "AIAscensionSTS2GameModNative.dll";
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return "libai_ascension_sts2_poc.dylib";
+            return "libAIAscensionSTS2GameModNative.dylib";
         }
 
-        return "libai_ascension_sts2_poc.so";
+        return "libAIAscensionSTS2GameModNative.so";
     }
 }

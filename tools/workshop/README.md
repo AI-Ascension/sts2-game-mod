@@ -10,9 +10,9 @@ the Steamworks SDK, the proprietary STS2 host assembly, or generated release out
 published file ID, game version, package version, source revision, and preview image. It accepts only
 the three current first-party runtime files:
 
-- `AIAscensionSTS2Poc.dll` — managed loader assembly;
-- `AIAscensionSTS2Poc.json` — host loader manifest; and
-- `ai_ascension_sts2_poc.dll` — Windows native companion.
+- `AIAscensionSTS2GameMod.dll` — managed loader assembly;
+- `AIAscensionSTS2GameMod.json` — host loader manifest; and
+- `AIAscensionSTS2GameModNative.dll` — Windows native companion.
 
 It rejects symlinks, directories, unexpected files, missing/empty payload files, unsafe metadata,
 and a pre-existing output directory. The output contains the allowlisted payload, a

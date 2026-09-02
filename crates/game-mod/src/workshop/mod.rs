@@ -27,4 +27,4 @@ pub const WORKSHOP_MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 /// Maximum length of an item/package path or metadata token.
 pub const WORKSHOP_MAX_TEXT_BYTES: usize = 256;
 
-pub(crate) const WORKSHOP_ENTRYPOINT: &str = "AIAscensionSTS2Poc.json";
+pub(crate) const WORKSHOP_ENTRYPOINT: &str = "AIAscensionSTS2GameMod.json";

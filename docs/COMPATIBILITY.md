@@ -25,7 +25,7 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 
 | Managed/native target | Game host | Platform | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
+| Runtime addon `AIAscensionSTS2GameMod` (renamed from `AIAscensionSTS2Poc`; evidence predates rename) | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed for the recorded pre-rename package; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
 | Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
 | Runtime-v2 fake boundary | No host; `sts2-protocol` commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527` | Offline Rust toolchain | Deterministic source/build/test | Confirmed for the in-memory fake seam only; live host mutation and settlement unverified |
 | Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
@@ -69,7 +69,7 @@ consumers.
 
 | Managed/native target | Runtime profile | Evidence | Result |
 | --- | --- | --- | --- |
-| `AIAscensionSTS2Poc` plus native runtime listener | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,

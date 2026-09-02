@@ -6,7 +6,7 @@ readonly SCRIPT_NAME=$(basename "$0")
 readonly PACKAGE_ID='ai-ascension.sts2-game-mod'
 readonly SCHEMA_VERSION='sts2-workshop-manifest-v1'
 readonly LOADER_CONTRACT='sts2-managed-loader-v1'
-readonly ENTRYPOINT='AIAscensionSTS2Poc.json'
+readonly ENTRYPOINT='AIAscensionSTS2GameMod.json'
 readonly MANIFEST_NAME='sts2-workshop-manifest.json'
 readonly CHECKSUM_NAME='SHA256SUMS'
 readonly TITLE='AI-Ascension STS2 Game Mod'
@@ -50,9 +50,9 @@ esac
 mkdir -p "$output_dir"
 
 readonly payload_files=(
-    'AIAscensionSTS2Poc.dll'
-    'AIAscensionSTS2Poc.json'
-    'ai_ascension_sts2_poc.dll'
+    'AIAscensionSTS2GameMod.dll'
+    'AIAscensionSTS2GameMod.json'
+    'AIAscensionSTS2GameModNative.dll'
 )
 
 is_allowed_payload() {
@@ -97,9 +97,9 @@ canonical_record() {
     printf '%s\t%s\t%s\n' "$name" "$(file_size "$path")" "$(file_digest "$path")" >> "$canonical_file"
 }
 
-canonical_record 'AIAscensionSTS2Poc.dll'
-canonical_record 'AIAscensionSTS2Poc.json'
-canonical_record 'ai_ascension_sts2_poc.dll'
+canonical_record 'AIAscensionSTS2GameMod.dll'
+canonical_record 'AIAscensionSTS2GameMod.json'
+canonical_record 'AIAscensionSTS2GameModNative.dll'
 content_digest=$(sha256sum "$canonical_file" | awk '{print $1}')
 
 manifest_path="$output_dir/$MANIFEST_NAME"
@@ -116,9 +116,9 @@ manifest_path="$output_dir/$MANIFEST_NAME"
     printf '  "content_kind": "first_party_executable",\n'
     printf '  "entrypoint": "%s",\n' "$ENTRYPOINT"
     printf '  "files": [\n'
-    printf '    {"path": "AIAscensionSTS2Poc.dll", "role": "managed_assembly", "size_bytes": %s, "sha256": "%s"},\n' "$(file_size "$output_dir/AIAscensionSTS2Poc.dll")" "$(file_digest "$output_dir/AIAscensionSTS2Poc.dll")"
-    printf '    {"path": "AIAscensionSTS2Poc.json", "role": "loader_manifest", "size_bytes": %s, "sha256": "%s"},\n' "$(file_size "$output_dir/AIAscensionSTS2Poc.json")" "$(file_digest "$output_dir/AIAscensionSTS2Poc.json")"
-    printf '    {"path": "ai_ascension_sts2_poc.dll", "role": "native_library", "size_bytes": %s, "sha256": "%s"}\n' "$(file_size "$output_dir/ai_ascension_sts2_poc.dll")" "$(file_digest "$output_dir/ai_ascension_sts2_poc.dll")"
+    printf '    {"path": "AIAscensionSTS2GameMod.dll", "role": "managed_assembly", "size_bytes": %s, "sha256": "%s"},\n' "$(file_size "$output_dir/AIAscensionSTS2GameMod.dll")" "$(file_digest "$output_dir/AIAscensionSTS2GameMod.dll")"
+    printf '    {"path": "AIAscensionSTS2GameMod.json", "role": "loader_manifest", "size_bytes": %s, "sha256": "%s"},\n' "$(file_size "$output_dir/AIAscensionSTS2GameMod.json")" "$(file_digest "$output_dir/AIAscensionSTS2GameMod.json")"
+    printf '    {"path": "AIAscensionSTS2GameModNative.dll", "role": "native_library", "size_bytes": %s, "sha256": "%s"}\n' "$(file_size "$output_dir/AIAscensionSTS2GameModNative.dll")" "$(file_digest "$output_dir/AIAscensionSTS2GameModNative.dll")"
     printf '  ],\n'
     printf '  "content_digest": "%s",\n' "$content_digest"
     printf '  "source_revision": "%s"\n' "$source_revision"

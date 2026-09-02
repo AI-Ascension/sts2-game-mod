@@ -33,7 +33,7 @@ internal static class Program
                 Platform = Platform,
                 LoaderContract = "sts2-managed-loader-v1",
                 ContentKind = "first_party_executable",
-                Entrypoint = "AIAscensionSTS2Poc.json",
+                Entrypoint = "AIAscensionSTS2GameMod.json",
                 Files = files,
                 ContentDigest = WorkshopPackageValidator.ComputeContentDigest(files),
                 SourceRevision = "commit-123"
@@ -56,7 +56,7 @@ internal static class Program
                 root, AppId, PublishedFileId, GameVersion, Platform));
             File.Delete(Path.Combine(root, "unexpected.txt"));
 
-            File.AppendAllText(Path.Combine(root, "AIAscensionSTS2Poc.json"), "changed\n");
+            File.AppendAllText(Path.Combine(root, "AIAscensionSTS2GameMod.json"), "changed\n");
             ExpectFailure("file_digest_mismatch", () => WorkshopPackageValidator.ValidateDirectory(
                 root, AppId, PublishedFileId, GameVersion, Platform));
             Console.WriteLine("Managed Workshop validation probe passed.");
@@ -78,18 +78,18 @@ internal static class Program
 
     private static void WritePayload(string root)
     {
-        File.WriteAllText(Path.Combine(root, "AIAscensionSTS2Poc.dll"), "synthetic managed\n");
-        File.WriteAllText(Path.Combine(root, "AIAscensionSTS2Poc.json"), "{\"id\":\"synthetic\"}\n");
-        File.WriteAllText(Path.Combine(root, "ai_ascension_sts2_poc.dll"), "synthetic native\n");
+        File.WriteAllText(Path.Combine(root, "AIAscensionSTS2GameMod.dll"), "synthetic managed\n");
+        File.WriteAllText(Path.Combine(root, "AIAscensionSTS2GameMod.json"), "{\"id\":\"synthetic\"}\n");
+        File.WriteAllText(Path.Combine(root, "AIAscensionSTS2GameModNative.dll"), "synthetic native\n");
     }
 
     private static WorkshopFile[] CreateInventory(string root)
     {
         return
         [
-            CreateFile(root, "AIAscensionSTS2Poc.dll", "managed_assembly"),
-            CreateFile(root, "AIAscensionSTS2Poc.json", "loader_manifest"),
-            CreateFile(root, "ai_ascension_sts2_poc.dll", "native_library")
+            CreateFile(root, "AIAscensionSTS2GameMod.dll", "managed_assembly"),
+            CreateFile(root, "AIAscensionSTS2GameMod.json", "loader_manifest"),
+            CreateFile(root, "AIAscensionSTS2GameModNative.dll", "native_library")
         ];
     }
 

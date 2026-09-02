@@ -31,7 +31,7 @@ host's `ModInitializer` metadata, loads the adjacent unique native companion, ve
 1, calls the checked-add smoke export, logs a bounded success marker, and places a top-layer Godot
 debug banner with the verified ABI and result when the process was launched with the exact
 `--debug` argument. The companion is built from the target-owned Rust crate as
-`ai_ascension_sts2_poc.dll` on Windows. The package script stages only the managed DLL, native DLL,
+`AIAscensionSTS2GameModNative.dll` on Windows. The package script stages only the managed DLL, native DLL,
 and manifest; it never copies proprietary host assemblies into the repository or package.
 
 This is a load-smoke implementation, not the game behavior implementation. It does not expose an
