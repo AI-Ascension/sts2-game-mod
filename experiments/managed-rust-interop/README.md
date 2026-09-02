@@ -5,8 +5,10 @@ assembly calls a Rust native library through a versioned C ABI and emits a visib
 the actual STS2 initializer. After the ABI smoke call succeeds, it adds a top-layer in-game debug
 banner only when the game is launched with the exact `--debug` argument. The banner reads
 `AI-ASCENSION STS2 POC` and `DEBUG | Rust ABI 1 | 19 + 23 = 42`. Normal launches retain the
-bounded log marker but do not add a visible overlay. It is a load-smoke package, not the gameplay
-implementation, and must only be installed in an explicitly authorized test environment.
+bounded log marker but do not add a visible overlay. It also has an explicitly opt-in launch mode
+that applies the host-equivalent full profile unlock automatically. Normal launches do not change
+profile progress. It is a development package and must only be installed in an explicitly authorized
+test environment.
 
 The managed project references the operator-supplied `sts2.dll` and `GodotSharp.dll` only at build
 time, exposes the host's `ModInitializer`, loads `ai_ascension_sts2_poc.dll`, verifies ABI version
@@ -44,5 +46,26 @@ The script only targets the exact `SlayTheSpire2.exe` process and the three `AIA
 package files. Existing installed files are backed up under the ignored `.sts2-dev/backups/`
 directory. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect the actions, or
 `--no-kill` only when the game is already stopped and file locking is not a concern. The script does
-not change profile settings or enable the addon in the game's Mods menu; that remains a one-time
-manual step if the profile has not already accepted the addon.
+not enable the addon in the game's Mods menu; that remains a one-time manual step if the profile has
+not already accepted the addon.
+
+## Optional automatic full unlock
+
+Pass `--ai-ascension-unlock-all` to `SlayTheSpire2.exe` when starting the game. Once the host has
+loaded the active profile, the mod calls the same progress APIs as the in-game `unlock all` command,
+saves the profile, and exits the one-shot operation. No keyboard input, console focus, or direct save
+file editing is involved.
+
+The flag marks all cards, relics, potions, events, acts, monsters, and epochs as discovered, sets
+every character's maximum ascension to 10, and sets the multiplayer maximum ascension to 10. It is
+idempotent. It does not unlock achievements or change the preferred ascension values, matching the
+host command's behavior.
+
+For the repeated WSL build/install/relaunch flow, use the wrapper's shorthand:
+
+```bash
+./experiments/managed-rust-interop/dev-cycle.sh --unlock-all
+```
+
+That shorthand passes the canonical `--ai-ascension-unlock-all` argument only on that relaunch. A
+normal invocation of `dev-cycle.sh` installs and starts the addon without changing profile progress.

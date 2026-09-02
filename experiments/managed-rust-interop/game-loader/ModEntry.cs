@@ -74,6 +74,7 @@ public static class ModEntry
                 {
                     InstallStatusOverlay(version, sum);
                 }
+                AutoProfileUnlock.ScheduleIfRequested();
             }
             catch (Exception exception)
             {
@@ -89,7 +90,7 @@ public static class ModEntry
 
     private static bool HasCommandLineArgument(string expectedArgument)
     {
-        foreach (string argument in Environment.GetCommandLineArgs())
+        foreach (string argument in System.Environment.GetCommandLineArgs())
         {
             if (string.Equals(argument, expectedArgument, StringComparison.Ordinal))
             {
