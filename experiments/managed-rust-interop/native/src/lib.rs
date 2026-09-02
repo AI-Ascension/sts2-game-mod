@@ -10,6 +10,10 @@ const STATUS_OK: i32 = 0;
 const STATUS_NULL_OUTPUT: i32 = 1;
 const STATUS_OVERFLOW: i32 = 2;
 
+mod runtime;
+
+pub use runtime::{RuntimeCallbacks, RuntimeRequest};
+
 /// Returns the version of the deliberately small native ABI.
 #[unsafe(no_mangle)]
 pub extern "C" fn sts2_game_mod_interop_abi_version() -> u32 {

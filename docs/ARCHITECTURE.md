@@ -35,7 +35,9 @@ debug banner with the verified ABI and result when the process was launched with
 and manifest; it never copies proprietary host assemblies into the repository or package.
 
 This is a load-smoke implementation, not the game behavior implementation. It does not expose an
-HTTP listener, access host game objects, mutate a run, or claim action/effect compatibility.
+HTTP listener as part of the loader-only smoke path, access host game objects outside the bounded
+runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
+bridge described below owns the new host-visible probe.
 
 ## Minimal POC mapping
 
@@ -110,10 +112,10 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 
 ## Protocol and data rules
 
-The owner-local HTTP contract remains separate from the copied POC artifact. The current adapter
-owns only a bounded request view and admission status; its schema, wire names, route catalog,
-errors, ordering, and versioning require later project-owned requirements and fixtures. MCP
-envelopes and gateway leases remain outside this repository.
+The owner-local HTTP contract remains separate from the copied POC artifact. The runtime adapter owns
+the bounded `runtime-v1` route/ABI mapping and its sanitized errors; MCP envelopes and gateway leases
+remain outside this repository. Broader gameplay routes, semantics, ordering, and versioning require
+later project-owned requirements and fixtures.
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
@@ -121,6 +123,25 @@ never expose debug strings, panic text, private paths, save contents, or raw hos
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
-ABI call for one exact installed host. It does not prove host API compatibility beyond the loader
-references, main-thread behavior, HTTP serving, game mutation, effect settlement, or safe fault
-isolation. Those require later focused runtime tests.
+ABI call for one exact installed host. The focused runtime report additionally confirms the bounded
+listener, managed main-thread dispatch, and host-visible probe effect for that same host. It does not
+prove game mutation, safe fault isolation, or compatibility with another host or platform.
+
+## Runtime adapter slice
+
+ADR 0010 adds a narrow owner-local host path around the shared `runtime-v1` artifact. The native
+companion binds only `127.0.0.1`, enforces bounded HTTP/header/body/response sizes, requires a bearer
+token, and admits only `/health/ready`, `/api/v1/runtime/state`, and
+`/api/v1/runtime/action`. It passes borrowed request bytes through a versioned C ABI callback; the
+managed side copies them into owned values before queueing.
+
+The managed bridge installs one bounded queue pump on `SceneTree.ProcessFrame`. State observation and
+the `show_runtime_probe` action run on that host thread. The action adds the existing status overlay,
+checks that the overlay is present, then advances generation and emits the effect witness. The
+listener, token, identity, lease, and correlation checks are owner-local enforcement; the gateway
+still owns external authorization, lease issuance, and fencing.
+
+The route/ABI implementation and tests are confirmed at source/build level, and the dated host
+report confirms a real request, live main-thread dispatch, and the bounded host-visible effect for
+STS2 v0.107.1 on Windows x86-64. Game-rule compatibility, process supervision, and the action's
+semantics beyond this probe remain unverified. The action is deliberately not a gameplay mutation.

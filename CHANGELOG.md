@@ -5,6 +5,12 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added a bounded loopback runtime listener, managed main-thread queue bridge, `runtime-v1` artifact
+  copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
+
+- Confirmed the focused `runtime-v1` host probe in STS2 v0.107.1 on Windows x86-64, including the
+  authenticated listener, main-thread dispatch, visible effect witness, and reversible cleanup.
+
 - Added the real `AIAscensionSTS2Poc` managed loader package and unique Rust companion. The package
   verifies ABI version 1, performs a bounded native smoke call, and logs a load marker in the exact
   installed game; gameplay, HTTP, and host mutation remain outside this load-smoke slice.

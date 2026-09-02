@@ -10,7 +10,7 @@ using MegaCrit.Sts2.Core.Modding;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 [ModInitializer(nameof(Initialize))]
-public static class ModEntry
+public static partial class ModEntry
 {
     private const uint ExpectedAbiVersion = 1;
     private const int ExpectedCheckedAddStatus = 0;
@@ -70,6 +70,7 @@ public static class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
+                StartRuntimeServer(_nativeLibrary);
                 if (HasCommandLineArgument(DebugArgument))
                 {
                     InstallStatusOverlay(version, sum);
@@ -129,13 +130,13 @@ public static class ModEntry
             }
 
             _statusOverlayQueued = false;
-            AddStatusOverlay(tree, version, sum);
+            AddStatusOverlay(tree, version, sum, false);
         };
         tree.ProcessFrame += _statusOverlayCallback;
         GD.Print($"{LogPrefix} queued visible status overlay for the next safe frame");
     }
 
-    private static void AddStatusOverlay(SceneTree tree, uint version, int sum)
+    private static void AddStatusOverlay(SceneTree tree, uint version, int sum, bool runtimeAction)
     {
         if (tree.Root == null || tree.Root.GetNodeOrNull<CanvasLayer>(StatusNodeName) != null)
         {
@@ -158,7 +159,9 @@ public static class ModEntry
         var label = new Label
         {
             Name = "Message",
-            Text = $"AI-ASCENSION STS2 POC\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
+            Text = runtimeAction
+                ? $"AI-ASCENSION STS2\nLIVE RUNTIME | ABI {version} | effect witnessed"
+                : $"AI-ASCENSION STS2 POC\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
             Position = new Vector2(52, 48),
             Size = new Vector2(580, 76),
             MouseFilter = Control.MouseFilterEnum.Ignore

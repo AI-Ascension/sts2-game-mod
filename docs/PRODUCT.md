@@ -24,13 +24,13 @@ and a target workspace for repository tooling plus the pre-existing interop expe
 adds non-empty target-owned Rust seams for a host port, bounded main-thread queue and dispatcher,
 versioned ABI validation, a transport-free bounded HTTP adapter, and their composition. The minimal
 POC additionally maps one copied artifact through a fake core port. Deterministic fake tests cover
-those seams. A narrow runtime load-smoke now adds the managed loader entry point, unique Rust
-companion package, manifest, ABI smoke call, and manual staging path. It adds no game rules,
-public route catalog, host gameplay adapter, or placeholder crate.
+those seams. A narrow runtime slice now adds the managed loader entry point, unique Rust companion
+package, manifest, ABI smoke call, bounded loopback routes, managed main-thread queue, and manual
+staging path. It adds no game rules or gameplay mutation.
 
 ## Future scope
 
-Later implementation may add a real host adapter, owner-local HTTP
+Later implementation may add broader host adapters, owner-local gameplay HTTP
 routes, and host-specific lifecycle behavior when each has a project-owned requirement, consumer,
 bounded module, and deterministic test seam. Host calls will remain explicit, serialized where
 required, and reconciled with observed host state. The current ports and POC fake mapping do not
@@ -46,7 +46,19 @@ make those runtime claims.
 
 ## Evidence boundary
 
-The current repository has confirmed load-smoke evidence for one exact installed host. The
-initialized Rust seams and POC fake mapping do not prove main-thread execution, HTTP serving,
-mutation settlement, or fault isolation. See the dated runtime evidence report for the precise
-load-smoke boundary.
+The current repository has confirmed load-smoke and focused runtime evidence for one exact installed
+host. The initialized Rust seams and POC fake mapping do not prove gameplay mutation, settlement of
+game rules, or fault isolation. See the dated runtime evidence reports for the precise boundaries.
+
+## Runtime vertical slice
+
+The first executable host-facing slice is intentionally a probe rather than a gameplay action. It
+accepts the canonical `runtime-v1` state request and the fixed `show_runtime_probe` action through a
+loopback-only, bearer-authenticated local adapter. The native listener owns bounded HTTP decoding;
+the managed bridge owns host access and queues work to the Godot main thread. An accepted action is
+reported only after a `CanvasLayer` status overlay is observed, and a stale generation is rejected
+with `sts2.game-mod/stale_generation`.
+
+This slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The
+source, build, and exact-host probe gates are `confirmed`; gameplay mutation, process lifecycle, and
+broader compatibility remain outside the evidence.
