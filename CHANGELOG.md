@@ -5,9 +5,15 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added the owner-local Runtime-v2 release-like artifact copy pinned to schema digest
+  `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and a bounded deterministic
+  in-memory fake seam for `end_turn`, receipt replay, reconciliation, cancellation, and timeout
+  fencing. No concrete host gameplay API exists here; live host mutation and settlement remain
+  unverified, and Runtime-v1 routes/tests are unchanged.
+
 - Added a bounded runtime listener (default loopback), managed main-thread queue bridge, `runtime-v1`
   artifact copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
-- Added built-in AI-Ascension settings for the listener enablement, bind address, and port, with
+- Added built-in AI-Ascension settings for listener enablement, bind address, and port, with
   status/authentication indicators, Apply-on-next-launch, and Reset controls; the bearer token
   remains environment-controlled.
 
