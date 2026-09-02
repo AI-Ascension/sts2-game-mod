@@ -188,6 +188,7 @@ internal static partial class StandaloneProfileSettings
         applyRow.AddChild(applyButton);
         content.AddChild(applyRow);
         content.AddChild(CreateDescriptionLabel("Changes progress only in the selected profile."));
+        AddProfileTransferControls(content, status);
     }
 
     private static Label CreateRowLabel(string text)
