@@ -20,6 +20,63 @@ The source remains in this directory to preserve its existing ownership and work
 Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, game files, saves,
 profiles, credentials, and runtime logs are never copied into the repository or package.
 
+## Optional ModConfig settings
+
+The addon can register settings with the optional ModConfig-STS2 framework. When that framework is
+installed and exposes its compatible public API, the addon appears under the game's `Settings ->
+Mods` page. The bridge discovers `ModConfig.ModConfigApi`, `ModConfig.ConfigEntry`, and
+`ModConfig.ConfigType` by reflection, so this addon has no hard DLL or PCK dependency on ModConfig.
+The registration uses the stable mod ID `AIAscensionSTS2Poc`. If ModConfig is absent or
+incompatible, the addon continues through its normal loader and ABI path without a settings page.
+
+The available controls are:
+
+| Label | Key | Type | Default | Behavior |
+| --- | --- | --- | --- | --- |
+| `Show debug overlay on launch` | `show_debug_overlay` | Toggle | `false` | Queues the existing ABI diagnostic overlay after successful loader and Rust ABI initialization. It does not change gameplay. |
+| `Unlock all profile content on next launch` | `unlock_all_on_next_launch` | Toggle | `false` | Requests one full profile unlock after the active profile is initialized. This changes profile progress and should be enabled only deliberately. |
+| `Apply full profile unlock now` | `apply_full_profile_unlock_now` | Button | Not persisted | Available only when the detected framework supports a button with a safe callback. It schedules the same guarded unlock operation immediately. |
+
+The debug toggle is diagnostic only. The existing standalone, case-sensitive `--debug` argument
+remains an explicit command-line override and continues to show the overlay even when ModConfig is
+not installed. Values are read only after the deferred framework registration point, so startup
+does not depend on settings being synchronously available.
+
+The launch unlock is a one-shot request. After the active profile is ready, the addon uses the
+host-equivalent progress APIs, saves through the host save manager, and clears the setting through
+the settings API only after that save succeeds. A failed or not-yet-ready attempt retains the
+request and emits a bounded diagnostic so a later launch can retry. The optional Apply button uses
+the same profile-readiness, main-thread, queued-attempt path; it does not enable the persistent
+launch toggle, edit save files directly, or create a concurrent second attempt. If the framework
+cannot safely support that callback, the button is omitted rather than rendered as a no-op.
+
+The framework's restore-defaults action owns reset behavior. It returns both persistent toggles to
+`false`; the Apply button has no persisted value. The addon does not create a competing reset file
+or duplicate persistence system.
+
+### Profile mutation boundary
+
+The full unlock marks all cards, relics, potions, events, acts, monsters, and epochs as discovered;
+sets every character's maximum ascension to `10`; and sets the multiplayer maximum ascension to
+`10`. It does not unlock achievements, change preferred ascension values, select an ascension for
+the user, edit arbitrary save fields, or expose content-category subsets.
+
+The settings feature does not add controls for runtime tokens, ports, bind addresses, HTTP routes,
+MCP actions, AI policy, seeds, or native mod enablement. The game's native Installed Mods checkbox
+continues to own enablement, and environment credentials remain outside the settings system.
+
+The existing standalone, case-sensitive `--ai-ascension-unlock-all` command-line argument remains
+available as an explicit fallback without ModConfig. It performs the same guarded one-shot profile
+operation, and the `dev-cycle.sh --unlock-all` shorthand continues to pass that canonical argument
+for an authorized local cycle.
+
+ModConfig registration is optional and fail-open: its absence or an incompatible API does not
+prevent the managed initializer, native ABI smoke call, `--debug` overlay, or command-line unlock
+fallback from operating. In that situation no in-game settings UI is claimed. The settings
+registration, UI rendering, callback behavior, and profile mutation remain separately unverified
+until exercised against an authorized exact STS2 host and compatible ModConfig installation; the
+existing load-smoke evidence does not by itself prove settings UI or game-profile compatibility.
+
 ## Optional debug overlay
 
 Launch the exact game executable with `--debug` to show the in-game ABI smoke details:
