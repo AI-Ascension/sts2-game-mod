@@ -34,6 +34,37 @@ that proprietary file. The recorded load-smoke uses the operator's installed hos
 storing or distributing it. No support claim is made for beta builds, earlier versions, Linux,
 macOS, or another architecture until an exact matrix row and evidence exist.
 
+## Optional ModConfig settings compatibility
+
+The optional settings path is source-derived and does not extend the current host matrix. The
+reflection bridge was implemented against the public ModConfig-STS2 API inspected at commit
+[`639eb97fa7824e94a43339913c51433117207d05`](https://github.com/xhyrzldf/ModConfig-STS2/tree/639eb97fa7824e94a43339913c51433117207d05)
+in the [ModConfig-STS2 repository](https://github.com/xhyrzldf/ModConfig-STS2), attributed to
+PiPiFanDev and licensed under MIT. The inspected seam consists of the public
+`ModConfig.ModConfigApi`, `ModConfig.ConfigEntry`, and `ModConfig.ConfigType` types and the
+three-argument registration overload, with the localized four-argument overload when available.
+The addon does not hard-reference, bundle, or require that framework.
+
+The stable identity and settings contract are:
+
+| Identity or setting | Value |
+| --- | --- |
+| Mod ID | `AIAscensionSTS2Poc` |
+| Debug setting | `show_debug_overlay`, default `false` |
+| One-shot profile setting | `unlock_all_on_next_launch`, default `false` |
+| Manual profile action | `apply_full_profile_unlock_now`, an optional non-persisted button |
+
+If ModConfig is absent or incompatible, the addon must continue through its normal managed-loader
+and Rust ABI smoke path. The standalone `--debug` and `--ai-ascension-unlock-all` command-line
+fallbacks remain available; no in-game settings page is implied in that state.
+
+The settings UI rendering, callback invocation, persisted-value hydration and reset, profile
+readiness, and profile mutation behavior remain unverified. They require a test against the exact
+compatible STS2 host and ModConfig installation, with the host tuple and framework revision
+recorded as separate evidence. The existing load-smoke and runtime-v1 evidence does not prove
+these settings behaviors, and this integration does not broaden support to another host version,
+platform, or architecture.
+
 ## Contract compatibility
 
 The checked-in `protocol-artifact/poc-v1/` copy is consumed by exact protocol version, schema

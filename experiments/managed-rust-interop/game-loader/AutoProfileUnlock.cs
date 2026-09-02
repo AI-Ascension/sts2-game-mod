@@ -18,8 +18,10 @@ internal static class AutoProfileUnlock
     private const int MaxWaitFrames = 600;
     private static Action? _callback;
     private static bool _queued;
+    private static bool _attemptRunning;
     private static bool _finished;
     private static bool _clearLaunchSettingAfterApply;
+    private static bool _clearFailureReported;
     private static int _waitFrames;
 
     private enum AttemptResult
@@ -53,6 +55,10 @@ internal static class AutoProfileUnlock
 
     internal static void ScheduleManualUnlock()
     {
+        if (_queued || _attemptRunning) return;
+        // A manual request is a new attempt, but never interrupt an existing one.
+        _finished = false;
+        _waitFrames = 0;
         GD.Print($"{LogPrefix} manual full unlock requested by ModConfig setting");
         ScheduleNextFrame();
     }
@@ -65,7 +71,7 @@ internal static class AutoProfileUnlock
 
     private static void ScheduleNextFrame()
     {
-        if (_finished || _queued)
+        if (_finished || _queued || _attemptRunning)
         {
             return;
         }
@@ -86,7 +92,11 @@ internal static class AutoProfileUnlock
             }
 
             _queued = false;
-            AttemptResult result = TryApply();
+            _attemptRunning = true;
+            AttemptResult result;
+            try { result = TryApply(); }
+            finally { _attemptRunning = false; }
+
             if (result == AttemptResult.Applied || result == AttemptResult.Failed)
             {
                 _finished = true;
@@ -168,7 +178,7 @@ internal static class AutoProfileUnlock
         catch (Exception exception)
         {
             GD.PrintErr(
-                $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}: {exception.Message}");
+                $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}");
             return AttemptResult.Failed;
         }
     }
@@ -180,16 +190,30 @@ internal static class AutoProfileUnlock
             return;
         }
 
-        _clearLaunchSettingAfterApply = false;
+        if (!ModConfigBridge.IsAvailable) { ReportClearFailure("ModConfig is unavailable"); return; }
+
         try
         {
-            ModConfigBridge.SetBool(ModConfigBridge.UnlockOnNextLaunchKey, false);
+            if (!ModConfigBridge.SetBool(ModConfigBridge.UnlockOnNextLaunchKey, false))
+            { ReportClearFailure("ModConfig rejected the reset"); return; }
+
+            if (ModConfigBridge.GetBool(ModConfigBridge.UnlockOnNextLaunchKey, true))
+            { ReportClearFailure("ModConfig did not accept the reset"); return; }
+
+            _clearLaunchSettingAfterApply = false;
         }
         catch (Exception exception)
         {
-            GD.PrintErr(
-                $"{LogPrefix} could not clear the one-shot unlock setting: {exception.GetType().Name}");
+            ReportClearFailure(exception.GetType().Name);
         }
+    }
+
+    private static void ReportClearFailure(string reason)
+    {
+        if (_clearFailureReported) return;
+
+        _clearFailureReported = true;
+        GD.PrintErr($"{LogPrefix} could not clear the one-shot unlock setting: {reason}");
     }
 
     private static void MarkDiscovered(

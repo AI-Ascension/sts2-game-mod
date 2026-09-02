@@ -39,6 +39,32 @@ HTTP listener as part of the loader-only smoke path, access host game objects ou
 runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
 bridge described below owns the new host-visible probe.
 
+### Optional settings boundary
+
+The managed addon owns an optional settings boundary through `ModConfigBridge`. The bridge discovers
+the public ModConfig API by narrow reflection over `ModConfig.ModConfigApi`, `ModConfig.ConfigEntry`,
+and `ModConfig.ConfigType`; it does not add a hard ModConfig DLL or PCK dependency. Registration is
+deferred to a safe Godot `ProcessFrame` so the optional framework can finish loading first. If the
+framework is absent or its public API is incompatible, registration fails open: native loading,
+the ABI smoke call, and the existing command-line fallbacks remain available, but no settings UI is
+claimed.
+
+The bridge registers two stable toggles for `AIAscensionSTS2Poc`: `show_debug_overlay` controls the
+existing diagnostic overlay after successful managed and native initialization and defaults to
+`false`; `unlock_all_on_next_launch` requests the explicit, one-shot full profile unlock and also
+defaults to `false`. When the verified optional API safely supports button callbacks, the bridge may
+also register the conditional `apply_full_profile_unlock_now` action. That action uses the same
+guarded, queued, profile-readiness path as the launch request and does not persist or enable the
+launch toggle.
+
+Profile unlocking is an explicit opt-in profile action owned by the managed host boundary. It uses
+the host `SaveManager` and its progress APIs after profile initialization, saves once through that
+host authority, and clears the one-shot setting only after a successful save. It is not arbitrary
+persistence, direct save-file editing, or a general settings storage mechanism. The settings
+registration, UI rendering, callbacks, and profile mutation remain unverified against an exact
+compatible game and ModConfig installation; the existing load-smoke and runtime-v1 evidence below
+does not prove those settings behaviors.
+
 ## Minimal POC mapping
 
 `protocol-artifact/poc-v1/` is a checked-in, release-like copy produced by the protocol owner. The

@@ -12,8 +12,9 @@ and has no released product behavior.
   authenticated listener, main-thread dispatch, visible effect witness, and reversible cleanup.
 
 - Added optional ModConfig settings for the managed addon: a diagnostic debug-overlay toggle, a
-  one-shot full-profile-unlock-on-next-launch toggle, and a manual full-profile-unlock action;
-  the framework remains optional and game-runtime behavior is unverified.
+  one-shot full-profile-unlock-on-next-launch toggle, and a manual full-profile-unlock action when
+  a compatible framework/button API is available; the framework remains optional and game-runtime
+  behavior is unverified.
 - Added the real `AIAscensionSTS2Poc` managed loader package and unique Rust companion. The package
   verifies ABI version 1, performs a bounded native smoke call, and logs a load marker in the exact
   installed game; gameplay, HTTP, and host mutation remain outside this load-smoke slice.

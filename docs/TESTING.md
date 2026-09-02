@@ -74,6 +74,26 @@ produce no in-game overlay. The observed marker, overlay state, and all host inp
 recorded in a separate evidence report; this is not part of ordinary CI. The completed report is
 [`docs/evidence/runtime-v1-host-live-20260902.md`](evidence/runtime-v1-host-live-20260902.md).
 
+## Settings-specific verification
+
+The optional ModConfig integration is verified at source level unless its UI and profile effects
+are separately exercised in an authorized disposable host. Deterministic cases must cover:
+
+| Case | Required observation |
+| --- | --- |
+| Framework absent or incompatible | Registration completes without blocking native loading or ABI validation; the existing CLI paths remain available and one bounded diagnostic identifies the unavailable integration without logging values. |
+| Registration contract | Mod ID `AIAscensionSTS2Poc` registers exactly `show_debug_overlay` (toggle, default `false`), `unlock_all_on_next_launch` (toggle, default `false`), and `apply_full_profile_unlock_now` only when a verified, type-compatible button callback is available. |
+| Deferred startup reads | Persisted values are read only after deferred registration/settings hydration; the ready callback runs once for present, absent, and incompatible framework cases. |
+| CLI overrides | Standalone `--debug` remains an exact case-sensitive override, and standalone `--ai-ascension-unlock-all` retains its existing case-insensitive behavior, regardless of framework availability. |
+| One-shot reset | A launch unlock request remains enabled after any failed or incomplete operation. It is cleared only after the profile save succeeds and the settings write succeeds with a confirmed read-back of `false`. |
+| Manual retry and concurrency | Manual and launch requests share one readiness/main-thread attempt; concurrent requests do not double-save, while a failed, timed-out, or completed attempt can be retried without overlapping work. |
+| Bounded diagnostics | Missing API types, registration/read/write failures, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
+
+The managed loader requires operator-supplied exact `sts2.dll` and `GodotSharp.dll` host assemblies;
+they must remain outside the repository and package. ModConfig rendering, callback behavior, and
+profile mutation remain `unverified` unless separately exercised with disposable data in an
+authorized host test that records the exact host tuple, setup, observations, and cleanup.
+
 ## Security and evidence language
 
 Security tests fail closed when a fixture or precondition is absent. Logs and fixtures contain no

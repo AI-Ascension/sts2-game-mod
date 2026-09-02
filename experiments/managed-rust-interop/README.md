@@ -29,6 +29,12 @@ Mods` page. The bridge discovers `ModConfig.ModConfigApi`, `ModConfig.ConfigEntr
 The registration uses the stable mod ID `AIAscensionSTS2Poc`. If ModConfig is absent or
 incompatible, the addon continues through its normal loader and ABI path without a settings page.
 
+The bridge was implemented against the public ModConfig-STS2 API inspected at commit
+[`639eb97fa7824e94a43339913c51433117207d05`](https://github.com/xhyrzldf/ModConfig-STS2/tree/639eb97fa7824e94a43339913c51433117207d05)
+in the authoritative [ModConfig-STS2 repository](https://github.com/xhyrzldf/ModConfig-STS2).
+That framework is attributed to PiPiFanDev and is licensed under MIT. No ModConfig framework
+source or DLL is bundled with this addon; only the narrow reflection bridge is included.
+
 The available controls are:
 
 | Label | Key | Type | Default | Behavior |
@@ -65,10 +71,12 @@ The settings feature does not add controls for runtime tokens, ports, bind addre
 MCP actions, AI policy, seeds, or native mod enablement. The game's native Installed Mods checkbox
 continues to own enablement, and environment credentials remain outside the settings system.
 
-The existing standalone, case-sensitive `--ai-ascension-unlock-all` command-line argument remains
-available as an explicit fallback without ModConfig. It performs the same guarded one-shot profile
-operation, and the `dev-cycle.sh --unlock-all` shorthand continues to pass that canonical argument
-for an authorized local cycle.
+The existing standalone, exact `--ai-ascension-unlock-all` command-line argument remains available
+as an explicit fallback without ModConfig. The argument comparison is case-insensitive, but the
+argument must still match the complete standalone value; forms such as `--ai-ascension-unlock-all=x`
+do not enable it. It performs the same guarded one-shot profile operation, and the
+`dev-cycle.sh --unlock-all` shorthand continues to pass that canonical argument for an authorized
+local cycle.
 
 ModConfig registration is optional and fail-open: its absence or an incompatible API does not
 prevent the managed initializer, native ABI smoke call, `--debug` overlay, or command-line unlock
