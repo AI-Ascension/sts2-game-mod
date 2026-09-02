@@ -78,4 +78,10 @@ impl<T> MainThreadQueue<T> {
         let count = budget.min(self.items.len());
         (0..count).filter_map(|_| self.items.pop_front()).collect()
     }
+
+    /// Removes the first queued item matching a predicate without changing FIFO order for the rest.
+    pub fn remove_matching(&mut self, mut predicate: impl FnMut(&T) -> bool) -> Option<T> {
+        let index = self.items.iter().position(&mut predicate)?;
+        self.items.remove(index)
+    }
 }
