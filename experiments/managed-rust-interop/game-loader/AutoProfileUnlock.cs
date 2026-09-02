@@ -19,6 +19,7 @@ internal static class AutoProfileUnlock
     private static Action? _callback;
     private static bool _queued;
     private static bool _finished;
+    private static bool _clearLaunchSettingAfterApply;
     private static int _waitFrames;
 
     private enum AttemptResult
@@ -28,14 +29,31 @@ internal static class AutoProfileUnlock
         Failed
     }
 
-    public static void ScheduleIfRequested()
+    internal static void ScheduleLaunch(bool unlockOnNextLaunch)
     {
-        if (!HasLaunchArgument())
+        bool launchArgumentRequested = HasLaunchArgument();
+        if (!launchArgumentRequested && !unlockOnNextLaunch)
         {
             return;
         }
 
-        GD.Print($"{LogPrefix} automatic full unlock requested by launch argument: {AutoUnlockArgument}");
+        if (launchArgumentRequested)
+        {
+            GD.Print($"{LogPrefix} automatic full unlock requested by launch argument: {AutoUnlockArgument}");
+        }
+
+        if (unlockOnNextLaunch)
+        {
+            _clearLaunchSettingAfterApply = true;
+            GD.Print($"{LogPrefix} automatic full unlock requested by ModConfig setting");
+        }
+
+        ScheduleNextFrame();
+    }
+
+    internal static void ScheduleManualUnlock()
+    {
+        GD.Print($"{LogPrefix} manual full unlock requested by ModConfig setting");
         ScheduleNextFrame();
     }
 
@@ -139,6 +157,7 @@ internal static class AutoProfileUnlock
             }
 
             saveManager.SaveProgressFile();
+            ClearLaunchSettingAfterSuccessfulSave();
             GD.Print(
                 $"{LogPrefix} automatic full unlock applied: cards={cardIds.Length}; "
                 + $"relics={relicIds.Length}; potions={potionIds.Length}; events={eventIds.Length}; "
@@ -151,6 +170,25 @@ internal static class AutoProfileUnlock
             GD.PrintErr(
                 $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}: {exception.Message}");
             return AttemptResult.Failed;
+        }
+    }
+
+    private static void ClearLaunchSettingAfterSuccessfulSave()
+    {
+        if (!_clearLaunchSettingAfterApply)
+        {
+            return;
+        }
+
+        _clearLaunchSettingAfterApply = false;
+        try
+        {
+            ModConfigBridge.SetBool(ModConfigBridge.UnlockOnNextLaunchKey, false);
+        }
+        catch (Exception exception)
+        {
+            GD.PrintErr(
+                $"{LogPrefix} could not clear the one-shot unlock setting: {exception.GetType().Name}");
         }
     }
 
