@@ -13,8 +13,8 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 managed_project="$repo_root/experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj"
 managed_project_msbuild=$(wslpath -w "$managed_project")
 native_manifest="$repo_root/experiments/managed-rust-interop/native/Cargo.toml"
-managed_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2Poc.dll"
-native_artifact="$repo_root/target/x86_64-pc-windows-gnu/release/ai_ascension_sts2_poc.dll"
+managed_build_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2GameMod.dll"
+native_build_artifact="$repo_root/target/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll"
 manifest="$repo_root/experiments/managed-rust-interop/game-loader/mod_manifest.json"
 
 if [[ "$game_data_input" == /* ]]; then
@@ -44,17 +44,17 @@ cargo build --locked --release --target x86_64-pc-windows-gnu --manifest-path "$
 "$dotnet_command" build "$managed_project_msbuild" --configuration Release \
     -p:STS2GameDataDir="$game_data_msbuild" --no-restore
 
-if [[ ! -f "$managed_artifact" || ! -f "$native_artifact" ]]; then
+if [[ ! -f "$managed_build_artifact" || ! -f "$native_build_artifact" ]]; then
     printf 'build did not produce the expected Windows addon artifacts\n' >&2
     exit 1
 fi
 
 mkdir -p "$output_dir"
-cp "$managed_artifact" "$output_dir/AIAscensionSTS2Poc.dll"
-cp "$native_artifact" "$output_dir/ai_ascension_sts2_poc.dll"
-cp "$manifest" "$output_dir/AIAscensionSTS2Poc.json"
+cp "$managed_build_artifact" "$output_dir/AIAscensionSTS2GameMod.dll"
+cp "$native_build_artifact" "$output_dir/AIAscensionSTS2GameModNative.dll"
+cp "$manifest" "$output_dir/AIAscensionSTS2GameMod.json"
 
 sha256sum \
-    "$output_dir/AIAscensionSTS2Poc.dll" \
-    "$output_dir/AIAscensionSTS2Poc.json" \
-    "$output_dir/ai_ascension_sts2_poc.dll"
+    "$output_dir/AIAscensionSTS2GameMod.dll" \
+    "$output_dir/AIAscensionSTS2GameMod.json" \
+    "$output_dir/AIAscensionSTS2GameModNative.dll"

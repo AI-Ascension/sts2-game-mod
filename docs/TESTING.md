@@ -12,7 +12,7 @@ Run from the target root:
 
 ~~~text
 cargo metadata --locked --no-deps --format-version 1
-sha256sum -c protocol-artifact/poc-v1/SHA256SUMS
+(cd protocol-artifact/poc-v1 && sha256sum -c SHA256SUMS)
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
@@ -107,3 +107,29 @@ requests, main-thread queue execution, a visible overlay witness, and reversible
 cleanup for the recorded host. Gameplay mutation, process supervision/restart, multi-instance
 behavior, other host versions, and other platforms remain `unverified`. Do not count a successful
 build or ABI load-smoke as any of those remaining runtime results.
+
+## Workshop package checks
+
+The owner-local Workshop contract is covered by deterministic Rust tests:
+
+~~~text
+cargo test --locked --offline -p sts2-game-mod --test workshop
+~~~
+
+The fixture-only package staging test uses synthetic payloads and a synthetic preview:
+
+~~~text
+bash tools/workshop/test-package-item.sh
+~~~
+
+The managed validator is exercised without a host assembly by the .NET 9 probe:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
+~~~
+
+These checks cover manifest shape, unknown fields, path traversal, duplicate/case-collision
+paths, sorted inventory, allowlist and compatibility drift, install readiness, unexpected files,
+reparse-point policy, file-size/digest mismatch, and content-digest mismatch. They do not prove
+Steam App Admin settings, Steam callbacks, subscription/download behavior, game discovery, or
+host compatibility.

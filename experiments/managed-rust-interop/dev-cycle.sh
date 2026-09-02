@@ -209,9 +209,9 @@ mods_dir="$game_dir/mods"
 [[ -f "$package_script" ]] \
     || die "packaging script was not found: $package_script"
 
-managed_artifact='AIAscensionSTS2Poc.dll'
-native_artifact='ai_ascension_sts2_poc.dll'
-manifest_artifact='AIAscensionSTS2Poc.json'
+managed_artifact='AIAscensionSTS2GameMod.dll'
+native_artifact='AIAscensionSTS2GameModNative.dll'
+manifest_artifact='AIAscensionSTS2GameMod.json'
 artifacts=("$managed_artifact" "$native_artifact" "$manifest_artifact")
 
 printf '%s\n' 'STS2 runtime addon cycle'

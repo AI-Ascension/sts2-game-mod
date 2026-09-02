@@ -1,6 +1,6 @@
 {
-  "id": "AIAscensionSTS2Poc",
-  "name": "AI-Ascension STS2 POC",
+  "id": "AIAscensionSTS2GameMod",
+  "name": "AI-Ascension STS2 Game Mod",
   "author": "AI-Ascension sts2-game-mod contributors",
   "description": "Managed/Rust load-smoke addon with an opt-in full profile unlock launch flag",
   "version": "0.2.0",
