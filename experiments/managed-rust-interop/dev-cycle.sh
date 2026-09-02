@@ -14,6 +14,7 @@ stop_game=true
 launch_game=true
 backup_installed=true
 dry_run=false
+unlock_all_on_launch=false
 
 usage() {
     printf '%s\n' \
@@ -30,6 +31,7 @@ usage() {
         '  --no-kill             leave the game running before installation' \
         '  --no-launch           do not relaunch after installation' \
         '  --no-backup           do not save replaced mod files before copying' \
+        '  --unlock-all          pass the opt-in full-unlock flag on game launch' \
         '  --dry-run             show the cycle without building or changing files' \
         '  -h, --help            show this help' \
         '' \
@@ -91,6 +93,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-backup)
             backup_installed=false
+            shift
+            ;;
+        --unlock-all|--ai-ascension-unlock-all)
+            unlock_all_on_launch=true
             shift
             ;;
         --dry-run)
@@ -213,6 +219,7 @@ printf '  game:  %s\n' "$game_dir"
 printf '  stage: %s\n' "$stage_dir"
 printf '  stop:  %s\n' "$stop_game"
 printf '  start: %s\n' "$launch_game"
+printf '  unlock on launch: %s\n' "$unlock_all_on_launch"
 
 if [[ "$dry_run" == true ]]; then
     printf '%s\n' 'dry-run: would build and stage the three addon artifacts.'
@@ -222,6 +229,9 @@ if [[ "$dry_run" == true ]]; then
     printf '%s\n' 'dry-run: would copy the staged DLLs and manifest into the game mods directory.'
     if [[ "$launch_game" == true ]]; then
         printf '%s\n' 'dry-run: would relaunch SlayTheSpire2.exe.'
+        if [[ "$unlock_all_on_launch" == true ]]; then
+            printf '%s\n' 'dry-run: would pass --ai-ascension-unlock-all to the game.'
+        fi
     fi
     exit 0
 fi
@@ -342,10 +352,14 @@ if [[ "$launch_game" == true ]]; then
     game_dir_windows=$(to_windows_path "$game_dir")
     escaped_game_exe=${game_exe_windows//\'/\'\'}
     escaped_game_dir=${game_dir_windows//\'/\'\'}
+    launch_arguments=''
+    if [[ "$unlock_all_on_launch" == true ]]; then
+        launch_arguments=" -ArgumentList '--ai-ascension-unlock-all'"
+    fi
 
     printf '%s\n' 'Relaunching SlayTheSpire2.exe...'
     "$powershell_cmd" -NoProfile -NonInteractive -Command \
-        "Start-Process -FilePath '$escaped_game_exe' -WorkingDirectory '$escaped_game_dir'"
+        "Start-Process -FilePath '$escaped_game_exe' -WorkingDirectory '$escaped_game_dir'$launch_arguments"
     printf '%s\n' 'Game launch requested.'
 else
     printf '%s\n' 'Game was not relaunched (--no-launch).'

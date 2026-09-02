@@ -2,9 +2,9 @@
   "id": "AIAscensionSTS2Poc",
   "name": "AI-Ascension STS2 POC",
   "author": "AI-Ascension sts2-game-mod contributors",
-  "description": "Load-smoke addon for the managed STS2 loader and Rust native ABI boundary",
-  "version": "0.1.0",
+  "description": "Managed/Rust load-smoke addon with an opt-in full profile unlock launch flag",
+  "version": "0.2.0",
   "has_pck": false,
   "has_dll": true,
-  "affects_gameplay": false
+  "affects_gameplay": true
 }
