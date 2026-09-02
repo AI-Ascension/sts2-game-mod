@@ -19,6 +19,8 @@ public static class ModEntry
     private const string StatusNodeName = "AIAscensionSTS2PocStatus";
     private static readonly object Gate = new();
     private static nint _nativeLibrary;
+    private static Action? _statusOverlayCallback;
+    private static bool _statusOverlayQueued;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate uint AbiVersion();
@@ -90,6 +92,34 @@ public static class ModEntry
         }
 
         if (tree.Root.GetNodeOrNull<CanvasLayer>(StatusNodeName) != null)
+        {
+            return;
+        }
+
+        if (_statusOverlayQueued)
+        {
+            return;
+        }
+
+        _statusOverlayQueued = true;
+        _statusOverlayCallback = () =>
+        {
+            if (_statusOverlayCallback != null)
+            {
+                tree.ProcessFrame -= _statusOverlayCallback;
+                _statusOverlayCallback = null;
+            }
+
+            _statusOverlayQueued = false;
+            AddStatusOverlay(tree, version, sum);
+        };
+        tree.ProcessFrame += _statusOverlayCallback;
+        GD.Print($"{LogPrefix} queued visible status overlay for the next safe frame");
+    }
+
+    private static void AddStatusOverlay(SceneTree tree, uint version, int sum)
+    {
+        if (tree.Root == null || tree.Root.GetNodeOrNull<CanvasLayer>(StatusNodeName) != null)
         {
             return;
         }
