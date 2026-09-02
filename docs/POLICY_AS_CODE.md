@@ -43,6 +43,7 @@ threshold.
 ## CI relationship
 
 policy.yml runs the same tests and strict command with contents read permission. ci.yml runs the
-Rust gates and the source-only managed probe. The host-loader project remains outside ordinary CI
-because it needs an operator-supplied proprietary host assembly. Workflows use immutable action
-commits, explicit timeouts, bounded commands, no secrets, and no privileged pull-request event.
+Rust gates and the native interop probe. The managed runtime-addon build remains outside ordinary
+CI because it needs operator-supplied proprietary `sts2.dll` and `GodotSharp.dll` references.
+Workflows use immutable action commits, explicit timeouts, bounded commands, no secrets, and no
+privileged pull-request event.

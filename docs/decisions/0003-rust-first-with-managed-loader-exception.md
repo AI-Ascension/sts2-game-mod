@@ -1,6 +1,6 @@
 # ADR 0003: Rust-first implementation with a managed loader exception
 
-- Status: Accepted for preparation
+- Status: Accepted boundary; runtime load-smoke added by ADR 0009
 - Date: 2026-09-02
 
 ## Context
@@ -15,8 +15,9 @@ Rust. The sole language exception is a minimal managed loader that owns host met
 native lifetime, and ABI translation. It must not own game rules, HTTP, MCP, persistence, or
 orchestration.
 
-The existing interop experiment remains a separately labeled source-only preparation artifact.
-This decision does not copy, vendor, or transliterate any other implementation.
+The interop directory remains separately labeled and owns only the thin runtime loader/package
+required by ADR 0009. This decision does not copy, vendor, or transliterate any other
+implementation.
 
 ## Consequences
 

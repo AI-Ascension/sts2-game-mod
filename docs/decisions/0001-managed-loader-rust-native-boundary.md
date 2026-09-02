@@ -1,6 +1,6 @@
 # ADR 0001: Managed loader and Rust native boundary
 
-- Status: Accepted for preparation; runtime-load gate outstanding
+- Status: Accepted boundary; load-smoke package added by ADR 0009
 - Date: 2026-09-02
 
 ## Context
@@ -12,11 +12,11 @@ the host assembly.
 
 ## Decision
 
-The future mod package will contain a thin managed loader, a Rust native component for each
-supported platform, and a manifest with licenses and user documentation. The managed side owns
-loader metadata, callback entry, native-library lifetime, and ABI translation only. Rust owns
-host-independent policy, host adaptation, the local HTTP adapter, and composition. MCP remains a
-separate process and never links to host code.
+The mod load-smoke package contains a thin managed loader, a Windows x86-64 Rust native companion,
+and a manifest with target-owned metadata. The managed side owns loader metadata, callback entry,
+native-library lifetime, and ABI translation only. Rust owns host-independent policy, host
+adaptation, the local HTTP adapter, and composition. MCP remains a separate process and never links
+to host code. Additional supported platforms and gameplay behavior require separate evidence.
 
 The ABI is versioned and narrow. Managed objects, host objects, Rust references, exceptions,
 allocator-owned buffers, and unbounded strings do not cross it. Fixed-width values, explicit
@@ -35,5 +35,5 @@ required before implementation.
 ## Consequences and evidence
 
 Unsafe code and marshalling remain isolated and testable. Native unload remains conservative until
-host lifecycle evidence proves it safe. The experiment is source-level preparation only: no game
-package was installed, no host assembly is stored here, and no game load or runtime claim follows.
+host lifecycle evidence proves it safe. ADR 0009 records the bounded load-smoke package and its
+separate host evidence; no host assembly is stored here, and load-smoke does not claim gameplay.

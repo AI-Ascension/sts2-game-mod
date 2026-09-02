@@ -1,6 +1,6 @@
 # ADR 0007: Wave 2 codebase initialization
 
-- Status: Accepted for Wave 2 preparation
+- Status: Accepted for Wave 2 preparation; runtime package superseded by ADR 0009
 - Date: 2026-09-02
 
 ## Context
@@ -25,13 +25,14 @@ ABI, and adapter implementations. The current seam carries only opaque bytes and
 transport-neutral boundary values; game rules, gateway lifecycle/routing, MCP semantics, provider
 behavior, storage, and real host callbacks remain outside this initialization.
 
-The existing `experiments/managed-rust-interop` preparation remains unchanged and remains a
-workspace member through inherited fields. No proprietary assembly, generated build output,
-credentials, copied implementation source, or game package is added.
+The existing `experiments/managed-rust-interop` native member remains in the workspace through
+inherited fields. The later runtime package and host evidence are intentionally outside this Wave 2
+initialization decision. No proprietary assembly, generated build output, credentials, or copied
+implementation source is added to the repository.
 
 ## Consequences
 
-The target now has compilable source-level ownership seams that later managed composition can
-consume. A green local build proves only generic Rust behavior and deterministic fakes. Real loader
-discovery, host ABI compatibility, thread affinity, HTTP serving, mutation settlement, and package
-safety remain unverified and require later requirements plus authorized host evidence.
+The target has compilable source-level ownership seams. This ADR alone proves only generic Rust
+behavior and deterministic fakes; the managed load-smoke package and its separate evidence are
+defined by ADR 0009. Thread affinity, HTTP serving, mutation settlement, and package safety remain
+outside that load-smoke.

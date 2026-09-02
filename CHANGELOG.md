@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added the real `AIAscensionSTS2Poc` managed loader package and unique Rust companion. The package
+  verifies ABI version 1, performs a bounded native smoke call, and logs a load marker in the exact
+  installed game; gameplay, HTTP, and host mutation remain outside this load-smoke slice.
 - Added an offline copy of the `sts2-protocol/poc-v1` release-like artifact and a deterministic
   game-mod mapping test for state read, accepted `use_budget`, rejected zero-unit action, and one
   settled-effect witness. This remains a fake core seam with no game-runtime claim.

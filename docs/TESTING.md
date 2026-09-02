@@ -22,8 +22,7 @@ cargo test --locked --offline --workspace --all-targets --all-features
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, and deterministic fake tests; they do not prove a product package or game
-runtime.
+artifact identity, and deterministic fake tests. They do not launch the game or prove host gameplay.
 
 ## Planned layers
 
@@ -57,8 +56,19 @@ assembly, OS, architecture, .NET/Rust runtime, source revision, artifact checksu
 profile identity, setup, request/action sequence, expected and observed results, cleanup, and
 evidence level. Build-only and generic ABI evidence remain distinct from load smoke and runtime.
 
-The preserved loader project requires an operator-supplied sts2.dll. It is not built by ordinary
-foundation validation in this target, and no game is launched by these checks.
+The runtime addon package requires an operator-supplied `sts2.dll` and `GodotSharp.dll`. Build and
+stage it from WSL with:
+
+~~~text
+bash experiments/managed-rust-interop/package-runtime-addon.sh \
+  "/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2/data_sts2_windows_x86_64" \
+  /tmp/sts2-runtime-addon
+~~~
+
+The script produces only the managed addon DLL, its unique Rust companion, and the manifest. A
+manual host load-smoke may copy those three files into an authorized game's `mods/` directory and
+launch the exact executable with a bounded `--quit-after` value. The observed marker and all host
+inputs must be recorded in a separate evidence report; this is not part of ordinary CI.
 
 ## Security and evidence language
 

@@ -7,18 +7,17 @@
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
-> **Status:** deterministic in-memory tests `confirmed` at the pinned commit · runtime, host, and game compatibility `unverified` · nothing is live.
+> **Status:** deterministic tests and managed load-smoke `confirmed` at the pinned commit · host gameplay, HTTP, and compatibility `unverified`.
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
-> **Owner:** The mod owner is responsible for the host boundary: main-thread queue, ABI gate, HTTP admission, and the Rust/native seam; the managed loader remains unimplemented; the game host stays authoritative.
+> **Owner:** The mod owner is responsible for the managed loader package, host boundary, main-thread queue, ABI gate, HTTP admission, and Rust/native seam; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)
 >
 > AI-Ascension is an independent project. It is not affiliated with or endorsed by Mega Crit or Valve and grants no rights to game files, assets, or marks.
 
 Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
-have tests; no game behavior or game package is claimed.
-
-Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
-have tests; no game behavior or game package is claimed.
+have tests. A thin managed loader package now loads the Rust companion and has passed a real
+load-smoke launch against the recorded STS2 host; gameplay and HTTP behavior remain outside this
+slice.
 
 ## Responsibility and consumers
 
@@ -33,9 +32,9 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 
 ## Current contents
 
-- [experiments/managed-rust-interop/](experiments/managed-rust-interop/) is the preserved,
-  source-only managed .NET 9 to Rust C ABI experiment. It is not production code and has not been
-  installed into a game profile.
+- [experiments/managed-rust-interop/](experiments/managed-rust-interop/) contains the managed .NET 9
+  loader package, its unique Rust companion library, the manifest, and the reproducible packaging
+  command. The package is intentionally limited to load-smoke and ABI evidence.
 - [crates/host/](crates/host/) owns the host port, bounded main-thread queue, dispatcher, and
   versioned ABI descriptor validation.
 - [crates/http-adapter/](crates/http-adapter/) owns a transport-free HTTP request boundary and
@@ -49,27 +48,29 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   witness for an accepted action.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) records the target boundary and dependency graph.
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records evidence levels and host claims.
+- [docs/evidence/runtime-addon-load-smoke-20260902.md](docs/evidence/runtime-addon-load-smoke-20260902.md)
+  records the exact installed-host load-smoke inputs and observed log marker.
 - [docs/decisions/](docs/decisions/) records the managed/native, ownership, scaffold, and
   sixth-target and Wave 2 initialization decisions.
 - [tools/repo-policy/](tools/repo-policy/) is the target-local Rust governance checker.
 
-The managed loader, real host adapter, route catalog, and packaging remain unimplemented. The
-POC's core port is a fake seam in this repository, not the game implementation or a claim that the
-future host can perform the same action.
+The managed loader and packaging are implemented for the load-smoke slice. The real host adapter,
+route catalog, and game action implementation remain unimplemented. The POC's core port is still
+a fake seam in this repository, not the game implementation or a claim that the host can perform
+the same action.
 
 ## Evidence and provenance
 
 The foundation and boundary seam are original target documentation and source tailored from the project
-standards. The interop experiment predates this foundation and is retained in place. No product
-implementation source was copied from another implementation. No
-proprietary host file, save, credential, personal path, or generated output is distributed.
+standards. No product implementation source was copied from another implementation. No proprietary
+host file, save, credential, personal path, or generated output is distributed. The local load-smoke
+uses the operator's installed host assembly without adding it to this repository or release output.
 
 The POC behavior is test-confirmed only for the local fake core port: a state read, one accepted
-action, and one zero-unit rejection preserve the bounded state and effect witness. Runtime
-behavior remains unverified: the game has not been launched, the loader has not been discovered by
-the game, no host assembly is stored here, no local HTTP listener is exposed, and no real
-main-thread queue or mutation has been exercised. The generic ABI experiment is not a mod-load
-claim.
+action, and one zero-unit rejection preserve the bounded state and effect witness. The managed
+loader has also passed load-smoke in STS2 v0.107.1 and logged a successful Rust ABI call. Live HTTP,
+main-thread queue behavior, host state/action mutation, effect settlement, and broader compatibility
+remain unverified.
 
 ## Local validation
 

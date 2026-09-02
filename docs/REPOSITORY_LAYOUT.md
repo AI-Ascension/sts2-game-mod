@@ -4,7 +4,7 @@
 
 ~~~text
 sts2-game-mod/
-├── managed/loader                    future managed loader boundary
+├── managed/loader                    future host-specific managed integration surface
 ├── crates/host                       host port, bounded queue, dispatcher, ABI gate
 ├── crates/http-adapter               bounded transport-free HTTP adapter seam
 ├── crates/game-mod                   target-local composition root
@@ -13,7 +13,7 @@ sts2-game-mod/
 ├── conformance/cases/poc-v1.json      copied protocol conformance evidence
 ├── schemas/game-http-v1              future owner-local HTTP schema
 ├── tests                             future component and host-test seams
-├── experiments/managed-rust-interop/ preserved source-only experiment
+├── experiments/managed-rust-interop/ managed load-smoke package and Rust companion source
 ├── tools/repo-policy/                target-local governance checker
 ├── docs/                             architecture, policy, testing, and decisions
 └── .github/                          bounded read-only automation
@@ -28,9 +28,9 @@ artifact's exact checksum inventory.
 ## Workspace
 
 The root Cargo workspace contains the target-local repo-policy tool, the three initialized seam
-crates, and the already-existing native member of the managed-rust-interop experiment. The product
-crates use only target-local path dependencies. The managed projects remain ordinary .NET projects
-under the experiment until a later implementation decision gives them a product home.
+crates, and the native companion of the managed-rust-interop runtime addon. The product crates use
+only target-local path dependencies. The managed loader remains an ordinary .NET project under
+the existing experiment directory and is packaged only by the explicit load-smoke command.
 
 ## Ownership map
 
@@ -45,7 +45,7 @@ under the experiment until a later implementation decision gives them a product 
 | conformance/cases/poc-v1.json | protocol release consumer | inert copied conformance evidence |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
-| experiments/managed-rust-interop | mod research | build-level ABI investigation only |
+| experiments/managed-rust-interop | mod | managed loader package, native companion, and load-smoke staging |
 
 The protocol target, core target, gateway, MCP server, and harness remain separate trees. Do not
 move their implementation or evidence into this target.

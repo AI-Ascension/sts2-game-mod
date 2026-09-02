@@ -9,11 +9,13 @@ MIT does not grant rights to STS2 binaries, game data, art, music, trademarks, p
 personal saves, or host assemblies. An operator may use an authorized local host installation for
 build or compatibility work, but those files remain outside this tree and all release archives.
 
-## Greenfield and experiment rules
+## Greenfield and runtime-package rules
 
 This target is original preparation work. Do not copy, vendor, transliterate, or use another
-harness implementation as a source plan. The managed/native experiment is preserved source-only
-with its own provenance; it is not permission to distribute the host or to claim game support.
+harness implementation as a source plan. The managed/native directory contains an original thin
+loader and native companion; it is not permission to distribute the host or to claim gameplay
+support. The package is built against an operator-supplied host assembly, which remains outside
+the repository and every release archive.
 
 New Rust and managed source includes an SPDX MIT header. Imported, generated, or adapted material
 records its origin, license, hash, and regeneration path. Unknown or incompatible licenses block
