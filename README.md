@@ -9,7 +9,7 @@
 >
 > **Status:** deterministic in-memory tests `confirmed` at the pinned commit · runtime, host, and game compatibility `unverified` · nothing is live.
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
-> **Owner:** The mod owner maintains the managed loader, host translation, main-thread boundary, authoritative local HTTP adapter, and narrow Rust/native seam; the game host stays authoritative.
+> **Owner:** The mod owner is responsible for the host boundary: main-thread queue, ABI gate, HTTP admission, and the Rust/native seam; the managed loader remains unimplemented; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)
 >
 > AI-Ascension is an independent project. It is not affiliated with or endorsed by Mega Crit or Valve and grants no rights to game files, assets, or marks.
