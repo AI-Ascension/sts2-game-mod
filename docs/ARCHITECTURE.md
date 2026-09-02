@@ -52,6 +52,25 @@ no witness.
 The test's core implementation is a fake. The mapping is source/test evidence for the boundary,
 not evidence of host callbacks, a local listener, game mutation, or settlement in STS2.
 
+## Runtime-v2 fake boundary
+
+`protocol-artifact/runtime-v2/` is the exact owner-local copy of the release-like Runtime-v2
+artifact from protocol commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527`. Its schema digest is
+`f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2`, its recorded generator is
+`hand-authored`, and `SHA256SUMS` is verified from this repository. The Rust consumer includes
+local bytes and has no sibling-checkout or path dependency.
+
+`RuntimeV2Mod` owns the bounded in-memory operation receipt store and queue. The only game port in
+this wave is `FakeRuntimeV2Game`; it advances a copied observation for the argument-free
+`end_turn` action and never reaches a game object. The seam proves admission, exactly-once fake
+application, fresh settlement witnesses, idempotent replay, fail-closed identity/generation and
+phase checks, bounded capacity, cancellation timing, unknown outcomes, reconciliation, and timeout
+removal. Runtime-v1 routes and tests are unchanged.
+
+No concrete host gameplay API exists in this repository. The Runtime-v2 fake is deterministic
+source/build/test evidence, not live STS2 gameplay evidence; live host mutation and settlement are
+unverified.
+
 ## System boundaries
 
 The target crosses four distinct boundaries:

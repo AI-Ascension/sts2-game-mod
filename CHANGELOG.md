@@ -9,6 +9,12 @@ and has no released product behavior.
   tool, managed pre-load validation, and synthetic Rust/managed fixture checks. Steam publication,
   subscription/download callbacks, and host-runtime Workshop evidence remain unverified.
 
+- Added the owner-local Runtime-v2 release-like artifact copy pinned to schema digest
+  `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and a bounded deterministic
+  in-memory fake seam for `end_turn`, receipt replay, reconciliation, cancellation, and timeout
+  fencing. No concrete host gameplay API exists here; live host mutation and settlement remain
+  unverified, and Runtime-v1 routes/tests are unchanged.
+
 - Added a bounded loopback runtime listener, managed main-thread queue bridge, `runtime-v1` artifact
   copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
 

@@ -12,8 +12,10 @@ Run from the target root:
 
 ~~~text
 cargo metadata --locked --no-deps --format-version 1
-sha256sum -c protocol-artifact/poc-v1/SHA256SUMS
+(cd protocol-artifact/poc-v1 && sha256sum -c SHA256SUMS)
 cargo test --locked --package sts2-game-mod --test poc
+cargo test --locked --offline --package sts2-game-mod --test runtime_v2
+(cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -22,8 +24,18 @@ cargo test --locked --offline --workspace --all-targets --all-features
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, and deterministic fake tests. The separate dated host report records the
-authorized runtime lane; these ordinary commands still do not launch the game or prove gameplay.
+artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
+separate dated host report records the authorized runtime lane; these ordinary commands still do
+not launch the game or prove gameplay or Runtime-v2 host settlement.
+
+## Runtime-v2 deterministic seam
+
+The focused `runtime_v2` test covers one admitted and settled `end_turn`, exactly-once fake
+application, duplicate replay, conflicting operation identity, outside-combat and enemy-turn
+rejection, stale generation and identity fencing, queue and receipt bounds, cancellation timing,
+post-write disconnect reconciliation, and pre-dispatch timeout removal. `sha256sum -c` verifies the
+copied release-like artifact from repository-relative paths. No test invokes STS2, a concrete host
+gameplay API, `AutoProfileUnlock`, or any persistent profile/save/provider path.
 
 ## Planned layers
 

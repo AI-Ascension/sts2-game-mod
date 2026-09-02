@@ -27,12 +27,19 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 | --- | --- | --- | --- | --- |
 | Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
 | Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
+| Runtime-v2 fake boundary | No host; `sts2-protocol` commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527` | Offline Rust toolchain | Deterministic source/build/test | Confirmed for the in-memory fake seam only; live host mutation and settlement unverified |
 | Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
 
 The project planning baseline names a host assembly identity, but this repository does not retain
 that proprietary file. The recorded load-smoke uses the operator's installed host assembly without
 storing or distributing it. No support claim is made for beta builds, earlier versions, Linux,
 macOS, or another architecture until an exact matrix row and evidence exist.
+
+Runtime-v2 is pinned locally to schema digest
+`f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` with provenance generator
+`hand-authored`. No concrete host gameplay API exists in this repository. The copied artifact,
+Rust contract, and fake lifecycle tests provide source/build/test evidence only; live host mutation
+and live host settlement are unverified.
 
 ## Contract compatibility
 

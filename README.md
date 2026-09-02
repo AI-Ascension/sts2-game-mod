@@ -43,6 +43,10 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   behavior explicit for the future managed host integration.
 - [protocol-artifact/poc-v1/](protocol-artifact/poc-v1/) is the offline copied artifact consumed by
   the deterministic mod/core boundary test.
+- [protocol-artifact/runtime-v2/](protocol-artifact/runtime-v2/) is the offline copied release-like
+  artifact for the bounded Runtime-v2 fake seam; it is pinned to schema digest
+  `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and has no sibling checkout
+  dependency.
 - `crates/game-mod/src/poc/` maps state reads and one typed `use_budget` action through a narrow
   `PocCorePort`, records correlation/instance/generation metadata, and emits one settled-effect
   witness for an accepted action.
@@ -79,6 +83,10 @@ The first-party package may contain executable mod files, but only the exact all
 under the configured App ID and published file ID are accepted. Arbitrary third-party Workshop
 DLLs, native libraries, scripts, archives, and renamed executables are rejected. Steam publication,
 subscription/download callbacks, game discovery, and host compatibility remain unverified.
+
+The Runtime-v2 seam is also fake-only: it proves bounded admission, exactly-once in-memory
+application, retained receipts, and reconciliation for argument-free `end_turn`. No concrete host
+gameplay API exists in this repository; live host mutation and settlement are unverified.
 
 ## Evidence and provenance
 

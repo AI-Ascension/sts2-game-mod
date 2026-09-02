@@ -8,6 +8,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 
 mod poc;
 mod protocol_artifact;
+mod runtime_v2;
 mod workshop;
 
 pub use poc::{
@@ -18,6 +19,16 @@ pub use poc::{
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
+};
+pub use runtime_v2::{
+    FakeRuntimeV2Game, RUNTIME_V2_ARTIFACT, RUNTIME_V2_GENERATOR, RUNTIME_V2_MAX_GENERATION,
+    RUNTIME_V2_MAX_LEASE_EPOCH, RUNTIME_V2_MAX_QUEUE_CAPACITY, RUNTIME_V2_MAX_RECEIPTS,
+    RUNTIME_V2_MAX_REQUEST_BYTES, RUNTIME_V2_MAX_TURN_INDEX, RUNTIME_V2_PROTOCOL_VERSION,
+    RUNTIME_V2_SCHEMA_DIGEST, RUNTIME_V2_SCHEMA_SOURCE, RuntimeV2Action, RuntimeV2ArtifactError,
+    RuntimeV2CombatPhase, RuntimeV2Config, RuntimeV2Context, RuntimeV2EffectWitness,
+    RuntimeV2Error, RuntimeV2GameError, RuntimeV2GamePort, RuntimeV2Identity, RuntimeV2Kind,
+    RuntimeV2Message, RuntimeV2Mod, RuntimeV2Observation, RuntimeV2Provenance, RuntimeV2Status,
+    RuntimeV2ValidationError, verify_runtime_v2_artifact,
 };
 pub use workshop::{
     AllowedWorkshopFile, WORKSHOP_LOADER_CONTRACT, WORKSHOP_MANIFEST_SCHEMA_VERSION,
