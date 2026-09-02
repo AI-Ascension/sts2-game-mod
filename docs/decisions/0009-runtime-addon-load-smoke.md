@@ -16,9 +16,9 @@ Promote the narrow loader seam into the `AIAscensionSTS2Poc` package. Its manage
 uses the host's `ModInitializer` metadata, loads the adjacent uniquely named
 `ai_ascension_sts2_poc.dll`, verifies ABI version `1`, calls the checked-add export with `19` and
 `23`, and logs a bounded success marker only when the result is `42`. It then adds a top-layer Godot
-status banner with the same verified values, giving an operator a visible in-game confirmation.
-The package script stages exactly the managed DLL, native DLL, and manifest for an authorized
-Windows x86-64 game test.
+debug banner with the same verified values only when the exact `--debug` argument is present,
+giving an operator an opt-in visible in-game confirmation. The package script stages exactly the
+managed DLL, native DLL, and manifest for an authorized Windows x86-64 game test.
 
 The package does not expose HTTP, inspect or mutate game state, own game rules, or replace the
 gateway/MCP/harness boundaries. Load-smoke evidence is recorded separately from Rust and fake-POC

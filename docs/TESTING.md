@@ -67,8 +67,10 @@ bash experiments/managed-rust-interop/package-runtime-addon.sh \
 
 The script produces only the managed addon DLL, its unique Rust companion, and the manifest. A
 manual host load-smoke may copy those three files into an authorized game's `mods/` directory and
-launch the exact executable with a bounded `--quit-after` value. The observed marker and all host
-inputs must be recorded in a separate evidence report; this is not part of ordinary CI.
+launch the exact executable with a bounded `--quit-after` value. Include the standalone `--debug`
+argument when validating the optional visible debug banner; without it, the load-smoke should
+produce no in-game overlay. The observed marker, overlay state, and all host inputs must be
+recorded in a separate evidence report; this is not part of ordinary CI.
 
 ## Security and evidence language
 

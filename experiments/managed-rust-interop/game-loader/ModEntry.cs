@@ -15,6 +15,7 @@ public static class ModEntry
     private const uint ExpectedAbiVersion = 1;
     private const int ExpectedCheckedAddStatus = 0;
     private const int ExpectedCheckedAddResult = 42;
+    private const string DebugArgument = "--debug";
     private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
     private const string StatusNodeName = "AIAscensionSTS2PocStatus";
     private static readonly object Gate = new();
@@ -69,7 +70,10 @@ public static class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
-                InstallStatusOverlay(version, sum);
+                if (HasCommandLineArgument(DebugArgument))
+                {
+                    InstallStatusOverlay(version, sum);
+                }
             }
             catch (Exception exception)
             {
@@ -81,6 +85,19 @@ public static class ModEntry
                 GD.PrintErr($"{LogPrefix} initialization failed: {exception.GetType().Name}: {exception.Message}");
             }
         }
+    }
+
+    private static bool HasCommandLineArgument(string expectedArgument)
+    {
+        foreach (string argument in Environment.GetCommandLineArgs())
+        {
+            if (string.Equals(argument, expectedArgument, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void InstallStatusOverlay(uint version, int sum)
@@ -140,7 +157,7 @@ public static class ModEntry
         var label = new Label
         {
             Name = "Message",
-            Text = $"AI-ASCENSION STS2 POC\nWORKING | Rust ABI {version} | 19 + 23 = {sum}",
+            Text = $"AI-ASCENSION STS2 POC\nDEBUG | Rust ABI {version} | 19 + 23 = {sum}",
             Position = new Vector2(52, 48),
             Size = new Vector2(580, 76),
             MouseFilter = Control.MouseFilterEnum.Ignore
