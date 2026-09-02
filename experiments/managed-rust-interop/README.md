@@ -31,15 +31,15 @@ The built-in panel contains:
 
 | Label | Behavior |
 | --- | --- |
-| `Runtime API` | Enables the authenticated listener when a token is configured. The default is on; changes apply on the next launch. |
+| `Runtime API` | Enables the authenticated listener when a token is configured. The default is on; changes apply immediately. |
 | `Bind address` | Selects the local hostname or IP address for the runtime listener. The dropdown includes loopback, all interfaces, the detected machine hostname, and detected local IPv4 addresses. |
 | `Network port` | Selects a port from `1024` through `65535`; the default is `15526`. |
 | `Target profile` | Selects Profile 1, Profile 2, or Profile 3. The choice is persisted in the mod's own user-data settings file. |
-| `Apply on next launch` | Saves the staged runtime API, bind address, and port values. A game restart is required before they become active. |
+| `Apply now` | Saves and immediately restarts the bounded listener with the staged runtime API, bind address, and port values. |
 | `Reset` | Restores the runtime API default, loopback address, and port `15526`. |
 | `Apply full profile unlock` | Switches to the selected profile through the host save manager, then queues the guarded unlock operation. Only the selected profile is modified. |
 
-Network values are staged in the panel and saved by `Apply on next launch` in the mod's own
+Network values are staged in the panel and saved and applied by `Apply now` in the mod's own
 user-data settings file. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain available as
 explicit environment-variable overrides for automation. The listener still requires
 `STS2_RUNTIME_TOKEN`; choosing `0.0.0.0` exposes the authenticated listener on all local interfaces

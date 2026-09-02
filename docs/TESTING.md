@@ -88,22 +88,25 @@ recorded in a separate evidence report; this is not part of ordinary CI. The com
 
 ## Settings-specific verification
 
-The optional ModConfig integration is verified at source level unless its UI and profile effects
-are separately exercised in an authorized disposable host. Deterministic cases must cover:
+The AI-Ascension addon owns its settings tab and does not require a ModConfig or other settings
+framework mod. Unless the controls are separately exercised in an authorized disposable host, the
+UI and live listener behavior remain source/build and load-smoke evidence only. Deterministic cases
+must cover:
 
 | Case | Required observation |
 | --- | --- |
-| Framework absent or incompatible | Registration completes without blocking native loading or ABI validation; the existing CLI paths remain available and one bounded diagnostic identifies the unavailable integration without logging values. |
-| Registration contract | Mod ID `AIAscensionSTS2Poc` registers exactly `show_debug_overlay` (toggle, default `false`), `unlock_all_on_next_launch` (toggle, default `false`), and `apply_full_profile_unlock_now` only when a verified, type-compatible button callback is available. |
-| Deferred startup reads | Persisted values are read only after deferred registration/settings hydration; the ready callback runs once for present, absent, and incompatible framework cases. |
-| CLI overrides | Standalone `--debug` remains an exact case-sensitive override, and standalone `--ai-ascension-unlock-all` retains its existing case-insensitive behavior, regardless of framework availability. |
+| Standalone registration | The addon installs its AI-Ascension tab without a framework dependency and without changing other mods' settings tabs. |
+| Runtime settings contract | The tab exposes Runtime API, Bind address, Network port, Apply now, and Reset; defaults are enabled, `127.0.0.1`, and `15526`. |
+| Runtime validation | Ports outside `1024` through `65535` and invalid address values are rejected without overwriting the last saved settings. |
+| Live reconfiguration | Apply persists the values, stops only the native listener, starts it with the selected endpoint, and updates the listener status without restarting the game. Reset performs the same live update using defaults. |
+| Environment overrides | `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` retain precedence for automation; the bearer token remains outside the settings UI. |
 | One-shot reset | A launch unlock request remains enabled after any failed or incomplete operation. It is cleared only after the profile save succeeds and the settings write succeeds with a confirmed read-back of `false`. |
 | Manual retry and concurrency | Manual and launch requests share one readiness/main-thread attempt; concurrent requests do not double-save, while a failed, timed-out, or completed attempt can be retried without overlapping work. |
-| Bounded diagnostics | Missing API types, registration/read/write failures, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
+| Bounded diagnostics | Registration/read/write, listener, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
 
 The managed loader requires operator-supplied exact `sts2.dll` and `GodotSharp.dll` host assemblies;
-they must remain outside the repository and package. ModConfig rendering, callback behavior, and
-profile mutation remain `unverified` unless separately exercised with disposable data in an
+they must remain outside the repository and package. Profile mutation and live listener
+reconfiguration remain `unverified` unless separately exercised with disposable data in an
 authorized host test that records the exact host tuple, setup, observations, and cleanup.
 
 ## Security and evidence language

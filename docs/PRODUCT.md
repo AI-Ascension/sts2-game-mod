@@ -57,8 +57,9 @@ accepts the canonical `runtime-v1` state request and the fixed `show_runtime_pro
 bearer-authenticated local adapter whose default bind address is loopback. The native listener owns
 bounded HTTP decoding; the managed bridge owns host access and queues work to the Godot main thread.
 An accepted action is reported only after a `CanvasLayer` status overlay is observed, and a stale
-generation is rejected with `sts2.game-mod/stale_generation`. The built-in settings tab persists
-the listener's enablement, local bind address, and port for the next launch; the bearer token
+generation is rejected with `sts2.game-mod/stale_generation`. The built-in settings tab immediately
+applies and persists the listener's enablement, local bind address, and port for future launches;
+the bearer token
 remains an environment-controlled secret.
 
 This slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The

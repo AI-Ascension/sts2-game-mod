@@ -106,7 +106,7 @@ observed and returns the fresh `status_overlay_visible` witness defined by the c
 [`runtime-v1` artifact](protocol-artifact/runtime-v1/README.md).
 
 The listener requires `STS2_RUNTIME_TOKEN` and the built-in Runtime API toggle. Its bind address and
-port are staged and persisted by the AI-Ascension settings tab for the next launch;
+port are staged, persisted, and applied immediately by the AI-Ascension settings tab;
 `STS2_RUNTIME_BIND_ADDRESS` and `STS2_RUNTIME_PORT` override those values for automation. The
 listener is disabled when its toggle is off, its token is absent, or its address or port is invalid.
 The exact STS2 v0.107.1 Windows x86-64 probe is recorded as confirmed in the dated host evidence;

@@ -178,7 +178,7 @@ ADR 0010 adds a narrow owner-local host path around the shared `runtime-v1` arti
 companion binds a configured local address (default `127.0.0.1`), enforces bounded
 HTTP/header/body/response sizes, requires a bearer token, and admits only `/health/ready`,
 `/api/v1/runtime/state`, and `/api/v1/runtime/action`. The built-in AI-Ascension settings tab
-stages and persists the enablement, address, and port for the next launch, while
+applies and persists the enablement, address, and port immediately, while
 `STS2_RUNTIME_BIND_ADDRESS` and `STS2_RUNTIME_PORT` remain explicit environment overrides. It
 passes borrowed request bytes through a versioned C ABI callback; the managed side copies them into
 owned values before queueing.

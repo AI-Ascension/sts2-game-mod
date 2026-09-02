@@ -20,13 +20,14 @@ Add a Runtime connection section to the standalone AI-Ascension settings tab wit
 
 | Setting | Behavior |
 | --- | --- |
-| Runtime API | Enables or disables the authenticated listener on the next launch; the default is enabled for backwards-compatible token-gated behavior. |
+| Runtime API | Enables or disables the authenticated listener immediately when Apply is selected; the default is enabled for backwards-compatible token-gated behavior. |
 | Bind address | Dropdown containing loopback (`127.0.0.1`), all interfaces (`0.0.0.0`), the detected machine hostname, and detected local IPv4 addresses. |
 | Network port | Validated numeric value from `1024` through `65535`, defaulting to `15526`. |
 
 The values are staged in the panel, persisted by the Apply action in the addon-owned user-data
-settings file, and take effect on the next game launch. Reset restores the enabled default,
-loopback, and port `15526`. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain explicit
+settings file, and applied immediately by stopping and restarting the bounded listener. Reset
+restores the enabled default, loopback, and port `15526`. `STS2_RUNTIME_PORT` and
+`STS2_RUNTIME_BIND_ADDRESS` remain explicit
 environment overrides for automation. `STS2_RUNTIME_TOKEN` remains environment-controlled and is
 still required before the listener starts.
 
@@ -41,8 +42,9 @@ or settings tab from operating.
 The default remains loopback-only behavior, while intentional testers can select a local network
 interface or hostname from the same tab. Selecting all interfaces can expose the listener beyond
 the local machine; the UI warns that a trusted network and firewall configuration are required.
-Listener settings are configuration for startup, so the UI explicitly says that a restart is
-required for a changed value to become active.
+Listener settings are live runtime configuration. Applying a change briefly restarts only the
+bounded listener; the game itself does not need to restart. If the listener cannot be restarted,
+the UI reports the failure and the saved values remain available for the next launch.
 
 The runtime health response reports a configured listener rather than claiming that every listener
 is loopback. Existing exact-host evidence remains evidence for the default loopback configuration;

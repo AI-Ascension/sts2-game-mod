@@ -95,30 +95,31 @@ internal static partial class StandaloneProfileSettings
 
         content.AddChild(CreateDescriptionLabel(
             $"Authentication: {ModEntry.RuntimeAuthenticationStatus}. The token remains outside the settings UI."));
-        content.AddChild(CreateDescriptionLabel($"Listener: {ModEntry.RuntimeListenerStatus}."));
+        Label listenerStatus = CreateDescriptionLabel($"Listener: {ModEntry.RuntimeListenerStatus}.");
+        content.AddChild(listenerStatus);
 
         Label status = CreateDescriptionLabel(
-            "Network changes are saved for the next launch. Select Apply after editing the values.");
+            "Network changes apply immediately and are saved for future launches. Select Apply after editing the values.");
         content.AddChild(status);
 
         addressDropdown.ItemSelected += index =>
         {
             BindAddressOption option = addressOptions[(int)index];
-            status.Text = $"Pending bind address: {option.Label}. Apply to save it.";
+            status.Text = $"Unsaved bind address: {option.Label}. Select Apply to apply it now.";
         };
         portInput.TextChanged += _ =>
         {
-            status.Text = "Pending network port. Apply to save it.";
+            status.Text = "Unsaved network port. Select Apply to apply it now.";
         };
 
-        runtimeToggle.Toggled += _ => status.Text = "Pending runtime API setting. Apply to save it.";
+        runtimeToggle.Toggled += _ => status.Text = "Unsaved Runtime API setting. Select Apply to apply it now.";
 
         var actionRow = new HBoxContainer { CustomMinimumSize = new Vector2(0, 45) };
         actionRow.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         var applyButton = new Button
         {
-            Text = "Apply on next launch",
-            CustomMinimumSize = new Vector2(230, 34),
+            Text = "Apply now",
+            CustomMinimumSize = new Vector2(170, 34),
             FocusMode = Control.FocusModeEnum.All
         };
         applyButton.AddThemeFontSizeOverride("font_size", 17);
@@ -127,7 +128,8 @@ internal static partial class StandaloneProfileSettings
             BindAddressOption option = addressOptions[addressDropdown.Selected];
             if (TrySaveRuntimeSettings(runtimeToggle.ButtonPressed, option.Value, portInput.Text, out string error))
             {
-                status.Text = $"Saved for {option.Value}:{RuntimePort}. Restart the game to apply it.";
+                status.Text = ModEntry.ApplyRuntimeSettings();
+                listenerStatus.Text = $"Listener: {ModEntry.RuntimeListenerStatus}.";
             }
             else
             {
@@ -156,7 +158,8 @@ internal static partial class StandaloneProfileSettings
             addressDropdown.Selected = addressOptions.FindIndex(option =>
                 string.Equals(option.Value, RuntimeBindAddress, StringComparison.OrdinalIgnoreCase));
             portInput.Text = RuntimePort.ToString(CultureInfo.InvariantCulture);
-            status.Text = "Network defaults saved. Restart the game to apply them.";
+            status.Text = ModEntry.ApplyRuntimeSettings();
+            listenerStatus.Text = $"Listener: {ModEntry.RuntimeListenerStatus}.";
         };
         actionRow.AddChild(resetButton);
         content.AddChild(actionRow);

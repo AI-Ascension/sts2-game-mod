@@ -45,12 +45,13 @@ The built-in settings contract is:
 
 | Setting | Default | Compatibility behavior |
 | --- | --- | --- |
-| Runtime API | Enabled | Applies on the next launch; disabling it skips listener startup |
+| Runtime API | Enabled | Applies immediately; disabling it stops the listener |
 | Bind address | `127.0.0.1` | The UI offers loopback, all interfaces, the detected hostname, and detected local IPv4 addresses |
-| Network port | `15526` | The UI accepts `1024` through `65535` and applies it on the next launch |
+| Network port | `15526` | The UI accepts `1024` through `65535` and applies it immediately |
 
 The settings tab also reports authentication and listener status without exposing the bearer token.
-Apply persists the selected values in the addon-owned user-data file; Reset restores the defaults.
+Apply persists the selected values and restarts only the bounded listener; Reset restores the defaults
+and applies them immediately.
 `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain explicit environment overrides for
 automation. The address and port controls are source/build and load-smoke confirmed in the exact
 recorded host; clicking every control, hostname resolution, firewall behavior, and every supported

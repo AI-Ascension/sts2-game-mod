@@ -14,7 +14,7 @@ and has no released product behavior.
 - Added a bounded runtime listener (default loopback), managed main-thread queue bridge, `runtime-v1`
   artifact copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
 - Added built-in AI-Ascension settings for listener enablement, bind address, and port, with
-  status/authentication indicators, Apply-on-next-launch, and Reset controls; the bearer token
+  status/authentication indicators, immediate Apply, and Reset controls; the bearer token
   remains environment-controlled.
 
 - Confirmed the focused `runtime-v1` host probe in STS2 v0.107.1 on Windows x86-64, including the
