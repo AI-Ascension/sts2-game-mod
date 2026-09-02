@@ -34,6 +34,11 @@ or another architecture until an exact matrix row and evidence exist.
 
 ## Contract compatibility
 
+The checked-in `protocol-artifact/poc-v1/` copy is consumed by exact protocol version, schema
+digest, and provenance. It is an offline release-like input, not a package or runtime compatibility
+claim. The game-mod POC mapping is source/test-confirmed only; host and game compatibility remain
+unverified.
+
 HTTP and ABI changes are classified as internal, additive-compatible, safety correction,
 deprecated-compatible, or breaking. A route, field, status, error, ordering, ABI symbol, calling
 convention, or host callback change needs a requirement, fixture, migration note, and version
