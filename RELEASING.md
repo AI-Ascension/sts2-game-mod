@@ -45,6 +45,26 @@ license, and user documentation while keeping host assemblies outside the packag
 The host-loader smoke test must use an operator-supplied exact host installation and disposable
 data. CI must not download or redistribute proprietary host files.
 
+## Workshop publication
+
+Workshop staging is a release-preparation action, not an ordinary CI action:
+
+1. Build the managed/native addon from the exact approved source and stage its three payload files.
+2. Run tools/workshop/package-item.sh with the consumer App ID, assigned published file ID, exact
+   game/package versions, source revision, and an operator-owned preview image.
+3. Inspect the content directory, manifest, SHA256SUMS, VDF, and checksums. The VDF must remain
+   beside the content directory and must not be uploaded as item content.
+4. For a new item, use published file ID 0 only to create the item. Record the assigned ID, rebuild
+   the package with that ID, and rerun all gates before treating the package as a release candidate.
+5. An authorized maintainer may use the generated VDF with SteamCMD for testing/publication or
+   later use an approved ISteamUGC publisher. Credentials remain outside the repository.
+6. Verify the published item, installed bytes, exact manifest policy, game discovery, load smoke,
+   and cleanup separately. Record the evidence level and exact Steam/STS2 versions.
+
+The current repository has no Steamworks SDK or committed App ID/item ID. Package staging and
+fixture validation are implemented; Steam configuration, upload, subscription, callback, and
+host-runtime evidence remain unverified.
+
 ## Failure and post-release checks
 
 After publication, verify checksums, package allowlists, documented startup, the HTTP index, and

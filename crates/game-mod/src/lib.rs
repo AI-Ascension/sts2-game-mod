@@ -8,6 +8,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 
 mod poc;
 mod protocol_artifact;
+mod workshop;
 
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
@@ -17,6 +18,13 @@ pub use poc::{
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
+};
+pub use workshop::{
+    AllowedWorkshopFile, WORKSHOP_LOADER_CONTRACT, WORKSHOP_MANIFEST_SCHEMA_VERSION,
+    WORKSHOP_PACKAGE_ID, WorkshopCompatibilityError, WorkshopConsumer, WorkshopContentKind,
+    WorkshopFile, WorkshopFileRole, WorkshopInstallState, WorkshopItemSnapshot, WorkshopManifest,
+    WorkshopManifestError, WorkshopPackage, WorkshopPolicy, WorkshopReadiness, WorkshopReject,
+    WorkshopWaitReason,
 };
 
 /// Target-owned composition of host admission, HTTP bounds, and ABI validation.

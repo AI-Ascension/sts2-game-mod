@@ -5,6 +5,10 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added a deterministic first-party Steam Workshop package contract, manifest/checksum staging
+  tool, managed pre-load validation, and synthetic Rust/managed fixture checks. Steam publication,
+  subscription/download callbacks, and host-runtime Workshop evidence remain unverified.
+
 - Added a bounded loopback runtime listener, managed main-thread queue bridge, `runtime-v1` artifact
   copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
 

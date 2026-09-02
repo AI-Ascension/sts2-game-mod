@@ -67,3 +67,21 @@ consumers.
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
 another host version, another platform, or a valued profile.
+
+## Workshop package profile
+
+The first-party Workshop package has its own compatibility dimensions: consumer App ID, published
+file ID, package version, game version, platform, loader contract, file-role allowlist, payload
+sizes, per-file digests, and content digest. The Rust contract and managed validator have
+source/build and synthetic-fixture evidence for these dimensions.
+
+The supported package is executable because it distributes the current managed/native mod, but the
+loader accepts only the exact first-party allowlist under an explicitly configured App ID and item
+ID. A Workshop title, author, tag, subscription, or folder path is not a trust or compatibility
+proof. The current target has no committed App ID or item ID; operators supply them while staging
+and must rebuild a release candidate after Steam assigns a new item ID.
+
+No row is promoted to Steam runtime support until an authorized disposable test records Steam API
+initialization, item creation/update or subscription, install callback/poll behavior,
+GetItemInstallInfo usage, game discovery, load smoke, and cleanup for an exact host/platform
+matrix.

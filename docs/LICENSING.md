@@ -21,6 +21,11 @@ New Rust and managed source includes an SPDX MIT header. Imported, generated, or
 records its origin, license, hash, and regeneration path. Unknown or incompatible licenses block
 release until resolved.
 
+The Workshop staging tool packages only the first-party managed assembly, native companion, and
+loader manifest. It does not package Steamworks binaries, host assemblies, game data, or preview
+assets; operators must verify the licensing and provenance of any externally supplied preview
+before publication.
+
 ## Dependencies and notices
 
 Review every Cargo or managed dependency before adding it. Keep the exact lockfile, license

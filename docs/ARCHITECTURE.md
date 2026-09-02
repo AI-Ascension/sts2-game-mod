@@ -145,3 +145,24 @@ The route/ABI implementation and tests are confirmed at source/build level, and 
 report confirms a real request, live main-thread dispatch, and the bounded host-visible effect for
 STS2 v0.107.1 on Windows x86-64. Game-rule compatibility, process supervision, and the action's
 semantics beyond this probe remain unverified. The action is deliberately not a gameplay mutation.
+
+## Steam Workshop boundary
+
+ADR 0011 adds a first-party executable Workshop package path for the existing runtime addon. The
+Rust module at crates/game-mod/src/workshop.rs is a pure owner-local contract: it parses bounded
+manifests, enforces sorted hashed file roles and safe relative payload paths, maps Steam install
+states to wait/ready/reject decisions, and compares an item against an exact package policy.
+
+The managed loader's WorkshopContent.cs is the filesystem and loader gate. When a
+sts2-workshop-manifest.json is present beside the managed assembly, the loader requires the
+operator-configured App ID, published file ID, game version, and platform, rejects unexpected
+entries and reparse points, verifies payload sizes and SHA-256 values, and checks the deterministic
+content digest before loading the native companion. A package without this marker remains
+compatible with the existing local/load-smoke path; a marked package fails closed when its policy
+is absent or mismatched.
+
+tools/workshop/package-item.sh stages only the exact managed assembly, loader manifest, and native
+companion, emits the manifest/checksum inventory, and writes the operator-only Steam Workshop VDF
+outside the content directory. The Steam API callback/initialization adapter is intentionally not
+implemented without the Steamworks SDK. Steam publication, subscription/download behavior, and
+Workshop-driven game discovery are therefore still unverified.

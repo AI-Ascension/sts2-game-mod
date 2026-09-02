@@ -63,6 +63,9 @@ jobs:
       - name: Run Rust tests
         run: cargo test --workspace --all-targets --all-features --locked
 
+      - name: Validate Workshop package staging
+        run: bash tools/workshop/test-package-item.sh
+
   managed-source:
     name: Managed source-only boundary
     runs-on: windows-latest
@@ -80,6 +83,9 @@ jobs:
 
       - name: Build source-only managed probe
         run: dotnet build experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj --configuration Release
+
+      - name: Run managed Workshop validation probe
+        run: dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
 
       - name: Record host-loader precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

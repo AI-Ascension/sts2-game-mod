@@ -54,3 +54,12 @@ Any change to events, permissions, actions, refs, secrets, environments, runners
 artifacts is an authority change and must be called out in review. Validate workflow syntax and
 security with the repository policy checker and dedicated tools when available; a missing tool is
 reported as unverified.
+
+## Workshop workflow
+
+Workshop content is prepared only from an explicit operator command after the normal build and
+compatibility gates. package-item.sh writes its VDF beside the content directory; the VDF is not
+part of the Workshop payload. Pull-request and ordinary push workflows never call SteamCMD,
+ISteamUGC, or any upload endpoint. An authorized publisher must supply the consumer App ID,
+published file ID, preview image, and credentials outside the repository, then verify the exact
+staged bytes and Steam result separately.
