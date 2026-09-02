@@ -6,6 +6,16 @@ use sts2_mod_host::{
 };
 use sts2_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
+mod poc;
+mod protocol_artifact;
+
+pub use poc::{
+    EffectWitness, PocAction, PocBoundaryRecord, PocCoreError, PocCorePort, PocCoreState,
+    PocMessage, PocMessageKind, PocMod, PocModError, PocObservation, PocProvenance, PocRoute,
+    PocStatus, PocValidationError,
+};
+pub use protocol_artifact::{ArtifactError, POC_ARTIFACT, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST};
+
 /// Target-owned composition of host admission, HTTP bounds, and ABI validation.
 #[derive(Debug)]
 pub struct ModRuntime<H> {

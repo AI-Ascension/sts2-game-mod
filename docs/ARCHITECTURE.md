@@ -7,8 +7,8 @@ callbacks into owned Rust values, schedules host work on the game main thread, e
 authoritative local HTTP surface, and composes the narrow native seam.
 
 This document records boundaries, the initialized source-level seams, and dependency direction.
-The current Rust source proves only deterministic port composition; it does not claim a managed
-loader or game runtime path.
+The current Rust source proves deterministic port composition plus one local fake `poc-v1` mapping;
+it does not claim a managed loader or game runtime path.
 
 ## Initialized source seam
 
@@ -21,6 +21,19 @@ composition tests make those source-level invariants deterministic.
 
 This seam is intentionally opaque and preparatory. It is not the managed loader, a public HTTP
 schema, a game-rule implementation, or a native implementation copied from another repository.
+
+## Minimal POC mapping
+
+`protocol-artifact/poc-v1/` is a checked-in, release-like copy produced by the protocol owner. The
+mod verifies its manifest and schema identity locally, then maps the four message shapes without a
+cross-repository dependency. `PocMod` accepts only a state request or an action request, forwards
+the typed `use_budget` action through `PocCorePort`, and returns the bounded observation with the
+same protocol version, schema digest, correlation ID, instance ID, and generation. An accepted
+action creates one `EffectWitness`; a core rejection returns its stable error identity and creates
+no witness.
+
+The test's core implementation is a fake. The mapping is source/test evidence for the boundary,
+not evidence of host callbacks, a local listener, game mutation, or settlement in STS2.
 
 ## System boundaries
 
@@ -82,10 +95,10 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 
 ## Protocol and data rules
 
-The owner-local HTTP contract is the only transport contract planned in this target. The current
-adapter owns only a bounded request view and admission status; its schema, wire names, route
-catalog, errors, ordering, and versioning require later project-owned requirements and fixtures.
-MCP envelopes and gateway leases remain outside this repository.
+The owner-local HTTP contract remains separate from the copied POC artifact. The current adapter
+owns only a bounded request view and admission status; its schema, wire names, route catalog,
+errors, ordering, and versioning require later project-owned requirements and fixtures. MCP
+envelopes and gateway leases remain outside this repository.
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.

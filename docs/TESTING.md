@@ -18,9 +18,10 @@ cargo clippy --locked --offline --workspace --all-targets --all-features -- -D w
 cargo test --locked --offline --workspace --all-targets --all-features
 ~~~
 
-The workspace now also contains the target-owned host, HTTP-adapter, and composition seams. The
-commands prove source-level structure, queue/ABI/adapter composition, and deterministic fake tests;
-they do not prove a product package or game runtime.
+The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
+`poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
+artifact identity, and deterministic fake tests; they do not prove a product package or game
+runtime.
 
 ## Planned layers
 
@@ -33,8 +34,9 @@ they do not prove a product package or game runtime.
 | host | loader, callbacks, main-thread and settlement behavior | exact disposable game |
 | release smoke | packaged bytes and install/start behavior | authorized clean host |
 
-Wave 2 claims unit/component coverage for the initialized ports and composition only. No host,
-integration, protocol, or release-smoke layer is claimed.
+Wave 2 claims unit/component coverage for the initialized ports, composition, and fake POC mapping
+only. The POC artifact test is a local conformance check for copied bytes and message shape; no
+host, integration, or release-smoke layer is claimed.
 
 ## Required future behavior
 

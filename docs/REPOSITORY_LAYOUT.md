@@ -8,6 +8,7 @@ sts2-game-mod/
 ├── crates/host                       host port, bounded queue, dispatcher, ABI gate
 ├── crates/http-adapter               bounded transport-free HTTP adapter seam
 ├── crates/game-mod                   target-local composition root
+├── protocol-artifact/poc-v1           offline copy consumed by the POC mapping
 ├── schemas/game-http-v1              future owner-local HTTP schema
 ├── conformance                       future deterministic boundary fixtures
 ├── tests                             future component and host-test seams
@@ -36,6 +37,7 @@ under the experiment until a later implementation decision gives them a product 
 | crates/host | mod | mod composition and managed/host integration seam |
 | crates/http-adapter | mod | mod composition; future owner-local HTTP listener |
 | crates/game-mod | mod | target-local composition and admission boundary |
+| protocol-artifact/poc-v1 | protocol release consumer | inert copied POC artifact and fixtures |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
 | experiments/managed-rust-interop | mod research | build-level ABI investigation only |
