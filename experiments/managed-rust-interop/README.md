@@ -38,6 +38,15 @@ The built-in panel contains:
 | `Apply on next launch` | Saves the staged runtime API, bind address, and port values. A game restart is required before they become active. |
 | `Reset` | Restores the runtime API default, loopback address, and port `15526`. |
 | `Apply full profile unlock` | Switches to the selected profile through the host save manager, then queues the guarded unlock operation. Only the selected profile is modified. |
+| `Export profile` | Writes the selected profile's saved progress to a user-chosen `.sts2profile` archive. |
+| `Import profile` | Validates a user-selected `.sts2profile` archive, confirms replacement, and imports it into the selected profile. A restart is required. |
+
+Profile transfer is a local, explicit settings action. The archive contains only the selected profile's
+`saves/` directory and a small format manifest; it is not a package input, repository artifact, or
+network operation. Export and import are unavailable while a run is in progress. Imports replace the
+selected profile's saved progress after validation, staging, and an atomic directory swap with
+rollback on failure. Archives are limited to 8,192 files and 256 MiB of uncompressed data, and
+archive paths must remain under `saves/`.
 
 Network values are staged in the panel and saved by `Apply on next launch` in the mod's own
 user-data settings file. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain available as
@@ -52,9 +61,10 @@ continues to show the overlay. The profile selector and Apply action are availab
 AI-Ascension tab without an additional mod. Settings UI construction is limited to the new tab and
 its panel; it does not change global settings values, other mod registrations, or other panels.
 
-The Apply button uses a profile-readiness and main-thread queued-attempt path. It does not edit save
-files directly or create a concurrent second attempt. A failed or not-yet-ready attempt emits a
-bounded diagnostic and does not report success.
+The full unlock Apply button uses a profile-readiness and main-thread queued-attempt path. It does
+not edit save files directly or create a concurrent second attempt. A failed or not-yet-ready attempt
+emits a bounded diagnostic and does not report success. The transfer actions are separate, explicitly
+file-backed operations and display a restart requirement after a successful import.
 
 The profile selection can be returned to Profile 1 from the dropdown. The Apply button has no
 separate persisted value and the addon does not create a competing reset system.

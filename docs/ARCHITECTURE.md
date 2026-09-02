@@ -65,6 +65,17 @@ registration, UI rendering, callbacks, and profile mutation remain unverified ag
 compatible game and ModConfig installation; the existing load-smoke and runtime-v1 evidence below
 does not prove those settings behaviors.
 
+### Local profile transfer boundary
+
+The standalone settings tab also owns explicit local export and import of the selected profile's
+saved progress. It resolves the selected slot through the host `ProgressSaveManager`, exports only
+the profile's `saves/` subtree to a versioned `.sts2profile` ZIP, and never sends the archive through
+the HTTP, native, MCP, gateway, or harness boundaries. Import is blocked during an active run,
+requires confirmation, validates bounded manifest and archive paths, stages outside the profile,
+and swaps the `saves/` directory with rollback if installation fails. The current profile is flushed
+through the host `SaveManager` before transfer, and a successful import reports that a restart is
+required. This is a narrow persistence seam, not general-purpose filesystem access or cloud sync.
+
 ## Minimal POC mapping
 
 `protocol-artifact/poc-v1/` is a checked-in, release-like copy produced by the protocol owner. The
@@ -116,7 +127,7 @@ not reported as completed until the host reaches the corresponding result.
 
 | Component | Owns | Must not own |
 | --- | --- | --- |
-| managed loader | load metadata, callback entry, native lifetime, ABI translation | domain rules, HTTP, MCP, persistence |
+| managed loader | load metadata, callback entry, native lifetime, ABI translation, narrow settings actions | domain rules, HTTP, MCP, general persistence |
 | host boundary | host adaptation, main-thread dispatch, lifecycle observation | public MCP or gateway policy |
 | HTTP adapter | local route decoding, response mapping, bounded errors | host object internals or gateway leases |
 | game-mod composition | wiring of target-local components | a second domain or transport implementation |

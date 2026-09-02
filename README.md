@@ -34,7 +34,8 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 
 - [experiments/managed-rust-interop/](experiments/managed-rust-interop/) contains the managed .NET 9
   loader package, its unique Rust companion library, the manifest, and the reproducible packaging
-  command. The package now contains the load-smoke/ABI path and the bounded runtime probe source.
+  command. The package now contains the load-smoke/ABI path, bounded runtime probe source, and
+  local `.sts2profile` export/import controls for selected saved progress.
 - [crates/host/](crates/host/) owns the host port, bounded main-thread queue, dispatcher, and
   versioned ABI descriptor validation.
 - [crates/http-adapter/](crates/http-adapter/) owns a transport-free HTTP request boundary and
@@ -73,8 +74,9 @@ gameplay API exists in this repository; live host mutation and settlement are un
 
 The foundation and boundary seam are original target documentation and source tailored from the project
 standards. No product implementation source was copied from another implementation. No proprietary
-host file, save, credential, personal path, or generated output is distributed. The local load-smoke
-uses the operator's installed host assembly without adding it to this repository or release output.
+host file, save, credential, personal path, or generated output is committed or packaged. A user-selected
+profile archive remains an external local artifact. The local load-smoke uses the operator's installed
+host assembly without adding it to this repository or release output.
 
 The POC behavior is test-confirmed only for the local fake core port: a state read, one accepted
 action, and one zero-unit rejection preserve the bounded state and effect witness. The managed

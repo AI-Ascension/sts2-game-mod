@@ -41,7 +41,9 @@ make those runtime claims.
 - Reimplementing game rules in the adapter.
 - Putting HTTP, MCP, gateway lifecycle, or harness coordination into the managed loader.
 - Remote-by-default exposure, discovery, fallback credentials, or unbounded payloads.
-- Storing or distributing proprietary game files, assets, saves, profiles, or credentials.
+- Bundling or remotely distributing proprietary game files, assets, saves, profiles, or credentials;
+  a user-initiated local profile transfer is limited to the settings boundary and never enters the
+  repository or package.
 - Compatibility with another harness implementation or unsupported game/platform versions.
 
 ## Evidence boundary
@@ -64,3 +66,17 @@ remains an environment-controlled secret.
 This slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The
 source, build, and exact-host probe gates are `confirmed`; gameplay mutation, process lifecycle, and
 broader compatibility remain outside the evidence.
+
+## Local profile transfer
+
+The standalone AI-Ascension settings tab provides explicit local export and import actions for the
+selected profile. Export flushes the current profile through the host save manager, then writes only
+its `saves/` subtree to a bounded `.sts2profile` ZIP archive. Import requires an idle game and a
+confirmation, validates the manifest, file count, uncompressed size, and safe `saves/` paths, then
+stages the archive before replacing the selected profile's saves with rollback on failure. A restart
+is required after import so the host reloads the replaced data.
+
+This is a narrow, user-selected filesystem operation owned by the managed host boundary. It is not
+an HTTP route, MCP action, cloud sync feature, package input, or repository artifact. The source and
+managed build establish the implementation shape; actual settings rendering, host path resolution,
+archive round trips, and restart behavior remain host-runtime evidence to be collected separately.

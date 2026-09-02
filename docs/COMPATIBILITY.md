@@ -27,6 +27,7 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 | --- | --- | --- | --- | --- |
 | Runtime addon `AIAscensionSTS2Poc` | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
 | Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
+| Profile transfer settings source | STS2 v0.107.1 host references | Windows x86-64 | Build-only | Confirmed source/build shape; settings UI, path resolution, archive round trip, and restart behavior unverified |
 | Runtime-v2 fake boundary | No host; `sts2-protocol` commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527` | Offline Rust toolchain | Deterministic source/build/test | Confirmed for the in-memory fake seam only; live host mutation and settlement unverified |
 | Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
 
@@ -61,6 +62,19 @@ Runtime-v2 is pinned locally to schema digest
 `hand-authored`. No concrete host gameplay API exists in this repository. The copied artifact,
 Rust contract, and fake lifecycle tests provide source/build/test evidence only; live host mutation
 and live host settlement are unverified.
+
+## Local profile transfer compatibility
+
+The profile actions target host `ProgressSaveManager.GetProgressPathForProfile`,
+`SaveManager.SaveProgressFile`, and `RunManager.IsInProgress`. The archive format is local to this
+addon: format `ai-ascension-sts2-profile`, version `1`, selected-slot metadata, only `saves/` paths,
+an 8,192-file limit, and a 256 MiB uncompressed-data limit. Import can move an archive from one
+profile slot into another after the user chooses the destination and confirms replacement.
+
+The managed project compiles against the recorded operator-supplied host references, which is
+build-only evidence for the API shape. No profile transfer row is promoted to load-smoke or focused
+runtime support until an authorized disposable profile demonstrates the dialogs, selected-profile
+path resolution, archive round trip, rollback behavior, and restart reload on the exact host tuple.
 
 ## Contract compatibility
 

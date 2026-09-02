@@ -100,11 +100,19 @@ are separately exercised in an authorized disposable host. Deterministic cases m
 | One-shot reset | A launch unlock request remains enabled after any failed or incomplete operation. It is cleared only after the profile save succeeds and the settings write succeeds with a confirmed read-back of `false`. |
 | Manual retry and concurrency | Manual and launch requests share one readiness/main-thread attempt; concurrent requests do not double-save, while a failed, timed-out, or completed attempt can be retried without overlapping work. |
 | Bounded diagnostics | Missing API types, registration/read/write failures, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
+| Active-run guard | Export and import are refused while `RunManager.IsInProgress` is true; no archive or profile directory is changed. |
+| Export manifest | Export writes only the selected profile's `saves/` subtree, adds one versioned manifest, enforces the file/count byte bounds, and uses a temporary archive before replacement. |
+| Import validation | Duplicate metadata, duplicate paths, traversal, non-`saves/` paths, missing `saves/progress.save`, malformed metadata, and mismatched file counts or sizes are rejected before the target profile is changed. |
+| Import replacement | A validated archive is staged outside the profile; the existing `saves/` directory is backed up, replaced, and restored when installation fails. |
+| Current-profile boundary | Export/import flush the selected active profile through the host save manager when applicable and report that a restart is required after import; no in-memory reload is claimed. |
+| Transfer diagnostics | Status text and logs use bounded categories and do not expose archive paths, profile paths, save contents, or raw host exceptions. |
 
 The managed loader requires operator-supplied exact `sts2.dll` and `GodotSharp.dll` host assemblies;
 they must remain outside the repository and package. ModConfig rendering, callback behavior, and
 profile mutation remain `unverified` unless separately exercised with disposable data in an
-authorized host test that records the exact host tuple, setup, observations, and cleanup.
+authorized host test that records the exact host tuple, setup, observations, and cleanup. Profile
+transfer round trips and restart reloads require the same separate host evidence; ordinary tests must
+use synthetic archives and must not touch real user profiles or saves.
 
 ## Security and evidence language
 
