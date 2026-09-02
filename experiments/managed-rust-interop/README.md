@@ -2,8 +2,10 @@
 
 This game-mod-owned directory contains the narrow runtime addon proof: a managed loader-compatible
 assembly calls a Rust native library through a versioned C ABI and emits a visible load marker from
-the actual STS2 initializer. It is a load-smoke package, not the gameplay implementation, and must
-only be installed in an explicitly authorized test environment.
+the actual STS2 initializer. After the ABI smoke call succeeds, it adds a top-layer in-game status
+banner reading `AI-ASCENSION STS2 POC` and `WORKING | Rust ABI 1 | 19 + 23 = 42`. It is a
+load-smoke package, not the gameplay implementation, and must only be installed in an explicitly
+authorized test environment.
 
 The managed project references the operator-supplied `sts2.dll` and `GodotSharp.dll` only at build
 time, exposes the host's `ModInitializer`, loads `ai_ascension_sts2_poc.dll`, verifies ABI version

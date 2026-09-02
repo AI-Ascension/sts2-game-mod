@@ -28,10 +28,11 @@ schema, a game-rule implementation, or a native implementation copied from anoth
 `experiments/managed-rust-interop/game-loader` is the loader-facing .NET 9 class library. It
 references only the operator-supplied `sts2.dll` and `GodotSharp.dll` at build time, carries the
 host's `ModInitializer` metadata, loads the adjacent unique native companion, verifies ABI version
-1, calls the checked-add smoke export, and logs a bounded success marker. The companion is built
-from the target-owned Rust crate as `ai_ascension_sts2_poc.dll` on Windows. The package script
-stages only the managed DLL, native DLL, and manifest; it never copies proprietary host assemblies
-into the repository or package.
+1, calls the checked-add smoke export, logs a bounded success marker, and places a top-layer Godot
+status banner with the verified ABI and result. The companion is built from the target-owned Rust
+crate as `ai_ascension_sts2_poc.dll` on Windows. The package script stages only the managed DLL,
+native DLL, and manifest; it never copies proprietary host assemblies into the repository or
+package.
 
 This is a load-smoke implementation, not the game behavior implementation. It does not expose an
 HTTP listener, access host game objects, mutate a run, or claim action/effect compatibility.

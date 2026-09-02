@@ -16,6 +16,7 @@ public static class ModEntry
     private const int ExpectedCheckedAddStatus = 0;
     private const int ExpectedCheckedAddResult = 42;
     private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
+    private const string StatusNodeName = "AIAscensionSTS2PocStatus";
     private static readonly object Gate = new();
     private static nint _nativeLibrary;
 
@@ -66,6 +67,7 @@ public static class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
+                InstallStatusOverlay(version, sum);
             }
             catch (Exception exception)
             {
@@ -77,6 +79,52 @@ public static class ModEntry
                 GD.PrintErr($"{LogPrefix} initialization failed: {exception.GetType().Name}: {exception.Message}");
             }
         }
+    }
+
+    private static void InstallStatusOverlay(uint version, int sum)
+    {
+        if (Engine.GetMainLoop() is not SceneTree tree || tree.Root == null)
+        {
+            GD.PrintErr($"{LogPrefix} could not install visible status overlay: SceneTree root is unavailable");
+            return;
+        }
+
+        if (tree.Root.GetNodeOrNull<CanvasLayer>(StatusNodeName) != null)
+        {
+            return;
+        }
+
+        var layer = new CanvasLayer
+        {
+            Name = StatusNodeName,
+            Layer = 1000
+        };
+        var background = new ColorRect
+        {
+            Name = "Background",
+            Color = new Color(0.03f, 0.08f, 0.12f, 0.92f),
+            Position = new Vector2(32, 32),
+            Size = new Vector2(620, 108),
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        var label = new Label
+        {
+            Name = "Message",
+            Text = $"AI-ASCENSION STS2 POC\nWORKING | Rust ABI {version} | 19 + 23 = {sum}",
+            Position = new Vector2(52, 48),
+            Size = new Vector2(580, 76),
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        label.AddThemeFontSizeOverride("font_size", 22);
+        label.AddThemeColorOverride("font_color", new Color(0.96f, 0.89f, 0.68f, 1.0f));
+        label.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.85f));
+        label.AddThemeConstantOverride("shadow_offset_x", 2);
+        label.AddThemeConstantOverride("shadow_offset_y", 2);
+
+        layer.AddChild(background);
+        layer.AddChild(label);
+        tree.Root.AddChild(layer);
+        GD.Print($"{LogPrefix} visible status overlay installed: {StatusNodeName}");
     }
 
     private static string NativeLibraryFileName()
