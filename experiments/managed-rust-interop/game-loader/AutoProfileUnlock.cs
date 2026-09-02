@@ -15,13 +15,14 @@ internal static class AutoProfileUnlock
 {
     private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
     private const string AutoUnlockArgument = "--ai-ascension-unlock-all";
+    private const int MinProfileId = 1;
+    private const int MaxProfileId = 3;
     private const int MaxWaitFrames = 600;
     private static Action? _callback;
     private static bool _queued;
     private static bool _attemptRunning;
     private static bool _finished;
-    private static bool _clearLaunchSettingAfterApply;
-    private static bool _clearFailureReported;
+    private static int? _targetProfileId;
     private static int _waitFrames;
 
     private enum AttemptResult
@@ -31,35 +32,35 @@ internal static class AutoProfileUnlock
         Failed
     }
 
-    internal static void ScheduleLaunch(bool unlockOnNextLaunch)
+    internal static void ScheduleLaunch()
     {
         bool launchArgumentRequested = HasLaunchArgument();
-        if (!launchArgumentRequested && !unlockOnNextLaunch)
+        if (!launchArgumentRequested)
         {
             return;
         }
 
-        if (launchArgumentRequested)
-        {
-            GD.Print($"{LogPrefix} automatic full unlock requested by launch argument: {AutoUnlockArgument}");
-        }
-
-        if (unlockOnNextLaunch)
-        {
-            _clearLaunchSettingAfterApply = true;
-            GD.Print($"{LogPrefix} automatic full unlock requested by ModConfig setting");
-        }
-
+        _targetProfileId = null;
+        GD.Print($"{LogPrefix} automatic full unlock requested by launch argument: {AutoUnlockArgument}");
         ScheduleNextFrame();
     }
 
-    internal static void ScheduleManualUnlock()
+    internal static void ScheduleManualUnlock(int targetProfileId)
     {
+        if (!IsValidProfileId(targetProfileId))
+        {
+            GD.PrintErr($"{LogPrefix} rejected unlock request for invalid profile {targetProfileId}");
+            return;
+        }
+
         if (_queued || _attemptRunning) return;
         // A manual request is a new attempt, but never interrupt an existing one.
         _finished = false;
         _waitFrames = 0;
-        GD.Print($"{LogPrefix} manual full unlock requested by ModConfig setting");
+        _targetProfileId = targetProfileId;
+        GD.Print(
+            $"{LogPrefix} manual full unlock requested by in-game settings; "
+            + $"target=profile {targetProfileId}");
         ScheduleNextFrame();
     }
 
@@ -130,6 +131,22 @@ internal static class AutoProfileUnlock
             SaveManager saveManager = SaveManager.Instance;
             if (!IsProfileReady(saveManager)) return AttemptResult.NotReady;
 
+            if (_targetProfileId is int targetProfileId)
+            {
+                if (!IsValidProfileId(targetProfileId))
+                {
+                    GD.PrintErr($"{LogPrefix} rejected unlock request for invalid profile {targetProfileId}");
+                    return AttemptResult.Failed;
+                }
+
+                if (saveManager.CurrentProfileId != targetProfileId)
+                {
+                    saveManager.SwitchProfileId(targetProfileId);
+                    GD.Print($"{LogPrefix} switched to target profile {targetProfileId}; waiting for profile data");
+                    return AttemptResult.NotReady;
+                }
+            }
+
             ModelId[] cardIds = ModelDb.AllCards.Select(card => card.Id).ToArray();
             ModelId[] relicIds = ModelDb.AllRelics.Select(relic => relic.Id).ToArray();
             ModelId[] potionIds = ModelDb.AllPotions.Select(potion => potion.Id).ToArray();
@@ -164,12 +181,11 @@ internal static class AutoProfileUnlock
             }
 
             saveManager.SaveProgressFile();
-            ClearLaunchSettingAfterSuccessfulSave();
             GD.Print(
                 $"{LogPrefix} automatic full unlock applied: cards={cardIds.Length}; "
                 + $"relics={relicIds.Length}; potions={potionIds.Length}; events={eventIds.Length}; "
                 + $"acts={actIds.Length}; monsters={monsterIds.Length}; epochs={epochIds.Length}; "
-                + $"characters={characterIds.Length}; ascension=10");
+                + $"characters={characterIds.Length}; profile={saveManager.CurrentProfileId}; ascension=10");
             return AttemptResult.Applied;
         }
         catch (Exception exception)
@@ -182,42 +198,11 @@ internal static class AutoProfileUnlock
 
     private static bool IsProfileReady(SaveManager saveManager)
     {
-        try { _ = saveManager.CurrentProfileId; return true; }
+        try { return saveManager.IsProfileInitialized && saveManager.CurrentProfileId >= MinProfileId; }
         catch (InvalidOperationException) { return false; }
     }
 
-    private static void ClearLaunchSettingAfterSuccessfulSave()
-    {
-        if (!_clearLaunchSettingAfterApply)
-        {
-            return;
-        }
-
-        if (!ModConfigBridge.IsAvailable) { ReportClearFailure("ModConfig is unavailable"); return; }
-
-        try
-        {
-            if (!ModConfigBridge.SetBool(ModConfigBridge.UnlockOnNextLaunchKey, false))
-            { ReportClearFailure("ModConfig rejected the reset"); return; }
-
-            if (ModConfigBridge.GetBool(ModConfigBridge.UnlockOnNextLaunchKey, true))
-            { ReportClearFailure("ModConfig did not accept the reset"); return; }
-
-            _clearLaunchSettingAfterApply = false;
-        }
-        catch (Exception exception)
-        {
-            ReportClearFailure(exception.GetType().Name);
-        }
-    }
-
-    private static void ReportClearFailure(string reason)
-    {
-        if (_clearFailureReported) return;
-
-        _clearFailureReported = true;
-        GD.PrintErr($"{LogPrefix} could not clear the one-shot unlock setting: {reason}");
-    }
+    private static bool IsValidProfileId(int profileId) => profileId >= MinProfileId && profileId <= MaxProfileId;
 
     private static void MarkDiscovered(
         ProgressState progress,

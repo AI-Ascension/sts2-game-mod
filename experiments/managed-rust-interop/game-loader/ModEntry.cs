@@ -71,18 +71,13 @@ public static partial class ModEntry
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
                 StartRuntimeServer(_nativeLibrary);
-                bool debugArgumentRequested = HasCommandLineArgument(DebugArgument);
-                ModConfigBridge.ConfigureCallbacks(AutoProfileUnlock.ScheduleManualUnlock);
-                ModConfigBridge.DeferredRegister(() =>
+                StandaloneProfileSettings.Initialize();
+                if (HasCommandLineArgument(DebugArgument))
                 {
-                    if (debugArgumentRequested || ModConfigBridge.GetBool(ModConfigBridge.ShowDebugOverlayKey, false))
-                    {
-                        InstallStatusOverlay(version, sum);
-                    }
+                    InstallStatusOverlay(version, sum);
+                }
 
-                    AutoProfileUnlock.ScheduleLaunch(
-                        ModConfigBridge.GetBool(ModConfigBridge.UnlockOnNextLaunchKey, false));
-                });
+                AutoProfileUnlock.ScheduleLaunch();
             }
             catch (Exception exception)
             {
