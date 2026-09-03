@@ -103,6 +103,9 @@ bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
 [[ "$bridge_source" != *'ArgumentList.Add(credential)'* ]] || fail 'bridge passes a token as an argument'
 [[ "$bridge_source" != *'QuotePowerShell(credential)'* ]] || fail 'bridge interpolates a token into PowerShell'
 input_automation_is_disabled || fail 'launcher or bridge contains a system-input control seam'
+dev_cycle_source=$(<"$script_dir/dev-cycle.sh")
+[[ "$dev_cycle_source" == *'UseShellExecute'* ]] || fail 'development cycle does not use a non-shell launch boundary'
+[[ "$dev_cycle_source" != *'Start-Process'* ]] || fail 'development cycle delegates game launch to PowerShell'
 
 printf '%s\n' \
     'CSPRNG/encoding/difference=TRUE' \
