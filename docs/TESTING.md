@@ -111,6 +111,10 @@ authorized host test that records the exact host tuple, setup, observations, and
 
 ## Ephemeral session launcher
 
+The owned launcher and Windows bridge always pass `--headless --audio-driver Dummy` to the game.
+This prevents the runtime test path from creating or focusing a game window; it does not move or
+capture the system cursor and does not send mouse or keyboard events.
+
 The target-owned launcher tests can run without a game or provider source:
 
 ~~~text

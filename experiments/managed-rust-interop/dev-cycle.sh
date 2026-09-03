@@ -352,9 +352,9 @@ if [[ "$launch_game" == true ]]; then
     game_dir_windows=$(to_windows_path "$game_dir")
     escaped_game_exe=${game_exe_windows//\'/\'\'}
     escaped_game_dir=${game_dir_windows//\'/\'\'}
-    launch_arguments=''
+    launch_arguments='--headless --audio-driver Dummy'
     if [[ "$unlock_all_on_launch" == true ]]; then
-        launch_arguments='--ai-ascension-unlock-all'
+        launch_arguments+=" --ai-ascension-unlock-all"
     fi
 
     printf '%s\n' 'Relaunching SlayTheSpire2.exe...'
