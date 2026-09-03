@@ -1,9 +1,10 @@
 # Managed .NET 9 to Rust runtime addon
 
-This game-mod-owned directory contains the narrow runtime addon proof: a managed loader-compatible
-assembly calls a Rust native library through a versioned C ABI and emits a visible load marker from
-the actual STS2 initializer. After the ABI smoke call succeeds, it adds a top-layer in-game debug
-banner only when the game is launched with the exact `--debug` argument. The banner reads
+This game-mod-owned directory contains the managed loader/native boundary and two explicitly
+separate runtime profiles. The Runtime-v1 path remains a narrow addon proof: a managed
+loader-compatible assembly calls a Rust native library through a versioned C ABI and emits a visible
+load marker from the actual STS2 initializer. After the ABI smoke call succeeds, it adds a top-layer
+in-game debug banner only when the game is launched with the exact `--debug` argument. The banner reads
 `AI-ASCENSION STS2 GAME MOD` and `DEBUG | Rust ABI 1 | 19 + 23 = 42`. Normal launches retain the
 bounded log marker but do not add a visible overlay. It also has an explicitly opt-in launch mode
 that applies the host-equivalent full profile unlock automatically. The built-in settings panel can
@@ -16,6 +17,18 @@ time, exposes the host's `ModInitializer`, loads `AIAscensionSTS2GameModNative.d
 1, and checks that the native `19 + 23` smoke call returns `42`. The companion is a Windows x86-64
 Rust `cdylib`. `package-runtime-addon.sh` builds and stages the three files required by the game:
 the managed DLL, the unique native DLL, and `AIAscensionSTS2GameMod.json`.
+
+The source also contains a Runtime-v2 `end_turn` host-adapter candidate. It validates the frozen
+Runtime-v2 envelope, reads combat state on the Godot main thread, calls the verified common host
+`PlayerCmd.EndTurn` symbol, retains operation status, and waits for a fresh turn observation before
+emitting the `turn_end_settled` witness. This candidate is source/build evidence only until it is
+run in an explicitly authorized disposable host profile.
+
+The source additionally contains a separate Runtime-v3 gameplay candidate for `play_card`. It
+validates a bounded card index and optional target, rechecks `CardModel.CanPlay*` and the target
+namespace on the host thread, queues `PlayCardAction`, and requires a fresh collection or energy
+change plus a `play_card_settled` witness. The v3 package and consumer mappings are component/build
+evidence only; live card play remains unverified.
 
 The source remains in this directory to preserve its existing ownership and workspace placement.
 Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, game files, saves,
@@ -133,6 +146,13 @@ helper places it in the game's inherited environment. `STS2_RUNTIME_SESSION=1` i
 ephemeral opt-in that allows this launcher to enable the listener even when the saved UI toggle is
 off; it does not change the persisted setting. The default endpoint is loopback on port `15526`.
 
+The launcher and its Windows bridge are input-free by design. They do not move or capture the
+system cursor, send mouse or keyboard events, focus or raise the game window, reposition a window,
+or navigate the game UI. A live trace may use the runtime API only after an operator has placed the
+authorized disposable profile in the required game state. If that state cannot be reached without
+UI input, the trace must stop and report the missing prerequisite; it must not use desktop-input
+automation.
+
 Provider binaries remain owned by their gateway, harness, and MCP targets. Supply each existing
 binary with `--gateway-binary`, `--harness-binary`, and `--mcp-binary`, or supply its source
 directory with the corresponding `--*-dir` option so the launcher can build that target's runtime
@@ -172,12 +192,28 @@ When `STS2_RUNTIME_TOKEN` is supplied and `Runtime API` is enabled, initializati
 runtime adapter on the saved bind address and port (default `127.0.0.1:15526`). The ephemeral session
 launcher additionally supplies `STS2_RUNTIME_SESSION=1` for a non-persisted automation launch, so a
 saved-off UI toggle cannot silently prevent the session readiness check.
-`STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. It exposes `/health/ready`,
-`/api/v1/runtime/state`, and `/api/v1/runtime/action` with bearer authentication. Requests are
-copied into a bounded managed queue and processed on the Godot main thread. The only admitted action
-is `show_runtime_probe`; it displays the live status overlay and returns a fresh
-`status_overlay_visible` witness. The action is an integration probe, not a gameplay mutation.
+`STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. The
+listener exposes the v1 probe routes and the frozen Runtime-v2 routes
+`/api/v2/runtime/state`, `/api/v2/runtime/action`, and
+`/api/v2/runtime/operations/{operation_id}` with bearer authentication. Requests are copied into a
+bounded managed queue and processed on the Godot main thread. Runtime-v1 retains the
+`show_runtime_probe` integration action. Runtime-v2 admits only argument-free `end_turn`, reports
+`accepted` before completion, and returns `settled` only after a fresh player-turn observation and
+`turn_end_settled` witness. `STS2_RUNTIME_QUEUE_CAPACITY` may set a bounded mod-side queue from `1`
+through `64`; the default is `16`. Each Runtime-v2 process also retains at most `64` operation
+receipts; new admitted operations receive `sts2.runtime/operation_capacity` once that bounded
+receipt store is full. A request that reaches the five-second boundary is canceled if it has not
+been claimed by the main-thread pump; a request already claimed is reported as timeout/uncertain
+and must be reconciled rather than retried.
+
+The separate Runtime-v3 gameplay profile adds `/api/v3/runtime/state`, `/api/v3/runtime/action`,
+and `/api/v3/runtime/operations/{operation_id}` for one bounded `play_card` action. It remains
+isolated from Runtime-v2 and requires a fresh host observation plus `play_card_settled` before
+settlement. See the dated v3 build evidence and decision record for the exact digest and host
+symbols; no live gameplay claim is made until an authorized disposable trace exists.
 
 The exact STS2 v0.107.1 Windows x86-64 host probe is recorded in the target evidence report. The
-package remains scoped to that focused runtime proof: the runtime token, host assemblies, game files,
-saves, and logs are not stored or packaged, and gameplay mutation is not implemented.
+Runtime-v2 and Runtime-v3 host-adapter candidate builds are recorded separately; their live
+gameplay execution, settlement, restart behavior, and gateway/MCP/harness integration remain
+unverified. The runtime token, host assemblies, game files, saves, and logs are not stored or
+packaged.

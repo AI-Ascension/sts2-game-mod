@@ -64,6 +64,8 @@ public static partial class ModEntry
 
     private sealed class RuntimeWork
     {
+        private int _state;
+
         public RuntimeWork(uint kind, RuntimeContext context, string body)
         {
             Kind = kind;
@@ -77,5 +79,11 @@ public static partial class ModEntry
         public int Status { get; set; } = RuntimeUnavailable;
         public string Response { get; set; } = "{\"error_code\":\"runtime_unavailable\"}";
         public ManualResetEventSlim Completed { get; } = new(false);
+
+        public bool TryClaimForProcessing() =>
+            Interlocked.CompareExchange(ref _state, 1, 0) == 0;
+
+        public bool TryCancelBeforeProcessing() =>
+            Interlocked.CompareExchange(ref _state, 2, 0) == 0;
     }
 }

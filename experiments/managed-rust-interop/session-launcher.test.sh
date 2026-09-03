@@ -99,6 +99,7 @@ bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
 [[ "$bridge_source" == *'UseShellExecute = false'* ]] || fail 'bridge shell boundary is not explicit'
 [[ "$bridge_source" != *'ArgumentList.Add(credential)'* ]] || fail 'bridge passes a token as an argument'
 [[ "$bridge_source" != *'QuotePowerShell(credential)'* ]] || fail 'bridge interpolates a token into PowerShell'
+input_automation_is_disabled || fail 'launcher or bridge contains a system-input control seam'
 
 printf '%s\n' \
     'CSPRNG/encoding/difference=TRUE' \
@@ -108,4 +109,5 @@ printf '%s\n' \
     'Already-running refusal predicate=TRUE' \
     'Startup timeout=TRUE' \
     'Owned cleanup=TRUE' \
-    'WSL-to-Windows stdin boundary=TRUE'
+    'WSL-to-Windows stdin boundary=TRUE' \
+    'System input automation=FALSE'
