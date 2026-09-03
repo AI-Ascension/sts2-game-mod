@@ -30,9 +30,10 @@ Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, g
 profiles, credentials, and runtime logs are never copied into the repository or package.
 
 The runtime launch paths (`session-launcher.sh` and `dev-cycle.sh`) and the Windows bridge are
-input-free by design. They start the game through non-shell process boundaries and do not move or
-capture the system cursor, send mouse or keyboard events, focus or raise the game window, reposition
-a window, or navigate the game UI. A live trace may use the runtime API only after an operator has
+input-free by design. They start the game through non-shell process boundaries in headless mode with
+dummy audio, so the owned path does not create or focus a game window. They do not move or capture
+the system cursor, send mouse or keyboard events, focus or raise the game window, reposition a
+window, or navigate the game UI. A live trace may use the runtime API only after an operator has
 placed the authorized disposable profile in the required game state. If that state cannot be reached
 without UI input, the trace must stop and report the missing prerequisite; it must not use
 desktop-input automation.

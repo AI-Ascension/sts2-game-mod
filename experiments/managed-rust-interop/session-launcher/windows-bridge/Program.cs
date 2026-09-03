@@ -29,6 +29,9 @@ internal static partial class Program
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
+            startInfo.ArgumentList.Add("--headless");
+            startInfo.ArgumentList.Add("--audio-driver");
+            startInfo.ArgumentList.Add("Dummy");
             startInfo.Environment["STS2_RUNTIME_TOKEN"] = credential;
             startInfo.Environment["STS2_RUNTIME_BIND_ADDRESS"] = options.BindAddress;
             startInfo.Environment["STS2_RUNTIME_PORT"] = options.Port;

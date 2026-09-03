@@ -99,12 +99,16 @@ bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
 [[ "$bridge_source" == *'FileName = options.GameExecutable'* ]] || fail 'bridge does not launch the requested game directly'
 [[ "$bridge_source" == *'WorkingDirectory = options.WorkingDirectory'* ]] || fail 'bridge does not preserve the game working directory'
 [[ "$bridge_source" == *'UseShellExecute = false'* ]] || fail 'bridge shell boundary is not explicit'
+[[ "$bridge_source" == *'ArgumentList.Add("--headless")'* ]] || fail 'bridge does not force headless launch'
+[[ "$bridge_source" == *'ArgumentList.Add("--audio-driver")'* ]] || fail 'bridge does not select dummy audio'
+[[ "$bridge_source" == *'ArgumentList.Add("Dummy")'* ]] || fail 'bridge does not select the dummy audio driver'
 [[ "$bridge_source" != *'Start-Process'* ]] || fail 'bridge delegates game launch to PowerShell'
 [[ "$bridge_source" != *'ArgumentList.Add(credential)'* ]] || fail 'bridge passes a token as an argument'
 [[ "$bridge_source" != *'QuotePowerShell(credential)'* ]] || fail 'bridge interpolates a token into PowerShell'
 input_automation_is_disabled || fail 'launcher or bridge contains a system-input control seam'
 dev_cycle_source=$(<"$script_dir/dev-cycle.sh")
 [[ "$dev_cycle_source" == *'UseShellExecute'* ]] || fail 'development cycle does not use a non-shell launch boundary'
+[[ "$dev_cycle_source" == *'--headless --audio-driver Dummy'* ]] || fail 'development cycle does not force headless launch'
 [[ "$dev_cycle_source" != *'Start-Process'* ]] || fail 'development cycle delegates game launch to PowerShell'
 
 printf '%s\n' \
