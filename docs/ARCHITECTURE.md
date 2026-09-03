@@ -60,6 +60,13 @@ success, use bounded timeouts, and cleanup targets only recorded child groups an
 PID. An already-running game is refused rather than adopted or killed. This guarantee covers only
 the owned launcher path; an independently launched proprietary host remains outside its scope.
 
+Both non-dry-run owned launch paths require the shared `live-authorization.sh` preflight before
+host inspection, package installation, profile access, listener setup, or child-process creation.
+It requires a non-expired, non-secret Runtime-v2 live record for a disposable profile and loopback
+network, rejects provider calls, and unsets the metadata before any child environment is created.
+Synthetic self-tests, the authorization-only check, and a `dev-cycle.sh --dry-run` remain outside
+the host lane.
+
 ### Built-in settings boundary
 
 `StandaloneProfileSettings` owns the AI-Ascension tab; it does not require ModConfig. It clones a

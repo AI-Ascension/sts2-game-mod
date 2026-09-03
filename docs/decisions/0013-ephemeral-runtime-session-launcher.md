@@ -29,6 +29,14 @@ window or interacting with the desktop cursor. That flag is an ephemeral launch 
 saved-off Runtime API setting and does not write settings. Provider binaries are explicit inputs or
 are built from explicit source directories; this target does not edit gateway, harness, or MCP.
 
+Before any host inspection, installation, profile access, listener setup, or child-process creation,
+the launcher requires the shared non-secret `LIVE_AUTHORIZATION` environment record. The record
+names the exact host/install and disposable profile, authorizes process/profile/listener/network
+actions, names cleanup and restore ownership, expires at a checked epoch deadline, and must state
+that provider calls are prohibited. The preflight metadata is removed before child creation. An
+authorization-only check is available without host access; synthetic self-tests and dry-runs do
+not enter the live lane.
+
 The default endpoint is loopback and the launcher bounds provider/game readiness and harness
 completion. It first verifies unauthenticated rejection, then authenticated game and gateway
 readiness, runs the existing harness/MCP trace, and terminates only recorded child process groups

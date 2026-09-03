@@ -181,10 +181,10 @@ experiments/managed-rust-interop/session-launcher.sh --self-test
 They cover OS-CSPRNG output of at least 32 bytes, bounded whitespace-free encoding, per-launch
 credential difference, runtime/mod versus gateway role separation, argument-leakage absence,
 missing/wrong/correct authorization status handling, the already-running refusal predicate,
-bounded startup timeout, owned process-group cleanup, and the stdin-only WSL-to-Windows bridge
-contract. The bridge project is also built as a managed warning-as-error check. These are synthetic
-tests and do not prove that an external provider binary or the proprietary game accepts the
-environment.
+bounded startup timeout, owned process-group cleanup, the stdin-only WSL-to-Windows bridge, and the
+fail-closed `LIVE_AUTHORIZATION` preflight. The bridge project is also built as a managed
+warning-as-error check. These are synthetic tests and do not prove that an external provider binary
+or the proprietary game accepts the environment.
 
 An authorized disposable live session uses the exact provider binaries or explicit source
 directories from their owning target revisions:
@@ -202,6 +202,9 @@ game and gateway readiness, and successful harness/MCP completion, then observe 
 cleanup and closed listeners. `--keep-alive` is reserved for manual inspection and must be
 interrupted before evidence is recorded. The command output is boolean-only; credentials, saves,
 host assemblies, private paths, and provider logs remain outside the repository and CI artifacts.
+Before that command can inspect or mutate a host, its complete non-secret `LIVE_AUTHORIZATION`
+record must be exported. `--authorization-check` validates the record without host access; an
+expired, incomplete, non-loopback, or provider-enabled record is rejected by the owned launcher.
 
 ## Security and evidence language
 

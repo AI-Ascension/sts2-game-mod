@@ -38,6 +38,34 @@ placed the authorized disposable profile in the required game state. If that sta
 without UI input, the trace must stop and report the missing prerequisite; it must not use
 desktop-input automation.
 
+Every non-dry-run launch path also requires a complete, non-secret `LIVE_AUTHORIZATION` record in
+environment variables. The preflight runs before host inspection, package installation, profile
+access, listener setup, or child-process creation and removes the record from the child environment.
+The synthetic `--self-test`, `--authorization-check`, and `dev-cycle.sh --dry-run` paths do not
+launch or mutate the host. A minimal record for a loopback Runtime-v2 disposable trace is:
+
+~~~bash
+export STS2_LIVE_AUTHORIZATION_APPROVED=yes
+export STS2_LIVE_AUTHORIZATION_SCOPE='runtime-v2 live disposable trace'
+export STS2_LIVE_AUTHORIZATION_HOST_IDENTITY='operator-supplied-host-id'
+export STS2_LIVE_AUTHORIZATION_HOST_INSTALL_LABEL='operator-supplied-install-label'
+export STS2_LIVE_AUTHORIZATION_PROFILE_IDENTITY='operator-supplied-disposable-profile'
+export STS2_LIVE_AUTHORIZATION_PROCESS_ACTIONS='install launch stop terminate'
+export STS2_LIVE_AUTHORIZATION_PROFILE_MUTATIONS='mutate disposable selected profile only'
+export STS2_LIVE_AUTHORIZATION_LISTENER_ACTIONS='bind loopback connect loopback'
+export STS2_LIVE_AUTHORIZATION_NETWORK_ACTIONS='loopback only'
+export STS2_LIVE_AUTHORIZATION_CLEANUP_OWNER='operator-or-team'
+export STS2_LIVE_AUTHORIZATION_RESTORE_POINT='operator-backup-or-checkpoint'
+export STS2_LIVE_AUTHORIZATION_EXPIRY_EPOCH=$((EPOCHSECONDS + 1800))
+export STS2_LIVE_AUTHORIZATION_PUBLICATION_AUTHORITY='none'
+export STS2_LIVE_AUTHORIZATION_PROVIDER_CALLS=prohibited
+~~~
+
+Use `session-launcher.sh --authorization-check` to validate the record without touching the host.
+The launcher requires the scope to name `runtime-v2` and `live`, requires install/launch/stop/
+terminate ownership, requires disposable-profile and loopback authorization, rejects an expired
+deadline, and rejects provider calls. Provider-enabled execution needs a separately approved seam.
+
 ## Built-in profile settings
 
 The addon owns its settings panel and injects one `AI-Ascension` tab into the game's native settings
