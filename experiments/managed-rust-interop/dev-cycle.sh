@@ -354,12 +354,18 @@ if [[ "$launch_game" == true ]]; then
     escaped_game_dir=${game_dir_windows//\'/\'\'}
     launch_arguments=''
     if [[ "$unlock_all_on_launch" == true ]]; then
-        launch_arguments=" -ArgumentList '--ai-ascension-unlock-all'"
+        launch_arguments='--ai-ascension-unlock-all'
     fi
 
     printf '%s\n' 'Relaunching SlayTheSpire2.exe...'
     "$powershell_cmd" -NoProfile -NonInteractive -Command \
-        "Start-Process -FilePath '$escaped_game_exe' -WorkingDirectory '$escaped_game_dir'$launch_arguments"
+        "\$startInfo = New-Object System.Diagnostics.ProcessStartInfo; \
+\$startInfo.FileName = '$escaped_game_exe'; \
+\$startInfo.WorkingDirectory = '$escaped_game_dir'; \
+\$startInfo.UseShellExecute = \$false; \
+\$startInfo.CreateNoWindow = \$true; \
+if ('$launch_arguments' -ne '') { \$startInfo.Arguments = '$launch_arguments' }; \
+[void][System.Diagnostics.Process]::Start(\$startInfo)"
     printf '%s\n' 'Game launch requested.'
 else
     printf '%s\n' 'Game was not relaunched (--no-launch).'

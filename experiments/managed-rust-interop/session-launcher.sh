@@ -40,6 +40,7 @@ input_automation_is_disabled() {
     local -a launcher_sources=(
         "$session_launcher_dir/session-launcher.sh"
         "$session_launcher_dir/session-launcher.test.sh"
+        "$session_launcher_dir/dev-cycle.sh"
         "$session_launcher_dir/session-launcher/windows-bridge/Program.cs"
     )
     local -a forbidden_apis=(
