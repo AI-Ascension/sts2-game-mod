@@ -35,6 +35,28 @@ that proprietary file. The recorded load-smoke uses the operator's installed hos
 storing or distributing it. No support claim is made for beta builds, earlier versions, Linux,
 macOS, or another architecture until an exact matrix row and evidence exist.
 
+## Built-in runtime listener settings compatibility
+
+The `AIAscensionSTS2Poc` addon owns its Runtime connection settings surface. ModConfig or another
+settings-framework mod is not required, bundled, or referenced. The native Installed Mods checkbox
+remains the sole enablement control for the addon itself.
+
+The built-in settings contract is:
+
+| Setting | Default | Compatibility behavior |
+| --- | --- | --- |
+| Runtime API | Enabled | Applies immediately; disabling it stops the listener |
+| Bind address | `127.0.0.1` | The UI offers loopback, all interfaces, the detected hostname, and detected local IPv4 addresses |
+| Network port | `15526` | The UI accepts `1024` through `65535` and applies it immediately |
+
+The settings tab also reports authentication and listener status without exposing the bearer token.
+Apply persists the selected values and restarts only the bounded listener; Reset restores the defaults
+and applies them immediately.
+`STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain explicit environment overrides for
+automation. The address and port controls are source/build and load-smoke confirmed in the exact
+recorded host; clicking every control, hostname resolution, firewall behavior, and every supported
+bind address remain unverified and do not broaden the host matrix.
+
 Runtime-v2 is pinned locally to schema digest
 `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` with provenance generator
 `hand-authored`. No concrete host gameplay API exists in this repository. The copied artifact,

@@ -75,12 +75,14 @@ public static partial class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
+                StandaloneProfileSettings.Initialize();
                 StartRuntimeServer(_nativeLibrary);
                 if (HasCommandLineArgument(DebugArgument))
                 {
                     InstallStatusOverlay(version, sum);
                 }
-                AutoProfileUnlock.ScheduleIfRequested();
+
+                AutoProfileUnlock.ScheduleLaunch();
             }
             catch (Exception exception)
             {

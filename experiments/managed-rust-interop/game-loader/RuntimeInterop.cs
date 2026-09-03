@@ -13,7 +13,7 @@ public static partial class ModEntry
 {
     private const string RuntimeTokenVariable = "STS2_RUNTIME_TOKEN";
     private const string RuntimePortVariable = "STS2_RUNTIME_PORT";
-    private const int RuntimeDefaultPort = 15526;
+    private const string RuntimeBindAddressVariable = "STS2_RUNTIME_BIND_ADDRESS";
     private const int RuntimeRequestKindState = 1;
     private const int RuntimeRequestKindAction = 2;
     private const int RuntimeAccepted = 200;
@@ -26,92 +26,59 @@ public static partial class ModEntry
     private static int _runtimePumpReady;
     private static ulong _runtimeGeneration;
     private static ulong _runtimeActionCount;
+    private static string _runtimeListenerStatus = "Not started";
+
+    internal static string RuntimeAuthenticationStatus =>
+        string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(RuntimeTokenVariable))
+            ? "Token missing"
+            : "Token configured";
+
+    internal static string RuntimeListenerStatus => _runtimeListenerStatus;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int RuntimeStart(ushort port, nint token, nuint tokenLength, ref RuntimeCallbacks callbacks);
+    private delegate int RuntimeStart(
+        ushort port,
+        nint bindAddress,
+        nuint bindAddressLength,
+        nint token,
+        nuint tokenLength,
+        ref RuntimeCallbacks callbacks);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int RuntimeRequestCallback(nint request, nint output, nuint outputCapacity, out nuint outputLength);
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RuntimeCallbacks
-    {
-        public nint Request;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativeRuntimeRequest
-    {
-        public uint Kind;
-        public nint InstanceId;
-        public nuint InstanceIdLength;
-        public nint CallerId;
-        public nuint CallerIdLength;
-        public nint SessionId;
-        public nuint SessionIdLength;
-        public nint LeaseId;
-        public nuint LeaseIdLength;
-        public nint LeaseEpoch;
-        public nuint LeaseEpochLength;
-        public nint CorrelationId;
-        public nuint CorrelationIdLength;
-        public nint Body;
-        public nuint BodyLength;
-    }
-
-    private readonly struct RuntimeContext
-    {
-        public RuntimeContext(string instanceId, string callerId, string sessionId, string leaseId, string leaseEpoch, string correlationId)
-        {
-            InstanceId = instanceId;
-            CallerId = callerId;
-            SessionId = sessionId;
-            LeaseId = leaseId;
-            LeaseEpoch = leaseEpoch;
-            CorrelationId = correlationId;
-        }
-
-        public string InstanceId { get; }
-        public string CallerId { get; }
-        public string SessionId { get; }
-        public string LeaseId { get; }
-        public string LeaseEpoch { get; }
-        public string CorrelationId { get; }
-    }
-
-    private sealed class RuntimeWork
-    {
-        public RuntimeWork(uint kind, RuntimeContext context, string body)
-        {
-            Kind = kind;
-            Context = context;
-            Body = body;
-        }
-
-        public uint Kind { get; }
-        public RuntimeContext Context { get; }
-        public string Body { get; }
-        public int Status { get; set; } = RuntimeUnavailable;
-        public string Response { get; set; } = "{\"error_code\":\"runtime_unavailable\"}";
-        public System.Threading.ManualResetEventSlim Completed { get; } = new(false);
-    }
-
     private static void StartRuntimeServer(nint nativeLibrary)
     {
+        if (!StandaloneProfileSettings.RuntimeEnabled && !RuntimeSessionLaunchEnabled())
+        {
+            _runtimeListenerStatus = "Disabled in settings";
+            GD.Print($"{LogPrefix} runtime HTTP listener disabled in settings");
+            return;
+        }
+
         string? token = System.Environment.GetEnvironmentVariable(RuntimeTokenVariable);
         if (string.IsNullOrWhiteSpace(token))
         {
+            _runtimeListenerStatus = "Disabled: authentication token missing";
             GD.Print($"{LogPrefix} runtime HTTP listener disabled: {RuntimeTokenVariable} is not set");
             return;
         }
         if (!TryReadPort(out ushort port))
         {
+            _runtimeListenerStatus = "Disabled: invalid network port";
             GD.PrintErr($"{LogPrefix} runtime HTTP listener disabled: {RuntimePortVariable} is invalid");
+            return;
+        }
+        if (!TryReadBindAddress(out string bindAddress))
+        {
+            _runtimeListenerStatus = "Disabled: invalid bind address";
+            GD.PrintErr($"{LogPrefix} runtime HTTP listener disabled: {RuntimeBindAddressVariable} is invalid");
             return;
         }
 
         try
         {
+            _runtimeListenerStatus = $"Starting on {FormatEndpoint(bindAddress, port)}";
             InstallRuntimePump();
             _runtimeRequestCallback = HandleRuntimeRequest;
             var callbacks = new RuntimeCallbacks
@@ -120,27 +87,39 @@ public static partial class ModEntry
             };
             nint export = NativeLibrary.GetExport(nativeLibrary, "sts2_game_mod_runtime_start");
             RuntimeStart start = Marshal.GetDelegateForFunctionPointer<RuntimeStart>(export);
+            byte[] bindAddressBytes = Encoding.UTF8.GetBytes(bindAddress);
             byte[] tokenBytes = Encoding.UTF8.GetBytes(token);
+            GCHandle bindAddressHandle = GCHandle.Alloc(bindAddressBytes, GCHandleType.Pinned);
             GCHandle tokenHandle = GCHandle.Alloc(tokenBytes, GCHandleType.Pinned);
             try
             {
-                int status = start(port, tokenHandle.AddrOfPinnedObject(), (nuint)tokenBytes.Length, ref callbacks);
+                int status = start(
+                    port,
+                    bindAddressHandle.AddrOfPinnedObject(),
+                    (nuint)bindAddressBytes.Length,
+                    tokenHandle.AddrOfPinnedObject(),
+                    (nuint)tokenBytes.Length,
+                    ref callbacks);
                 if (status == 0)
                 {
-                    GD.Print($"{LogPrefix} authenticated runtime HTTP listener started on 127.0.0.1:{port}");
+                    _runtimeListenerStatus = $"Listening on {FormatEndpoint(bindAddress, port)}";
+                    GD.Print($"{LogPrefix} authenticated runtime HTTP listener started on {FormatEndpoint(bindAddress, port)}");
                 }
                 else
                 {
+                    _runtimeListenerStatus = $"Failed to start listener (status {status})";
                     GD.PrintErr($"{LogPrefix} runtime HTTP listener failed to start: status={status}");
                 }
             }
             finally
             {
                 tokenHandle.Free();
+                bindAddressHandle.Free();
             }
         }
         catch (Exception exception)
         {
+            _runtimeListenerStatus = $"Unavailable: {exception.GetType().Name}";
             GD.PrintErr($"{LogPrefix} runtime HTTP listener unavailable: {exception.GetType().Name}: {exception.Message}");
         }
     }
@@ -150,10 +129,36 @@ public static partial class ModEntry
         string? value = System.Environment.GetEnvironmentVariable(RuntimePortVariable);
         if (string.IsNullOrWhiteSpace(value))
         {
-            port = RuntimeDefaultPort;
+            int configuredPort = StandaloneProfileSettings.RuntimePort;
+            if (configuredPort <= 0 || configuredPort > ushort.MaxValue)
+            {
+                port = 0;
+                return false;
+            }
+
+            port = (ushort)configuredPort;
             return true;
         }
         return ushort.TryParse(value, out port) && port > 0;
+    }
+
+    private static bool TryReadBindAddress(out string bindAddress)
+    {
+        string? value = System.Environment.GetEnvironmentVariable(RuntimeBindAddressVariable);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            value = StandaloneProfileSettings.RuntimeBindAddress;
+        }
+
+        value = value.Trim();
+        if (!StandaloneProfileSettings.IsValidRuntimeBindAddress(value))
+        {
+            bindAddress = string.Empty;
+            return false;
+        }
+
+        bindAddress = value;
+        return true;
     }
 
     private static void InstallRuntimePump()

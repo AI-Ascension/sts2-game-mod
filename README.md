@@ -116,14 +116,18 @@ only; they do not promote host compatibility beyond the evidence level recorded 
 
 ## Bounded runtime slice
 
-The interop package now includes an authenticated loopback-only runtime adapter with two fixed
-routes: `GET /api/v1/runtime/state` and `POST /api/v1/runtime/action`. The native listener validates
-bounded HTTP input and identity headers, then invokes the managed bridge. Managed work is queued and
-executed from the Godot `SceneTree.ProcessFrame` callback. The only accepted action is the safe,
-host-visible `show_runtime_probe`; acceptance requires the status overlay to be observed and returns
-the fresh `status_overlay_visible` witness defined by the copied [`runtime-v1` artifact](protocol-artifact/runtime-v1/README.md).
+The interop package now includes an authenticated runtime adapter with two fixed routes (default
+bind address `127.0.0.1`): `GET /api/v1/runtime/state` and `POST /api/v1/runtime/action`. The native
+listener validates bounded HTTP input and identity headers, then invokes the managed bridge. Managed
+work is queued and executed from the Godot `SceneTree.ProcessFrame` callback. The only accepted
+action is the safe, host-visible `show_runtime_probe`; acceptance requires the status overlay to be
+observed and returns the fresh `status_overlay_visible` witness defined by the copied
+[`runtime-v1` artifact](protocol-artifact/runtime-v1/README.md).
 
-The listener requires `STS2_RUNTIME_TOKEN`, binds to loopback, and is disabled when its token is
-absent or its configured port is invalid. The exact STS2 v0.107.1 Windows x86-64 probe is recorded
-as confirmed in the dated host evidence; the package still does not implement gameplay mutation or
-claim compatibility with another host or platform.
+The listener requires `STS2_RUNTIME_TOKEN` and the built-in Runtime API toggle. Its bind address and
+port are staged, persisted, and applied immediately by the AI-Ascension settings tab;
+`STS2_RUNTIME_BIND_ADDRESS` and `STS2_RUNTIME_PORT` override those values for automation. The
+listener is disabled when its toggle is off, its token is absent, or its address or port is invalid.
+The exact STS2 v0.107.1 Windows x86-64 probe is recorded as confirmed in the dated host evidence;
+the package still does not implement gameplay mutation or claim compatibility with another host or
+platform.

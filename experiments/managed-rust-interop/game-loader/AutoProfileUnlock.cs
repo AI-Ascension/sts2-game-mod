@@ -15,10 +15,14 @@ internal static class AutoProfileUnlock
 {
     private const string LogPrefix = "[AI-ASCENSION STS2 POC]";
     private const string AutoUnlockArgument = "--ai-ascension-unlock-all";
+    private const int MinProfileId = 1;
+    private const int MaxProfileId = 3;
     private const int MaxWaitFrames = 600;
     private static Action? _callback;
     private static bool _queued;
+    private static bool _attemptRunning;
     private static bool _finished;
+    private static int? _targetProfileId;
     private static int _waitFrames;
 
     private enum AttemptResult
@@ -28,14 +32,35 @@ internal static class AutoProfileUnlock
         Failed
     }
 
-    public static void ScheduleIfRequested()
+    internal static void ScheduleLaunch()
     {
-        if (!HasLaunchArgument())
+        bool launchArgumentRequested = HasLaunchArgument();
+        if (!launchArgumentRequested)
         {
             return;
         }
 
+        _targetProfileId = null;
         GD.Print($"{LogPrefix} automatic full unlock requested by launch argument: {AutoUnlockArgument}");
+        ScheduleNextFrame();
+    }
+
+    internal static void ScheduleManualUnlock(int targetProfileId)
+    {
+        if (!IsValidProfileId(targetProfileId))
+        {
+            GD.PrintErr($"{LogPrefix} rejected unlock request for invalid profile {targetProfileId}");
+            return;
+        }
+
+        if (_queued || _attemptRunning) return;
+        // A manual request is a new attempt, but never interrupt an existing one.
+        _finished = false;
+        _waitFrames = 0;
+        _targetProfileId = targetProfileId;
+        GD.Print(
+            $"{LogPrefix} manual full unlock requested by in-game settings; "
+            + $"target=profile {targetProfileId}");
         ScheduleNextFrame();
     }
 
@@ -47,7 +72,7 @@ internal static class AutoProfileUnlock
 
     private static void ScheduleNextFrame()
     {
-        if (_finished || _queued)
+        if (_finished || _queued || _attemptRunning)
         {
             return;
         }
@@ -68,7 +93,11 @@ internal static class AutoProfileUnlock
             }
 
             _queued = false;
-            AttemptResult result = TryApply();
+            _attemptRunning = true;
+            AttemptResult result;
+            try { result = TryApply(); }
+            finally { _attemptRunning = false; }
+
             if (result == AttemptResult.Applied || result == AttemptResult.Failed)
             {
                 _finished = true;
@@ -100,9 +129,22 @@ internal static class AutoProfileUnlock
         try
         {
             SaveManager saveManager = SaveManager.Instance;
-            if (!saveManager.IsProfileInitialized)
+            if (!IsProfileReady(saveManager)) return AttemptResult.NotReady;
+
+            if (_targetProfileId is int targetProfileId)
             {
-                return AttemptResult.NotReady;
+                if (!IsValidProfileId(targetProfileId))
+                {
+                    GD.PrintErr($"{LogPrefix} rejected unlock request for invalid profile {targetProfileId}");
+                    return AttemptResult.Failed;
+                }
+
+                if (saveManager.CurrentProfileId != targetProfileId)
+                {
+                    saveManager.SwitchProfileId(targetProfileId);
+                    GD.Print($"{LogPrefix} switched to target profile {targetProfileId}; waiting for profile data");
+                    return AttemptResult.NotReady;
+                }
             }
 
             ModelId[] cardIds = ModelDb.AllCards.Select(card => card.Id).ToArray();
@@ -143,16 +185,24 @@ internal static class AutoProfileUnlock
                 $"{LogPrefix} automatic full unlock applied: cards={cardIds.Length}; "
                 + $"relics={relicIds.Length}; potions={potionIds.Length}; events={eventIds.Length}; "
                 + $"acts={actIds.Length}; monsters={monsterIds.Length}; epochs={epochIds.Length}; "
-                + $"characters={characterIds.Length}; ascension=10");
+                + $"characters={characterIds.Length}; profile={saveManager.CurrentProfileId}; ascension=10");
             return AttemptResult.Applied;
         }
         catch (Exception exception)
         {
             GD.PrintErr(
-                $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}: {exception.Message}");
+                $"{LogPrefix} automatic full unlock failed: {exception.GetType().Name}");
             return AttemptResult.Failed;
         }
     }
+
+    private static bool IsProfileReady(SaveManager saveManager)
+    {
+        try { return saveManager.IsProfileInitialized && saveManager.CurrentProfileId >= MinProfileId; }
+        catch (InvalidOperationException) { return false; }
+    }
+
+    private static bool IsValidProfileId(int profileId) => profileId >= MinProfileId && profileId <= MaxProfileId;
 
     private static void MarkDiscovered(
         ProgressState progress,

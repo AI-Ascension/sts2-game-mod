@@ -39,6 +39,50 @@ HTTP listener as part of the loader-only smoke path, access host game objects ou
 runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
 bridge described below owns the new host-visible probe.
 
+### Ephemeral session orchestration
+
+`experiments/managed-rust-interop/session-launcher.sh` is a development/test orchestrator owned by
+this target. It does not move gateway, harness, or MCP ownership into the mod. It receives explicit
+provider binaries or source directories, starts each provider in a dedicated POSIX process group,
+and starts the Windows game through the checked-in .NET bridge. The launcher generates a fresh
+runtime/mod credential and a different gateway credential with the OS CSPRNG for each session. The
+runtime credential is supplied to the game over bridge stdin and to the gateway as `STS2_MOD_TOKEN`;
+the gateway credential is supplied only as `STS2_GATEWAY_TOKEN` to the gateway and harness/MCP
+chain. No credential is persisted or placed in an argument or log.
+
+The bridge is the explicit WSL-to-Windows environment boundary. It sets `STS2_RUNTIME_TOKEN`, the
+selected loopback-default bind address and port, and the non-secret `STS2_RUNTIME_SESSION=1` on the
+game process. The session flag is accepted only as an ephemeral launch override; saved settings
+remain owned by the in-game panel. Readiness probes require unauthenticated rejection followed by
+authenticated success, use bounded timeouts, and cleanup targets only recorded child groups and
+the recorded game PID. An already-running game is refused rather than adopted or killed.
+
+### Optional settings boundary
+
+The managed addon owns an optional settings boundary through `ModConfigBridge`. The bridge discovers
+the public ModConfig API by narrow reflection over `ModConfig.ModConfigApi`, `ModConfig.ConfigEntry`,
+and `ModConfig.ConfigType`; it does not add a hard ModConfig DLL or PCK dependency. Registration is
+deferred to a safe Godot `ProcessFrame` so the optional framework can finish loading first. If the
+framework is absent or its public API is incompatible, registration fails open: native loading,
+the ABI smoke call, and the existing command-line fallbacks remain available, but no settings UI is
+claimed.
+
+The bridge registers two stable toggles for `AIAscensionSTS2Poc`: `show_debug_overlay` controls the
+existing diagnostic overlay after successful managed and native initialization and defaults to
+`false`; `unlock_all_on_next_launch` requests the explicit, one-shot full profile unlock and also
+defaults to `false`. When the verified optional API safely supports button callbacks, the bridge may
+also register the conditional `apply_full_profile_unlock_now` action. That action uses the same
+guarded, queued, profile-readiness path as the launch request and does not persist or enable the
+launch toggle.
+
+Profile unlocking is an explicit opt-in profile action owned by the managed host boundary. It uses
+the host `SaveManager` and its progress APIs after profile initialization, saves once through that
+host authority, and clears the one-shot setting only after a successful save. It is not arbitrary
+persistence, direct save-file editing, or a general settings storage mechanism. The settings
+registration, UI rendering, callbacks, and profile mutation remain unverified against an exact
+compatible game and ModConfig installation; the existing load-smoke and runtime-v1 evidence below
+does not prove those settings behaviors.
+
 ## Minimal POC mapping
 
 `protocol-artifact/poc-v1/` is a checked-in, release-like copy produced by the protocol owner. The
@@ -99,6 +143,7 @@ not reported as completed until the host reaches the corresponding result.
 | MCP target | thin MCP-to-gateway translation | host access, game rules, lifecycle ownership |
 | harness target | coordination, explicit instance context, experiments, artifacts | game authority or wire reinterpretation |
 | protocol target | only approved shared language/transport-neutral contracts | target-specific host or transport behavior |
+| session launcher | disposable process/env orchestration and readiness evidence | provider implementation, saved settings, credentials, gameplay |
 
 ## Dependency direction
 
@@ -149,10 +194,13 @@ prove game mutation, safe fault isolation, or compatibility with another host or
 ## Runtime adapter slice
 
 ADR 0010 adds a narrow owner-local host path around the shared `runtime-v1` artifact. The native
-companion binds only `127.0.0.1`, enforces bounded HTTP/header/body/response sizes, requires a bearer
-token, and admits only `/health/ready`, `/api/v1/runtime/state`, and
-`/api/v1/runtime/action`. It passes borrowed request bytes through a versioned C ABI callback; the
-managed side copies them into owned values before queueing.
+companion binds a configured local address (default `127.0.0.1`), enforces bounded
+HTTP/header/body/response sizes, requires a bearer token, and admits only `/health/ready`,
+`/api/v1/runtime/state`, and `/api/v1/runtime/action`. The built-in AI-Ascension settings tab
+applies and persists the enablement, address, and port immediately, while
+`STS2_RUNTIME_BIND_ADDRESS` and `STS2_RUNTIME_PORT` remain explicit environment overrides. It
+passes borrowed request bytes through a versioned C ABI callback; the managed side copies them into
+owned values before queueing.
 
 The managed bridge installs one bounded queue pump on `SceneTree.ProcessFrame`. State observation and
 the `show_runtime_probe` action run on that host thread. The action adds the existing status overlay,

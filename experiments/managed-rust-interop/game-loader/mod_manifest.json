@@ -2,8 +2,8 @@
   "id": "AIAscensionSTS2GameMod",
   "name": "AI-Ascension STS2 Game Mod",
   "author": "AI-Ascension sts2-game-mod contributors",
-  "description": "Managed/Rust load-smoke addon with an opt-in full profile unlock launch flag",
-  "version": "0.2.0",
+  "description": "Managed/Rust load-smoke addon with built-in profile settings and an opt-in full profile unlock",
+  "version": "0.4.0",
   "has_pck": false,
   "has_dll": true,
   "affects_gameplay": true

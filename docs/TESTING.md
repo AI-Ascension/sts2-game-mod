@@ -86,6 +86,63 @@ produce no in-game overlay. The observed marker, overlay state, and all host inp
 recorded in a separate evidence report; this is not part of ordinary CI. The completed report is
 [`docs/evidence/runtime-v1-host-live-20260902.md`](evidence/runtime-v1-host-live-20260902.md).
 
+## Settings-specific verification
+
+The AI-Ascension addon owns its settings tab and does not require a ModConfig or other settings
+framework mod. Unless the controls are separately exercised in an authorized disposable host, the
+UI and live listener behavior remain source/build and load-smoke evidence only. Deterministic cases
+must cover:
+
+| Case | Required observation |
+| --- | --- |
+| Standalone registration | The addon installs its AI-Ascension tab without a framework dependency and without changing other mods' settings tabs. |
+| Runtime settings contract | The tab exposes Runtime API, Bind address, Network port, Apply now, and Reset; defaults are enabled, `127.0.0.1`, and `15526`. |
+| Runtime validation | Ports outside `1024` through `65535` and invalid address values are rejected without overwriting the last saved settings. |
+| Live reconfiguration | Apply persists the values, stops only the native listener, starts it with the selected endpoint, and updates the listener status without restarting the game. Reset performs the same live update using defaults. |
+| Environment overrides | `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` retain precedence for automation; the bearer token remains outside the settings UI. |
+| One-shot reset | A launch unlock request remains enabled after any failed or incomplete operation. It is cleared only after the profile save succeeds and the settings write succeeds with a confirmed read-back of `false`. |
+| Manual retry and concurrency | Manual and launch requests share one readiness/main-thread attempt; concurrent requests do not double-save, while a failed, timed-out, or completed attempt can be retried without overlapping work. |
+| Bounded diagnostics | Registration/read/write, listener, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
+
+The managed loader requires operator-supplied exact `sts2.dll` and `GodotSharp.dll` host assemblies;
+they must remain outside the repository and package. Profile mutation and live listener
+reconfiguration remain `unverified` unless separately exercised with disposable data in an
+authorized host test that records the exact host tuple, setup, observations, and cleanup.
+
+## Ephemeral session launcher
+
+The target-owned launcher tests can run without a game or provider source:
+
+~~~text
+bash experiments/managed-rust-interop/session-launcher.test.sh
+experiments/managed-rust-interop/session-launcher.sh --self-test
+~~
+
+They cover OS-CSPRNG output of at least 32 bytes, bounded whitespace-free encoding, per-launch
+credential difference, runtime/mod versus gateway role separation, argument-leakage absence,
+missing/wrong/correct authorization status handling, the already-running refusal predicate,
+bounded startup timeout, owned process-group cleanup, and the stdin-only WSL-to-Windows bridge
+contract. The bridge project is also built as a managed warning-as-error check. These are synthetic
+tests and do not prove that an external provider binary or the proprietary game accepts the
+environment.
+
+An authorized disposable live session uses the exact provider binaries or explicit source
+directories from their owning target revisions:
+
+~~~text
+experiments/managed-rust-interop/session-launcher.sh \
+  --game-dir "<STS2 install>" \
+  --gateway-binary "<sts2-gateway-runtime>" \
+  --harness-binary "<sts2-harness-runtime>" \
+  --mcp-binary "<sts2-mcp-server>"
+~~~
+
+The default one-shot run must observe listener enabled, unauthenticated rejection, authenticated
+game and gateway readiness, and successful harness/MCP completion, then observe owned-process
+cleanup and closed listeners. `--keep-alive` is reserved for manual inspection and must be
+interrupted before evidence is recorded. The command output is boolean-only; credentials, saves,
+host assemblies, private paths, and provider logs remain outside the repository and CI artifacts.
+
 ## Security and evidence language
 
 Security tests fail closed when a fixture or precondition is absent. Logs and fixtures contain no

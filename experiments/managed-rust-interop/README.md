@@ -6,7 +6,8 @@ the actual STS2 initializer. After the ABI smoke call succeeds, it adds a top-la
 banner only when the game is launched with the exact `--debug` argument. The banner reads
 `AI-ASCENSION STS2 GAME MOD` and `DEBUG | Rust ABI 1 | 19 + 23 = 42`. Normal launches retain the
 bounded log marker but do not add a visible overlay. It also has an explicitly opt-in launch mode
-that applies the host-equivalent full profile unlock automatically. Normal launches do not change
+that applies the host-equivalent full profile unlock automatically. The built-in settings panel can
+also target a selected profile and apply the guarded unlock action. Normal launches do not change
 profile progress. It is a development package and must only be installed in an explicitly authorized
 test environment.
 
@@ -19,6 +20,73 @@ the managed DLL, the unique native DLL, and `AIAscensionSTS2GameMod.json`.
 The source remains in this directory to preserve its existing ownership and workspace placement.
 Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, game files, saves,
 profiles, credentials, and runtime logs are never copied into the repository or package.
+
+## Built-in profile settings
+
+The addon owns its settings panel and injects one `AI-Ascension` tab into the game's native settings
+screen. It uses the host `NSettingsTabManager` and `NSettingsPanel` seam directly; no ModConfig or
+other settings-framework mod is required or loaded. The existing General, Graphics, Sound, and
+Input tabs are left intact. If ModConfig is still installed, it may add its separate Mods tab, but
+AI-Ascension does not use or modify it.
+
+The built-in panel contains:
+
+| Label | Behavior |
+| --- | --- |
+| `Runtime API` | Enables the authenticated listener when a token is configured. The default is on; changes apply immediately. |
+| `Bind address` | Selects the local hostname or IP address for the runtime listener. The dropdown includes loopback, all interfaces, the detected machine hostname, and detected local IPv4 addresses. |
+| `Network port` | Selects a port from `1024` through `65535`; the default is `15526`. |
+| `Target profile` | Selects Profile 1, Profile 2, or Profile 3. The choice is persisted in the mod's own user-data settings file. |
+| `Apply now` | Saves and immediately restarts the bounded listener with the staged runtime API, bind address, and port values. |
+| `Reset` | Restores the runtime API default, loopback address, and port `15526`. |
+| `Apply full profile unlock` | Switches to the selected profile through the host save manager, then queues the guarded unlock operation. Only the selected profile is modified. |
+
+Network values are staged in the panel and saved and applied by `Apply now` in the mod's own
+user-data settings file. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain available as
+explicit environment-variable overrides for automation. The listener still requires
+`STS2_RUNTIME_TOKEN`; choosing `0.0.0.0` exposes the authenticated listener on all local interfaces
+and should only be used with an intentionally configured firewall and trusted network. The panel
+shows whether the token is configured and the listener's current startup status without displaying
+the token.
+
+The standalone, case-sensitive `--debug` argument remains an explicit developer diagnostic and
+continues to show the overlay. The profile selector and Apply action are available from the
+AI-Ascension tab without an additional mod. Settings UI construction is limited to the new tab and
+its panel; it does not change global settings values, other mod registrations, or other panels.
+
+The Apply button uses a profile-readiness and main-thread queued-attempt path. It does not edit save
+files directly or create a concurrent second attempt. A failed or not-yet-ready attempt emits a
+bounded diagnostic and does not report success.
+
+The profile selection can be returned to Profile 1 from the dropdown. The Apply button has no
+separate persisted value and the addon does not create a competing reset system.
+
+### Profile mutation boundary
+
+The full unlock marks all cards, relics, potions, events, acts, monsters, and epochs as discovered;
+sets every character's maximum ascension to `10`; and sets the multiplayer maximum ascension to
+`10`. It does not unlock achievements, change preferred ascension values, select an ascension for
+the user, edit arbitrary save fields, or expose content-category subsets. The in-game action
+targets the selected profile (1, 2, or 3) by using the host `SaveManager.SwitchProfileId` API before
+applying the guarded mutation. The standalone command-line argument continues to target the active
+profile.
+
+The settings feature does not add controls for runtime tokens, HTTP routes, MCP actions, AI policy,
+seeds, or native mod enablement. The game's native Installed Mods checkbox continues to own
+enablement, and environment credentials remain outside the settings system.
+
+The existing standalone, exact `--ai-ascension-unlock-all` command-line argument remains available
+as an explicit command-line path without any settings-framework mod. The argument comparison is case-insensitive, but the
+argument must still match the complete standalone value; forms such as `--ai-ascension-unlock-all=x`
+do not enable it. It performs the same guarded one-shot profile operation, and the
+`dev-cycle.sh --unlock-all` shorthand continues to pass that canonical argument for an authorized
+local cycle.
+
+The built-in settings registration is fail-open: if the host settings seam is unavailable, the
+managed initializer, native ABI smoke call, `--debug` overlay, and command-line unlock path still
+operate. The settings registration, UI rendering, callback behavior, and profile mutation remain
+separately unverified until exercised against an authorized exact STS2 host; the existing load-smoke
+evidence does not by itself prove settings UI or game-profile compatibility.
 
 ## Optional debug overlay
 
@@ -49,6 +117,34 @@ directory. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect t
 not enable the addon in the game's Mods menu; that remains a one-time manual step if the profile has
 not already accepted the addon.
 
+## Ephemeral runtime session launcher
+
+`session-launcher.sh` is the target-owned disposable orchestration entrypoint for the authenticated
+runtime proof. It first refuses an already-running `SlayTheSpire2.exe` with a restart-required
+error, builds and installs only the three addon artifacts, and then creates two fresh 48-byte
+credentials with the operating system CSPRNG. One credential is used as both
+`STS2_RUNTIME_TOKEN` for the game and `STS2_MOD_TOKEN` for the gateway's downstream hop. The other
+is used only as `STS2_GATEWAY_TOKEN` by the gateway, harness, and MCP process.
+
+The launcher does not put credentials in arguments, Steam options, URLs, files, `.env` values, logs,
+screenshots, or CI artifacts. The Windows game is started through the checked-in
+`session-launcher/windows-bridge` helper: the token crosses the WSL boundary over stdin and the
+helper places it in the game's inherited environment. `STS2_RUNTIME_SESSION=1` is a non-secret,
+ephemeral opt-in that allows this launcher to enable the listener even when the saved UI toggle is
+off; it does not change the persisted setting. The default endpoint is loopback on port `15526`.
+
+Provider binaries remain owned by their gateway, harness, and MCP targets. Supply each existing
+binary with `--gateway-binary`, `--harness-binary`, and `--mcp-binary`, or supply its source
+directory with the corresponding `--*-dir` option so the launcher can build that target's runtime
+binary. The launcher never edits those repositories. A normal run reports only boolean readiness
+lines and cleans up its gateway, harness/MCP process group, game PID, and listeners before exiting.
+Use `--keep-alive` for an interactive disposable session, and interrupt it to perform the same
+owned-process cleanup. Run the synthetic checks with:
+
+```bash
+bash experiments/managed-rust-interop/session-launcher.test.sh
+```
+
 ## Optional automatic full unlock
 
 Pass `--ai-ascension-unlock-all` to `SlayTheSpire2.exe` when starting the game. Once the host has
@@ -72,8 +168,11 @@ normal invocation of `dev-cycle.sh` installs and starts the addon without changi
 
 ## Runtime probe
 
-When `STS2_RUNTIME_TOKEN` is supplied, initialization also starts the bounded loopback runtime
-adapter on `STS2_RUNTIME_PORT` (default `15526`). It exposes `/health/ready`,
+When `STS2_RUNTIME_TOKEN` is supplied and `Runtime API` is enabled, initialization starts the bounded
+runtime adapter on the saved bind address and port (default `127.0.0.1:15526`). The ephemeral session
+launcher additionally supplies `STS2_RUNTIME_SESSION=1` for a non-persisted automation launch, so a
+saved-off UI toggle cannot silently prevent the session readiness check.
+`STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. It exposes `/health/ready`,
 `/api/v1/runtime/state`, and `/api/v1/runtime/action` with bearer authentication. Requests are
 copied into a bounded managed queue and processed on the Godot main thread. The only admitted action
 is `show_runtime_probe`; it displays the live status overlay and returns a fresh

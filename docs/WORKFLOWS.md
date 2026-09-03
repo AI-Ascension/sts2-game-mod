@@ -9,12 +9,18 @@ verification. A green check is not a merge, release, install, deployment, or com
 ## Foundation workflows
 
 - policy.yml checks the target policy tool and strict policy from pull requests and main pushes.
-- ci.yml runs Rust format, Clippy, tests, and the source-only native interop probe.
+- ci.yml runs Rust format, Clippy, tests, the source-only native interop probe, and the synthetic
+  ephemeral-session launcher checks.
 - The managed runtime-addon build is intentionally not a CI lane because it needs an
   operator-owned proprietary `sts2.dll` and `GodotSharp.dll`.
 - The authorized host load-smoke is a manual lane using
   `experiments/managed-rust-interop/package-runtime-addon.sh`; its exact game input, artifact
   hashes, launch command, log marker, and cleanup belong in a dated evidence report.
+- The authorized authenticated session lane uses
+  `experiments/managed-rust-interop/session-launcher.sh`; it generates in-memory per-launch
+  credentials, crosses WSL to Windows over stdin, starts only explicit provider binaries, and
+  cleans up only recorded child processes. Its synthetic checks are local; live readiness and
+  cleanup remain a separate disposable-host claim.
 - Future host, security, conformance, and release workflows must be added with real commands and
   evidence; no empty success job is allowed.
 
