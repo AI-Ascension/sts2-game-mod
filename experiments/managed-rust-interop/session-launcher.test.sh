@@ -96,7 +96,10 @@ fi
 bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
 [[ "$bridge_source" == *'Console.ReadLine()'* ]] || fail 'bridge does not read the token from stdin'
 [[ "$bridge_source" == *'STS2_RUNTIME_TOKEN'* ]] || fail 'bridge does not set the runtime token environment'
+[[ "$bridge_source" == *'FileName = options.GameExecutable'* ]] || fail 'bridge does not launch the requested game directly'
+[[ "$bridge_source" == *'WorkingDirectory = options.WorkingDirectory'* ]] || fail 'bridge does not preserve the game working directory'
 [[ "$bridge_source" == *'UseShellExecute = false'* ]] || fail 'bridge shell boundary is not explicit'
+[[ "$bridge_source" != *'Start-Process'* ]] || fail 'bridge delegates game launch to PowerShell'
 [[ "$bridge_source" != *'ArgumentList.Add(credential)'* ]] || fail 'bridge passes a token as an argument'
 [[ "$bridge_source" != *'QuotePowerShell(credential)'* ]] || fail 'bridge interpolates a token into PowerShell'
 input_automation_is_disabled || fail 'launcher or bridge contains a system-input control seam'

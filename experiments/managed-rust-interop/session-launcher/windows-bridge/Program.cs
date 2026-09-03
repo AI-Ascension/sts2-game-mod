@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 using System.Diagnostics;
-using System.IO;
 using System.Text.RegularExpressions;
 
 namespace AiAscension.SessionWindowsBridge;
@@ -10,7 +9,6 @@ internal static partial class Program
 {
     private const int MinimumCredentialLength = 43;
     private const int MaximumCredentialLength = 256;
-    private static readonly char[] LineSeparators = new[] { '\r', '\n' };
 
     private static int Main(string[] args)
     {
@@ -24,47 +22,22 @@ internal static partial class Program
                 return 2;
             }
 
-            string powerShell = Path.Combine(
-                Environment.SystemDirectory,
-                "WindowsPowerShell",
-                "v1.0",
-                "powershell.exe");
             var startInfo = new ProcessStartInfo
             {
-                FileName = powerShell,
+                FileName = options.GameExecutable,
+                WorkingDirectory = options.WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
             };
             startInfo.Environment["STS2_RUNTIME_TOKEN"] = credential;
             startInfo.Environment["STS2_RUNTIME_BIND_ADDRESS"] = options.BindAddress;
             startInfo.Environment["STS2_RUNTIME_PORT"] = options.Port;
             startInfo.Environment["STS2_RUNTIME_SESSION"] = "1";
-            startInfo.ArgumentList.Add("-NoProfile");
-            startInfo.ArgumentList.Add("-NonInteractive");
-            startInfo.ArgumentList.Add("-Command");
-            startInfo.ArgumentList.Add(
-                $"$game = Start-Process -FilePath {QuotePowerShell(options.GameExecutable)} "
-                + $"-WorkingDirectory {QuotePowerShell(options.WorkingDirectory)} -PassThru; "
-                + "Write-Output ('PID=' + $game.Id)");
 
             using Process process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException("game process did not start");
-            Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
-            Task<string> errorTask = process.StandardError.ReadToEndAsync();
-            process.WaitForExit();
-            _ = errorTask.GetAwaiter().GetResult();
-            string processOutput = outputTask.GetAwaiter().GetResult();
-            if (process.ExitCode != 0)
-            {
-                throw new InvalidOperationException("Windows process handoff failed");
-            }
-            string? gamePid = processOutput
-                .Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .FirstOrDefault(line => line.StartsWith("PID=", StringComparison.Ordinal));
-            if (gamePid is null || !int.TryParse(gamePid[4..], out int parsedPid) || parsedPid <= 0)
+            int parsedPid = process.Id;
+            if (parsedPid <= 0)
             {
                 throw new InvalidOperationException("Windows process handoff returned no game PID");
             }
@@ -77,11 +50,6 @@ internal static partial class Program
             Console.Error.WriteLine("runtime session game launch failed");
             return 1;
         }
-    }
-
-    private static string QuotePowerShell(string value)
-    {
-        return $"'{value.Replace("'", "''", StringComparison.Ordinal)}'";
     }
 
     private static bool CredentialIsSafe(string value)

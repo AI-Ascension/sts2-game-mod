@@ -29,12 +29,12 @@ The source remains in this directory to preserve its existing ownership and work
 Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, game files, saves,
 profiles, credentials, and runtime logs are never copied into the repository or package.
 
-The session launcher and its Windows bridge are input-free by design. They do not move or capture
-the system cursor, send mouse or keyboard events, focus or raise the game window, reposition a
-window, or navigate the game UI. A live trace may use the runtime API only after an operator has
-placed the authorized disposable profile in the required game state. If that state cannot be
-reached without UI input, the trace must stop and report the missing prerequisite; it must not use
-desktop-input automation.
+The session launcher and its Windows bridge are input-free by design. The bridge starts the game
+directly with a non-shell process boundary and does not move or capture the system cursor, send
+mouse or keyboard events, focus or raise the game window, reposition a window, or navigate the game
+UI. A live trace may use the runtime API only after an operator has placed the authorized disposable
+profile in the required game state. If that state cannot be reached without UI input, the trace must
+stop and report the missing prerequisite; it must not use desktop-input automation.
 
 ## Built-in profile settings
 
