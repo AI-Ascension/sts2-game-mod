@@ -23,7 +23,9 @@ credentials exist only in launcher memory, child environments, and the bridge st
 The launcher refuses an existing `SlayTheSpire2.exe` before building, installing, or generating a
 session. It uses a checked-in .NET bridge with `UseShellExecute=false`; the bridge receives the
 runtime credential from stdin and sets the game's inherited `STS2_RUNTIME_TOKEN`, bind address,
-port, and non-secret `STS2_RUNTIME_SESSION=1`. That flag is an ephemeral launch override for a
+port, and non-secret `STS2_RUNTIME_SESSION=1`. The bridge also always launches the host with
+`--headless --audio-driver Dummy`, preventing the owned path from creating or focusing a game
+window or interacting with the desktop cursor. That flag is an ephemeral launch override for a
 saved-off Runtime API setting and does not write settings. Provider binaries are explicit inputs or
 are built from explicit source directories; this target does not edit gateway, harness, or MCP.
 
