@@ -21,9 +21,12 @@ disclosure, and publish a fix only after affected users can update.
 The disposable session launcher generates a fresh runtime/mod credential and a distinct gateway
 credential from the operating system CSPRNG for every launch. Credentials are held only in process
 memory, passed to child environments or the Windows bridge stdin, and never accepted as launcher
-arguments or written to files, logs, screenshots, Steam options, URLs, or CI artifacts. The launcher
-refuses to adopt an already-running game, defaults the game listener to loopback, bounds readiness,
-and terminates only recorded child process groups and the recorded Windows game PID.
+arguments or written to files, logs, screenshots, Steam options, URLs, or CI artifacts. The owned
+launcher and bridge force `--headless --audio-driver Dummy`, so they do not create or focus a game
+window, capture the desktop cursor, or send mouse or keyboard events. The launcher refuses to adopt
+an already-running game, defaults the game listener to loopback, bounds readiness, and terminates
+only recorded child process groups and the recorded Windows game PID. Independently launched hosts
+and unrelated desktop processes are outside this guarantee.
 
 The project does not promise a response time or a bounty. This policy is not permission to access
 another person's game profile, host installation, network, or data.
