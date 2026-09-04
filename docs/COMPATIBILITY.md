@@ -45,7 +45,7 @@ The built-in settings contract is:
 
 | Setting | Default | Compatibility behavior |
 | --- | --- | --- |
-| Runtime API | Enabled | Applies immediately; disabling it stops the listener |
+| Runtime API | Enabled | Applies immediately; disabling stops the listener unless the explicit `STS2_RUNTIME_SESSION=1` launch override is active |
 | Bind address | `127.0.0.1` | The UI offers loopback, all interfaces, the detected hostname, and detected local IPv4 addresses |
 | Network port | `15526` | The UI accepts `1024` through `65535` and applies it immediately |
 
@@ -56,6 +56,11 @@ and applies them immediately.
 automation. The address and port controls are source/build and load-smoke confirmed in the exact
 recorded host; clicking every control, hostname resolution, firewall behavior, and every supported
 bind address remain unverified and do not broaden the host matrix.
+
+The profile action rejects active runs and unfinished/failed run saves before switching the active
+profile or changing progress. These guards have production-linked synthetic coverage only; an
+exact-host build and authorized disposable-profile test remain required. Profile changes are
+persistent, do not unlock achievements, and do not reduce ascension values already above 10.
 
 Runtime-v2 is pinned locally to schema digest
 `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` with provenance generator

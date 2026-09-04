@@ -57,31 +57,26 @@ remain owned by the in-game panel. Readiness probes require unauthenticated reje
 authenticated success, use bounded timeouts, and cleanup targets only recorded child groups and
 the recorded game PID. An already-running game is refused rather than adopted or killed.
 
-### Optional settings boundary
+### Built-in settings boundary
 
-The managed addon owns an optional settings boundary through `ModConfigBridge`. The bridge discovers
-the public ModConfig API by narrow reflection over `ModConfig.ModConfigApi`, `ModConfig.ConfigEntry`,
-and `ModConfig.ConfigType`; it does not add a hard ModConfig DLL or PCK dependency. Registration is
-deferred to a safe Godot `ProcessFrame` so the optional framework can finish loading first. If the
-framework is absent or its public API is incompatible, registration fails open: native loading,
-the ABI smoke call, and the existing command-line fallbacks remain available, but no settings UI is
-claimed.
+`StandaloneProfileSettings` owns the AI-Ascension tab; it does not require ModConfig. It clones a
+native settings tab and panel using the host's private `_tabs` seam, so exact-host rendering and
+focus compatibility require separate evidence. ADR 0011's optional ModConfig bridge is historical,
+not the current implementation. The current controls are Runtime API, bind address, port, Reset,
+target profile, and Apply full profile unlock. The CLI `--debug` and
+`--ai-ascension-unlock-all` remain available; there is no persisted one-shot unlock toggle.
 
-The bridge registers two stable toggles for `AIAscensionSTS2Poc`: `show_debug_overlay` controls the
-existing diagnostic overlay after successful managed and native initialization and defaults to
-`false`; `unlock_all_on_next_launch` requests the explicit, one-shot full profile unlock and also
-defaults to `false`. When the verified optional API safely supports button callbacks, the bridge may
-also register the conditional `apply_full_profile_unlock_now` action. That action uses the same
-guarded, queued, profile-readiness path as the launch request and does not persist or enable the
-launch toggle.
+Profile unlocking is an explicit persistent progress mutation. The manual action may switch the
+active profile to the selected profile; the launch argument uses the initialized current profile.
+Both run on a deferred main-thread frame and reject active runs and pending, canceled, or failed
+run saves before switching or mutating. Readiness is bounded to 600 frames and rechecked after a
+profile switch. The operation marks content discovered and raises ascension to at least 10 without
+lowering existing maxima. It invokes the host `SaveProgressFile` once per attempt and does not
+report success if that call throws. This does not establish crash-atomic progress persistence or
+undo partially applied in-memory changes after failure. Manual retry is explicit.
 
-Profile unlocking is an explicit opt-in profile action owned by the managed host boundary. It uses
-the host `SaveManager` and its progress APIs after profile initialization, saves once through that
-host authority, and clears the one-shot setting only after a successful save. It is not arbitrary
-persistence, direct save-file editing, or a general settings storage mechanism. The settings
-registration, UI rendering, callbacks, and profile mutation remain unverified against an exact
-compatible game and ModConfig installation; the existing load-smoke and runtime-v1 evidence below
-does not prove those settings behaviors.
+Production-linked synthetic tests cover these guards without a host or real profiles. They do not
+prove the proprietary API shape, disk durability, settings rendering, or live profile safety.
 
 ## Minimal POC mapping
 

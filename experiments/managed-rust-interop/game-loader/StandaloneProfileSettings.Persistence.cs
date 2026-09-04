@@ -214,8 +214,7 @@ internal static partial class StandaloneProfileSettings
     {
         try
         {
-            Directory.CreateDirectory(OS.GetUserDataDir());
-            File.WriteAllLines(
+            SettingsPersistence.WriteAllLines(
                 GetSettingsPath(),
                 new[]
                 {

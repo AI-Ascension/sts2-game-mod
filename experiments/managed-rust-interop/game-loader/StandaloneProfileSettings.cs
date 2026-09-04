@@ -181,13 +181,14 @@ internal static partial class StandaloneProfileSettings
         applyButton.Pressed += () =>
         {
             int profileId = ClampProfileId(_selectedProfileId);
-            AutoProfileUnlock.ScheduleManualUnlock(profileId);
-            status.Text = $"Unlock queued for Profile {profileId}.";
+            status.Text = AutoProfileUnlock.ScheduleManualUnlock(profileId);
         };
         applyRow.AddChild(applyLabel);
         applyRow.AddChild(applyButton);
         content.AddChild(applyRow);
-        content.AddChild(CreateDescriptionLabel("Changes progress only in the selected profile."));
+        content.AddChild(CreateDescriptionLabel(
+            "Permanently changes the selected profile's progress and may switch the active profile. "
+            + "Return to the main menu and let run saving finish before applying. This does not unlock achievements."));
     }
 
     private static Label CreateRowLabel(string text)

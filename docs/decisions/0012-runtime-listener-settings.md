@@ -31,6 +31,12 @@ restores the enabled default, loopback, and port `15526`. `STS2_RUNTIME_PORT` an
 environment overrides for automation. `STS2_RUNTIME_TOKEN` remains environment-controlled and is
 still required before the listener starts.
 
+Settings updates write and flush a same-directory temporary file before replacing the previous
+settings file. Failed writes do not truncate the previously saved choices. This is atomic
+publication, not a claim of crash-durable directory metadata on every filesystem. The UI explicitly
+warns that non-loopback transport is plaintext and requires a trusted network and firewall, and
+that launch environment settings override saved controls (including Runtime API Off for sessions).
+
 The managed/native ABI passes the selected bind address and port to the Rust listener. Rust resolves
 the selected address locally, binds the first usable socket address, stores the actual bound socket
 address for shutdown wake-up, and keeps the existing bounded HTTP, identity, and bearer-token

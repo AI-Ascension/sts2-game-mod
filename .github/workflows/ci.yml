@@ -92,5 +92,8 @@ jobs:
       - name: Run managed Workshop validation probe
         run: dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
 
+      - name: Run managed profile settings validation probe
+        run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
+
       - name: Record host-loader precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."
