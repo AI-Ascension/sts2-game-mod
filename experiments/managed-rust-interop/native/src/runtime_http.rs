@@ -2,7 +2,6 @@
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
-use std::net::TcpStream;
 
 const MAX_HEADER_BYTES: usize = 8 * 1024;
 const MAX_BODY_BYTES: usize = 16 * 1024;
@@ -21,7 +20,7 @@ impl Request {
     }
 }
 
-pub(super) fn read_request(stream: &mut TcpStream) -> Result<Request, u16> {
+pub(super) fn read_request(stream: &mut impl Read) -> Result<Request, u16> {
     let mut bytes = Vec::with_capacity(MAX_HEADER_BYTES);
     let mut buffer = [0_u8; 1024];
     let header_end = loop {
@@ -40,6 +39,9 @@ pub(super) fn read_request(stream: &mut TcpStream) -> Result<Request, u16> {
             return Err(413);
         }
     };
+    if header_end + 4 > MAX_HEADER_BYTES {
+        return Err(413);
+    }
     let header_text = std::str::from_utf8(&bytes[..header_end]).map_err(|_| 400_u16)?;
     let mut lines = header_text.split("\r\n");
     let request_line = lines.next().ok_or(400_u16)?;
@@ -134,7 +136,7 @@ fn find_header_end(bytes: &[u8]) -> Option<usize> {
 }
 
 pub(super) fn write_response(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     status: u16,
     body: &[u8],
 ) -> std::io::Result<()> {
@@ -174,5 +176,16 @@ mod tests {
     fn detects_complete_http_headers() {
         assert_eq!(find_header_end(b"GET / HTTP/1.1\r\n\r\nbody"), Some(14));
         assert_eq!(find_header_end(b"GET / HTTP/1.1\n\n"), None);
+    }
+
+    #[test]
+    fn rejects_header_terminator_beyond_header_budget() {
+        let mut bytes = b"GET / HTTP/1.1\r\nHost: ".to_vec();
+        bytes.resize(super::MAX_HEADER_BYTES - 1, b'x');
+        bytes.extend_from_slice(b"\r\n\r\n");
+        assert!(matches!(
+            super::read_request(&mut bytes.as_slice()),
+            Err(413)
+        ));
     }
 }

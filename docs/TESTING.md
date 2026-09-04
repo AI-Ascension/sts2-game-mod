@@ -174,6 +174,14 @@ runtime or external evidence was not run.
 
 ## Runtime slice checks
 
+`cargo test --locked --offline -p sts2-game-mod-interop` includes synthetic loopback regressions
+for idle headers, incomplete bodies, progress that must not extend the absolute deadline,
+nonreading response peers, stop interruption, and joining a stopped listener with an open peer.
+Parser tests also reject a header terminator that crosses the 8-KiB header limit. These tests
+use no game, profile, external service, or real credentials; generous elapsed-time ceilings
+are hang detection, not a real-time scheduling guarantee. They do not prove that managed host
+callbacks terminate safely, nor that native unload is safe in a live game.
+
 The native runtime crate has bounded parser/identity tests, Clippy coverage, and a Windows
 x86-64 release cross-build. The managed loader project builds against operator-supplied
 `sts2.dll` and `GodotSharp.dll` without copying those assemblies into the repository. The checked-in

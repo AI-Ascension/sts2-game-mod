@@ -197,6 +197,14 @@ applies and persists the enablement, address, and port immediately, while
 passes borrowed request bytes through a versioned C ABI callback; the managed side copies them into
 owned values before queueing.
 
+Each accepted connection has one absolute 10-second socket-I/O deadline, including header/body
+reads and response writes; partial progress does not reset it. Socket waits poll the stop flag
+at most every 50 milliseconds, subject to OS scheduling. The nonblocking accept loop needs no
+self-connection to stop. Shutdown still joins the listener thread before releasing callback
+lifetime; the synchronous managed callback must enforce its own execution bound (currently a
+five-second queue wait). Socket deadlines do not cancel host work already admitted or forcibly
+interrupt a managed callback. An expired exchange can close without an HTTP error body.
+
 The managed bridge installs one bounded queue pump on `SceneTree.ProcessFrame`. State observation and
 the `show_runtime_probe` action run on that host thread. The action adds the existing status overlay,
 checks that the overlay is present, then advances generation and emits the effect witness. The

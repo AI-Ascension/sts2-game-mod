@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread::{self, JoinHandle};
@@ -16,8 +16,16 @@ const BIND_FAILED: i32 = 3;
 const THREAD_FAILED: i32 = 4;
 const STOP_FAILED: i32 = 5;
 
+#[cfg(test)]
+#[path = "runtime_endpoint_tests.rs"]
+mod endpoint_tests;
 #[path = "runtime_http.rs"]
 mod http;
+#[path = "runtime_io.rs"]
+mod io;
+#[cfg(test)]
+#[path = "runtime_io_tests.rs"]
+mod io_tests;
 #[path = "runtime_listener.rs"]
 mod listener;
 
@@ -55,7 +63,6 @@ pub struct RuntimeRequest {
 }
 
 struct RuntimeHandle {
-    address: SocketAddr,
     stop: Arc<AtomicBool>,
     join: JoinHandle<()>,
 }
@@ -67,6 +74,14 @@ fn server_slot() -> &'static Mutex<Option<RuntimeHandle>> {
 }
 
 #[unsafe(no_mangle)]
+/// Starts the listener with copied configuration and a borrowed callback.
+///
+/// # Safety
+/// Input pointers must be valid for their declared lengths; `callbacks` must be
+/// aligned and readable. The callback must remain callable until stop returns,
+/// must not unwind across the ABI, and must return within its own bounded time.
+/// It may only access request/output pointers during the call and may not write
+/// beyond output capacity. Calling stop from the callback itself is unsupported.
 pub unsafe extern "C" fn sts2_game_mod_runtime_start(
     port: u16,
     bind_address: *const u8,
@@ -124,11 +139,7 @@ pub unsafe extern "C" fn sts2_game_mod_runtime_start(
         Ok(value) => value,
         Err(_) => return THREAD_FAILED,
     };
-    *slot = Some(RuntimeHandle {
-        address: listener::shutdown_address(address),
-        stop,
-        join,
-    });
+    *slot = Some(RuntimeHandle { stop, join });
     STARTED
 }
 
@@ -141,7 +152,6 @@ pub extern "C" fn sts2_game_mod_runtime_stop() -> i32 {
         return STARTED;
     };
     handle.stop.store(true, Ordering::Release);
-    let _ = TcpStream::connect(handle.address);
     if handle.join.join().is_err() {
         return STOP_FAILED;
     }
@@ -158,7 +168,9 @@ fn serve(
     while !stop.load(Ordering::Acquire) {
         match listener.accept() {
             Ok((mut stream, _)) => {
-                let _ = handle_connection(&mut stream, &listener_address, &token, callback);
+                let mut connection =
+                    io::Connection::new(&mut stream, &stop, Duration::from_secs(10));
+                let _ = handle_connection(&mut connection, &listener_address, &token, callback);
             }
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                 thread::sleep(Duration::from_millis(5));
@@ -169,7 +181,7 @@ fn serve(
 }
 
 fn handle_connection(
-    stream: &mut TcpStream,
+    stream: &mut io::Connection<'_>,
     listener_address: &str,
     token: &[u8],
     callback: RuntimeRequestCallback,
@@ -208,7 +220,7 @@ fn dispatch(
     callback: RuntimeRequestCallback,
     kind: u32,
     request: &http::Request,
-    stream: &mut TcpStream,
+    stream: &mut io::Connection<'_>,
 ) -> std::io::Result<()> {
     let Some(instance_id) = request.headers.get("x-sts2-instance-id") else {
         return http::write_response(stream, 400, b"{\"error_code\":\"missing_instance_id\"}");
