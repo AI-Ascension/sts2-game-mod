@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+use super::artifact::{RUNTIME_V2_MAX_GENERATION, RUNTIME_V2_MAX_TURN_INDEX};
 use super::contract::{RuntimeV2CombatPhase, RuntimeV2Observation, RuntimeV2ValidationError};
 
 /// Failures a host-specific implementation may report after dispatch.
@@ -61,7 +62,7 @@ impl RuntimeV2GamePort for FakeRuntimeV2Game {
         let (Some(generation), Some(turn_index)) = (generation, turn_index) else {
             return Err(RuntimeV2GameError::Rejected);
         };
-        if turn_index > 1024 {
+        if turn_index > RUNTIME_V2_MAX_TURN_INDEX || generation > RUNTIME_V2_MAX_GENERATION {
             return Err(RuntimeV2GameError::Rejected);
         }
         self.observation.generation = generation;

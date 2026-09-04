@@ -82,6 +82,9 @@ impl<G: RuntimeV2GamePort> RuntimeV2Mod<G> {
         &mut self,
         request: RuntimeV2Message,
     ) -> Result<RuntimeV2Message, RuntimeV2Error> {
+        if request.kind != RuntimeV2Kind::ActionRequest {
+            return Err(RuntimeV2Error::MalformedRequest);
+        }
         request
             .validate_request()
             .map_err(request_validation_error)?;
@@ -179,6 +182,9 @@ impl<G: RuntimeV2GamePort> RuntimeV2Mod<G> {
         &mut self,
         request: &RuntimeV2Message,
     ) -> Result<RuntimeV2Message, RuntimeV2Error> {
+        if request.kind != RuntimeV2Kind::ActionRequest {
+            return Err(RuntimeV2Error::MalformedRequest);
+        }
         request
             .validate_request()
             .map_err(request_validation_error)?;
@@ -215,6 +221,9 @@ impl<G: RuntimeV2GamePort> RuntimeV2Mod<G> {
         &mut self,
         request: RuntimeV2Message,
     ) -> Result<RuntimeV2Message, RuntimeV2Error> {
+        if request.kind != RuntimeV2Kind::ActionRequest {
+            return Err(RuntimeV2Error::MalformedRequest);
+        }
         request
             .validate_request()
             .map_err(request_validation_error)?;

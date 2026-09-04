@@ -35,6 +35,10 @@ not launch the game or prove gameplay or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
 
+The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
+and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
+rejects generation exhaustion before changing its observation or action count.
+
 The focused `runtime_v2` test covers one admitted and settled `end_turn`, exactly-once fake
 application, duplicate replay, conflicting operation identity, outside-combat and enemy-turn
 rejection, stale generation and identity fencing, queue and receipt bounds, cancellation timing,
