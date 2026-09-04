@@ -70,18 +70,21 @@ cargo test --locked --offline --workspace --all-targets --all-features
 ~~~
 
 The policy command is the repository gate, not a replacement for compilation or tests. CI mirrors
-the format, Clippy, and workspace-test commands (without `--offline`); a local offline failure is
-an environment/dependency-cache limitation and must be reported as such.
+the format, Clippy, and workspace-test commands (without `--offline`). If offline resolution
+fails because a dependency is not cached, report that specific environment limitation.
+Compilation, policy, lint, and test failures remain failures and require investigation.
 
 ### Managed source-only build
 
-This build has no proprietary host dependency and is the managed CI boundary:
+These managed CI checks have no proprietary host dependency:
 
 ~~~text
 dotnet build experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
 ~~~
 
-Use the pinned .NET 9 SDK. This proves the source-only managed probe compiles; it does not prove
+Use the pinned .NET 9 SDK. These compile the source-only managed probe and exercise synthetic
+Workshop package validation. They do not prove
 that STS2 discovers the loader, that a host assembly is compatible, or that the game runs it.
 
 ### Host-dependent Windows addon build
