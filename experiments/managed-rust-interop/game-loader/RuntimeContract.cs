@@ -16,6 +16,12 @@ public static partial class ModEntry
 
     private static (int Status, string Response) ProcessRuntimeWork(RuntimeWork work)
     {
+        if (work.Kind >= RuntimeRequestKindRuntimeV2State && work.Kind <= RuntimeRequestKindRuntimeV3Operation)
+        {
+            return work.Kind <= RuntimeRequestKindRuntimeV2Operation
+                ? ProcessRuntimeV2Work(work)
+                : ProcessRuntimeV3GameplayWork(work);
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));
@@ -136,6 +142,13 @@ public static partial class ModEntry
 
     private static string RuntimeError(RuntimeContext context, uint kind, string code)
     {
+        if (kind >= RuntimeRequestKindRuntimeV2State && kind <= RuntimeRequestKindRuntimeV3Operation)
+        {
+            return kind <= RuntimeRequestKindRuntimeV2Operation
+                ? RuntimeV2PlainError(code)
+                : RuntimeV3GameplayPlainError(code);
+        }
+
         return kind == RuntimeRequestKindAction
             ? RuntimeActionResponse(context, _runtimeGeneration, "rejected", code, false)
             : JsonSerializer.Serialize(new Dictionary<string, object?>

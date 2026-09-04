@@ -25,7 +25,7 @@ cargo test --locked --offline --workspace --all-targets --all-features
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
 artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-separate dated host report records the authorized runtime lane; these ordinary commands still do
+managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
 not launch the game or prove gameplay or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
@@ -34,8 +34,39 @@ The focused `runtime_v2` test covers one admitted and settled `end_turn`, exactl
 application, duplicate replay, conflicting operation identity, outside-combat and enemy-turn
 rejection, stale generation and identity fencing, queue and receipt bounds, cancellation timing,
 post-write disconnect reconciliation, and pre-dispatch timeout removal. `sha256sum -c` verifies the
-copied release-like artifact from repository-relative paths. No test invokes STS2, a concrete host
-gameplay API, `AutoProfileUnlock`, or any persistent profile/save/provider path.
+copied release-like artifact from repository-relative paths. No Rust test invokes STS2 or any
+persistent profile/save/provider path; the managed build resolves concrete host symbols without
+executing them.
+
+## Runtime-v2 host-adapter build
+
+The managed candidate is built only with an operator-supplied exact host assembly outside the
+repository:
+
+~~~text
+dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  -p:STS2GameDataDir="<operator-supplied-host-data>"
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj --configuration Release \
+  -p:STS2GameDataDir="<operator-supplied-host-data>" --no-restore
+bash experiments/managed-rust-interop/package-runtime-addon.sh \
+  "<operator-supplied-host-data>" /tmp/sts2-runtime-v2-addon
+~~~
+
+For the recorded v0.107.1 host, the candidate builds with zero warnings and errors and the native
+crate passes six tests, including exact bearer-token matching at the native HTTP boundary. Exact
+hashes and verified common host symbols are recorded in
+[`runtime-v2-host-build-20260902.md`](evidence/runtime-v2-host-build-20260902.md). This is `L1`
+build/package evidence, not a live host result.
+
+## Runtime-v3 gameplay candidate build
+
+The separate `runtime-v3-gameplay` candidate uses the same exact-host build boundary and adds
+`play_card` host translation. It is gated by the v3 protocol digest, the verified card/target
+symbols, bounded collection observations, and the `play_card_settled` witness. Exact package hashes
+and symbols are recorded in
+[`runtime-v3-gameplay-host-build-20260902.md`](evidence/runtime-v3-gameplay-host-build-20260902.md).
+The candidate is `L1` build/package evidence until an authorized disposable host records a live
+card-play effect.
 
 ## Planned layers
 
@@ -166,11 +197,12 @@ x86-64 release cross-build. The managed loader project builds against operator-s
 `sts2.dll` and `GodotSharp.dll` without copying those assemblies into the repository. The checked-in
 `protocol-artifact/runtime-v1/` copy is the canonical message reference.
 
-The authorized probe confirmed starting the listener inside STS2, authenticated state/action
+The authorized probe confirmed starting the v1 listener inside STS2, authenticated state/action
 requests, main-thread queue execution, a visible overlay witness, and reversible disposable-profile
-cleanup for the recorded host. Gameplay mutation, process supervision/restart, multi-instance
-behavior, other host versions, and other platforms remain `unverified`. Do not count a successful
-build or ABI load-smoke as any of those remaining runtime results.
+cleanup for the recorded host. The Runtime-v2 candidate build does not promote to live gameplay
+evidence. Gameplay mutation/settlement, process supervision/restart, multi-instance behavior, other
+host versions, and other platforms remain `unverified`. Do not count a successful build or ABI
+load-smoke as any of those remaining runtime results.
 
 ## Workshop package checks
 

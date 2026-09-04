@@ -33,6 +33,11 @@ session_launcher_caller_group=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
 game_started=0
 gateway_started=0
 harness_started=0
+owned_mods_dir=''
+owned_backup_dir=''
+owned_mod_artifacts=()
+gateway_log_file='/dev/null'
+harness_log_file='/dev/null'
 
 input_automation_is_disabled() {
     local source_file
@@ -291,6 +296,7 @@ run_gateway_with_credentials() {
         STS2_INSTANCE_ID=instance-1 \
         STS2_CALLER_ID=harness \
         STS2_SESSION_ID=session-1 \
+        STS2_MCP_SESSION_ID=mcp-session-1 \
         STS2_LEASE_ID=lease-1 \
         STS2_LEASE_EPOCH=1 \
         "$@"
@@ -383,8 +389,16 @@ install_addon() {
     local backup_root="$session_launcher_repo_root/.sts2-dev/session-backups"
     local backup_dir
     local artifact
-    local -a artifacts=(AIAscensionSTS2Poc.dll ai_ascension_sts2_poc.dll AIAscensionSTS2Poc.json)
-    local -a existing_files=()
+    local -a artifacts=(
+        AIAscensionSTS2GameMod.dll
+        AIAscensionSTS2GameModNative.dll
+        AIAscensionSTS2GameMod.json
+    )
+    local -a legacy_artifacts=(
+        AIAscensionSTS2Poc.dll
+        ai_ascension_sts2_poc.dll
+        AIAscensionSTS2Poc.json
+    )
 
     game_is_running && die 'SlayTheSpire2.exe started while the addon was being prepared; restart required'
     bash "$session_launcher_package_script" "$game_data_dir" "$stage_dir" >/dev/null
@@ -394,9 +408,8 @@ install_addon() {
 
     mkdir -p "$mods_dir" "$backup_root"
     backup_dir=$(mktemp -d "$backup_root/session.XXXXXX")
-    for artifact in "${artifacts[@]}"; do
+    for artifact in "${artifacts[@]}" "${legacy_artifacts[@]}"; do
         if [[ -f "$mods_dir/$artifact" ]]; then
-            existing_files+=("$artifact")
             cp -p -- "$mods_dir/$artifact" "$backup_dir/$artifact"
         fi
     done
@@ -413,6 +426,20 @@ install_addon() {
             die "installed addon artifact did not match the staged artifact: $artifact"
         fi
     done
+
+    # The old POC package is the same project and binds the same runtime port.
+    # Retire its exact three files for this session, with the pre-run copies above
+    # retained for deterministic restoration.
+    for artifact in "${legacy_artifacts[@]}"; do
+        rm -f -- "$mods_dir/$artifact" || {
+            restore_addon "$mods_dir" "$backup_dir" "${artifacts[@]}" "${legacy_artifacts[@]}"
+            die "failed to retire legacy addon artifact: $artifact"
+        }
+    done
+
+    owned_mods_dir="$mods_dir"
+    owned_backup_dir="$backup_dir"
+    owned_mod_artifacts=("${artifacts[@]}" "${legacy_artifacts[@]}")
 }
 
 restore_addon() {
@@ -452,6 +479,19 @@ cleanup_owned_processes() {
     fi
     if (( game_started )) && probe_status "$game_probe_host" "$network_port" /health/ready ANY ''; then
         cleanup_failed=1
+    fi
+    if [[ -n "$owned_backup_dir" ]]; then
+        restore_addon "$owned_mods_dir" "$owned_backup_dir" "${owned_mod_artifacts[@]}"
+        for cleanup_artifact in "${owned_mod_artifacts[@]}"; do
+            if [[ -f "$owned_backup_dir/$cleanup_artifact" ]]; then
+                cmp -s -- "$owned_backup_dir/$cleanup_artifact" "$owned_mods_dir/$cleanup_artifact" || cleanup_failed=1
+            else
+                [[ ! -e "$owned_mods_dir/$cleanup_artifact" ]] || cleanup_failed=1
+            fi
+        done
+        owned_mods_dir=''
+        owned_backup_dir=''
+        owned_mod_artifacts=()
     fi
     unset runtime_token gateway_token STS2_PROBE_TOKEN
     if (( cleanup_failed )); then
@@ -620,6 +660,7 @@ main() {
     local provider_dir
     local provider_binary
     local endpoint_parts
+    local debug_log_dir=${STS2_RUNTIME_DEBUG_LOG_DIR:-}
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -688,6 +729,13 @@ main() {
     [[ -f "$session_launcher_package_script" ]] || die 'addon packaging script is missing'
     [[ -f "$session_launcher_bridge_project" ]] || die 'Windows session bridge project is missing'
     input_automation_is_disabled || die 'UI input automation is present in the owned launch path'
+    if [[ -n "$debug_log_dir" ]]; then
+        [[ "$debug_log_dir" == /* ]] || die 'STS2_RUNTIME_DEBUG_LOG_DIR must be an absolute temporary directory'
+        mkdir -p -- "$debug_log_dir"
+        chmod 700 -- "$debug_log_dir"
+        gateway_log_file="$debug_log_dir/gateway.log"
+        harness_log_file="$debug_log_dir/harness.log"
+    fi
 
     [[ "$startup_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
         || die '--startup-timeout must be a positive integer'
@@ -842,10 +890,11 @@ main() {
         STS2_INSTANCE_ID=instance-1 \
         STS2_CALLER_ID=harness \
         STS2_SESSION_ID=session-1 \
+        STS2_MCP_SESSION_ID=mcp-session-1 \
         STS2_LEASE_ID=lease-1 \
         STS2_LEASE_EPOCH=1 \
         setsid "$gateway_binary" \
-        </dev/null >/dev/null 2>&1 &
+        </dev/null >"$gateway_log_file" 2>&1 &
     gateway_pid=$!
     gateway_started=1
     gateway_identity=$(record_process_identity "$gateway_pid") \
@@ -883,7 +932,7 @@ main() {
         STS2_LEASE_EPOCH=1 \
         STS2_MCP_SESSION_ID=mcp-session-1 \
         setsid "$harness_binary" \
-        </dev/null >/dev/null 2>&1 &
+        </dev/null >"$harness_log_file" 2>&1 &
     harness_pid=$!
     harness_started=1
     harness_identity=$(record_process_identity "$harness_pid") \

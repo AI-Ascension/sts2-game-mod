@@ -7,9 +7,10 @@ callbacks into owned Rust values, schedules host work on the game main thread, e
 authoritative local HTTP surface, and composes the narrow native seam.
 
 This document records boundaries, the initialized source-level seams, the managed load-smoke
-package, and dependency direction. The Rust source proves deterministic port composition plus one
-local fake `poc-v1` mapping; the managed package separately proves loader discovery and the native
-ABI smoke call in one recorded game version.
+package, the Runtime-v2 host-adapter candidate, and dependency direction. The Rust source proves
+deterministic port composition plus one local fake `poc-v1` mapping; the managed package separately
+proves loader discovery and the native ABI smoke call in one recorded game version. Runtime-v2 host
+execution remains a separate controlled-host gate.
 
 ## Initialized source seam
 
@@ -34,10 +35,36 @@ debug banner with the verified ABI and result when the process was launched with
 `AIAscensionSTS2GameModNative.dll` on Windows. The package script stages only the managed DLL, native DLL,
 and manifest; it never copies proprietary host assemblies into the repository or package.
 
-This is a load-smoke implementation, not the game behavior implementation. It does not expose an
-HTTP listener as part of the loader-only smoke path, access host game objects outside the bounded
-runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
-bridge described below owns the new host-visible probe.
+The Runtime-v1 portion is a load-smoke implementation, not a game behavior implementation. It does
+not claim gameplay action/effect compatibility. The separate runtime bridge owns the host-visible
+probe and the Runtime-v2 host-adapter candidate described below.
+
+### Runtime-v2 host-adapter candidate
+
+The managed experiment also contains the frozen Runtime-v2 `end_turn` path. Its native listener
+adds only the fixed v2 state, action, and operation routes. The managed bridge validates the complete
+v2 envelope and context, reads `CombatManager` state on the Godot main thread, rechecks player-turn
+legality and `PlayerActionsDisabled`, and calls the exact common host `PlayerCmd.EndTurn` symbol.
+It returns `accepted` for admission and retains the operation; only a fresh bounded turn observation
+and `turn_end_settled` witness return `settled`. Host exceptions and transition uncertainty return
+`unknown`, and the operation lookup is read-only.
+
+The adapter uses only symbols present in the recorded v0.107.1 host: `IsInProgress`,
+`IsEnemyTurnStarted`, `PlayerActionsDisabled`, and `DebugOnlyGetState`, plus
+`RunManager.DebugOnlyGetState`, `LocalContext.GetMe`, and `PlayerCmd.EndTurn`. A newer host has
+`IsPlayPhase`, but the adapter does not depend on that release-specific property. The candidate is
+source/build evidence only until exercised in an explicitly authorized disposable host profile.
+
+### Runtime-v3 gameplay candidate
+
+The separate `runtime-v3-gameplay` candidate adds only the bounded `play_card` action. Its managed
+adapter reads `PlayerCombatState.Hand`, pile counts, energy, and bounded enemy observations; it
+revalidates `CardModel.CanPlay`, optional `CanPlayTargeting`, and the numeric enemy `CombatId`; then
+it queues `PlayCardAction(CardModel, Creature)` through `ActionQueueSynchronizer.RequestEnqueue`.
+The operation settles only after a fresh generation and a changed hand, energy, or pile observation,
+with a `play_card_settled` witness. The protocol, gateway, MCP, and harness seams are separately
+versioned so Runtime-v2 remains unchanged. The candidate is build/component evidence only; live
+card play and profile safety remain unverified.
 
 ### Ephemeral session orchestration
 
@@ -121,9 +148,9 @@ application, fresh settlement witnesses, idempotent replay, fail-closed identity
 phase checks, bounded capacity, cancellation timing, unknown outcomes, reconciliation, and timeout
 removal. Runtime-v1 routes and tests are unchanged.
 
-No concrete host gameplay API exists in this repository. The Runtime-v2 fake is deterministic
-source/build/test evidence, not live STS2 gameplay evidence; live host mutation and settlement are
-unverified.
+The fake and host-adapter candidate are deterministic/source-build evidence, not live STS2 gameplay
+evidence. The candidate's host mutation and settlement remain unverified until a controlled-host
+trace is recorded.
 
 ## System boundaries
 
@@ -187,9 +214,9 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 ## Protocol and data rules
 
 The owner-local HTTP contract remains separate from the copied POC artifact. The runtime adapter owns
-the bounded `runtime-v1` route/ABI mapping and its sanitized errors; MCP envelopes and gateway leases
-remain outside this repository. Broader gameplay routes, semantics, ordering, and versioning require
-later project-owned requirements and fixtures.
+the bounded `runtime-v1` and frozen Runtime-v2 route/ABI mappings and their sanitized errors; MCP
+envelopes and gateway leases remain outside this repository. Broader gameplay routes, semantics,
+ordering, and versioning require a new project-owned profile and fixtures.
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
@@ -218,10 +245,12 @@ checks that the overlay is present, then advances generation and emits the effec
 listener, token, identity, lease, and correlation checks are owner-local enforcement; the gateway
 still owns external authorization, lease issuance, and fencing.
 
-The route/ABI implementation and tests are confirmed at source/build level, and the dated host
+The v1 route/ABI implementation and tests are confirmed at source/build level, and the dated host
 report confirms a real request, live main-thread dispatch, and the bounded host-visible effect for
-STS2 v0.107.1 on Windows x86-64. Game-rule compatibility, process supervision, and the action's
-semantics beyond this probe remain unverified. The action is deliberately not a gameplay mutation.
+STS2 v0.107.1 on Windows x86-64. The v2 host-adapter candidate builds against that exact host and
+has separate build evidence, but live `end_turn` mutation/settlement, process supervision, and
+action semantics beyond the frozen profile remain unverified. The v1 probe is deliberately not a
+gameplay mutation.
 
 ## Steam Workshop boundary
 

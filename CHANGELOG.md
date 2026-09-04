@@ -5,6 +5,11 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added the separately versioned `runtime-v3-gameplay` `play_card` host-adapter candidate with
+  bounded card/target validation, verified v0.107.1 host symbols, main-thread queueing, fresh
+  collection/energy settlement observation, and a `play_card_settled` witness. Build/package
+  evidence is recorded; live gameplay remains unverified.
+
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses
   an already-running game, verifies unauthenticated rejection plus authenticated game/gateway and

@@ -14,16 +14,27 @@ public static partial class ModEntry
     private const string RuntimeTokenVariable = "STS2_RUNTIME_TOKEN";
     private const string RuntimePortVariable = "STS2_RUNTIME_PORT";
     private const string RuntimeBindAddressVariable = "STS2_RUNTIME_BIND_ADDRESS";
+    private const string RuntimeQueueCapacityVariable = "STS2_RUNTIME_QUEUE_CAPACITY";
     private const int RuntimeRequestKindState = 1;
     private const int RuntimeRequestKindAction = 2;
+    private const int RuntimeRequestKindRuntimeV2State = 3;
+    private const int RuntimeRequestKindRuntimeV2Action = 4;
+    private const int RuntimeRequestKindRuntimeV2Operation = 5;
+    private const int RuntimeRequestKindRuntimeV3State = 6;
+    private const int RuntimeRequestKindRuntimeV3Action = 7;
+    private const int RuntimeRequestKindRuntimeV3Operation = 8;
+    private const int RuntimeQueueDefaultCapacity = 16;
+    private const int RuntimeQueueMaximumCapacity = 64;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
+    private const int RuntimeTooManyRequests = 429;
     private const int RuntimeUnavailable = 503;
     private const int RuntimeTimeout = 504;
     private static readonly ConcurrentQueue<RuntimeWork> RuntimeQueue = new();
     private static RuntimeRequestCallback? _runtimeRequestCallback;
     private static Action? _runtimePumpCallback;
     private static int _runtimePumpReady;
+    private static int _runtimeQueueDepth;
     private static ulong _runtimeGeneration;
     private static ulong _runtimeActionCount;
     private static string _runtimeListenerStatus = "Not started";
@@ -124,43 +135,6 @@ public static partial class ModEntry
         }
     }
 
-    private static bool TryReadPort(out ushort port)
-    {
-        string? value = System.Environment.GetEnvironmentVariable(RuntimePortVariable);
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            int configuredPort = StandaloneProfileSettings.RuntimePort;
-            if (configuredPort <= 0 || configuredPort > ushort.MaxValue)
-            {
-                port = 0;
-                return false;
-            }
-
-            port = (ushort)configuredPort;
-            return true;
-        }
-        return ushort.TryParse(value, out port) && port > 0;
-    }
-
-    private static bool TryReadBindAddress(out string bindAddress)
-    {
-        string? value = System.Environment.GetEnvironmentVariable(RuntimeBindAddressVariable);
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            value = StandaloneProfileSettings.RuntimeBindAddress;
-        }
-
-        value = value.Trim();
-        if (!StandaloneProfileSettings.IsValidRuntimeBindAddress(value))
-        {
-            bindAddress = string.Empty;
-            return false;
-        }
-
-        bindAddress = value;
-        return true;
-    }
-
     private static void InstallRuntimePump()
     {
         if (Volatile.Read(ref _runtimePumpReady) != 0)
@@ -195,47 +169,38 @@ public static partial class ModEntry
                 ReadNativeText(native.CorrelationId, native.CorrelationIdLength));
             string body = ReadNativeText(native.Body, native.BodyLength);
             RuntimeWork work = new(native.Kind, context, body);
+            int status;
+            string response;
             if (Volatile.Read(ref _runtimePumpReady) == 0)
             {
-                work.Status = RuntimeUnavailable;
-                work.Response = RuntimeError(context, native.Kind, "runtime_pump_unavailable");
+                status = RuntimeUnavailable;
+                response = RuntimeError(context, native.Kind, "runtime_pump_unavailable");
             }
             else
             {
-                RuntimeQueue.Enqueue(work);
-                if (!work.Completed.Wait(TimeSpan.FromSeconds(5)))
+                if (!TryEnqueueRuntimeWork(work))
                 {
-                    work.Status = RuntimeTimeout;
-                    work.Response = RuntimeError(context, native.Kind, "main_thread_timeout");
+                    status = RuntimeTooManyRequests;
+                    response = RuntimeError(context, native.Kind, "runtime_queue_capacity");
+                }
+                else if (!work.Completed.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    work.TryCancelBeforeProcessing();
+                    status = RuntimeTimeout;
+                    response = RuntimeError(context, native.Kind, "main_thread_timeout");
+                }
+                else
+                {
+                    status = work.Status;
+                    response = work.Response;
                 }
             }
-            return WriteNativeResponse(work.Status, work.Response, output, outputCapacity, out outputLength);
+            return WriteNativeResponse(status, response, output, outputCapacity, out outputLength);
         }
         catch (Exception exception)
         {
             GD.PrintErr($"{LogPrefix} runtime callback failed: {exception.GetType().Name}: {exception.Message}");
             return RuntimeUnavailable;
-        }
-    }
-
-    private static void ProcessRuntimeQueue()
-    {
-        for (int index = 0; index < 16 && RuntimeQueue.TryDequeue(out RuntimeWork? work); index++)
-        {
-            try
-            {
-                (work.Status, work.Response) = ProcessRuntimeWork(work);
-            }
-            catch (Exception exception)
-            {
-                work.Status = RuntimeUnavailable;
-                work.Response = RuntimeError(work.Context, work.Kind, "main_thread_exception");
-                GD.PrintErr($"{LogPrefix} runtime main-thread request failed: {exception.GetType().Name}: {exception.Message}");
-            }
-            finally
-            {
-                work.Completed.Set();
-            }
         }
     }
 
