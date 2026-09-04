@@ -164,17 +164,16 @@ internal static partial class StandaloneProfileSettings
 
                         break;
                     case "runtime_enabled":
-                        if (bool.TryParse(value, out bool enabled))
+                        if (TryParseBoolean(value, out bool enabled))
                         {
                             _runtimeEnabled = enabled;
                         }
-                        else if (value is "1" or "yes" or "on")
+
+                        break;
+                    case "allow_repeating_seeds":
+                        if (TryParseBoolean(value, out bool allowRepeatingSeeds))
                         {
-                            _runtimeEnabled = true;
-                        }
-                        else if (value is "0" or "no" or "off")
-                        {
-                            _runtimeEnabled = false;
+                            _allowRepeatingSeeds = allowRepeatingSeeds;
                         }
 
                         break;
@@ -220,6 +219,7 @@ internal static partial class StandaloneProfileSettings
                 {
                     $"profile_id={ClampProfileId(_selectedProfileId).ToString(CultureInfo.InvariantCulture)}",
                     $"runtime_enabled={_runtimeEnabled.ToString().ToLowerInvariant()}",
+                    $"allow_repeating_seeds={_allowRepeatingSeeds.ToString().ToLowerInvariant()}",
                     $"runtime_port={_runtimePort.ToString(CultureInfo.InvariantCulture)}",
                     $"runtime_bind_address={_runtimeBindAddress}"
                 });
@@ -230,6 +230,32 @@ internal static partial class StandaloneProfileSettings
         {
             error = exception.GetType().Name;
             return false;
+        }
+    }
+
+    private static bool TryParseBoolean(string value, out bool result)
+    {
+        string normalized = value.Trim();
+        if (bool.TryParse(normalized, out result))
+        {
+            return true;
+        }
+
+        switch (normalized.ToLowerInvariant())
+        {
+            case "1":
+            case "yes":
+            case "on":
+                result = true;
+                return true;
+            case "0":
+            case "no":
+            case "off":
+                result = false;
+                return true;
+            default:
+                result = false;
+                return false;
         }
     }
 

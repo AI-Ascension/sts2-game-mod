@@ -29,11 +29,17 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 | Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
 | Runtime-v2 fake boundary | No host; `sts2-protocol` commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527` | Offline Rust toolchain | Deterministic source/build/test | Confirmed for the in-memory fake seam only; live host mutation and settlement unverified |
 | Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
+| Repeat-seed practice replay | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Managed build against exact host; gameplay not executed | Build confirmed; settings UI, cleanup, restart, history suppression, and protected-mode behavior unverified; see [repeat-seed](repeat-seed.md) |
 
 The project planning baseline names a host assembly identity, but this repository does not retain
 that proprietary file. The recorded load-smoke uses the operator's installed host assembly without
 storing or distributing it. No support claim is made for beta builds, earlier versions, Linux,
 macOS, or another architecture until an exact matrix row and evidence exist.
+
+The repeat-seed row is intentionally narrower than general gameplay support. The implementation
+only targets an active single-player Custom run and restarts it from the captured seed beginning.
+It does not support later-floor checkpoints, standard/daily/multiplayer replay, or another host
+version without a new compatibility test.
 
 ## Built-in runtime listener settings compatibility
 

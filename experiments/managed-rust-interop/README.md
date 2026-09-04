@@ -11,6 +11,14 @@ also target a selected profile and apply the guarded unlock action. Normal launc
 profile progress. It is a development package and must only be installed in an explicitly authorized
 test environment.
 
+The panel also contains an opt-in `Allow repeating seeds` control and a separate `Replay / reset
+seed once` action. The action requires confirmation and is limited to an active single-player,
+one-player Custom run. It cleans up the current run through host APIs and starts a new Custom run
+with the same seed, character, acts, modifiers, and ascension. It intentionally restarts from the
+seed beginning, does not create a run-history entry, and does not support later-floor checkpoints.
+Standard, daily, multiplayer, and unavailable states are protected. This behavior is source/build
+verified against operator-supplied host assemblies but remains runtime-unverified.
+
 The managed project references the operator-supplied `sts2.dll` and `GodotSharp.dll` only at build
 time, exposes the host's `ModInitializer`, loads `AIAscensionSTS2GameModNative.dll`, verifies ABI version
 1, and checks that the native `19 + 23` smoke call returns `42`. The companion is a Windows x86-64
@@ -40,6 +48,8 @@ The built-in panel contains:
 | `Apply now` | Saves and immediately restarts the bounded listener with the staged runtime API, bind address, and port values. |
 | `Reset` | Restores the runtime API default, loopback address, and port `15526`. |
 | `Apply full profile unlock` | Switches to the selected profile through the host save manager, then queues the guarded unlock operation. Only the selected profile is modified. |
+| `Allow repeating seeds` | Persists an opt-in practice setting; off by default. It gates the explicit replay/reset action and does not alter standard-mode seed rules. |
+| `Replay / reset seed once` | After confirmation, restarts the active eligible Custom run from its original seed through the host lifecycle. |
 
 Network values are staged in the panel and saved and applied by `Apply now` in the mod's own
 user-data settings file. `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` remain available as
@@ -72,8 +82,9 @@ applying the guarded mutation. The standalone command-line argument continues to
 profile.
 
 The settings feature does not add controls for runtime tokens, HTTP routes, MCP actions, AI policy,
-seeds, or native mod enablement. The game's native Installed Mods checkbox continues to own
-enablement, and environment credentials remain outside the settings system.
+or native mod enablement. The game's native Installed Mods checkbox continues to own enablement,
+and environment credentials remain outside the settings system. The separate repeat-seed controls
+are limited to the guarded practice replay described above.
 
 The existing standalone, exact `--ai-ascension-unlock-all` command-line argument remains available
 as an explicit command-line path without any settings-framework mod. The argument comparison is case-insensitive, but the

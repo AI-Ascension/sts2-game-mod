@@ -129,6 +129,7 @@ internal static partial class StandaloneProfileSettings
     {
         EnsureSelectionLoaded();
         PopulateNetworkSettings(content);
+        PopulateRepeatSeedSettings(content);
 
         var section = new Label
         {
