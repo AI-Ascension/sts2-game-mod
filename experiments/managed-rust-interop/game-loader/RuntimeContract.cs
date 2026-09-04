@@ -63,7 +63,7 @@ public static partial class ModEntry
         AddStatusOverlay(tree, ExpectedAbiVersion, ExpectedCheckedAddResult, true);
         if (tree.Root.GetNodeOrNull<CanvasLayer>(StatusNodeName) == null)
         {
-            return (RuntimeUnavailable, RuntimeError(context, RuntimeRequestKindAction, "effect_not_observed"));
+            return (RuntimeUnavailable, "{\"error_code\":\"runtime_probe_outcome_unknown\"}");
         }
         _runtimeGeneration++;
         _runtimeActionCount++;

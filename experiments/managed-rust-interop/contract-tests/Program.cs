@@ -97,6 +97,11 @@ namespace AiAscension.Sts2GameMod.Runtime
             Console.WriteLine(ProcessRuntimeWork(new RuntimeWork(1, context, "")).Response);
             if (limited.Status != 409 || _hostCalls != 1)
                 throw new InvalidOperationException("counter bound mutated host");
+            _runtimeActionCount = 0;
+            _retainOverlay = false;
+            var uncertain = ProcessRuntimeWork(new RuntimeWork(2, context, wire));
+            if (uncertain != (503, "{\"error_code\":\"runtime_probe_outcome_unknown\"}") || _hostCalls != 2)
+                throw new InvalidOperationException("missing post-effect witness falsely claimed rejection");
         }
 
         private static void Reject(string wire, RuntimeContext context, string name)

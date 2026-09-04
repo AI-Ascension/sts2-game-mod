@@ -37,10 +37,11 @@ namespace AiAscension.Sts2GameMod.Runtime
         private static ulong _runtimeGeneration;
         private static ulong _runtimeActionCount;
         private static int _hostCalls;
+        private static bool _retainOverlay = true;
         private static void AddStatusOverlay(Godot.SceneTree tree, uint abi, int result, bool force)
         {
             _hostCalls++;
-            tree.Root.Overlay = new Godot.CanvasLayer();
+            tree.Root.Overlay = _retainOverlay ? new Godot.CanvasLayer() : null;
         }
     }
 }

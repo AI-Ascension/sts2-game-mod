@@ -194,6 +194,8 @@ This probe links the actual managed Runtime-v1 contract/validation/ABI types to 
 host doubles. It exercises strict required/unknown/duplicate fields, null request sentinels,
 numeric kinds/bounds, header/body epoch agreement, malformed JSON and invalid callback context,
 fresh versus stale actions, and refusal before exceeding the canonical 1024 probe-action count.
+It also checks that an invoked host effect without a visible witness remains an unknown transport
+outcome rather than a canonical rejection.
 It emits synthetic request/response JSON for independent canonical-schema checks. It does not
 establish concrete Godot rendering, live thread affinity, or full protocol conformance.
 
