@@ -223,7 +223,7 @@ semantics beyond this probe remain unverified. The action is deliberately not a 
 
 ## Steam Workshop boundary
 
-ADR 0011 adds a first-party executable Workshop package path for the existing runtime addon. The
+[ADR 0015](decisions/0015-steam-workshop-first-party-package.md) adds a first-party executable Workshop package path for the existing runtime addon. The
 Rust module at crates/game-mod/src/workshop.rs is a pure owner-local contract: it parses bounded
 manifests, enforces sorted hashed file roles and safe relative payload paths, maps Steam install
 states to wait/ready/reject decisions, and compares an item against an exact package policy.
