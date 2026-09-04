@@ -7,5 +7,10 @@
     <Compile Include="../game-loader/RuntimeContract.cs" Link="RuntimeContract.cs" />
     <Compile Include="../game-loader/RuntimeContractValidation.cs" Link="RuntimeContractValidation.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" Link="Boundary/%(Filename)%(Extension)" />
+    <Compile Include="../game-loader/LegalActionCatalog.cs" Link="Boundary/LegalActionCatalog.cs" />
+    <Compile Include="../game-loader/PostconditionVerifier.cs" Link="Boundary/PostconditionVerifier.cs" />
+    <Compile Include="../game-loader/FairPlayProjection.cs" Link="Boundary/FairPlayProjection.cs" />
+    <Compile Include="../game-loader/PrivilegedFieldGuard.cs" Link="Boundary/PrivilegedFieldGuard.cs" />
   </ItemGroup>
 </Project>

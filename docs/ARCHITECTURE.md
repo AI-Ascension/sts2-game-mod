@@ -268,7 +268,7 @@ gameplay mutation.
 
 ## Runtime-v3 gameplay bridge
 
-ADR 0014 adds the managed source-only Runtime-v3 bridge. `RuntimeV3GameplayHost` owns the boundary
+ADR 0018 adds the managed source-only Runtime-v3 bridge. `RuntimeV3GameplayHost` owns the boundary
 between an injected host source and the host-thread queue: it accepts only validated typed actions
 from the current generation, records operation identities, and settles only with a fresh observation
 and transition witness. Dispatch, queue, host projection, and settlement exceptions become an
