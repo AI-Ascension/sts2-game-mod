@@ -27,8 +27,8 @@ jobs:
       - name: Verify semantic boundary remains fail-closed
         run: |
           git diff --check
-          if rg -n '\b(unwrap|expect|todo!|unimplemented!)\b|panic!' crates/game-mod/src; then exit 1; fi
-          if rg -n 'raw_memory|random_state|future_rng|host_object|process_command|screen_coordinate|input_event' experiments/managed-rust-interop/game-loader/RuntimeV3GameplayObservation.cs; then exit 1; fi
+          if grep -REn '\b(unwrap|expect|todo!|unimplemented!)\b|panic!' crates/game-mod/src; then exit 1; fi
+          if grep -En 'raw_memory|random_state|future_rng|host_object|process_command|screen_coordinate|input_event' experiments/managed-rust-interop/game-loader/RuntimeV3GameplayObservation.cs; then exit 1; fi
 
       - name: Verify copied POC artifact checksums
         working-directory: protocol-artifact/poc-v1

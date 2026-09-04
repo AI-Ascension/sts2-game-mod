@@ -23,3 +23,4 @@ markdown_max = 700
 "crates/game-mod/src/runtime_v3_gameplay/contract.rs" = "Handwritten neutral-contract mirror retained as one review unit; split or regenerate with the next schema tool."
 "crates/game-mod/src/runtime_v3_gameplay/runtime.rs" = "Handwritten host-thread adapter retained as one review unit; split at the next runtime contract revision."
 "experiments/managed-rust-interop/game-loader/RuntimeV3GameplaySupport.cs" = "Source-only managed compatibility seam is retained as one host boundary; split when the licensed SDK is supplied."
+"experiments/managed-rust-interop/game-loader/RuntimeV3GameplayHost.cs" = "Source-only managed host boundary retains one authoritative receipt and postcondition unit; split when the licensed SDK is supplied."
