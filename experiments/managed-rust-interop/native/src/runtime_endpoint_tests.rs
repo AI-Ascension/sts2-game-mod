@@ -5,7 +5,10 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-fn exchange(request: &[u8], callback: super::RuntimeRequestCallback) -> std::io::Result<String> {
+pub(super) fn exchange(
+    request: &[u8],
+    callback: super::RuntimeRequestCallback,
+) -> std::io::Result<String> {
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let mut peer = TcpStream::connect(listener.local_addr()?)?;
     peer.set_read_timeout(Some(Duration::from_secs(2)))?;

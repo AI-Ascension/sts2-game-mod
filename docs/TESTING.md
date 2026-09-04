@@ -395,6 +395,12 @@ provenance, stale digests and cross-field contradictions. Rust recovery tests al
 exercise operation-bound completion, refreshed correlation, uncertain dispatch and
 JSON-safe generation exhaustion without fake mutation.
 
+Native loopback tests exercise all six Runtime-v3 method/route mappings against all six request
+kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
+counter establishes that rejected combinations never cross the ABI and accepted combinations
+retain gameplay callback kind 3. These are HTTP admission tests, not full message conformance
+or managed/live-host mutation evidence; the existing auth and absolute-deadline tests still run.
+
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
 operation identities, stale observations, host-thread queueing, settlement witnesses, projection
 redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local

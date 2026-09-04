@@ -274,6 +274,12 @@ from the current generation, records operation identities, and settles only with
 and transition witness. Dispatch, queue, host projection, and settlement exceptions become an
 explicit unknown/recovery result.
 
+Before entering the managed callback, the native HTTP adapter checks the exact method/route
+against the top-level JSON request kind. State, legal-actions, action, wait, reobserve, and recover
+accept only their corresponding message kinds. Malformed JSON, non-object roots, duplicate root
+fields, and kind mismatches fail before callback invocation. The shared gameplay ABI callback
+kind remains 3; full payload/schema validation remains the managed handler's responsibility.
+
 Receipt lookup is scoped to instance/session/lease/epoch/operation and precedes new
 action admission. Replays use saved observation/catalog snapshots. Observation reads
 can discover a new generation; mutations and catalog-bound requests cannot bypass

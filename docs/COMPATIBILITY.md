@@ -144,6 +144,12 @@ typed catalog checks, host-thread adapter, separate co-op helpers, and postcondi
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
+Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
+Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
+This corrects admission in an unmerged transport implementation without changing the protocol
+digest or gameplay callback ABI kind 3. It does not permit a GET observation route to dispatch
+a mutation merely because its body names an action request.
+
 The internal Runtime-v3 host-source interface receives scoped operation identities
 and must supply independent completion evidence. The internal completion correction
 leaves message shapes unchanged. Separately, the unmerged protocol revision tightens
