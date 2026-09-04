@@ -49,6 +49,12 @@ namespace AiAscension.Sts2GameMod.Runtime
                 nested["extra"] = 1;
                 Reject(changed.ToJsonString(), context, "extra field " + objectPath);
             }
+            foreach (string field in new[] { "observation", "status", "error_code", "effect_witness" })
+            {
+                JsonObject changed = request.DeepClone().AsObject();
+                changed[field] = "not null";
+                Reject(changed.ToJsonString(), context, "nonnull " + field);
+            }
             string wire = request.ToJsonString();
             Reject(wire.Insert(1, "\"generation\":" + initial + ","), context, "duplicate top-level");
             Reject(wire.Replace("\"action_id\":", "\"action_id\":\"show_runtime_probe\",\"action_id\":", StringComparison.Ordinal),
@@ -65,6 +71,12 @@ namespace AiAscension.Sts2GameMod.Runtime
                 RuntimeContext invalid = new(context.InstanceId, context.CallerId, context.SessionId,
                     context.LeaseId, value, context.CorrelationId);
                 Reject(wire, invalid, "invalid context epoch");
+            }
+            foreach (string value in new[] { "", "space invalid", "unicode-λ", new string('a', 129) })
+            {
+                RuntimeContext invalid = new(context.InstanceId, value, context.SessionId,
+                    context.LeaseId, context.LeaseEpoch, context.CorrelationId);
+                Reject(wire, invalid, "invalid caller context");
             }
             if (_hostCalls != 0) throw new InvalidOperationException("rejection mutated host");
             var accepted = ProcessRuntimeWork(new RuntimeWork(2, context, wire));
