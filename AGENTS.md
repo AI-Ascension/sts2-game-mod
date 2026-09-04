@@ -112,18 +112,19 @@ prints their SHA-256 digests. Do not copy the host assemblies, game files, saves
 back into the repository.
 
 For a complete authorized WSL install/relaunch cycle, use the target-owned wrapper with an explicit
-game directory:
+game directory and the complete `LIVE_AUTHORIZATION` environment record documented in
+`experiments/managed-rust-interop/README.md`:
 
 ~~~text
 bash experiments/managed-rust-interop/dev-cycle.sh \
   --game-dir "/path/to/Slay the Spire 2"
 ~~~
 
-After a successful build it stops only `SlayTheSpire2.exe`, backs up replaced addon files under the
+After a successful build it stops only inspected processes from the selected installation, backs up replaced addon files under the
 ignored `.sts2-dev/backups/` directory, copies and compares the three staged files in `mods/`, then
 relaunches the same installation. Use `--dry-run` to inspect the cycle, `--no-launch` for an
-install-only operation, or `--no-kill` only when skipping the stop is known to be safe because the
-game is stopped or the installation is not locked. A game launch, load smoke, or runtime probe is separate host evidence and
+install-only operation, or `--no-kill` to require the selected installation already stopped.
+A game launch, load smoke, or runtime probe is separate host evidence and
 must be recorded as confirmed or unverified; it is never implied by a successful build.
 
 ### CI and host-boundary rule
