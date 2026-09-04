@@ -67,6 +67,10 @@ internal sealed class RuntimeV3GameplayHost
         {
             return Array.Empty<LegalActionReference>();
         }
+        if (!observation.IsActionable || observation.ModalBlocking || !observation.InputEnabled)
+        {
+            return Array.Empty<LegalActionReference>();
+        }
         IReadOnlyList<LegalActionReference> actions = _source.LegalActions(observation);
         if (!LegalActionCatalog.TryCreate(
                 observation.Generation,

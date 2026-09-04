@@ -148,3 +148,24 @@ fn wait_and_stale_action_are_fail_closed() -> Result<(), Box<dyn Error>> {
     assert_eq!(stale.error_code.as_deref(), Some("stale_generation"));
     Ok(())
 }
+
+#[test]
+fn disabled_input_exposes_no_legal_actions() -> Result<(), Box<dyn Error>> {
+    let mut game = FakeRuntimeV3GameplayGame::new(observation(), vec![action()])?;
+    game.set_input_enabled(false);
+    let mut runtime = RuntimeV3GameplayMod::new(
+        game,
+        RuntimeV3GameplayConfig {
+            identity: RuntimeV3GameplayIdentity::new("instance-1", "session-1", "lease-1", 1),
+            queue_capacity: 2,
+            receipt_capacity: 8,
+            max_request_bytes: 4096,
+        },
+    )?;
+    let response = round_trip(
+        &mut runtime,
+        RuntimeV3GameplayMessage::state_request(context(), 0),
+    );
+    assert_eq!(response.legal_actions.as_ref().map(Vec::len), Some(0));
+    Ok(())
+}

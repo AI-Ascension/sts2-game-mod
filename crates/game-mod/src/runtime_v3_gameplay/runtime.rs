@@ -576,10 +576,13 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         observation
             .validate()
             .map_err(|_| RuntimeV3GameplayError::InvalidObservation)?;
-        let legal_actions = self
-            .game
-            .legal_actions(&observation)
-            .map_err(RuntimeV3GameplayError::Host)?;
+        let legal_actions = if self.game.input_enabled() {
+            self.game
+                .legal_actions(&observation)
+                .map_err(RuntimeV3GameplayError::Host)?
+        } else {
+            Vec::new()
+        };
         if legal_actions.len() > RUNTIME_V3_GAMEPLAY_MAX_LEGAL_ACTIONS {
             return Err(RuntimeV3GameplayError::InvalidActions);
         }
