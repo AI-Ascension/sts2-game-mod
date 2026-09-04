@@ -25,6 +25,18 @@ and ascension on the game thread. It queues one bounded next-frame operation, ca
 `NGame.StartNewSingleplayerRun` using the captured seed and `GameMode.Custom`. The mod does not
 open, parse, or rewrite save files, and it does not call the run-ended/history path.
 
+The controller rechecks the opt-in setting, active run identity, seed, and active profile after
+queueing and after awaiting the current save task. A replacement pending save cancels replay;
+the user may retry after saving finishes. Unsupported hosts without an authoritative Custom mode
+property reject replay; modifiers alone are not mode evidence. The profile selector used by the
+separate unlock action does not select the replay target: replay belongs to the active run/profile.
+
+Cleanup, deletion, and replacement are not a transaction. A failure after cleanup begins may lose
+the old run and requires operator recovery; the controller cannot roll it back. The confirmation
+warns about this, and error logs distinguish pre-cleanup cancellation from post-cleanup failure
+without exposing exception messages or seed values. This feature must remain opt-in and
+runtime-unverified until save ordering and failure recovery are exercised on a disposable host.
+
 This is a restart-from-seed operation. It intentionally does not claim to restore the current
 floor, combat RNG position, deck state, map progress, or any other later-run checkpoint. A future
 checkpoint feature would need its own versioned identity/integrity contract and tests.

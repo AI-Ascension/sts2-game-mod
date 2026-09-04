@@ -63,6 +63,18 @@ profile; it is not full conformance or a release-support claim.
 
 ## Repeat-seed verification
 
+Run the source-linked controller probe without proprietary assemblies:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/replay-tests/ReplayValidationProbe.csproj --configuration Release
+~~~
+
+It links the production controller against synthetic API-shape fakes and covers unknown/protected
+mode rejection, duplicate queueing, opt-out before the frame or during saving, profile/run changes,
+replacement pending saves, failed saves, one same-seed restart, and sanitized post-cleanup failure.
+It does not establish real host API compatibility, Godot continuation scheduling, save atomicity,
+or the immutability of captured character/act/modifier model objects.
+
 The managed repeat-seed implementation is covered by the exact-host compile command in the host
 evidence section below. Static and build checks establish API shape and fail-closed source paths;
 they do not establish that a game UI click starts a replacement run. The feature-specific runtime

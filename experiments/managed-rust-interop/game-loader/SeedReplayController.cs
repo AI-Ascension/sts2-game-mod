@@ -85,7 +85,7 @@ internal static class SeedReplayController
             _ = ReplayAsync(acceptedSnapshot);
         };
         tree.ProcessFrame += pump;
-        GD.Print($"[AI-ASCENSION STS2 POC] repeat-seed replay queued: seed={acceptedSnapshot.Seed}");
+        GD.Print("[AI-ASCENSION STS2 POC] repeat-seed replay queued");
         return true;
     }
 
@@ -97,6 +97,13 @@ internal static class SeedReplayController
         try
         {
             RunManager runManager = RunManager.Instance;
+            if (!SaveManager.Instance.IsProfileInitialized
+                || SaveManager.Instance.CurrentProfileId is < 1 or > 3)
+            {
+                reason = "the active profile is unavailable";
+                return false;
+            }
+
             if (!runManager.IsInProgress)
             {
                 reason = "no active run";
@@ -134,7 +141,7 @@ internal static class SeedReplayController
                 return false;
             }
 
-            if (!TryGetGameMode(runManager, state, out GameMode gameMode) || gameMode != GameMode.Custom)
+            if (!TryGetGameMode(runManager, out GameMode gameMode) || gameMode != GameMode.Custom)
             {
                 reason = "only custom runs are supported; standard and daily runs are protected";
                 return false;
@@ -149,6 +156,7 @@ internal static class SeedReplayController
 
             snapshot = new ReplaySnapshot(
                 state,
+                SaveManager.Instance.CurrentProfileId,
                 state.Players[0].Character,
                 new List<ActModel>(state.Acts),
                 new List<ModifierModel>(state.Modifiers),
@@ -163,7 +171,7 @@ internal static class SeedReplayController
         }
     }
 
-    private static bool TryGetGameMode(RunManager runManager, RunState state, out GameMode gameMode)
+    private static bool TryGetGameMode(RunManager runManager, out GameMode gameMode)
     {
         if (RunManagerGameModeProperty?.GetValue(runManager) is GameMode reflectedMode)
         {
@@ -171,20 +179,22 @@ internal static class SeedReplayController
             return true;
         }
 
-        // Older host builds derive mode from modifiers. Keep the fallback conservative so a
-        // standard run is never silently promoted into a replayable practice run.
-        gameMode = state.Modifiers.Count > 0 ? GameMode.Custom : GameMode.Standard;
-        return true;
+        // Modifiers are not authoritative mode evidence on an unsupported host.
+        gameMode = default;
+        return false;
     }
 
     private static async Task ReplayAsync(ReplaySnapshot snapshot)
     {
         _replayRunning = true;
+        bool cleanupStarted = false;
         try
         {
             RunManager runManager = RunManager.Instance;
             if (!TryCaptureSnapshot(out ReplaySnapshot? current, out string reason)
+                || !StandaloneProfileSettings.AllowRepeatingSeeds
                 || current == null
+                || current.ProfileId != snapshot.ProfileId
                 || current.SourceState != snapshot.SourceState
                 || !string.Equals(current.Seed, snapshot.Seed, StringComparison.Ordinal))
             {
@@ -206,9 +216,12 @@ internal static class SeedReplayController
             }
 
             if (!TryCaptureSnapshot(out ReplaySnapshot? savedState, out reason)
+                || !StandaloneProfileSettings.AllowRepeatingSeeds
                 || savedState == null
+                || savedState.ProfileId != snapshot.ProfileId
                 || savedState.SourceState != snapshot.SourceState
-                || !string.Equals(savedState.Seed, snapshot.Seed, StringComparison.Ordinal))
+                || !string.Equals(savedState.Seed, snapshot.Seed, StringComparison.Ordinal)
+                || SaveManager.Instance.CurrentRunSaveTask is { IsCompletedSuccessfully: false })
             {
                 string failureReason = string.IsNullOrWhiteSpace(reason) ? "the active run changed" : reason;
                 GD.PrintErr($"[AI-ASCENSION STS2 POC] repeat-seed replay cancelled after save drain: {failureReason}");
@@ -217,6 +230,7 @@ internal static class SeedReplayController
 
             // CleanUp does not create a run-history entry. DeleteCurrentRun then removes only
             // the host-owned resume save, using the same supported APIs as the game's lifecycle.
+            cleanupStarted = true;
             runManager.CleanUp(graceful: true);
             SaveManager.Instance.DeleteCurrentRun();
 
@@ -229,12 +243,13 @@ internal static class SeedReplayController
                 gameMode: GameMode.Custom,
                 ascensionLevel: snapshot.AscensionLevel,
                 dailyTime: null);
-            GD.Print($"[AI-ASCENSION STS2 POC] repeat-seed replay started: seed={snapshot.Seed}");
+            GD.Print("[AI-ASCENSION STS2 POC] repeat-seed replay started");
         }
         catch (Exception exception)
         {
-            GD.PrintErr(
-                $"[AI-ASCENSION STS2 POC] repeat-seed replay failed safely: {exception.GetType().Name}: {exception.Message}");
+            GD.PrintErr($"[AI-ASCENSION STS2 POC] repeat-seed replay failed "
+                + $"{(cleanupStarted ? "after cleanup began; run recovery may be required" : "before cleanup")}: "
+                + exception.GetType().Name);
         }
         finally
         {
@@ -244,6 +259,7 @@ internal static class SeedReplayController
 
     private sealed record ReplaySnapshot(
         RunState SourceState,
+        int ProfileId,
         CharacterModel Character,
         IReadOnlyList<ActModel> Acts,
         IReadOnlyList<ModifierModel> Modifiers,

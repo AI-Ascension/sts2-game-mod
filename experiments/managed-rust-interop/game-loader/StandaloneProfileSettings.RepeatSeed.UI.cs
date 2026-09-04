@@ -108,7 +108,8 @@ internal static partial class StandaloneProfileSettings
                 Title = "Replay this seed?",
                 DialogText =
                     "The active custom run will be cleaned up and restarted from its original seed. "
-                    + "Its current progress will be discarded and no run-history entry will be added. Continue?",
+                    + "Its current progress will be discarded. If restart fails after cleanup, "
+                    + "the old run cannot be restored by this action. No run-history entry is requested. Continue?",
                 OkButtonText = "Replay / reset",
                 CancelButtonText = "Cancel"
             };
