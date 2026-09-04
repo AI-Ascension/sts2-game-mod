@@ -7,9 +7,11 @@ trap 'rm -rf -- "$fixture_root"' EXIT
 session_launcher_repo_root=$fixture_root
 session_launcher_package_script="$script_dir/session-package-fixture.sh"
 tasklist_cmd="$script_dir/session-launcher-fixture.sh"
+inspection_start=$SECONDS
 if (export STS2_SESSION_TEST_INSPECTION_HANG=1; probe_timeout_seconds=1; game_is_running) >/dev/null 2>&1; then
     printf 'hung inspection admitted work\n' >&2; exit 1
 fi
+(( SECONDS - inspection_start < 3 )) || { printf 'inspection deadline not enforced\n' >&2; exit 1; }
 live_authorization_deadline=$((EPOCHSECONDS + 60))
 mkdir -p "$fixture_root/host/mods"
 install_addon "$fixture_root/host/data" "$fixture_root/host" "$fixture_root/host/mods"
