@@ -266,6 +266,20 @@ has separate build evidence, but live `end_turn` mutation/settlement, process su
 action semantics beyond the frozen profile remain unverified. The v1 probe is deliberately not a
 gameplay mutation.
 
+## Runtime-v3 gameplay bridge
+
+ADR 0014 adds the managed source-only Runtime-v3 bridge. `RuntimeV3GameplayHost` owns the boundary
+between an injected host source and the host-thread queue: it accepts only validated typed actions
+from the current generation, records operation identities, and settles only with a fresh observation
+and transition witness. Dispatch, queue, host projection, and settlement exceptions become an
+explicit unknown/recovery result.
+
+`FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
+The co-op projection adds peer identity, ally targets, and synchronization metadata; disagreement,
+missing peers, disconnect, invalid identities, or unsupported action shapes suspend mutation. No
+provider policy, raw input, host object, save, executable, or future random state is represented.
+The bridge is source/build evidence only until the exact licensed host assemblies are available.
+
 ## Steam Workshop boundary
 
 [ADR 0015](decisions/0015-steam-workshop-first-party-package.md) adds a first-party executable Workshop package path for the existing runtime addon. The

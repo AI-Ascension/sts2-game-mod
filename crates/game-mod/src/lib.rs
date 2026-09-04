@@ -9,6 +9,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 mod poc;
 mod protocol_artifact;
 mod runtime_v2;
+mod runtime_v3_gameplay;
 mod workshop;
 
 pub use poc::{
@@ -29,6 +30,22 @@ pub use runtime_v2::{
     RuntimeV2Error, RuntimeV2GameError, RuntimeV2GamePort, RuntimeV2Identity, RuntimeV2Kind,
     RuntimeV2Message, RuntimeV2Mod, RuntimeV2Observation, RuntimeV2Provenance, RuntimeV2Status,
     RuntimeV2ValidationError, verify_runtime_v2_artifact,
+};
+pub use runtime_v3_gameplay::{
+    FakeRuntimeV3GameplayGame, RUNTIME_V3_GAMEPLAY_ARTIFACT,
+    RUNTIME_V3_GAMEPLAY_GENERATOR, RUNTIME_V3_GAMEPLAY_MAX_ENTITIES,
+    RUNTIME_V3_GAMEPLAY_MAX_GENERATION, RUNTIME_V3_GAMEPLAY_MAX_LEGAL_ACTIONS,
+    RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES, RUNTIME_V3_GAMEPLAY_PROTOCOL_VERSION,
+    RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST, RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE,
+    RuntimeV3GameplayAction, RuntimeV3GameplayCard, RuntimeV3GameplayConfig,
+    RuntimeV3GameplayContext, RuntimeV3GameplayEnemy, RuntimeV3GameplayEnemyIntent,
+    RuntimeV3GameplayGameError, RuntimeV3GameplayGamePort, RuntimeV3GameplayIdentity,
+    RuntimeV3GameplayLegalAction, RuntimeV3GameplayMessage, RuntimeV3GameplayMessageKind,
+    RuntimeV3GameplayMod, RuntimeV3GameplayObservation, RuntimeV3GameplayPlayer,
+    RuntimeV3GameplayProvenance, RuntimeV3GameplayRecovery, RuntimeV3GameplayRecoveryKind,
+    RuntimeV3GameplayShopItem, RuntimeV3GameplayState, RuntimeV3GameplayStateKind,
+    RuntimeV3GameplayStatus, RuntimeV3GameplayTransitionWitness,
+    RuntimeV3GameplayValidationError, RuntimeV3GameplayWaitOutcome,
 };
 pub use workshop::{
     AllowedWorkshopFile, WORKSHOP_LOADER_CONTRACT, WORKSHOP_MANIFEST_SCHEMA_VERSION,

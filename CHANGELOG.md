@@ -20,6 +20,9 @@ and has no released product behavior.
 - Enforced the ABI version 1 descriptor's zero-reserved-byte requirement. Invalid descriptors
   return `AbiError::NonzeroReservedBytes`; valid descriptor layout and version remain unchanged.
   Synthetic regression tests cover every reserved byte, without extending host evidence.
+- Added the source-only Runtime-v3 fair-play host bridge, generation-bound typed legal-action
+  catalog, postcondition receipt path, fail-closed unknown outcomes, and additive co-op projection.
+  Licensed host assembly/build and live gameplay compatibility remain unverified.
 
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses

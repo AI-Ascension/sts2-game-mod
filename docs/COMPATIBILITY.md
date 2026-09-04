@@ -138,6 +138,12 @@ The profile's `show_runtime_probe` action proves only a host-visible status-over
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
 another host version, another platform, or a valued profile.
 
+The separate `runtime-v3-gameplay` bridge is source-derived and uses the neutral protocol digest
+`fbfb18279b0c7ebb350ef0ce0d56547fa11e83985b13380cb2b0f1dba4cb56e9`. Its fair-play projection,
+typed catalog checks, host-thread adapter, co-op suspension rules, and postcondition verifier are
+covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
+settlement, and multiplayer behavior remain `unverified`.
+
 ## Workshop package profile
 
 The first-party Workshop package has its own compatibility dimensions: consumer App ID, published

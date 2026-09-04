@@ -225,7 +225,7 @@ public static partial class ModEntry
     private static int WriteNativeResponse(int status, string response, nint output, nuint outputCapacity, out nuint outputLength)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(response);
-        if (bytes.Length > (long)outputCapacity || bytes.Length > 64 * 1024)
+        if (bytes.Length > (long)outputCapacity || bytes.Length > 128 * 1024)
         {
             outputLength = 0;
             return RuntimeUnavailable;

@@ -360,3 +360,10 @@ Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Ex
 retries ignore transport correlation and JSON formatting; run/combat/player replacement
 invalidates generation. This bounded observation is not a complete game-state revision
 or a game-rule parity claim.
+## Runtime-v3 and co-op checks
+
+Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
+operation identities, stale observations, host-thread queueing, settlement witnesses, projection
+redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local
+identity, generation disagreement, missing peers, disconnect, ally targeting, and mutation
+suspension. They do not claim a licensed target build or live multiplayer compatibility.
