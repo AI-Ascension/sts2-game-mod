@@ -21,6 +21,43 @@ The source remains in this directory to preserve its existing ownership and work
 Generated `bin/`, `obj/`, and `target/` output is excluded. The host assembly, game files, saves,
 profiles, credentials, and runtime logs are never copied into the repository or package.
 
+The runtime launch paths (`session-launcher.sh` and `dev-cycle.sh`) and the Windows bridge are
+input-free by design. They start the game through non-shell process boundaries in headless mode with
+dummy audio, so the owned path does not create or focus a game window. They do not move or capture
+the system cursor, send mouse or keyboard events, focus or raise the game window, reposition a
+window, or navigate the game UI. A live trace may use the runtime API only after an operator has
+placed the authorized disposable profile in the required game state. If that state cannot be reached
+without UI input, the trace must stop and report the missing prerequisite; it must not use
+desktop-input automation.
+
+Every non-dry-run launch path also requires a complete, non-secret `LIVE_AUTHORIZATION` record in
+environment variables. The preflight runs before host inspection, package installation, profile
+access, listener setup, or child-process creation and removes the record from the child environment.
+The synthetic `--self-test`, `--authorization-check`, and `dev-cycle.sh --dry-run` paths do not
+launch or mutate the host. A minimal record for a loopback Runtime-v2 disposable trace is:
+
+~~~bash
+export STS2_LIVE_AUTHORIZATION_APPROVED=yes
+export STS2_LIVE_AUTHORIZATION_SCOPE='runtime-v2 live disposable trace'
+export STS2_LIVE_AUTHORIZATION_HOST_IDENTITY='operator-supplied-host-id'
+export STS2_LIVE_AUTHORIZATION_HOST_INSTALL_LABEL='operator-supplied-install-label'
+export STS2_LIVE_AUTHORIZATION_PROFILE_IDENTITY='operator-supplied-disposable-profile'
+export STS2_LIVE_AUTHORIZATION_PROCESS_ACTIONS='install launch stop terminate'
+export STS2_LIVE_AUTHORIZATION_PROFILE_MUTATIONS='mutate disposable selected profile only'
+export STS2_LIVE_AUTHORIZATION_LISTENER_ACTIONS='bind loopback connect loopback'
+export STS2_LIVE_AUTHORIZATION_NETWORK_ACTIONS='loopback only'
+export STS2_LIVE_AUTHORIZATION_CLEANUP_OWNER='operator-or-team'
+export STS2_LIVE_AUTHORIZATION_RESTORE_POINT='operator-backup-or-checkpoint'
+export STS2_LIVE_AUTHORIZATION_EXPIRY_EPOCH=$((EPOCHSECONDS + 1800))
+export STS2_LIVE_AUTHORIZATION_PUBLICATION_AUTHORITY='none'
+export STS2_LIVE_AUTHORIZATION_PROVIDER_CALLS=prohibited
+~~~
+
+Use `session-launcher.sh --authorization-check` to validate the record without touching the host.
+The launcher requires the scope to name `runtime-v2` and `live`, requires install/launch/stop/
+terminate ownership, requires disposable-profile and loopback authorization, rejects an expired
+deadline, and rejects provider calls. Provider-enabled execution needs a separately approved seam.
+
 ## Built-in profile settings
 
 The addon owns its settings panel and injects one `AI-Ascension` tab into the game's native settings

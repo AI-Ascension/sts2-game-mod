@@ -21,9 +21,20 @@ disclosure, and publish a fix only after affected users can update.
 The disposable session launcher generates a fresh runtime/mod credential and a distinct gateway
 credential from the operating system CSPRNG for every launch. Credentials are held only in process
 memory, passed to child environments or the Windows bridge stdin, and never accepted as launcher
-arguments or written to files, logs, screenshots, Steam options, URLs, or CI artifacts. The launcher
-refuses to adopt an already-running game, defaults the game listener to loopback, bounds readiness,
-and terminates only recorded child process groups and the recorded Windows game PID.
+arguments or written to files, logs, screenshots, Steam options, URLs, or CI artifacts. The owned
+launcher and bridge force `--headless --audio-driver Dummy`, so they do not create or focus a game
+window, capture the desktop cursor, or send mouse or keyboard events. The launcher refuses to adopt
+an already-running game, defaults the game listener to loopback, bounds readiness, and terminates
+only recorded child process groups and the recorded Windows game PID. Independently launched hosts
+and unrelated desktop processes are outside this guarantee.
+
+Non-dry-run owned launch paths fail closed unless the operator supplies a complete non-secret
+`LIVE_AUTHORIZATION` record. It names the exact host/install, disposable profile, permitted process
+and profile actions, loopback listener/network scope, cleanup owner, restore point, future deadline,
+publication authority, and provider-call status. The record is checked before host inspection,
+installation, profile access, listener setup, or child-process creation, then removed from child
+environments. The launcher has no provider-call path; it rejects any value other than
+`STS2_LIVE_AUTHORIZATION_PROVIDER_CALLS=prohibited`.
 
 The project does not promise a response time or a bounty. This policy is not permission to access
 another person's game profile, host installation, network, or data.

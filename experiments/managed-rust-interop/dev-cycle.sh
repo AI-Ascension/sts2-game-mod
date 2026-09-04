@@ -5,6 +5,7 @@ set -Eeuo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 repo_root=$(cd -- "$script_dir/../.." && pwd -P)
 package_script="$script_dir/package-runtime-addon.sh"
+authorization_script="$script_dir/live-authorization.sh"
 
 game_dir_input=${STS2_GAME_DIR:-}
 stage_dir=${STS2_RUNTIME_ADDON_STAGE_DIR:-"$repo_root/.sts2-dev/runtime-addon"}
@@ -45,6 +46,9 @@ die() {
     printf 'error: %s\n' "$1" >&2
     exit 1
 }
+
+[[ -f "$authorization_script" ]] || die 'live authorization helper is missing'
+source "$authorization_script"
 
 take_value() {
     local option=$1
@@ -122,6 +126,13 @@ done
 
 if [[ ! "$wait_seconds" =~ ^[0-9]+$ ]]; then
     die '--wait-seconds must be a non-negative integer'
+fi
+
+if [[ "$dry_run" != true ]]; then
+    # Installation, stopping, and relaunching are live mutations. Require the
+    # same explicit record as the single-instance runtime launcher before any
+    # host path is resolved or any build/child action begins.
+    validate_live_authorization
 fi
 
 to_wsl_path() {
@@ -352,14 +363,20 @@ if [[ "$launch_game" == true ]]; then
     game_dir_windows=$(to_windows_path "$game_dir")
     escaped_game_exe=${game_exe_windows//\'/\'\'}
     escaped_game_dir=${game_dir_windows//\'/\'\'}
-    launch_arguments=''
+    launch_arguments='--headless --audio-driver Dummy'
     if [[ "$unlock_all_on_launch" == true ]]; then
-        launch_arguments=" -ArgumentList '--ai-ascension-unlock-all'"
+        launch_arguments+=" --ai-ascension-unlock-all"
     fi
 
     printf '%s\n' 'Relaunching SlayTheSpire2.exe...'
     "$powershell_cmd" -NoProfile -NonInteractive -Command \
-        "Start-Process -FilePath '$escaped_game_exe' -WorkingDirectory '$escaped_game_dir'$launch_arguments"
+        "\$startInfo = New-Object System.Diagnostics.ProcessStartInfo; \
+\$startInfo.FileName = '$escaped_game_exe'; \
+\$startInfo.WorkingDirectory = '$escaped_game_dir'; \
+\$startInfo.UseShellExecute = \$false; \
+\$startInfo.CreateNoWindow = \$true; \
+if ('$launch_arguments' -ne '') { \$startInfo.Arguments = '$launch_arguments' }; \
+[void][System.Diagnostics.Process]::Start(\$startInfo)"
     printf '%s\n' 'Game launch requested.'
 else
     printf '%s\n' 'Game was not relaunched (--no-launch).'

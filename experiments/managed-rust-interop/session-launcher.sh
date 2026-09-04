@@ -5,6 +5,7 @@ set -Eeuo pipefail
 session_launcher_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 session_launcher_repo_root=$(cd -- "$session_launcher_dir/../.." && pwd -P)
 session_launcher_package_script="$session_launcher_dir/package-runtime-addon.sh"
+session_launcher_authorization_script="$session_launcher_dir/live-authorization.sh"
 session_launcher_bridge_project="$session_launcher_dir/session-launcher/windows-bridge/SessionWindowsBridge.csproj"
 session_launcher_bridge_dll="$session_launcher_dir/session-launcher/windows-bridge/bin/Release/net8.0/SessionWindowsBridge.dll"
 
@@ -33,10 +34,54 @@ game_started=0
 gateway_started=0
 harness_started=0
 
+input_automation_is_disabled() {
+    local source_file
+    local source_text
+    local forbidden_api
+    local -a launcher_sources=(
+        "$session_launcher_dir/session-launcher.sh"
+        "$session_launcher_dir/session-launcher.test.sh"
+        "$session_launcher_dir/dev-cycle.sh"
+        "$session_launcher_dir/session-launcher/windows-bridge/Program.cs"
+    )
+    local -a forbidden_apis=(
+        "Set""CursorPos"
+        "mouse""_event"
+        "Send""Input"
+        "keybd""_event"
+        "Set""ForegroundWindow"
+        "Set""WindowPos"
+        "BringWindow""ToTop"
+        "Show""Window"
+        "Set""ActiveWindow"
+        "Set""Focus"
+        "AttachThread""Input"
+        "Block""Input"
+        "Clip""Cursor"
+        "Get""CursorPos"
+        "Set""Cursor"
+        "Set""Capture"
+        "Release""Capture"
+        "Move""Window"
+    )
+
+    for source_file in "${launcher_sources[@]}"; do
+        [[ -f "$source_file" ]] || return 1
+        source_text=$(<"$source_file") || return 1
+        for forbidden_api in "${forbidden_apis[@]}"; do
+            [[ "$source_text" != *"$forbidden_api"* ]] || return 1
+        done
+    done
+}
+
 die() {
     printf 'error: %s\n' "$1" >&2
     exit 1
 }
+
+[[ -f "$session_launcher_authorization_script" ]] \
+    || die 'live authorization helper is missing'
+source "$session_launcher_authorization_script"
 
 take_value() {
     local option=$1
@@ -440,6 +485,7 @@ self_test() {
 
     command -v openssl >/dev/null 2>&1 || die 'openssl is required for the CSPRNG self-test'
     command -v timeout >/dev/null 2>&1 || die 'timeout is required for the readiness self-test'
+    input_automation_is_disabled || die 'UI input automation is present in the owned launch path'
     first_runtime=$(new_credential) || die 'CSPRNG did not return a bounded credential'
     second_runtime=$(new_credential) || die 'CSPRNG did not return a second credential'
     first_gateway=$(new_credential) || die 'CSPRNG did not return a gateway credential'
@@ -502,7 +548,8 @@ self_test() {
         'Credential role separation=TRUE' \
         'Authorization fail-closed=TRUE' \
         'Owned process cleanup=TRUE' \
-        'Token leakage=FALSE'
+        'Token leakage=FALSE' \
+        'System input automation=FALSE'
 }
 
 usage() {
@@ -534,6 +581,7 @@ usage() {
         '  --taskkill-command P   explicit taskkill.exe path' \
         '  --keep-alive           leave the owned session running until interrupted' \
         '  --self-test            run synthetic credential/auth/process tests' \
+        '  --authorization-check  validate LIVE_AUTHORIZATION without host access' \
         '  -h, --help             show this help'
 }
 
@@ -555,6 +603,7 @@ main() {
     local taskkill_command_input=''
     local keep_alive=false
     local self_test_requested=false
+    local authorization_check_requested=false
     local game_dir
     local game_data_dir
     local game_exe
@@ -610,6 +659,7 @@ main() {
             --taskkill-command=*) taskkill_command_input=${1#*=}; shift ;;
             --keep-alive) keep_alive=true; shift ;;
             --self-test) self_test_requested=true; shift ;;
+            --authorization-check) authorization_check_requested=true; shift ;;
             -h|--help) usage; return 0 ;;
             *) die "unknown option: $1" ;;
         esac
@@ -620,12 +670,24 @@ main() {
         return 0
     fi
 
+    if [[ "$authorization_check_requested" == true ]]; then
+        validate_live_authorization
+        printf '%s\n' 'LIVE_AUTHORIZATION=VALID'
+        return 0
+    fi
+
+    # This is the first operation on the non-synthetic path. It must happen
+    # before host inspection, addon installation, listener setup, or any child
+    # process is started.
+    validate_live_authorization
+
     unset STS2_RUNTIME_TOKEN STS2_GATEWAY_TOKEN STS2_MOD_TOKEN STS2_PROBE_TOKEN
     command -v openssl >/dev/null 2>&1 || die 'openssl is required for ephemeral credentials'
     command -v timeout >/dev/null 2>&1 || die 'timeout is required for bounded readiness'
     command -v setsid >/dev/null 2>&1 || die 'setsid is required for owned process groups'
     [[ -f "$session_launcher_package_script" ]] || die 'addon packaging script is missing'
     [[ -f "$session_launcher_bridge_project" ]] || die 'Windows session bridge project is missing'
+    input_automation_is_disabled || die 'UI input automation is present in the owned launch path'
 
     [[ "$startup_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
         || die '--startup-timeout must be a positive integer'
@@ -644,11 +706,17 @@ main() {
         || die '--gateway-address must be HOST:PORT with a port from 1 through 65535'
     gateway_host=$(printf '%s\n' "$endpoint_parts" | sed -n '1p')
     gateway_port=$(printf '%s\n' "$endpoint_parts" | sed -n '2p')
+    [[ "$gateway_host" == 127.0.0.1 ]] \
+        || die 'the authorized live launcher requires the gateway address to be 127.0.0.1'
+    [[ "$bind_address" == 127.0.0.1 ]] \
+        || die 'the authorized live launcher requires the game bind address to be 127.0.0.1'
     mod_addr=${mod_addr_input:-127.0.0.1:$network_port}
     endpoint_parts=$(parse_endpoint "$mod_addr") \
         || die '--mod-address must be HOST:PORT with a port from 1 through 65535'
     mod_host=$(printf '%s\n' "$endpoint_parts" | sed -n '1p')
     mod_port=$(printf '%s\n' "$endpoint_parts" | sed -n '2p')
+    [[ "$mod_host" == 127.0.0.1 ]] \
+        || die 'the authorized live launcher requires the mod address to be 127.0.0.1'
     case "$bind_address" in
         0.0.0.0) game_probe_host=127.0.0.1 ;;
         *) game_probe_host=$bind_address ;;
@@ -828,7 +896,8 @@ main() {
         'Token configured=TRUE' \
         'Listener enabled=TRUE' \
         'Gateway authenticated=TRUE' \
-        'Harness ready=TRUE'
+        'Harness ready=TRUE' \
+        'System input automation=FALSE'
     if [[ "$keep_alive" == true ]]; then
         while game_pid_is_running; do
             sleep 1
