@@ -25,6 +25,7 @@ usage() {
 }
 
 [[ $# -eq 8 ]] || usage
+export LC_ALL=C
 
 payload_dir=$(realpath -e "$1") || die "payload directory does not exist: $1"
 output_dir=$(realpath -m "$2") || die "could not resolve output directory: $2"
@@ -33,21 +34,31 @@ published_file_id=$4
 game_version=$5
 package_version=$6
 source_revision=$7
+[[ ! -L "$1" && ! -L "$8" ]] || die 'payload root and preview must not be symlinks'
 preview_file=$(realpath -e "$8") || die "preview file does not exist: $8"
 [[ -f "$preview_file" && ! -L "$preview_file" ]] || die 'preview file must be a regular non-symlink file'
 
-[[ "$consumer_app_id" =~ ^[1-9][0-9]*$ ]] || die 'consumer app ID must be a positive decimal integer'
-[[ "$published_file_id" =~ ^[0-9]+$ ]] || die 'published file ID must be a decimal integer or 0'
+bounded_decimal() {
+    local value=$1 maximum=$2
+    [[ "$value" =~ ^(0|[1-9][0-9]*)$ ]] || return 1
+    [[ ${#value} -lt ${#maximum} || (${#value} -eq ${#maximum} && ! "$value" > "$maximum") ]]
+}
+bounded_decimal "$consumer_app_id" 4294967295 && [[ "$consumer_app_id" != 0 ]] || die 'consumer app ID must be a positive uint32 decimal'
+bounded_decimal "$published_file_id" 18446744073709551615 || die 'published file ID must be a uint64 decimal without leading zeros'
 [[ "$game_version" =~ ^[A-Za-z0-9._-]+$ ]] || die 'game version contains unsupported characters'
 [[ "$package_version" =~ ^[A-Za-z0-9._-]+$ ]] || die 'package version contains unsupported characters'
 [[ "$source_revision" =~ ^[A-Za-z0-9._/-]+$ ]] || die 'source revision contains unsupported characters'
 [[ "$source_revision" != *..* ]] || die 'source revision may not contain parent traversal'
+for token in "$game_version" "$package_version" "$source_revision"; do
+    [[ ${#token} -le 256 && "$token" != *..* ]] || die 'metadata token exceeds contract bounds'
+done
 
-case "$payload_dir/" in
-    "$output_dir/"*) die 'output directory must not be inside the payload directory' ;;
+case "$output_dir/" in
+    "$payload_dir/"*) die 'output directory must not be inside the payload directory' ;;
 esac
 [[ -e "$output_dir" ]] && die "output directory already exists: $output_dir"
-mkdir -p "$output_dir"
+vdf_path="${output_dir}.vdf"
+[[ ! -e "$vdf_path" && ! -L "$vdf_path" ]] || die "VDF output already exists: $vdf_path"
 
 readonly payload_files=(
     'AIAscensionSTS2GameMod.dll'
@@ -74,6 +85,12 @@ for name in "${payload_files[@]}"; do
     source_file="$payload_dir/$name"
     [[ -f "$source_file" && ! -L "$source_file" ]] || die "required payload file is missing: $name"
     [[ -s "$source_file" ]] || die "required payload file is empty: $name"
+    [[ $(wc -c < "$source_file") -le 268435456 ]] || die "payload file exceeds its byte bound: $name"
+done
+
+mkdir -p "$output_dir"
+for name in "${payload_files[@]}"; do
+    source_file="$payload_dir/$name"
     cp -- "$source_file" "$output_dir/$name"
 done
 
@@ -131,9 +148,6 @@ checksum_path="$output_dir/$CHECKSUM_NAME"
         printf '%s  %s\n' "$(file_digest "$output_dir/$name")" "$name"
     done
 } > "$checksum_path"
-
-vdf_path="${output_dir}.vdf"
-[[ ! -e "$vdf_path" ]] || die "VDF output already exists: $vdf_path"
 
 vdf_escape() {
     local value=$1

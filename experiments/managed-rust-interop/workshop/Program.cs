@@ -51,6 +51,8 @@ internal static class Program
                 return 1;
             }
 
+            NegativeCases.Run(root, () => WorkshopPackageValidator.ValidateDirectory(
+                root, AppId, PublishedFileId, GameVersion, Platform));
             File.WriteAllText(Path.Combine(root, "unexpected.txt"), "reject me\n");
             ExpectFailure("unexpected_file", () => WorkshopPackageValidator.ValidateDirectory(
                 root, AppId, PublishedFileId, GameVersion, Platform));

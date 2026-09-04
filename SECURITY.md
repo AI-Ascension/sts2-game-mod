@@ -35,6 +35,11 @@ third-party code. The checked-in package tool stages an exact allowlist, records
 digests, and emits a manifest and checksum inventory. The managed loader rejects unexpected files,
 reparse points, unsafe paths, identity mismatches, and digest failures before native loading.
 
+Manifest reads are bounded before allocation; duplicate JSON fields and reparse points in the
+install-root ancestry are rejected. Keep installed bytes quiescent and owner-controlled through
+native loading: these checks do not authenticate the publisher or prevent concurrent replacement.
+The managed assembly has already been admitted by the host before its package validation runs.
+
 Steam credentials, Steamworks binaries, host assemblies, game data, and local installation paths
 must remain outside the repository and CI. Do not add arbitrary DLL loading, dynamic dependency
 resolution, or upload credentials to the package or workflow. Report a suspected bypass with a

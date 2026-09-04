@@ -20,6 +20,11 @@ and a pre-existing output directory. The output contains the allowlisted payload
 `SHA256SUMS`. The Steam upload VDF is written beside the content directory so it cannot accidentally
 become Workshop payload.
 
+App/item IDs must fit unsigned 32/64-bit decimal fields without leading zeros; metadata tokens
+and payload sizes obey the consumer bounds. Invalid input, output nested inside the payload,
+and an existing upload VDF are rejected before creating the output directory. Source payloads
+must remain quiescent during staging; this tool is not a transactional installer.
+
 The manifest uses the owner-local `sts2-workshop-manifest-v1` contract and records
 `sts2-managed-loader-v1`. A `published-file-id` of `0` is valid only for creating a new item. After
 Steam assigns an ID, rebuild the package with that exact ID before treating it as a release
