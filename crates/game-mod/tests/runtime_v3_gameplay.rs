@@ -63,14 +63,19 @@ fn round_trip(
     message: RuntimeV3GameplayMessage,
 ) -> RuntimeV3GameplayMessage {
     let body = serde_json::to_vec(&message).expect("request encodes");
-    let response = runtime.handle(&body).expect("request is accepted by the boundary");
+    let response = runtime
+        .handle(&body)
+        .expect("request is accepted by the boundary");
     serde_json::from_slice(&response).expect("response decodes")
 }
 
 #[test]
 fn state_and_legal_actions_are_host_generated() -> Result<(), Box<dyn Error>> {
     let mut runtime = runtime();
-    let response = round_trip(&mut runtime, RuntimeV3GameplayMessage::state_request(context(), 0));
+    let response = round_trip(
+        &mut runtime,
+        RuntimeV3GameplayMessage::state_request(context(), 0),
+    );
     assert_eq!(response.kind, RuntimeV3GameplayMessageKind::StateResponse);
     assert_eq!(response.generation, 0);
     assert_eq!(response.legal_actions.as_ref().map(Vec::len), Some(1));
@@ -122,7 +127,10 @@ fn wait_and_stale_action_are_fail_closed() -> Result<(), Box<dyn Error>> {
         RuntimeV3GameplayMessage::wait_request(context(), 1, "op-1", 100),
     );
     assert_eq!(wait.kind, RuntimeV3GameplayMessageKind::WaitResponse);
-    assert_eq!(wait.wait_outcome, Some(RuntimeV3GameplayWaitOutcome::Successor));
+    assert_eq!(
+        wait.wait_outcome,
+        Some(RuntimeV3GameplayWaitOutcome::Successor)
+    );
 
     let stale = round_trip(
         &mut runtime,

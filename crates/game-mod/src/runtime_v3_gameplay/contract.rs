@@ -2,8 +2,7 @@
 
 pub const RUNTIME_V3_GAMEPLAY_PROTOCOL_VERSION: &str = "runtime-v3-gameplay";
 pub const RUNTIME_V3_GAMEPLAY_ARTIFACT: &str = "sts2-protocol/runtime-v3-gameplay";
-pub const RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE: &str =
-    "schemas/runtime-v3-gameplay.schema.json";
+pub const RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE: &str = "schemas/runtime-v3-gameplay.schema.json";
 pub const RUNTIME_V3_GAMEPLAY_GENERATOR: &str = "hand-authored";
 pub const RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST: &str =
     "fbfb18279b0c7ebb350ef0ce0d56547fa11e83985b13380cb2b0f1dba4cb56e9";
@@ -73,17 +72,39 @@ pub struct RuntimeV3GameplayPlayer {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum RuntimeV3GameplayState {
-    Setup { characters: Vec<String> },
-    Map { node_id: Option<String>, options: Vec<String> },
-    Combat { turn_index: u16, enemies: Vec<RuntimeV3GameplayEnemy> },
-    Reward { options: Vec<String> },
-    Shop { items: Vec<RuntimeV3GameplayShopItem> },
-    Event { choices: Vec<String> },
-    Rest { options: Vec<String> },
-    Selection { choices: Vec<String> },
+    Setup {
+        characters: Vec<String>,
+    },
+    Map {
+        node_id: Option<String>,
+        options: Vec<String>,
+    },
+    Combat {
+        turn_index: u16,
+        enemies: Vec<RuntimeV3GameplayEnemy>,
+    },
+    Reward {
+        options: Vec<String>,
+    },
+    Shop {
+        items: Vec<RuntimeV3GameplayShopItem>,
+    },
+    Event {
+        choices: Vec<String>,
+    },
+    Rest {
+        options: Vec<String>,
+    },
+    Selection {
+        choices: Vec<String>,
+    },
     Victory,
-    Defeat { reason: Option<String> },
-    Recovery { code: String },
+    Defeat {
+        reason: Option<String>,
+    },
+    Recovery {
+        code: String,
+    },
 }
 
 impl RuntimeV3GameplayState {
@@ -126,18 +147,37 @@ pub struct RuntimeV3GameplayObservation {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum RuntimeV3GameplayAction {
-    StartRun { character_id: String },
-    SelectMapNode { node_id: String },
-    PlayCard { card_id: String, target_id: Option<String> },
+    StartRun {
+        character_id: String,
+    },
+    SelectMapNode {
+        node_id: String,
+    },
+    PlayCard {
+        card_id: String,
+        target_id: Option<String>,
+    },
     EndTurn,
-    ChooseReward { reward_id: String },
+    ChooseReward {
+        reward_id: String,
+    },
     SkipReward,
-    ShopPurchase { item_id: String },
-    ShopRemove { card_id: String },
+    ShopPurchase {
+        item_id: String,
+    },
+    ShopRemove {
+        card_id: String,
+    },
     Rest,
-    Smith { card_id: String },
-    EventChoice { choice_id: String },
-    SelectCard { card_id: String },
+    Smith {
+        card_id: String,
+    },
+    EventChoice {
+        choice_id: String,
+    },
+    SelectCard {
+        card_id: String,
+    },
     ConfirmVictory,
     SaveQuit,
 }
@@ -309,7 +349,11 @@ pub struct RuntimeV3GameplayMessage {
 
 impl RuntimeV3GameplayMessage {
     #[must_use]
-    pub fn base(context: RuntimeV3GameplayContext, generation: u64, kind: RuntimeV3GameplayMessageKind) -> Self {
+    pub fn base(
+        context: RuntimeV3GameplayContext,
+        generation: u64,
+        kind: RuntimeV3GameplayMessageKind,
+    ) -> Self {
         Self {
             protocol_version: RUNTIME_V3_GAMEPLAY_PROTOCOL_VERSION.to_owned(),
             schema_digest: RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST.to_owned(),
@@ -337,12 +381,20 @@ impl RuntimeV3GameplayMessage {
 
     #[must_use]
     pub fn state_request(context: RuntimeV3GameplayContext, generation: u64) -> Self {
-        Self::base(context, generation, RuntimeV3GameplayMessageKind::StateRequest)
+        Self::base(
+            context,
+            generation,
+            RuntimeV3GameplayMessageKind::StateRequest,
+        )
     }
 
     #[must_use]
     pub fn reobserve_request(context: RuntimeV3GameplayContext, generation: u64) -> Self {
-        Self::base(context, generation, RuntimeV3GameplayMessageKind::ReobserveRequest)
+        Self::base(
+            context,
+            generation,
+            RuntimeV3GameplayMessageKind::ReobserveRequest,
+        )
     }
 
     #[must_use]
@@ -353,7 +405,11 @@ impl RuntimeV3GameplayMessage {
     ) -> Self {
         Self {
             state_id: Some(state_id.into()),
-            ..Self::base(context, generation, RuntimeV3GameplayMessageKind::LegalActionsRequest)
+            ..Self::base(
+                context,
+                generation,
+                RuntimeV3GameplayMessageKind::LegalActionsRequest,
+            )
         }
     }
 
@@ -387,7 +443,11 @@ impl RuntimeV3GameplayMessage {
         Self {
             operation_id: Some(operation_id.into()),
             wait_for_millis: Some(wait_for_millis),
-            ..Self::base(context, generation, RuntimeV3GameplayMessageKind::WaitRequest)
+            ..Self::base(
+                context,
+                generation,
+                RuntimeV3GameplayMessageKind::WaitRequest,
+            )
         }
     }
 
@@ -399,7 +459,11 @@ impl RuntimeV3GameplayMessage {
     ) -> Self {
         Self {
             recovery: Some(recovery),
-            ..Self::base(context, generation, RuntimeV3GameplayMessageKind::RecoverRequest)
+            ..Self::base(
+                context,
+                generation,
+                RuntimeV3GameplayMessageKind::RecoverRequest,
+            )
         }
     }
 
@@ -465,7 +529,10 @@ impl RuntimeV3GameplayObservation {
         if !valid_identity(&self.state_id)
             || self.generation > RUNTIME_V3_GAMEPLAY_MAX_GENERATION
             || self.player.hp > self.player.max_hp
-            || self.visible_seed.as_deref().is_some_and(|value| !valid_text(value))
+            || self
+                .visible_seed
+                .as_deref()
+                .is_some_and(|value| !valid_text(value))
         {
             return Err(RuntimeV3GameplayValidationError::ObservationShape);
         }
@@ -475,12 +542,23 @@ impl RuntimeV3GameplayObservation {
         validate_cards(&self.player.exhaust)?;
         match &self.state {
             RuntimeV3GameplayState::Setup { characters }
-            | RuntimeV3GameplayState::Reward { options: characters }
-            | RuntimeV3GameplayState::Rest { options: characters }
-            | RuntimeV3GameplayState::Event { choices: characters }
-            | RuntimeV3GameplayState::Selection { choices: characters } => validate_ids(characters),
+            | RuntimeV3GameplayState::Reward {
+                options: characters,
+            }
+            | RuntimeV3GameplayState::Rest {
+                options: characters,
+            }
+            | RuntimeV3GameplayState::Event {
+                choices: characters,
+            }
+            | RuntimeV3GameplayState::Selection {
+                choices: characters,
+            } => validate_ids(characters),
             RuntimeV3GameplayState::Map { node_id, options } => {
-                if node_id.as_deref().is_some_and(|value| !valid_identity(value)) {
+                if node_id
+                    .as_deref()
+                    .is_some_and(|value| !valid_identity(value))
+                {
                     return Err(RuntimeV3GameplayValidationError::InvalidIdentity);
                 }
                 validate_ids(options)
@@ -540,15 +618,27 @@ impl RuntimeV3GameplayLegalAction {
         }
         let values = match &self.action {
             RuntimeV3GameplayAction::StartRun { character_id }
-            | RuntimeV3GameplayAction::SelectMapNode { node_id: character_id }
-            | RuntimeV3GameplayAction::ChooseReward { reward_id: character_id }
-            | RuntimeV3GameplayAction::ShopPurchase { item_id: character_id }
-            | RuntimeV3GameplayAction::ShopRemove { card_id: character_id }
-            | RuntimeV3GameplayAction::Smith { card_id: character_id }
-            | RuntimeV3GameplayAction::EventChoice { choice_id: character_id }
-            | RuntimeV3GameplayAction::SelectCard { card_id: character_id } => {
-                [Some(character_id.as_str()), None]
+            | RuntimeV3GameplayAction::SelectMapNode {
+                node_id: character_id,
             }
+            | RuntimeV3GameplayAction::ChooseReward {
+                reward_id: character_id,
+            }
+            | RuntimeV3GameplayAction::ShopPurchase {
+                item_id: character_id,
+            }
+            | RuntimeV3GameplayAction::ShopRemove {
+                card_id: character_id,
+            }
+            | RuntimeV3GameplayAction::Smith {
+                card_id: character_id,
+            }
+            | RuntimeV3GameplayAction::EventChoice {
+                choice_id: character_id,
+            }
+            | RuntimeV3GameplayAction::SelectCard {
+                card_id: character_id,
+            } => [Some(character_id.as_str()), None],
             RuntimeV3GameplayAction::PlayCard { card_id, target_id } => {
                 [Some(card_id.as_str()), target_id.as_deref()]
             }
@@ -558,7 +648,11 @@ impl RuntimeV3GameplayLegalAction {
             | RuntimeV3GameplayAction::ConfirmVictory
             | RuntimeV3GameplayAction::SaveQuit => [None, None],
         };
-        if values.into_iter().flatten().any(|value| !valid_identity(value)) {
+        if values
+            .into_iter()
+            .flatten()
+            .any(|value| !valid_identity(value))
+        {
             Err(RuntimeV3GameplayValidationError::ActionShape)
         } else {
             Ok(())
@@ -582,8 +676,7 @@ impl RuntimeV3GameplayTransitionWitness {
 
 impl RuntimeV3GameplayRecovery {
     fn validate(&self) -> Result<(), RuntimeV3GameplayValidationError> {
-        if (self.kind == RuntimeV3GameplayRecoveryKind::Reconcile) != self.operation_id.is_some()
-        {
+        if (self.kind == RuntimeV3GameplayRecoveryKind::Reconcile) != self.operation_id.is_some() {
             return Err(RuntimeV3GameplayValidationError::RecoveryShape);
         }
         if self
@@ -597,7 +690,9 @@ impl RuntimeV3GameplayRecovery {
     }
 }
 
-fn validate_shape(message: &RuntimeV3GameplayMessage) -> Result<(), RuntimeV3GameplayValidationError> {
+fn validate_shape(
+    message: &RuntimeV3GameplayMessage,
+) -> Result<(), RuntimeV3GameplayValidationError> {
     match message.kind {
         RuntimeV3GameplayMessageKind::StateRequest
         | RuntimeV3GameplayMessageKind::ReobserveRequest => {
@@ -776,7 +871,9 @@ fn observation_matches_envelope(message: &RuntimeV3GameplayMessage) -> bool {
         && observation.generation == message.generation
 }
 
-fn result_shape(message: &RuntimeV3GameplayMessage) -> Result<(), RuntimeV3GameplayValidationError> {
+fn result_shape(
+    message: &RuntimeV3GameplayMessage,
+) -> Result<(), RuntimeV3GameplayValidationError> {
     if message.operation_id.is_none()
         || message.action.is_some()
         || message.wait_for_millis.is_some()
@@ -903,7 +1000,9 @@ fn validate_ids(values: &[String]) -> Result<(), RuntimeV3GameplayValidationErro
     }
 }
 
-fn validate_actions(actions: &[RuntimeV3GameplayLegalAction]) -> Result<(), RuntimeV3GameplayValidationError> {
+fn validate_actions(
+    actions: &[RuntimeV3GameplayLegalAction],
+) -> Result<(), RuntimeV3GameplayValidationError> {
     if actions.len() > RUNTIME_V3_GAMEPLAY_MAX_LEGAL_ACTIONS {
         return Err(RuntimeV3GameplayValidationError::CollectionBounds);
     }

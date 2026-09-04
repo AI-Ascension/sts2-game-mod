@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use super::contract::{
-    RuntimeV3GameplayAction, RuntimeV3GameplayObservation,
-};
+use super::contract::{RuntimeV3GameplayAction, RuntimeV3GameplayObservation};
 
 /// Host-side failures kept separate from queue and protocol failures.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

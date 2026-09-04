@@ -6,10 +6,10 @@ use sts2_game_mod_host::{MainThreadQueue, QueueError};
 
 use super::contract::{
     RUNTIME_V3_GAMEPLAY_MAX_GENERATION, RUNTIME_V3_GAMEPLAY_MAX_LEGAL_ACTIONS,
-    RuntimeV3GameplayContext, RuntimeV3GameplayIdentity,
-    RuntimeV3GameplayLegalAction, RuntimeV3GameplayMessage, RuntimeV3GameplayMessageKind,
-    RuntimeV3GameplayObservation, RuntimeV3GameplayRecoveryKind, RuntimeV3GameplayStatus,
-    RuntimeV3GameplayTransitionWitness, RuntimeV3GameplayWaitOutcome,
+    RuntimeV3GameplayContext, RuntimeV3GameplayIdentity, RuntimeV3GameplayLegalAction,
+    RuntimeV3GameplayMessage, RuntimeV3GameplayMessageKind, RuntimeV3GameplayObservation,
+    RuntimeV3GameplayRecoveryKind, RuntimeV3GameplayStatus, RuntimeV3GameplayTransitionWitness,
+    RuntimeV3GameplayWaitOutcome,
 };
 use super::fake::{RuntimeV3GameplayGameError, RuntimeV3GameplayGamePort};
 
@@ -67,7 +67,9 @@ impl std::fmt::Display for RuntimeV3GameplayError {
             Self::StaleIdentity => "runtime-v3 request has stale identity or lease",
             Self::StaleGeneration => "runtime-v3 request has a stale generation",
             Self::OperationNotFound => "runtime-v3 operation is not retained",
-            Self::OperationConflict => "runtime-v3 operation identity conflicts with a prior request",
+            Self::OperationConflict => {
+                "runtime-v3 operation identity conflicts with a prior request"
+            }
             Self::QueueClosed => "runtime-v3 admission queue is closed",
             Self::QueueFull => "runtime-v3 admission queue is full",
             Self::ReceiptStoreFull => "runtime-v3 receipt store is full",
@@ -101,10 +103,7 @@ pub struct RuntimeV3GameplayMod<G> {
 }
 
 impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
-    pub fn new(
-        game: G,
-        config: RuntimeV3GameplayConfig,
-    ) -> Result<Self, RuntimeV3GameplayError> {
+    pub fn new(game: G, config: RuntimeV3GameplayConfig) -> Result<Self, RuntimeV3GameplayError> {
         if !valid_identity(&config.identity.instance_id)
             || !valid_identity(&config.identity.session_id)
             || !valid_identity(&config.identity.lease_id)
@@ -158,11 +157,20 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
 
     pub fn snapshot(
         &self,
-    ) -> Result<(RuntimeV3GameplayObservation, Vec<RuntimeV3GameplayLegalAction>), RuntimeV3GameplayError> {
+    ) -> Result<
+        (
+            RuntimeV3GameplayObservation,
+            Vec<RuntimeV3GameplayLegalAction>,
+        ),
+        RuntimeV3GameplayError,
+    > {
         self.checked_snapshot()
     }
 
-    pub fn pump(&mut self, budget: usize) -> Result<Vec<RuntimeV3GameplayMessage>, RuntimeV3GameplayError> {
+    pub fn pump(
+        &mut self,
+        budget: usize,
+    ) -> Result<Vec<RuntimeV3GameplayMessage>, RuntimeV3GameplayError> {
         self.queue
             .drain(budget)
             .into_iter()
@@ -352,7 +360,11 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         let (before, legal_actions) = match self.checked_snapshot() {
             Ok(value) => value,
             Err(_) => {
-                return Ok(self.finish_unknown(&queued.operation_id, &request, "settlement_unproven"));
+                return Ok(self.finish_unknown(
+                    &queued.operation_id,
+                    &request,
+                    "settlement_unproven",
+                ));
             }
         };
         let action = request
@@ -380,7 +392,11 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         let (after, after_actions) = match after_result {
             Ok(value) => value,
             Err(_) => {
-                return Ok(self.finish_unknown(&queued.operation_id, &request, "settlement_unproven"));
+                return Ok(self.finish_unknown(
+                    &queued.operation_id,
+                    &request,
+                    "settlement_unproven",
+                ));
             }
         };
         let response = match dispatch_result {
@@ -549,11 +565,14 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
 
     fn checked_snapshot(
         &self,
-    ) -> Result<(RuntimeV3GameplayObservation, Vec<RuntimeV3GameplayLegalAction>), RuntimeV3GameplayError> {
-        let observation = self
-            .game
-            .snapshot()
-            .map_err(RuntimeV3GameplayError::Host)?;
+    ) -> Result<
+        (
+            RuntimeV3GameplayObservation,
+            Vec<RuntimeV3GameplayLegalAction>,
+        ),
+        RuntimeV3GameplayError,
+    > {
+        let observation = self.game.snapshot().map_err(RuntimeV3GameplayError::Host)?;
         observation
             .validate()
             .map_err(|_| RuntimeV3GameplayError::InvalidObservation)?;
