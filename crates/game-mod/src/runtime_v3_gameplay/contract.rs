@@ -574,10 +574,10 @@ impl RuntimeV3GameplayObservation {
                     {
                         return Err(RuntimeV3GameplayValidationError::ObservationShape);
                     }
-                    if let RuntimeV3GameplayEnemyIntent::Attack { hits, .. } = &enemy.intent {
-                        if *hits == 0 {
-                            return Err(RuntimeV3GameplayValidationError::ObservationShape);
-                        }
+                    if let RuntimeV3GameplayEnemyIntent::Attack { hits, .. } = &enemy.intent
+                        && *hits == 0
+                    {
+                        return Err(RuntimeV3GameplayValidationError::ObservationShape);
                     }
                 }
                 Ok(())

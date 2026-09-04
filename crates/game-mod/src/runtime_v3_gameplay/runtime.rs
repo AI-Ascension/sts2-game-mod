@@ -634,6 +634,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         response
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn result_response(
         &self,
         request: &RuntimeV3GameplayMessage,
