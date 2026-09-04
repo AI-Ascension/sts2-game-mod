@@ -30,6 +30,16 @@ advance combat or mutate gameplay state.
 
 ## Consequences and evidence
 
+Safety correction: managed admission holds at most 64 pending requests and processes at most 16
+per frame. A five-second wait removes pending work atomically before execution can claim it.
+If execution has already begun, the timeout remains an unknown outcome; late completion cannot
+overwrite the published response. Admission failures use HTTP 503 and owner-local JSON errors;
+timeouts use HTTP 504 with `main_thread_timeout_before_dispatch` or `main_thread_outcome_unknown`.
+An execution exception also remains unknown because a host effect may already have happened.
+These transport failures are not canonical `runtime-v1` rejected action envelopes. The immutable
+artifact and native ABI are unchanged. Consumers must not retry mutations solely from a timeout.
+The source-linked managed queue probe tests synthetic races and does not extend dated host evidence.
+
 The native listener and managed bridge are source/build-confirmed, and consumers use the copied
 `protocol-artifact/runtime-v1/` artifact. The authorized probe confirmed a real listener request,
 host callback, main-thread execution, visible effect, disposable profile, and reversible cleanup for

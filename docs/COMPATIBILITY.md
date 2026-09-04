@@ -87,6 +87,12 @@ already accepted.
 
 ## Promotion and deprecation
 
+Runtime-v1 queue timeout safety correction preserves the artifact and ABI. Pending work is removed
+before dispatch; already executing work is not revoked. HTTP 504 now carries an owner-local
+`main_thread_timeout_before_dispatch` or `main_thread_outcome_unknown` transport error, rather than
+a canonical rejected action response which could falsely imply no effect. Saturation returns HTTP
+503 `runtime_queue_full`. These source-only tested failures do not extend the live-host matrix.
+
 Do not promote build-only evidence to load or runtime support. A deprecation names a replacement,
 warning, first deprecated release, earliest removal release, and compatibility tests. A breaking
 change needs explicit approval and coordinated updates to the adapter, schema, package, and

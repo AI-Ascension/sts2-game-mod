@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 using System;
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -19,8 +18,7 @@ public static partial class ModEntry
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
     private const int RuntimeUnavailable = 503;
-    private const int RuntimeTimeout = 504;
-    private static readonly ConcurrentQueue<RuntimeWork> RuntimeQueue = new();
+    private static readonly RuntimeDispatchQueue<RuntimeWork> RuntimeQueue = new(64);
     private static RuntimeRequestCallback? _runtimeRequestCallback;
     private static Action? _runtimePumpCallback;
     private static int _runtimePumpReady;
@@ -197,45 +195,45 @@ public static partial class ModEntry
             RuntimeWork work = new(native.Kind, context, body);
             if (Volatile.Read(ref _runtimePumpReady) == 0)
             {
-                work.Status = RuntimeUnavailable;
-                work.Response = RuntimeError(context, native.Kind, "runtime_pump_unavailable");
+                return WriteNativeResponse(RuntimeUnavailable,
+                    "{\"error_code\":\"runtime_pump_unavailable\"}", output, outputCapacity, out outputLength);
             }
             else
             {
-                RuntimeQueue.Enqueue(work);
-                if (!work.Completed.Wait(TimeSpan.FromSeconds(5)))
+                var pending = RuntimeQueue.Enqueue(work);
+                if (pending == null)
                 {
-                    work.Status = RuntimeTimeout;
-                    work.Response = RuntimeError(context, native.Kind, "main_thread_timeout");
+                    return WriteNativeResponse(RuntimeUnavailable,
+                        "{\"error_code\":\"runtime_queue_full\"}", output, outputCapacity, out outputLength);
                 }
+                var response = RuntimeQueue.Wait(pending, TimeSpan.FromSeconds(5));
+                return WriteNativeResponse(response.Status, response.Response, output, outputCapacity, out outputLength);
             }
-            return WriteNativeResponse(work.Status, work.Response, output, outputCapacity, out outputLength);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            GD.PrintErr($"{LogPrefix} runtime callback failed: {exception.GetType().Name}: {exception.Message}");
+            GD.PrintErr($"{LogPrefix} runtime callback failed");
             return RuntimeUnavailable;
         }
     }
 
     private static void ProcessRuntimeQueue()
     {
-        for (int index = 0; index < 16 && RuntimeQueue.TryDequeue(out RuntimeWork? work); index++)
+        for (int index = 0; index < 16 && RuntimeQueue.ProcessOne(ExecuteRuntimeWork); index++)
         {
-            try
-            {
-                (work.Status, work.Response) = ProcessRuntimeWork(work);
-            }
-            catch (Exception exception)
-            {
-                work.Status = RuntimeUnavailable;
-                work.Response = RuntimeError(work.Context, work.Kind, "main_thread_exception");
-                GD.PrintErr($"{LogPrefix} runtime main-thread request failed: {exception.GetType().Name}: {exception.Message}");
-            }
-            finally
-            {
-                work.Completed.Set();
-            }
+        }
+    }
+
+    private static (int Status, string Response) ExecuteRuntimeWork(RuntimeWork work)
+    {
+        try
+        {
+            return ProcessRuntimeWork(work);
+        }
+        catch (Exception)
+        {
+            GD.PrintErr($"{LogPrefix} runtime main-thread request failed");
+            return (RuntimeUnavailable, "{\"error_code\":\"main_thread_outcome_unknown\"}");
         }
     }
 

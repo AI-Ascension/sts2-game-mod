@@ -186,6 +186,16 @@ use no game, profile, external service, or real credentials; generous elapsed-ti
 are hang detection, not a real-time scheduling guarantee. They do not prove that managed host
 callbacks terminate safely, nor that native unload is safe in a live game.
 
+~~~text
+dotnet run --project experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj --configuration Release
+~~~
+
+This source-linked managed probe compiles the production queue, callback, and ABI types against
+original minimal host doubles. It tests capacity, FIFO, canceled pending work removal, completed
+publication, barrier-controlled execution timeout, immutable late response, callback unavailability,
+and sanitized possibly-applied exception handling. It uses no proprietary assembly, game, or profile.
+It does not verify the concrete host contract implementation or live thread affinity.
+
 The native runtime crate has bounded parser/identity tests, Clippy coverage, and a Windows
 x86-64 release cross-build. The managed loader project builds against operator-supplied
 `sts2.dll` and `GodotSharp.dll` without copying those assemblies into the repository. The checked-in

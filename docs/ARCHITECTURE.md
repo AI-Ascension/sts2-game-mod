@@ -205,7 +205,12 @@ lifetime; the synchronous managed callback must enforce its own execution bound 
 five-second queue wait). Socket deadlines do not cancel host work already admitted or forcibly
 interrupt a managed callback. An expired exchange can close without an HTTP error body.
 
-The managed bridge installs one bounded queue pump on `SceneTree.ProcessFrame`. State observation and
+The managed bridge installs one bounded queue pump on `SceneTree.ProcessFrame`. Admission and
+callback execution are coordinated through a 64-entry pending queue with atomic admission,
+execution claim, and timeout removal; at most 16 entries execute per frame. A callback timeout
+after execution starts reports an unknown transport outcome, never a false rejection. Error paths
+on the network callback do not read host observations. The source-linked queue regression suite
+does not establish exact-host compatibility. State observation and
 the `show_runtime_probe` action run on that host thread. The action adds the existing status overlay,
 checks that the overlay is present, then advances generation and emits the effect witness. The
 listener, token, identity, lease, and correlation checks are owner-local enforcement; the gateway

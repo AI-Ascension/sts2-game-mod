@@ -95,5 +95,9 @@ jobs:
       - name: Run managed profile settings validation probe
         run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
 
-      - name: Record host-loader precondition
+      - name: Run managed runtime queue regressions
+        # The queue probe links production managed callback sources to original test doubles.
+        run: dotnet run --project experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj --configuration Release
+
+      - name: Record exact-host precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."
