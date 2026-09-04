@@ -1,5 +1,11 @@
 # Runtime-v3 gameplay host adapter build evidence
 
+> Historical author-reported build evidence, not validation of the repaired PR head. The
+> 2026-09-04 review found incorrect settlement inference and incomplete idempotency/freshness
+> protection. Current code retains unknown outcomes pending independent completion evidence;
+> these package hashes must not be used to claim validation of the corrected source. The v2
+> symbol narrative also predates the committed `EndPlayerTurnAction` enqueue implementation.
+
 - Date: 2026-09-02
 - Evidence level: `L1` target-local source/build/package evidence
 - Status: `confirmed` for the named build and reflection oracles; live host behavior remains

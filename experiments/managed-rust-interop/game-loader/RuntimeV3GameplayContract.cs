@@ -76,7 +76,7 @@ public static partial class ModEntry
             return (RuntimeRejected, RuntimeV3GameplayOperationResponse(context, rejected));
         }
 
-        if (_runtimeV3GameplayPending != null)
+        if (_runtimeV3GameplayPending != null || _runtimeV2Pending != null)
         {
             RuntimeV3GameplayOperation rejected = RetainRuntimeV3GameplayOperation(
                 parsedRequest,
@@ -114,30 +114,16 @@ public static partial class ModEntry
         _runtimeV3GameplayPending = operation;
         if (!TryQueueRuntimeV3GameplayAction(parsedRequest, out string dispatchError))
         {
-            operation.Status = "rejected";
-            operation.Observation = observation;
+            bool uncertain = dispatchError == "sts2.runtime/host_action_exception";
+            operation.Status = uncertain ? "unknown" : "rejected";
+            operation.Observation = uncertain ? null : observation;
             operation.ErrorCode = dispatchError;
-            _runtimeV3GameplayPending = null;
-            return (RuntimeRejected, RuntimeV3GameplayOperationResponse(context, operation));
+            if (!uncertain) _runtimeV3GameplayPending = null;
+            return (uncertain ? RuntimeUnavailable : RuntimeRejected, RuntimeV3GameplayOperationResponse(context, operation));
         }
 
         TryFinalizePendingRuntimeV3Gameplay();
-        if (operation.Status == "settled")
-        {
-            return (RuntimeAccepted, RuntimeV3GameplayOperationResponse(context, operation));
-        }
-        if (_runtimeV3GameplayGeneration != parsedRequest.Generation)
-        {
-            operation.Status = "unknown";
-            operation.Observation = null;
-            operation.ErrorCode = "sts2.runtime/host_transition_uncertain";
-            _runtimeV3GameplayPending = null;
-            return (RuntimeUnavailable, RuntimeV3GameplayOperationResponse(context, operation));
-        }
-
-        operation.Status = "accepted";
-        operation.Observation = observation;
-        return (RuntimeAccepted, RuntimeV3GameplayOperationResponse(context, operation));
+        return (RuntimeUnavailable, RuntimeV3GameplayOperationResponse(context, operation));
     }
 
     private static (int Status, string Response) ProcessRuntimeV3GameplayOperation(
@@ -188,6 +174,7 @@ public static partial class ModEntry
         RuntimeV3GameplayBinding? binding = _runtimeV3GameplayBinding;
         if (binding == null)
         {
+            if (!TryAuthorizeRuntimeV2Context(context, out error)) return false;
             _runtimeV3GameplayBinding = new RuntimeV3GameplayBinding(
                 context.InstanceId,
                 context.CallerId,

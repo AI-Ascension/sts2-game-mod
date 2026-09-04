@@ -142,33 +142,12 @@ public static partial class ModEntry
     private static void TryFinalizePendingRuntimeV3Gameplay()
     {
         RuntimeV3GameplayOperation? operation = _runtimeV3GameplayPending;
-        if (operation == null || (operation.Status != "dispatching" && operation.Status != "accepted"))
-        {
-            return;
-        }
-
-        RuntimeV3GameplayHostObservation observation = ReadRuntimeV3GameplayObservation();
-        if (observation.HostReady
-            && observation.CombatPhase == RuntimeV3GameplayPlayerTurn
-            && observation.Generation > operation.RequestGeneration
-            && RuntimeV3GameplayEffectChanged(operation.Before, observation))
-        {
-            operation.Status = "settled";
-            operation.Observation = observation;
-            operation.ErrorCode = null;
-            _runtimeV3GameplayPending = null;
-        }
-    }
-
-    private static bool RuntimeV3GameplayEffectChanged(
-        RuntimeV3GameplayHostObservation before,
-        RuntimeV3GameplayHostObservation after)
-    {
-        return before.HandCount != after.HandCount
-            || before.Energy != after.Energy
-            || before.DrawPileCount != after.DrawPileCount
-            || before.DiscardPileCount != after.DiscardPileCount
-            || before.ExhaustPileCount != after.ExhaustPileCount;
+        if (operation == null || operation.Status == "rejected") return;
+        // RequestEnqueue provides no operation-bound completion evidence in this candidate.
+        // A count/energy change can belong to another action; never manufacture a witness.
+        operation.Status = "unknown";
+        operation.Observation = null;
+        operation.ErrorCode ??= "sts2.runtime/completion_unverified";
     }
 
 }

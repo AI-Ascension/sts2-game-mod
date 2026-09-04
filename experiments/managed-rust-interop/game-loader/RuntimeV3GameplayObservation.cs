@@ -60,6 +60,8 @@ public static partial class ModEntry
             }
 
             PlayerCombatState playerCombat = player.PlayerCombatState;
+            if (playerCombat.Hand.Cards.Count > RuntimeV3GameplayMaxCardIndex)
+                return EmptyRuntimeV3GameplayObservation(false);
             List<RuntimeV3GameplayEnemyObservation> enemies = new();
             foreach (Creature enemy in combatState.Enemies)
             {
@@ -98,7 +100,7 @@ public static partial class ModEntry
                 drawCount,
                 discardCount,
                 exhaustCount,
-                enemies);
+                enemies) + RuntimeV3GameplayHandSignature(combatState, player);
             return new RuntimeV3GameplayHostObservation(
                 phase,
                 BoundedRuntimeV3GameplayCount(combatState.RoundNumber, RuntimeV2MaxTurnIndex),

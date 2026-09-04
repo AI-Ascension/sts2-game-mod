@@ -19,9 +19,8 @@ path and bounded combat state symbols, including `PlayerCombatState.Hand`, `Card
 Use `runtime-v3-gameplay` for one bounded `play_card` action. The transport accepts a card index from
 0 through 64 and an optional opaque target ID. The mod translates an absent target to the player
 creature and an explicit target to a numeric enemy `CombatId`, revalidates the card and target on
-the host thread, and queues the host `PlayCardAction`. The profile reports `accepted` at admission
-and `settled` only after a fresh generation plus changed hand, energy, or pile observation and a
-`play_card_settled` witness. The gateway, MCP, and harness consumers keep this profile separate from
+the host thread, and queues the host `PlayCardAction`. The candidate reports `unknown` after enqueue and requires independent operation-bound completion
+evidence before it can emit `settled` and a `play_card_settled` witness. The gateway, MCP, and harness consumers keep this profile separate from
 Runtime-v2.
 
 ## Limits
@@ -30,3 +29,17 @@ The candidate has protocol, pure-core, managed/native build, gateway, MCP, and h
 component evidence. It has no authorized live card-play trace, no support claim for another host
 version, and no claim that a returned wrapper value or UI acknowledgement proves a gameplay effect.
 No host assembly, save, profile, credential, or generated package is stored in the repository.
+
+## Review correction (2026-09-04)
+
+The source review replaced the candidate's state-delta settlement inference. Neither a later turn
+nor changed energy/pile counts proves completion of a particular queued operation. The current
+adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
+blocks further v2/v3 mutations until independent operation-bound completion is available. It does
+not emit a settlement witness from these host adapters. No such host completion binding has yet
+been established; this is an integration blocker, not a successful gameplay result.
+
+Both gameplay profiles share one identity fence and one outstanding-mutation exclusion. Exact
+semantic retries ignore transport correlation/JSON formatting; card-slot replacement, reordering,
+run/combat/player replacement, and observed playability changes invalidate v3 generation. The
+bounded observation is not a complete game-state revision or a game-rule parity claim.

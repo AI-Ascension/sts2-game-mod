@@ -80,7 +80,7 @@ public static partial class ModEntry
             return (RuntimeRejected, RuntimeV2OperationResponse(context, rejected));
         }
 
-        if (_runtimeV2Pending != null)
+        if (_runtimeV2Pending != null || _runtimeV3GameplayPending != null)
         {
             RuntimeV2Operation rejected = RetainRuntimeV2Operation(
                 parsedRequest,

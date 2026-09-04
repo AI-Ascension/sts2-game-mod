@@ -3,18 +3,7 @@
 // Handwritten synthetic host surface; not copied from or evidence of a proprietary host API.
 namespace Godot
 {
-    internal sealed class SceneTree
-    {
-        public Node Root { get; } = new();
-        internal event Action? ProcessFrame;
-        internal void Pump() => ProcessFrame?.Invoke();
-    }
-    internal sealed class Node
-    {
-        internal CanvasLayer? Overlay { get; set; }
-        internal T? GetNodeOrNull<T>(string name) where T : class => Overlay as T;
-    }
-    internal sealed class CanvasLayer { }
+    internal sealed class SceneTree { public object Root { get; } = new(); }
     internal static class Engine { public static object GetMainLoop() => new SceneTree(); }
     internal static class GD
     {

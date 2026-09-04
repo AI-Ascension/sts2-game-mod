@@ -84,7 +84,7 @@ public static partial class ModEntry
                 generation,
                 cardIndex,
                 targetId,
-                root.GetRawText());
+                JsonSerializer.Serialize(new { generation, cardIndex, targetId }));
             return true;
         }
         catch (JsonException)
