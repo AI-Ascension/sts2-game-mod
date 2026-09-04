@@ -42,7 +42,8 @@ internal sealed record CoopProjection(
         int localCount = 0;
         foreach (CoopPeer peer in players)
         {
-            if (!RuntimeV3GameplayContract.IsIdentity(peer.PeerId)
+            if (!Enum.IsDefined(peer.Role)
+                || !RuntimeV3GameplayContract.IsIdentity(peer.PeerId)
                 || !peerIds.Add(peer.PeerId))
             {
                 error = "co-op peer identity is invalid or duplicated";
@@ -71,7 +72,11 @@ internal sealed record CoopProjection(
             }
         }
         error = string.Empty;
-        projection = new CoopProjection(stateId, generation, players, synchronization);
+        projection = new CoopProjection(stateId, generation,
+            new List<CoopPeer>(players).AsReadOnly(), synchronization with
+            {
+                MissingPeers = new List<string>(synchronization.MissingPeers).AsReadOnly()
+            });
         return true;
     }
 

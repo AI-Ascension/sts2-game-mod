@@ -90,6 +90,8 @@ struct QueuedOperation {
 struct OperationReceipt {
     request: RuntimeV3GameplayMessage,
     response: RuntimeV3GameplayMessage,
+    admitted_observation: RuntimeV3GameplayObservation,
+    admitted_actions: Vec<RuntimeV3GameplayLegalAction>,
 }
 
 #[derive(Debug)]
@@ -237,21 +239,23 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             .operation_id
             .as_deref()
             .ok_or(RuntimeV3GameplayError::MalformedRequest)?;
-        let (observation, legal_actions) = self.checked_snapshot()?;
         if let Some(receipt) = self.receipts.get(operation_id) {
-            if receipt.request == request {
-                return Ok(receipt.response.clone());
+            let mut original = receipt.request.clone();
+            original.correlation_id.clone_from(&request.correlation_id);
+            if original == request {
+                return Ok(correlated(&receipt.response, &request));
             }
             return Ok(self.result_response(
                 &request,
                 RuntimeV3GameplayStatus::Rejected,
-                Some(observation),
-                Some(legal_actions),
+                Some(receipt.admitted_observation.clone()),
+                Some(receipt.admitted_actions.clone()),
                 None,
                 Some("idempotency_conflict"),
                 None,
             ));
         }
+        let (observation, legal_actions) = self.checked_snapshot()?;
         if request.state_id.as_deref() != Some(observation.state_id.as_str())
             || request.generation != observation.generation
         {
@@ -320,6 +324,8 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                     OperationReceipt {
                         request,
                         response: accepted.clone(),
+                        admitted_observation: observation,
+                        admitted_actions: legal_actions,
                     },
                 );
                 Ok(accepted)
@@ -387,7 +393,12 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             );
             return Ok(self.finish(&queued.operation_id, response));
         }
-        let dispatch_result = self.game.dispatch(&action.action);
+        let dispatch_result = self
+            .game
+            .dispatch(&self.identity, &queued.operation_id, action);
+        if let Some(response) = self.proven_completion(&request) {
+            return Ok(self.finish(&queued.operation_id, response));
+        }
         let after_result = self.checked_snapshot();
         let (after, after_actions) = match after_result {
             Ok(value) => value,
@@ -400,24 +411,10 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             }
         };
         let response = match dispatch_result {
-            Ok(()) if after.generation > before.generation => {
-                let transition = RuntimeV3GameplayTransitionWitness {
-                    from_generation: before.generation,
-                    to_generation: after.generation,
-                    state_id: after.state_id.clone(),
-                    effect_kind: format!("{}.settled", action.action_id),
-                };
-                self.result_response(
-                    &request,
-                    RuntimeV3GameplayStatus::Settled,
-                    Some(after),
-                    Some(after_actions),
-                    Some(transition),
-                    None,
-                    None,
-                )
-            }
-            Err(error) if after == before => self.result_response(
+            Err(
+                error @ (RuntimeV3GameplayGameError::Rejected
+                | RuntimeV3GameplayGameError::NotReady),
+            ) if after == before => self.result_response(
                 &request,
                 RuntimeV3GameplayStatus::Rejected,
                 Some(after),
@@ -440,7 +437,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
     }
 
     fn wait(
-        &self,
+        &mut self,
         request: &RuntimeV3GameplayMessage,
     ) -> Result<RuntimeV3GameplayMessage, RuntimeV3GameplayError> {
         self.ensure_identity(request)?;
@@ -448,6 +445,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             .operation_id
             .as_deref()
             .ok_or(RuntimeV3GameplayError::MalformedRequest)?;
+        self.refresh_completion(operation_id);
         let Some(receipt) = self.receipts.get(operation_id) else {
             let mut response = self.result_response(
                 request,
@@ -477,13 +475,17 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         }
         match receipt.response.status {
             Some(RuntimeV3GameplayStatus::Settled) => {
-                let mut response = receipt.response.clone();
+                let mut response = correlated(&receipt.response, request);
                 response.kind = RuntimeV3GameplayMessageKind::WaitResponse;
-                response.wait_outcome = Some(RuntimeV3GameplayWaitOutcome::Successor);
+                response.wait_outcome = Some(if response.state_id == receipt.request.state_id {
+                    RuntimeV3GameplayWaitOutcome::SameStateMutation
+                } else {
+                    RuntimeV3GameplayWaitOutcome::Successor
+                });
                 Ok(response)
             }
             Some(RuntimeV3GameplayStatus::Unknown) => {
-                let mut response = receipt.response.clone();
+                let mut response = correlated(&receipt.response, request);
                 response.kind = RuntimeV3GameplayMessageKind::WaitResponse;
                 response.wait_outcome = Some(RuntimeV3GameplayWaitOutcome::RecoveryRequired);
                 Ok(response)
@@ -538,6 +540,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                     .operation_id
                     .as_deref()
                     .ok_or(RuntimeV3GameplayError::OperationNotFound)?;
+                self.refresh_completion(operation_id);
                 let Some(receipt) = self.receipts.get(operation_id) else {
                     let mut response = self.result_response(
                         request,
@@ -552,7 +555,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                     response.kind = RuntimeV3GameplayMessageKind::RecoverResponse;
                     return Ok(response);
                 };
-                let mut response = receipt.response.clone();
+                let mut response = correlated(&receipt.response, request);
                 response.kind = RuntimeV3GameplayMessageKind::RecoverResponse;
                 Ok(response)
             }
@@ -598,6 +601,45 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             }
         }
         Ok((observation, legal_actions))
+    }
+
+    fn proven_completion(
+        &self,
+        request: &RuntimeV3GameplayMessage,
+    ) -> Option<RuntimeV3GameplayMessage> {
+        let operation_id = request.operation_id.as_deref()?;
+        let proof = self.game.completion(&self.identity, operation_id)?;
+        if proof.identity != self.identity
+            || proof.operation_id != operation_id
+            || request.action.as_ref() != Some(&proof.action)
+            || proof.transition.from_generation != request.generation
+        {
+            return None;
+        }
+        let response = self.result_response(
+            request,
+            RuntimeV3GameplayStatus::Settled,
+            Some(proof.observation),
+            Some(proof.legal_actions),
+            Some(proof.transition),
+            None,
+            None,
+        );
+        response.validate().ok()?;
+        Some(response)
+    }
+
+    fn refresh_completion(&mut self, operation_id: &str) {
+        let Some(receipt) = self.receipts.get(operation_id) else {
+            return;
+        };
+        // Accepted work has not been dispatched; polling must never execute it.
+        if receipt.response.status != Some(RuntimeV3GameplayStatus::Unknown) {
+            return;
+        }
+        if let Some(response) = self.proven_completion(&receipt.request) {
+            self.finish(operation_id, response);
+        }
     }
 
     fn ensure_identity(
@@ -704,6 +746,15 @@ fn context(message: &RuntimeV3GameplayMessage) -> RuntimeV3GameplayContext {
         message.lease_id.clone(),
         message.lease_epoch,
     )
+}
+
+fn correlated(
+    receipt: &RuntimeV3GameplayMessage,
+    request: &RuntimeV3GameplayMessage,
+) -> RuntimeV3GameplayMessage {
+    let mut response = receipt.clone();
+    response.correlation_id.clone_from(&request.correlation_id);
+    response
 }
 
 fn valid_identity(value: &str) -> bool {

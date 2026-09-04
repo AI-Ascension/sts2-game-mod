@@ -139,16 +139,21 @@ reproduced in an authorized disposable host. It is not a support claim for gamep
 another host version, another platform, or a valued profile.
 
 The separate `runtime-v3-gameplay` bridge is source-derived and uses the neutral protocol digest
-`fbfb18279b0c7ebb350ef0ce0d56547fa11e83985b13380cb2b0f1dba4cb56e9`. Its fair-play projection,
-typed catalog checks, host-thread adapter, co-op suspension rules, and postcondition verifier are
+`b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c`. Its fair-play projection,
+typed catalog checks, host-thread adapter, separate co-op helpers, and postcondition verifier are
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
 The internal Runtime-v3 host-source interface receives scoped operation identities
-and must supply independent completion evidence. This safety correction leaves the
-wire profile unchanged. Host implementations must implement the completion port;
+and must supply independent completion evidence. The internal completion correction
+leaves message shapes unchanged. Separately, the unmerged protocol revision tightens
+schema shape validation, explicit nullable fields, and closed tagged variants.
+Consumers must update together to the new digest above; old-digest requests fail closed.
+Host implementations must implement the completion port;
 an unavailable witness preserves an unknown outcome. Managed handler tests use
 synthetic completion events and do not promote the licensed-host compatibility row.
+The co-op helpers are not connected to the managed gameplay request path; their
+source-only validation does not establish multiplayer mutation fencing.
 
 ## Workshop package profile
 

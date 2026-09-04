@@ -17,5 +17,8 @@ pub use contract::{
     RuntimeV3GameplayStateKind, RuntimeV3GameplayStatus, RuntimeV3GameplayTransitionWitness,
     RuntimeV3GameplayValidationError, RuntimeV3GameplayWaitOutcome,
 };
-pub use fake::{FakeRuntimeV3GameplayGame, RuntimeV3GameplayGameError, RuntimeV3GameplayGamePort};
+pub use fake::{
+    FakeRuntimeV3GameplayGame, RuntimeV3GameplayCompletion, RuntimeV3GameplayGameError,
+    RuntimeV3GameplayGamePort,
+};
 pub use runtime::{RuntimeV3GameplayConfig, RuntimeV3GameplayMod};

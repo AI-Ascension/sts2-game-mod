@@ -9,5 +9,9 @@
     <Compile Include="../game-loader/PostconditionVerifier.cs" Link="Boundary/PostconditionVerifier.cs" />
     <Compile Include="../game-loader/FairPlayProjection.cs" Link="Boundary/FairPlayProjection.cs" />
     <Compile Include="../game-loader/PrivilegedFieldGuard.cs" Link="Boundary/PrivilegedFieldGuard.cs" />
+    <Compile Include="../game-loader/LlmCombatPatch.cs" Link="Boundary/LlmCombatPatch.cs" />
+    <Compile Include="../game-loader/StateDetector.cs" Link="Boundary/StateDetector.cs" />
+    <Compile Include="../game-loader/BuildManifest.cs" Link="Boundary/BuildManifest.cs" />
+    <Compile Include="../game-loader/Coop*.cs" Link="Boundary/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

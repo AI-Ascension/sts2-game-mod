@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using AiAscension.Sts2GameMod.Runtime;
 
@@ -8,14 +9,22 @@ namespace AiAscension.Sts2GameMod.GameplayTests;
 
 internal static class Program
 {
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--emit-contract-frames")
+        {
+            ContractFrames.Emit();
+            return;
+        }
         ReadsDiscoverNewGenerations();
         SettledReceiptIsReplayedBeforeAdmission();
         UnrelatedTransitionDoesNotSettle();
         MismatchedCompletionDoesNotSettle();
         QueuedActionRechecksGeneration();
         MalformedNumbersAndDuplicateFieldsAreRejected();
+        RecoveryReconcilesScopedReceipts();
+        TextBoundsUseUtf8Bytes();
+        HelpersCompileAndRejectInvalidCoop();
         Console.WriteLine("Runtime-v3 managed request, receipt, and settlement checks passed.");
     }
 
@@ -45,6 +54,7 @@ internal static class Program
         RuntimeV3GameplaySupport support = RuntimeV3GameplaySupport.WithHost(source, new TestQueue());
         using JsonDocument first = Wire.Call(support, "dispatch_action_request", 1, out int firstStatus);
         Check(firstStatus == 200 && Wire.Status(first) == "settled", "independent completion settles");
+        source.Hand.Clear();
         source.ThrowReads = true;
         using JsonDocument replay = Wire.Call(support, "dispatch_action_request", 1, out int replayStatus);
         Check(replayStatus == 200 && replay.RootElement.GetRawText() == first.RootElement.GetRawText()
@@ -113,6 +123,66 @@ internal static class Program
     private static void Check(bool passed, string message)
     {
         if (!passed) { throw new InvalidOperationException(message); }
+    }
+
+    private static void RecoveryReconcilesScopedReceipts()
+    {
+        var source = new FakeHost();
+        RuntimeV3GameplaySupport support = RuntimeV3GameplaySupport.WithHost(source, new TestQueue());
+        using JsonDocument first = Wire.Call(support, "dispatch_action_request", 1, out _);
+        source.Complete = true;
+        using JsonDocument recovered = Wire.Call(support, "recover_request", 1, out int status,
+            recoveryKind: "reconcile");
+        Check(status == 200 && Wire.Status(recovered) == "settled" && source.Dispatches == 1,
+            "reconcile uses independent completion without dispatching again");
+        using JsonDocument foreign = Wire.Call(support, "recover_request", 1, out int foreignStatus,
+            session: "other-session", recoveryKind: "reconcile");
+        Check(foreignStatus == 503 && Wire.Error(foreign) == "operation_not_found", "reconcile isolation");
+
+        var queue = new TestQueue { Deferred = true };
+        var staleSource = new FakeHost();
+        RuntimeV3GameplaySupport stale = RuntimeV3GameplaySupport.WithHost(staleSource, queue);
+        using JsonDocument accepted = Wire.Call(stale, "dispatch_action_request", 1, out _);
+        staleSource.Generation = 2;
+        queue.Run();
+        using JsonDocument waited = Wire.Call(stale, "wait_request", 1, out _, recoveryKind: "reconcile");
+        Check(waited.RootElement.GetProperty("wait_outcome").GetString() == "recovery_required",
+            "terminal rejection directs caller to reconciliation rather than another wait");
+        using JsonDocument rejected = Wire.Call(stale, "recover_request", 1, out int rejectedStatus,
+            recoveryKind: "reconcile");
+        Check(rejectedStatus == 409 && Wire.Status(rejected) == "rejected"
+            && Wire.Error(rejected) == "stale_generation" && staleSource.Dispatches == 0,
+            "reconcile exposes terminal rejection without mutation");
+    }
+
+    private static void TextBoundsUseUtf8Bytes()
+    {
+        Check(RuntimeV3GameplayContract.IsText(new string('é', 256)), "512 UTF8 bytes accepted");
+        Check(!RuntimeV3GameplayContract.IsText(new string('é', 257)), "514 UTF8 bytes rejected");
+        Check(!RuntimeV3GameplayContract.IsText("name\u0085"), "Unicode controls rejected");
+    }
+
+    private static void HelpersCompileAndRejectInvalidCoop()
+    {
+        var players = new List<CoopPeer> { new("local", CoopPeerRole.Local), new("ally", CoopPeerRole.Ally) };
+        var missing = new List<string>();
+        var synchronization = new CoopSynchronization(CoopSyncStatus.Synchronized, 1, 2, missing);
+        Check(CoopProjection.TryCreate("combat", 1, players, synchronization, out CoopProjection? projection, out _)
+            && projection is not null && projection.MutationAllowed, "valid co-op helper projection");
+        players.Clear();
+        missing.Add("ally");
+        Check(projection!.Players.Count == 2 && projection.Synchronization.MissingPeers.Count == 0,
+            "co-op helper snapshot does not retain mutable caller collections");
+        Check(!CoopProjection.TryCreate("combat", 1,
+            new[] { new CoopPeer("local", CoopPeerRole.Local), new CoopPeer("ally", (CoopPeerRole)99) },
+            synchronization with { MissingPeers = Array.Empty<string>() }, out _, out _), "invalid peer role rejected");
+        Check(!(synchronization with { Status = (CoopSyncStatus)99 }).Validate(out _), "invalid sync enum rejected");
+        var source = new FakeHost { Complete = true };
+        var patch = new LlmCombatPatch(new RuntimeV3GameplayHost(source, new TestQueue()));
+        var operation = new RuntimeV3OperationKey("instance-1", "session-1", "lease-1", 1, "operation-1");
+        Check(!patch.TryDispatchCurrent(operation, source.Observe(), "missing", out _), "missing semantic action rejected");
+        Check(patch.TryDispatchCurrent(operation, source.Observe(), "combat.end-turn", out RuntimeV3DispatchReceipt? receipt)
+            && receipt?.Status == RuntimeV3DispatchStatus.Settled, "combat helper uses scoped operation identity");
     }
 
     private static void MalformedNumbersAndDuplicateFieldsAreRejected()

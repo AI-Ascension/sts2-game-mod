@@ -35,7 +35,8 @@ internal sealed record CoopSynchronization(
 
     internal bool Validate(out string error)
     {
-        if (Generation > RuntimeV3GameplayContract.MaxGeneration
+        if (!Enum.IsDefined(Status)
+            || Generation > RuntimeV3GameplayContract.MaxGeneration
             || PeerCount < 2
             || PeerCount > 4
             || MissingPeers.Count > 4)

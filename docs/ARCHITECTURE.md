@@ -282,10 +282,25 @@ completion evidence; a generation increase alone cannot settle an action. The ma
 component probe exercises this production handler without a licensed host.
 
 `FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
-The co-op projection adds peer identity, ally targets, and synchronization metadata; disagreement,
-missing peers, disconnect, invalid identities, or unsupported action shapes suspend mutation. No
+The separate co-op helper validates peer identity and synchronization metadata, and
+reports whether mutation would be allowed. It is not wired into the gameplay host,
+wire observation, or mutation admission; this PR does not implement co-op enforcement.
+No
 provider policy, raw input, host object, save, executable, or future random state is represented.
 The bridge is source/build evidence only until the exact licensed host assemblies are available.
+
+Read-only recovery reconciliation returns the scoped stored receipt, including a
+terminal rejection, and can query independent completion without dispatching again.
+Wait responses cannot encode rejection in the canonical profile; they direct the
+caller to reconciliation instead of representing rejection as an endless timeout.
+Stored observations and catalogs own copies of mutable source collections.
+
+The separate Rust `RuntimeV3GameplayMod` test seam follows the same rule: dispatch
+is not settlement. Its host port supplies an owned completion snapshot bound to
+instance/session/lease/epoch, operation, action and prior generation. Wait and
+reconciliation can inspect that proof, while replay uses the current transport
+correlation and never reads the changed host merely to return a retained receipt.
+The Rust fake explicitly generates synthetic completion evidence; it is not a host binding.
 
 ## Steam Workshop boundary
 

@@ -17,25 +17,22 @@ internal sealed class LlmCombatPatch
         _host = host;
     }
 
-    internal RuntimeV3DispatchReceipt DispatchCurrent(
-        string operationId,
+    internal bool TryDispatchCurrent(
+        RuntimeV3OperationKey operation,
         RuntimeV3GameplayObservation observation,
-        string actionId)
+        string actionId,
+        out RuntimeV3DispatchReceipt? receipt)
     {
         foreach (LegalActionReference action in _host.LegalActions(observation))
         {
             if (string.Equals(action.ActionId, actionId, StringComparison.Ordinal))
             {
-                return _host.Dispatch(operationId, observation, action);
+                receipt = _host.Dispatch(operation, observation, action);
+                return true;
             }
         }
 
-        return new RuntimeV3DispatchReceipt(
-            operationId,
-            RuntimeV3DispatchStatus.Rejected,
-            observation,
-            null,
-            "action_not_current",
-            null);
+        receipt = null;
+        return false;
     }
 }

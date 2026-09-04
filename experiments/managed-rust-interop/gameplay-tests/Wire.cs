@@ -12,7 +12,8 @@ internal static class Wire
 {
     internal static JsonDocument Call(RuntimeV3GameplaySupport support, string kind, ulong generation,
         out int status, string stateId = "combat-1", string actionKind = "end_turn",
-        string session = "session-1", ulong epoch = 1, Func<string, string>? transform = null)
+        string session = "session-1", ulong epoch = 1, Func<string, string>? transform = null,
+        string recoveryKind = "reobserve")
     {
         var body = new Dictionary<string, object?>
         {
@@ -31,7 +32,8 @@ internal static class Wire
             ["status"] = null, ["transition"] = null, ["error_code"] = null,
             ["wait_for_millis"] = kind == "wait_request" ? (int?)1 : null,
             ["wait_outcome"] = null,
-            ["recovery"] = kind == "recover_request" ? new { kind = "reobserve", operation_id = (string?)null } : null
+            ["recovery"] = kind == "recover_request" ? new { kind = recoveryKind,
+                operation_id = recoveryKind == "reconcile" ? "operation-1" : null } : null
         };
         string json = JsonSerializer.Serialize(body);
         return JsonDocument.Parse(support.Handle("instance-1", session, "lease-1", "request-1",

@@ -376,8 +376,29 @@ completion polling, queue-time generation checks, and malformed numeric/duplicat
 fields. CI runs it with the pinned .NET SDK and warnings as errors. These are
 managed component results, not licensed-host gameplay evidence.
 
+The probe also covers read-only scoped reconciliation of delayed completion and
+terminal rejection, immutable receipt snapshots, UTF-8 text bounds, invalid co-op
+enums, and the scoped semantic combat helper. It compiles all host-independent
+managed gameplay helpers rather than only the envelope handler.
+
+`--emit-contract-frames` emits fifteen deterministic JSON lines from the actual
+managed handler for independent canonical-protocol validation, including accepted,
+unknown, settled and rejected receipt paths. The captured frames were decoded and
+validated with protocol commit `82507361890c1bdce6cffeaf7e616d93e53a7d99` in the
+organization review. This is cross-language message evidence, not network or host evidence.
+
+The checked-in `protocol-artifact/runtime-v3-gameplay` copy, matching source schema
+and conformance case preserve the producer's exact eight-file checksum inventory.
+`runtime_v3_contract` tests hash those bytes, validate every golden and reject
+missing nullable fields, unknown tagged fields, duplicate discriminators, invalid
+provenance, stale digests and cross-field contradictions. Rust recovery tests also
+exercise operation-bound completion, refreshed correlation, uncertain dispatch and
+JSON-safe generation exhaustion without fake mutation.
+
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
 operation identities, stale observations, host-thread queueing, settlement witnesses, projection
 redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local
 identity, generation disagreement, missing peers, disconnect, ally targeting, and mutation
-suspension. They do not claim a licensed target build or live multiplayer compatibility.
+suspension in the isolated helper. The gameplay host does not consume the co-op
+helper, so these tests do not establish integrated co-op admission, a licensed
+target build, or live multiplayer compatibility.

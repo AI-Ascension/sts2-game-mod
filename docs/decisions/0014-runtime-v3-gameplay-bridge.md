@@ -16,9 +16,10 @@ Keep the managed Runtime-v3 bridge behind `RuntimeV3GameplayHost` and its inject
 main-thread queue. It serializes only the bounded fair-play projection, rejects unknown or
 privileged fields, requires a generation-matching typed action from the host catalog, records
 idempotent operation receipts, and reports `unknown` when dispatch or settlement cannot be proven.
-Postconditions require a fresh generation and an independent transition witness. Co-op projection
-is additive and suspends mutation for disagreement, missing peers, disconnect, or invalid peer
-identity.
+Postconditions require a fresh generation and an independent transition witness.
+The isolated co-op projection helper computes a mutation-admission recommendation
+for disagreement, missing peers, disconnect, or invalid identity. It is not yet
+connected to gameplay admission or the wire profile; no integrated co-op claim is made.
 
 Observation reads (including recovery reobservation) return the current authoritative
 generation even when the caller has an older one. New mutations and legal-catalog
@@ -28,6 +29,9 @@ The receipt key includes instance, session, lease, epoch, and operation identity
 Exact retries replay the stored receipt before fresh admission; changing the state,
 action payload, or generation under that key is an idempotency conflict. Receipts
 retain their observation/catalog snapshot rather than rereading changed host state.
+The snapshots copy source collections; an `IReadOnlyList` alone does not establish
+ownership of the underlying mutable list. Read-only reconciliation retrieves the
+scoped receipt and queries independent completion, without repeating the mutation.
 
 The source-only host port now receives the operation key on dispatch and supplies
 an optional completion snapshot with a witness bound to that operation and action.
@@ -37,8 +41,9 @@ later completion without repeating the mutation. A concrete host adapter must im
 this completion port from an authoritative operation-completion callback or verified
 action-specific postcondition; the synthetic probe does not establish STS2 semantics.
 
-This is a safety correction to an unmerged, source-only internal port. The wire
-profile and digest are unchanged. The ModEntry interop binding is separated from
+This is a safety correction to an unmerged, source-only internal port. It does not
+change the completion witness wire shape. A separately coordinated protocol schema
+correction changes the accepted digest; see the compatibility matrix. The ModEntry interop binding is separated from
 the managed handler so the actual handler can compile and execute without game DLLs.
 
 The checked-in managed files remain a source-only compatibility seam because no licensed STS2/Godot

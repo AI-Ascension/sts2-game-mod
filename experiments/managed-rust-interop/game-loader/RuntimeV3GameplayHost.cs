@@ -62,8 +62,23 @@ internal sealed class RuntimeV3GameplayHost
         {
             throw new InvalidOperationException($"invalid host projection: {error}");
         }
-        return observation;
+        return SnapshotObservation(observation);
     }
+
+    private static RuntimeV3GameplayObservation SnapshotObservation(RuntimeV3GameplayObservation observation) =>
+        observation with
+        {
+            Player = observation.Player with
+            {
+                Hand = new List<RuntimeV3GameplayCard>(observation.Player.Hand).AsReadOnly(),
+                Deck = new List<RuntimeV3GameplayCard>(observation.Player.Deck).AsReadOnly(),
+                Discard = new List<RuntimeV3GameplayCard>(observation.Player.Discard).AsReadOnly(),
+                Exhaust = new List<RuntimeV3GameplayCard>(observation.Player.Exhaust).AsReadOnly()
+            },
+            StateValues = new List<string>(observation.StateValues).AsReadOnly(),
+            Enemies = new List<RuntimeV3GameplayEnemy>(observation.Enemies).AsReadOnly(),
+            ShopItems = new List<RuntimeV3GameplayShopItem>(observation.ShopItems).AsReadOnly()
+        };
 
     internal IReadOnlyList<LegalActionReference> LegalActions(RuntimeV3GameplayObservation observation)
     {
@@ -197,7 +212,7 @@ internal sealed class RuntimeV3GameplayHost
             IReadOnlyList<LegalActionReference> actions = SnapshotActions(
                 completion.Observation, completion.LegalActions);
             _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Settled,
-                Observation = completion.Observation, Witness = completion.Witness,
+                Observation = SnapshotObservation(completion.Observation), Witness = completion.Witness,
                 LegalActions = actions, ErrorCode = null };
         }
         catch (Exception)

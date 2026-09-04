@@ -131,7 +131,7 @@ fn wait_and_stale_action_are_fail_closed() -> Result<(), Box<dyn Error>> {
     assert_eq!(wait.kind, RuntimeV3GameplayMessageKind::WaitResponse);
     assert_eq!(
         wait.wait_outcome,
-        Some(RuntimeV3GameplayWaitOutcome::Successor)
+        Some(RuntimeV3GameplayWaitOutcome::SameStateMutation)
     );
 
     let stale = round_trip(

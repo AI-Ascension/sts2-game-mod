@@ -15,13 +15,23 @@ internal sealed class FakeHost : IRuntimeV3HostSource
     internal bool ThrowReads { get; set; }
     internal bool WrongOperation { get; set; }
     internal bool WrongAction { get; set; }
+    internal List<RuntimeV3GameplayCard> Hand { get; } = new()
+    {
+        new RuntimeV3GameplayCard("card-1", "Synthetic card", 1, false)
+    };
     private RuntimeV3OperationKey? _operation;
     private LegalActionReference? _action;
     private RuntimeV3GameplayObservation? _completedObservation;
 
     public RuntimeV3GameplayObservation Observe() => ThrowReads
         ? throw new InvalidOperationException("synthetic unavailable host")
-        : RuntimeV3GameplayFixtures.CombatObservation(Generation);
+        : Observation();
+
+    private RuntimeV3GameplayObservation Observation()
+    {
+        RuntimeV3GameplayObservation observation = RuntimeV3GameplayFixtures.CombatObservation(Generation);
+        return observation with { Player = observation.Player with { Hand = Hand } };
+    }
 
     public IReadOnlyList<LegalActionReference> LegalActions(RuntimeV3GameplayObservation observation) =>
         ThrowReads ? throw new InvalidOperationException("synthetic unavailable catalog")
@@ -33,7 +43,7 @@ internal sealed class FakeHost : IRuntimeV3HostSource
         _operation = operation;
         _action = action;
         Generation++;
-        _completedObservation = RuntimeV3GameplayFixtures.CombatObservation(Generation);
+        _completedObservation = Observation();
         return true;
     }
 

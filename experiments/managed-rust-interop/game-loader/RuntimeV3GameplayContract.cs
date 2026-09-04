@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using System.Text;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
@@ -11,7 +12,7 @@ internal static class RuntimeV3GameplayContract
     internal const string Artifact = "sts2-protocol/runtime-v3-gameplay";
     internal const string SchemaSource = "schemas/runtime-v3-gameplay.schema.json";
     internal const string Generator = "hand-authored";
-    internal const string SchemaDigest = "fbfb18279b0c7ebb350ef0ce0d56547fa11e83985b13380cb2b0f1dba4cb56e9";
+    internal const string SchemaDigest = "b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c";
     internal const ulong MaxGeneration = 9_007_199_254_740_991;
     internal const int MaxLegalActions = 256;
     internal const int MaxEntities = 256;
@@ -25,7 +26,7 @@ internal static class RuntimeV3GameplayContract
 
     internal static bool IsText(string value)
     {
-        if (string.IsNullOrEmpty(value) || value.Length > MaxTextBytes)
+        if (string.IsNullOrEmpty(value) || Encoding.UTF8.GetByteCount(value) > MaxTextBytes)
         {
             return false;
         }

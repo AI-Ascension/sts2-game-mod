@@ -345,7 +345,8 @@ internal sealed class RuntimeV3GameplaySupport
         {
             return UnknownEnvelope(
                 "wait_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
-                requestGeneration, receipt.ErrorCode ?? "operation_in_progress", "timeout",
+                requestGeneration, receipt.ErrorCode ?? "operation_in_progress",
+                receipt.Status == RuntimeV3DispatchStatus.Rejected ? "recovery_required" : "timeout",
                 out status, operationId);
         }
         status = Accepted;
@@ -393,6 +394,27 @@ internal sealed class RuntimeV3GameplaySupport
             return ObservationEnvelope(
                 "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
                 observation, actions, "recovery-operation", "accepted", null, null);
+        }
+        if (recoveryKind == "reconcile"
+            && TryString(recovery, "operation_id", out string? operationId) && operationId is not null)
+        {
+            RuntimeV3OperationKey operation = new(instanceId, sessionId, leaseId, leaseEpoch, operationId);
+            if (_host is null || !_host.TryGetReceipt(operation, out RuntimeV3DispatchReceipt? receipt)
+                || receipt is null)
+            {
+                return UnknownEnvelope(
+                    "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
+                    requestGeneration, "operation_not_found", "recovery_required", out status, operationId);
+            }
+            status = receipt.Status switch
+            {
+                RuntimeV3DispatchStatus.Rejected => Rejected,
+                RuntimeV3DispatchStatus.Unknown => Unavailable,
+                _ => Accepted
+            };
+            return ReceiptEnvelope(
+                "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
+                requestGeneration, receipt, receipt.Observation, receipt.LegalActions);
         }
         return UnknownEnvelope(
             "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,

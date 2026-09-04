@@ -38,6 +38,10 @@ jobs:
         working-directory: protocol-artifact/runtime-v1
         run: sha256sum -c SHA256SUMS
 
+      - name: Verify canonical Runtime-v3 artifact checksums
+        working-directory: protocol-artifact/runtime-v3-gameplay
+        run: sha256sum -c SHA256SUMS
+
       - name: Validate copied POC JSON fixtures
         run: |
           cmp protocol-artifact/poc-v1/schema.json schemas/poc-v1.schema.json
