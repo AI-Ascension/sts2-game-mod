@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 mod config;
+mod decisions;
 mod diagnostic;
 mod files;
 mod license;
@@ -56,6 +57,7 @@ pub fn check(root: &Path, strict: bool) -> Result<Outcome, String> {
     findings.extend(workflow::findings(root, &repository_files));
     findings.extend(license::findings(root, &repository_files));
     findings.extend(markdown::findings(root, &repository_files));
+    findings.extend(decisions::findings(root, &repository_files));
     findings.extend(rust::findings(root));
     findings.sort_by(|left, right| {
         left.path

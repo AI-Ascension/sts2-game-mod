@@ -19,6 +19,7 @@ warnings as failures. It must not hide a missing tool, failed command, or unavai
 | CFG001 | policy configuration exists and declares the supported version |
 | DOC001 | required governance, docs, workflow, and tool files exist |
 | DOC002 | local Markdown links resolve |
+| DOC003 | normative ADR identifiers are unique and match numbered filenames; old-path redirects remain thin |
 | SIZE001 | handwritten Rust, C#, workflow, and Markdown budgets |
 | EXC001 | exemptions are exact existing paths with reasons |
 | WF001-WF005 | workflow permissions, trust, failure visibility, and immutable actions |
@@ -39,6 +40,12 @@ its durable provenance. Copied implementation source is never eligible.
 Changing policy is a process change. Explain the rule, enforcement effect, migration, reason for
 any exemption, and exact local results. Refactor oversized handwritten files before weakening a
 threshold.
+
+The [decision registry](decisions/README.md) records the current numbering. DOC003 rejects reused
+four-digit heading identifiers, filename/heading mismatches, and malformed decision headings.
+Thin `# Moved:` redirects preserve old links without counting as duplicate normative decisions.
+This repairs merged-branch identifier collisions without changing the decisions themselves; no
+policy exemptions or weakened checks are needed. It does not prove agreement with decision content.
 
 ## CI relationship
 
