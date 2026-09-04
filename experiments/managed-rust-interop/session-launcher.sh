@@ -316,7 +316,7 @@ run_harness_with_credentials() {
 
 game_is_running() {
     local process_list
-    process_list=$("$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null) \
+    process_list=$(timeout --kill-after=1 "$probe_timeout_seconds" "$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null) \
         || die 'game process inspection failed; refusing host changes'
     printf '%s\n' "$process_list" | tr -d '\r' \
         | awk '$1 == "SlayTheSpire2.exe" { found = 1 } END { exit(found ? 0 : 1) }'
@@ -324,7 +324,7 @@ game_is_running() {
 
 game_pid_is_running() {
     [[ "$game_pid" =~ ^[0-9]+$ ]] || return 1
-    "$tasklist_cmd" /FI "PID eq $game_pid" /NH 2>/dev/null \
+    timeout --kill-after=1 "$probe_timeout_seconds" "$tasklist_cmd" /FI "PID eq $game_pid" /NH 2>/dev/null \
         | tr -d '\r' \
         | awk -v expected_pid="$game_pid" \
             '$1 == "SlayTheSpire2.exe" && $2 == expected_pid { found = 1 } END { exit(found ? 0 : 1) }'
@@ -474,7 +474,7 @@ cleanup_owned_processes() {
         stop_posix_group "$gateway_group" "$gateway_session" "$gateway_pid"
     fi
     if (( game_started )); then
-        if ! "$windows_dotnet" "$bridge_dll_windows" --stop-owned \
+        if ! timeout --kill-after=2 10 "$windows_dotnet" "$bridge_dll_windows" --stop-owned \
             "$game_pid" "$game_start_ticks" "$game_exe_windows" </dev/null >/dev/null 2>&1; then
             cleanup_failed=1
         fi
