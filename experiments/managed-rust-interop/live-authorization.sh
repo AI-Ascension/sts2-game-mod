@@ -79,10 +79,10 @@ validate_live_authorization() {
         || die 'LIVE_AUTHORIZATION listener actions must authorize loopback bind'
     live_authorization_has_phrase "$listener_actions" 'connect loopback' \
         || die 'LIVE_AUTHORIZATION listener actions must authorize loopback connect'
-    live_authorization_has_phrase "$network_actions" loopback \
+    [[ "$network_actions" == 'loopback only' ]] \
         || die 'LIVE_AUTHORIZATION network actions must authorize loopback only'
 
-    [[ "$deadline" =~ ^[0-9]{1,12}$ ]] \
+    [[ "$deadline" =~ ^[1-9][0-9]{0,11}$ ]] \
         || die 'LIVE_AUTHORIZATION expiry_or_cleanup_deadline must be an epoch integer'
     now=${EPOCHSECONDS:-0}
     [[ "$now" =~ ^[0-9]+$ && "$now" != 0 ]] \
@@ -92,7 +92,27 @@ validate_live_authorization() {
     [[ ${STS2_LIVE_AUTHORIZATION_PROVIDER_CALLS} == prohibited ]] \
         || die 'provider calls are prohibited unless a separate authorization seam is approved'
 
+    # Keep only the deadline locally, never in the child environment. Recheck
+    # admission after builds and while supervising owned processes.
+    live_authorization_deadline=$deadline
+    export -n live_authorization_deadline
+
     # Do not let authorization metadata leak into any later child environment.
     unset STS2_LIVE_AUTHORIZATION_APPROVED
     unset "${live_authorization_variables[@]}"
+}
+
+assert_live_authorization_current() {
+    [[ ${live_authorization_deadline:-} =~ ^[1-9][0-9]{0,11}$ ]] \
+        || die 'LIVE_AUTHORIZATION has not been validated'
+    (( EPOCHSECONDS < live_authorization_deadline )) \
+        || die 'LIVE_AUTHORIZATION deadline passed; stopping owned work'
+}
+
+run_with_live_authorization() {
+    assert_live_authorization_current
+    local remaining=$((live_authorization_deadline - EPOCHSECONDS))
+    (( remaining > 0 )) || die 'LIVE_AUTHORIZATION deadline passed before command admission'
+    command -v timeout >/dev/null 2>&1 || die 'timeout is required for bounded authorized work'
+    timeout --kill-after=2 "$remaining" "$@"
 }

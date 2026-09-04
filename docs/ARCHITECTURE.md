@@ -52,12 +52,14 @@ chain. No credential is persisted or placed in an argument or log.
 
 The bridge is the explicit WSL-to-Windows environment boundary. It sets `STS2_RUNTIME_TOKEN`, the
 selected loopback-default bind address and port, and the non-secret `STS2_RUNTIME_SESSION=1` on the
-game process. It also always passes `--headless --audio-driver Dummy`, so the owned runtime test
-path does not create or focus a game window, capture the desktop cursor, or require desktop input.
+game process. It also always passes `--headless --audio-driver Dummy` and does not call desktop
+input APIs. Host compliance with those flags is unverified; they do not enforce OS isolation.
 The session flag is accepted only as an ephemeral launch override; saved settings remain owned by
 the in-game panel. Readiness probes require unauthenticated rejection followed by authenticated
 success, use bounded timeouts, and cleanup targets only recorded child groups and the recorded game
-PID. An already-running game is refused rather than adopted or killed. This guarantee covers only
+PID after verifying creation time and executable path on a retained process handle. A Windows
+handle allowlist gives the child NUL standard handles, so inherited output pipes cannot block the
+launch receipt. An already-running game is refused rather than adopted or killed. This covers only
 the owned launcher path; an independently launched proprietary host remains outside its scope.
 
 Both non-dry-run owned launch paths require the shared `live-authorization.sh` preflight before

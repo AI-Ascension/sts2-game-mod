@@ -31,7 +31,8 @@ profiles, credentials, and runtime logs are never copied into the repository or 
 
 The runtime launch paths (`session-launcher.sh` and `dev-cycle.sh`) and the Windows bridge are
 input-free by design. They start the game through non-shell process boundaries in headless mode with
-dummy audio, so the owned path does not create or focus a game window. They do not move or capture
+dummy audio. Exact-host compliance with those flags is unverified; they are not an OS sandbox.
+The launcher code does not move or capture
 the system cursor, send mouse or keyboard events, focus or raise the game window, reposition a
 window, or navigate the game UI. A live trace may use the runtime API only after an operator has
 placed the authorized disposable profile in the required game state. If that state cannot be reached
@@ -158,12 +159,20 @@ export STS2_GAME_DIR='/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the
 ./experiments/managed-rust-interop/dev-cycle.sh
 ```
 
-The script only targets the exact `SlayTheSpire2.exe` process and the three first-party runtime
-package files. Existing installed files are backed up under the ignored `.sts2-dev/backups/`
-directory. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect the actions, or
-`--no-kill` only when the game is already stopped and file locking is not a concern. The script does
+The script inspects executable paths and stops only game processes from the selected installation;
+an inaccessible identity fails closed before termination or installation. It does not kill by
+image name or terminate an uninspected descendant tree. Existing installed files are backed up in
+unique directories under the ignored `.sts2-dev/backups/`; linked installation/staging paths are
+refused. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect the actions, or
+`--no-kill` to require the selected installation already stopped. The script does
 not enable the addon in the game's Mods menu; that remains a one-time manual step if the profile has
 not already accepted the addon.
+
+The installation is a checked three-file replacement, not a crash-atomic transaction. Copy or
+verification failures attempt restoration from the unique backup, but process interruption, power
+loss, or concurrent filesystem changes can require operator restoration. Do not run concurrent
+installers or use `--no-backup` when recovery is required. These scripts do not verify or select
+the authorized disposable profile automatically.
 
 ## Ephemeral runtime session launcher
 

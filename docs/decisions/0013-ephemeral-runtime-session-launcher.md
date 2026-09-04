@@ -24,8 +24,8 @@ The launcher refuses an existing `SlayTheSpire2.exe` before building, installing
 session. It uses a checked-in .NET bridge with `UseShellExecute=false`; the bridge receives the
 runtime credential from stdin and sets the game's inherited `STS2_RUNTIME_TOKEN`, bind address,
 port, and non-secret `STS2_RUNTIME_SESSION=1`. The bridge also always launches the host with
-`--headless --audio-driver Dummy`, preventing the owned path from creating or focusing a game
-window or interacting with the desktop cursor. That flag is an ephemeral launch override for a
+`--headless --audio-driver Dummy`; source checks prove flag selection, not host compliance or
+desktop isolation. The session environment flag is an ephemeral launch override for a
 saved-off Runtime API setting and does not write settings. Provider binaries are explicit inputs or
 are built from explicit source directories; this target does not edit gateway, harness, or MCP.
 
@@ -40,7 +40,9 @@ not enter the live lane.
 The default endpoint is loopback and the launcher bounds provider/game readiness and harness
 completion. It first verifies unauthenticated rejection, then authenticated game and gateway
 readiness, runs the existing harness/MCP trace, and terminates only recorded child process groups
-and the recorded Windows game PID. A successful one-shot run verifies both listeners are closed.
+and the recorded Windows game PID with matching creation time and executable path. The bridge
+gives the child only NUL standard handles through an explicit Windows handle allowlist; it does
+not inherit the launcher's stdin or captured-output pipe. A successful one-shot run verifies both listeners are closed.
 `--keep-alive` is available for manual inspection and remains subject to the same owned cleanup.
 
 ## Consequences

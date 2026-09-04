@@ -168,13 +168,18 @@ This checks atomic publication, not power-loss durability of the directory entry
 ## Ephemeral session launcher
 
 The owned launcher and Windows bridge always pass `--headless --audio-driver Dummy` to the game.
-This prevents the runtime test path from creating or focusing a game window; it does not move or
-capture the system cursor and does not send mouse or keyboard events.
+Source checks establish that the launcher requests these flags and contains no listed system-input
+API calls. They do not establish that the proprietary host obeys the flags or cannot affect the
+desktop. That requires a separately authorized exact-host test.
 
 The target-owned launcher tests can run without a game or provider source:
 
 ~~~text
 bash experiments/managed-rust-interop/session-launcher.test.sh
+bash experiments/managed-rust-interop/session-install.test.sh
+bash experiments/managed-rust-interop/live-authorization.test.sh
+bash experiments/managed-rust-interop/package-runtime-addon.test.sh
+bash experiments/managed-rust-interop/dev-cycle.test.sh
 experiments/managed-rust-interop/session-launcher.sh --self-test
 ~~
 
@@ -205,6 +210,24 @@ host assemblies, private paths, and provider logs remain outside the repository 
 Before that command can inspect or mutate a host, its complete non-secret `LIVE_AUTHORIZATION`
 record must be exported. `--authorization-check` validates the record without host access; an
 expired, incomplete, non-loopback, or provider-enabled record is rejected by the owned launcher.
+
+The synthetic installation test uses only temporary fake payloads. It verifies renamed package
+filenames, refusal on process-inspection failure, direct symlink refusal, and expired admission.
+Authorization metadata is an operator attestation; these tests do not prove profile isolation.
+
+Run the Windows bridge integration and mocked process-guard checks without a game:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/session-launcher/bridge-tests/SessionWindowsBridgeTests.csproj --configuration Release -warnaserror
+pwsh -NoProfile -NonInteractive -File experiments/managed-rust-interop/dev-cycle-process-tests.ps1
+~~~
+
+The bridge test checks PID/start-time/executable identity and argument quoting on any platform;
+on Windows it also launches only its own synthetic child to verify captured output reaches EOF
+while that child lives, NUL output does not block, and wrong identities cannot terminate it.
+Windows cases explicitly skip elsewhere. The process guard test mocks enumeration and process
+objects; it never discovers or kills real game processes. Package tests substitute fake compilers
+and path converters, not proprietary assemblies. Neither suite proves live WSL/game behavior.
 
 ## Security and evidence language
 

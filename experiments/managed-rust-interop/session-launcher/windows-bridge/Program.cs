@@ -14,6 +14,12 @@ internal static partial class Program
     {
         try
         {
+            if (args.Length > 0 && args[0] == "--stop-owned")
+            {
+                OwnedProcess.Stop(args);
+                Console.WriteLine("STOPPED=TRUE");
+                return 0;
+            }
             Options options = Options.Parse(args);
             string credential = Console.ReadLine() ?? string.Empty;
             if (!CredentialIsSafe(credential))
@@ -37,20 +43,32 @@ internal static partial class Program
             startInfo.Environment["STS2_RUNTIME_PORT"] = options.Port;
             startInfo.Environment["STS2_RUNTIME_SESSION"] = "1";
 
-            using Process process = Process.Start(startInfo)
-                ?? throw new InvalidOperationException("game process did not start");
+            using Process process = DetachedWindowsProcess.Start(startInfo);
             int parsedPid = process.Id;
             if (parsedPid <= 0)
             {
                 throw new InvalidOperationException("Windows process handoff returned no game PID");
             }
-            Console.WriteLine("STARTED=TRUE");
-            Console.WriteLine($"PID={parsedPid}");
+            try
+            {
+                long startTicks = process.StartTime.ToUniversalTime().Ticks;
+                Console.Write($"STARTED=TRUE\nPID={parsedPid}\nSTART_TICKS={startTicks}\n");
+                Console.Out.Flush();
+            }
+            catch
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                    if (!process.WaitForExit(5000)) throw new TimeoutException("handoff cleanup failed");
+                }
+                throw;
+            }
             return 0;
         }
         catch (Exception)
         {
-            Console.Error.WriteLine("runtime session game launch failed");
+            Console.Error.WriteLine("runtime session process operation failed");
             return 1;
         }
     }

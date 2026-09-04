@@ -23,6 +23,7 @@ harness_pid=''
 harness_group=''
 harness_session=''
 game_pid=''
+game_start_ticks=''
 network_port=''
 gateway_host=''
 gateway_port=''
@@ -42,7 +43,7 @@ input_automation_is_disabled() {
         "$session_launcher_dir/session-launcher.sh"
         "$session_launcher_dir/session-launcher.test.sh"
         "$session_launcher_dir/dev-cycle.sh"
-        "$session_launcher_dir/session-launcher/windows-bridge/Program.cs"
+        "$session_launcher_dir"/session-launcher/windows-bridge/*.cs
     )
     local -a forbidden_apis=(
         "Set""CursorPos"
@@ -222,6 +223,10 @@ stop_posix_group() {
     local count
 
     if [[ -z "$group" || -z "$session" ]]; then
+        if posix_process_is_alive "$pid"; then
+            cleanup_failed=1
+            return 1
+        fi
         return 0
     fi
     if [[ -n "$session_launcher_caller_group" && "$group" == "$session_launcher_caller_group" ]]; then
@@ -310,8 +315,10 @@ run_harness_with_credentials() {
 }
 
 game_is_running() {
-    "$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null \
-        | tr -d '\r' \
+    local process_list
+    process_list=$("$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null) \
+        || die 'game process inspection failed; refusing host changes'
+    printf '%s\n' "$process_list" | tr -d '\r' \
         | awk '$1 == "SlayTheSpire2.exe" { found = 1 } END { exit(found ? 0 : 1) }'
 }
 
@@ -338,17 +345,21 @@ wait_for_probe() {
     local token=$6
     local process_kind=$7
     local process_id=$8
-    local attempts=$((startup_timeout_seconds * 5))
-    local attempt
+    local readiness_deadline=$((SECONDS + startup_timeout_seconds))
+    local remaining
 
-    for ((attempt = 0; attempt < attempts; attempt++)); do
+    while (( SECONDS < readiness_deadline )); do
+        assert_live_authorization_current
         if [[ "$process_kind" == posix ]] && ! posix_process_is_alive "$process_id"; then
             die "$label exited before readiness"
         fi
         if [[ "$process_kind" == windows ]] && ! game_pid_is_running; then
             die "$label exited before readiness"
         fi
-        if probe_status "$host" "$port" "$path" "$expected" "$token"; then
+        remaining=$((readiness_deadline - SECONDS))
+        (( remaining > 0 )) || break
+        (( remaining <= probe_timeout_seconds )) || remaining=$probe_timeout_seconds
+        if probe_timeout_seconds=$remaining probe_status "$host" "$port" "$path" "$expected" "$token"; then
             return 0
         fi
         sleep 0.2
@@ -362,6 +373,7 @@ wait_for_harness() {
     local status
 
     for ((attempt = 0; attempt < attempts; attempt++)); do
+        assert_live_authorization_current
         if ! posix_process_is_alive "$harness_pid"; then
             if wait "$harness_pid"; then
                 return 0
@@ -375,6 +387,14 @@ wait_for_harness() {
     die "harness did not finish within ${harness_timeout_seconds}s"
 }
 
+require_plain_install_path() {
+    local current=$1
+    while [[ "$current" != / && "$current" != . ]]; do
+        [[ ! -L "$current" ]] || die 'addon paths must not contain symbolic links'
+        current=$(dirname -- "$current")
+    done
+}
+
 install_addon() {
     local game_data_dir=$1
     local game_dir=$2
@@ -383,15 +403,31 @@ install_addon() {
     local backup_root="$session_launcher_repo_root/.sts2-dev/session-backups"
     local backup_dir
     local artifact
-    local -a artifacts=(AIAscensionSTS2Poc.dll ai_ascension_sts2_poc.dll AIAscensionSTS2Poc.json)
+    local current
+    local -a artifacts=(AIAscensionSTS2GameMod.dll AIAscensionSTS2GameModNative.dll AIAscensionSTS2GameMod.json)
     local -a existing_files=()
 
+    for current in "$mods_dir" "$stage_dir" "$backup_root"; do
+        require_plain_install_path "$current"
+    done
+    for artifact in "${artifacts[@]}"; do
+        require_plain_install_path "$stage_dir/$artifact"
+        require_plain_install_path "$mods_dir/$artifact"
+    done
     game_is_running && die 'SlayTheSpire2.exe started while the addon was being prepared; restart required'
-    bash "$session_launcher_package_script" "$game_data_dir" "$stage_dir" >/dev/null
+    run_with_live_authorization bash "$session_launcher_package_script" "$game_data_dir" "$stage_dir" >/dev/null
     for artifact in "${artifacts[@]}"; do
         [[ -s "$stage_dir/$artifact" ]] || die "staged addon artifact is missing: $artifact"
     done
 
+    assert_live_authorization_current
+    refuse_if_game_running
+    [[ ! -L "$mods_dir" && ! -L "$stage_dir" && ! -L "$backup_root" ]] \
+        || die 'addon directories must not be symbolic links'
+    for artifact in "${artifacts[@]}"; do
+        [[ ! -L "$mods_dir/$artifact" && ! -L "$stage_dir/$artifact" ]] \
+            || die 'addon files must not be symbolic links'
+    done
     mkdir -p "$mods_dir" "$backup_root"
     backup_dir=$(mktemp -d "$backup_root/session.XXXXXX")
     for artifact in "${artifacts[@]}"; do
@@ -402,7 +438,7 @@ install_addon() {
     done
 
     for artifact in "${artifacts[@]}"; do
-        if ! cp -f -- "$stage_dir/$artifact" "$mods_dir/$artifact"; then
+        if ! cp --remove-destination -- "$stage_dir/$artifact" "$mods_dir/$artifact"; then
             restore_addon "$mods_dir" "$backup_dir" "${artifacts[@]}"
             die "failed to install addon artifact: $artifact"
         fi
@@ -422,7 +458,7 @@ restore_addon() {
     local artifact
     for artifact in "$@"; do
         if [[ -f "$backup_dir/$artifact" ]]; then
-            cp -f -- "$backup_dir/$artifact" "$mods_dir/$artifact"
+            cp --remove-destination -- "$backup_dir/$artifact" "$mods_dir/$artifact"
         else
             rm -f -- "$mods_dir/$artifact"
         fi
@@ -437,15 +473,11 @@ cleanup_owned_processes() {
     if (( gateway_started )); then
         stop_posix_group "$gateway_group" "$gateway_session" "$gateway_pid"
     fi
-    if (( game_started )) && game_pid_is_running; then
-        if ! "$taskkill_cmd" /PID "$game_pid" /T /F >/dev/null 2>&1; then
+    if (( game_started )); then
+        if ! "$windows_dotnet" "$bridge_dll_windows" --stop-owned \
+            "$game_pid" "$game_start_ticks" "$game_exe_windows" </dev/null >/dev/null 2>&1; then
             cleanup_failed=1
         fi
-        for ((cleanup_wait = 0; cleanup_wait < 100; cleanup_wait++)); do
-            game_pid_is_running || break
-            sleep 0.1
-        done
-        game_pid_is_running && cleanup_failed=1
     fi
     if (( gateway_started )) && probe_status "$gateway_host" "$gateway_port" /health/ready ANY ''; then
         cleanup_failed=1
@@ -578,7 +610,7 @@ usage() {
         '  --windows-dotnet PATH  Windows dotnet.exe used by the bridge' \
         '  --bridge-dll PATH      prebuilt Windows bridge DLL' \
         '  --tasklist-command P   explicit tasklist.exe path' \
-        '  --taskkill-command P   explicit taskkill.exe path' \
+        '  --taskkill-command P   deprecated compatibility option (unused)' \
         '  --keep-alive           leave the owned session running until interrupted' \
         '  --self-test            run synthetic credential/auth/process tests' \
         '  --authorization-check  validate LIVE_AUTHORIZATION without host access' \
@@ -750,13 +782,6 @@ main() {
         tasklist_cmd=$(find_windows_tool tasklist.exe) \
             || die 'tasklist.exe is unavailable; run the launcher from WSL on Windows'
     fi
-    if [[ -n "$taskkill_command_input" ]]; then
-        taskkill_cmd=$(resolve_executable "$(to_wsl_path "$taskkill_command_input")") \
-            || die "taskkill command is unavailable: $taskkill_command_input"
-    else
-        taskkill_cmd=$(find_windows_tool taskkill.exe) \
-            || die 'taskkill.exe is unavailable; run the launcher from WSL on Windows'
-    fi
     refuse_if_game_running
 
     if [[ -n "$gateway_binary_input" ]]; then
@@ -766,7 +791,7 @@ main() {
         [[ -n "$gateway_dir_input" ]] || die 'pass --gateway-binary or --gateway-dir'
         provider_dir=$(to_wsl_path "$gateway_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "gateway Cargo.toml is missing: $gateway_dir_input"
-        cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-gateway-runtime \
+        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-gateway-runtime \
             >/dev/null
         gateway_binary="$provider_dir/target/debug/sts2-gateway-runtime"
     fi
@@ -779,7 +804,7 @@ main() {
         [[ -n "$harness_dir_input" ]] || die 'pass --harness-binary or --harness-dir'
         provider_dir=$(to_wsl_path "$harness_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "harness Cargo.toml is missing: $harness_dir_input"
-        cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-harness-runtime \
+        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-harness-runtime \
             >/dev/null
         harness_binary="$provider_dir/target/debug/sts2-harness-runtime"
     fi
@@ -792,7 +817,7 @@ main() {
         [[ -n "$mcp_dir_input" ]] || die 'pass --mcp-binary or --mcp-dir'
         provider_dir=$(to_wsl_path "$mcp_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "MCP Cargo.toml is missing: $mcp_dir_input"
-        cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-mcp-server \
+        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-mcp-server \
             >/dev/null
         mcp_binary="$provider_dir/target/debug/sts2-mcp-server"
     fi
@@ -815,7 +840,7 @@ main() {
         bridge_dll=$(to_wsl_path "$bridge_dll_input")
     else
         bridge_project_windows=$(to_windows_path "$session_launcher_bridge_project")
-        "$windows_dotnet" build "$bridge_project_windows" --configuration Release --nologo >/dev/null
+        run_with_live_authorization "$windows_dotnet" build "$bridge_project_windows" --configuration Release --nologo >/dev/null
         bridge_dll="$session_launcher_bridge_dll"
     fi
     [[ -s "$bridge_dll" ]] || die "session bridge DLL is missing: $bridge_dll"
@@ -834,6 +859,8 @@ main() {
     trap 'on_exit "$?"' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
+
+    assert_live_authorization_current
 
     STS2_GATEWAY_ADDR="$gateway_addr" \
         STS2_MOD_ADDR="$mod_addr" \
@@ -854,6 +881,8 @@ main() {
     gateway_session=$(printf '%s\n' "$gateway_identity" | sed -n '2p')
     wait_for_probe 'gateway listener' "$gateway_host" "$gateway_port" /health/ready 401 '' posix "$gateway_pid"
 
+    assert_live_authorization_current
+    refuse_if_game_running
     bridge_output=$(printf '%s\n' "$runtime_token" \
         | "$windows_dotnet" "$bridge_dll_windows" \
             --game-executable "$game_exe_windows" \
@@ -863,7 +892,10 @@ main() {
         || die 'Windows game launch bridge failed'
     game_pid=$(printf '%s\n' "$bridge_output" | tr -d '\r' \
         | awk -F= '$1 == "PID" && $2 ~ /^[0-9]+$/ { print $2; exit }')
-    [[ "$bridge_output" == *'STARTED=TRUE'* && "$game_pid" =~ ^[0-9]+$ ]] \
+    game_start_ticks=$(printf '%s\n' "$bridge_output" | tr -d '\r' \
+        | awk -F= '$1 == "START_TICKS" && $2 ~ /^[0-9]+$/ { print $2; exit }')
+    [[ "$bridge_output" == *'STARTED=TRUE'* && "$game_pid" =~ ^[1-9][0-9]*$ \
+        && "$game_start_ticks" =~ ^[1-9][0-9]*$ ]] \
         || die 'Windows game launch bridge did not confirm a game process'
     game_started=1
 
@@ -900,6 +932,7 @@ main() {
         'System input automation=FALSE'
     if [[ "$keep_alive" == true ]]; then
         while game_pid_is_running; do
+            assert_live_authorization_current
             sleep 1
         done
         die 'owned game process exited while the session was running'
