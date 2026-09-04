@@ -305,8 +305,8 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         let accepted = self.result_response(
             &request,
             RuntimeV3GameplayStatus::Accepted,
-            Some(observation),
-            Some(legal_actions),
+            Some(observation.clone()),
+            Some(legal_actions.clone()),
             None,
             None,
             None,

@@ -18,4 +18,4 @@ pub use contract::{
     RuntimeV3GameplayValidationError, RuntimeV3GameplayWaitOutcome,
 };
 pub use fake::{FakeRuntimeV3GameplayGame, RuntimeV3GameplayGameError, RuntimeV3GameplayGamePort};
-pub use runtime::{RuntimeV3GameplayConfig, RuntimeV3GameplayError, RuntimeV3GameplayMod};
+pub use runtime::{RuntimeV3GameplayConfig, RuntimeV3GameplayMod};
