@@ -9,5 +9,12 @@
     <Compile Include="../game-loader/RuntimeV2*.cs" />
     <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Network.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Queue.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Lifecycle.cs" />
+    <Compile Include="../game-loader/RuntimeDispatchQueue.cs" />
+    <Compile Include="../game-loader/RuntimeContract.cs" />
+    <Compile Include="../game-loader/RuntimeContractValidation.cs" />
   </ItemGroup>
 </Project>

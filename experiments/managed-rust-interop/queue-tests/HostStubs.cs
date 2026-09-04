@@ -40,6 +40,7 @@ namespace AiAscension.Sts2GameMod.Runtime
     {
         private const string LogPrefix = "test";
         private static void TryFinalizePendingRuntimeV2() { }
+        private static void TryFinalizePendingRuntimeV3Gameplay() { }
         private static bool RuntimeSessionLaunchEnabled() => false;
         private static (int, string) ProcessRuntimeWork(RuntimeWork work)
         {
