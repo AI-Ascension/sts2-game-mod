@@ -23,11 +23,12 @@ decision body and do not reserve another identifier. Local link validation check
 | 0013 | [Ephemeral runtime-session launcher](0013-ephemeral-runtime-session-launcher.md) |
 | 0014 | [Runtime-v2 fake boundary](0014-runtime-v2-fake-boundary.md) |
 | 0015 | [First-party Workshop package](0015-steam-workshop-first-party-package.md) |
+| 0019 | [Repeat-seed practice replay](0019-repeat-seed-practice-replay.md) |
 
 The last two decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
 historical rather than being silently rewritten to claim the current built-in implementation.
 
 For pending-branch reconciliation, reserve 0016/0017 for the earlier gameplay catalog/host proposal,
-0018 for the newer neutral Runtime-v3 host bridge, and 0019 for repeat-seed practice replay.
+0018 for the newer neutral Runtime-v3 host bridge.
 These reservations are not accepted decisions or evidence that those branches have merged.
