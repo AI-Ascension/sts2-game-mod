@@ -70,6 +70,16 @@ and live host settlement are unverified.
 
 ## Contract compatibility
 
+The managed Runtime-v1 request validator enforces the copied schema's closed required shape,
+null sentinels, identity bounds and maximum safe integer. It additionally rejects duplicate JSON
+properties and requires the body epoch to match the transport context. Numeric values use the
+typed unsigned-integer representation (fraction/exponent lexical forms are not accepted).
+Malformed inputs fail before host effects. A session refuses additional probe actions once
+`action_count` reaches 1024 rather than emitting observations outside the immutable schema.
+These are source-tested contract enforcement corrections, not an artifact or native ABI revision.
+A host effect invoked without its subsequently visible witness returns HTTP 503 owner-local
+`runtime_probe_outcome_unknown`; it must not be interpreted as proof that the effect did not occur.
+
 The checked-in `protocol-artifact/poc-v1/` copy is consumed by exact protocol version, schema
 digest, and provenance. It is an offline release-like input, not a package or runtime compatibility
 claim. The game-mod POC mapping remains source/test-confirmed only. The separate runtime-v1 probe

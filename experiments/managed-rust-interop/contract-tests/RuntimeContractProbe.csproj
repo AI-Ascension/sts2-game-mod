@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/RuntimeContract.cs" Link="RuntimeContract.cs" />
+    <Compile Include="../game-loader/RuntimeContractValidation.cs" Link="RuntimeContractValidation.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
+  </ItemGroup>
+</Project>
