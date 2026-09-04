@@ -157,7 +157,7 @@ internal sealed class RuntimeV3GameplaySupport
         string responseKind,
         out int status)
     {
-        if (!TryCurrent(requestGeneration, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
+        if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
         {
             return RecoveryState(
                 instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
@@ -249,6 +249,19 @@ internal sealed class RuntimeV3GameplaySupport
                 instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
                 "reobserve_response", "host_not_configured_or_invalid_action", out status);
         }
+        if (operationId is null || stateId is null || requestedAction is null)
+        {
+            return RecoveryState(
+                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
+                "reobserve_response", "invalid_action", out status);
+        }
+        RuntimeV3OperationKey operation = new(instanceId, sessionId, leaseId, leaseEpoch, operationId);
+        if (_host.TryReplay(operation, stateId, requestedAction, out RuntimeV3DispatchReceipt? replay)
+            && replay is not null)
+        {
+            return RenderDispatchReceipt(
+                correlationId, instanceId, sessionId, leaseId, leaseEpoch, requestGeneration, replay, out status);
+        }
         if (!TryCurrent(requestGeneration, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
         {
             return RecoveryState(
@@ -278,7 +291,7 @@ internal sealed class RuntimeV3GameplaySupport
         RuntimeV3DispatchReceipt receipt;
         try
         {
-            receipt = _host.Dispatch(operationId, observation, requestedAction);
+            receipt = _host.Dispatch(operation, observation, requestedAction);
         }
         catch (Exception)
         {
@@ -287,30 +300,23 @@ internal sealed class RuntimeV3GameplaySupport
                 leaseEpoch, requestGeneration, "dispatch_outcome_unknown", "recovery_required",
                 out status, operationId);
         }
+        return RenderDispatchReceipt(
+            correlationId, instanceId, sessionId, leaseId, leaseEpoch, requestGeneration, receipt, out status);
+    }
+
+    private static string RenderDispatchReceipt(
+        string correlationId, string instanceId, string sessionId, string leaseId,
+        ulong leaseEpoch, ulong requestGeneration, RuntimeV3DispatchReceipt receipt, out int status)
+    {
         status = receipt.Status switch
         {
             RuntimeV3DispatchStatus.Rejected => Rejected,
             RuntimeV3DispatchStatus.Unknown => Unavailable,
             _ => Accepted
         };
-        IReadOnlyList<LegalActionReference> receiptActions = actions;
-        if (receipt.Observation is not null)
-        {
-            try
-            {
-                receiptActions = _host.LegalActions(receipt.Observation);
-            }
-            catch (Exception)
-            {
-                return UnknownEnvelope(
-                    "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
-                    leaseEpoch, requestGeneration, "settlement_unproven", "recovery_required",
-                    out status, operationId);
-            }
-        }
         return ReceiptEnvelope(
             "dispatch_action_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
-            requestGeneration, receipt, observation, receiptActions);
+            requestGeneration, receipt, receipt.Observation, receipt.LegalActions);
     }
 
     private string Wait(
@@ -323,13 +329,13 @@ internal sealed class RuntimeV3GameplaySupport
         ulong requestGeneration,
         out int status)
     {
-        if (!TryString(root, "operation_id", out string? operationId) || _host is null)
+        if (!TryString(root, "operation_id", out string? operationId) || operationId is null || _host is null)
         {
             return UnknownEnvelope(
                 "wait_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
                 requestGeneration, "operation_not_found", "timeout", out status, operationId);
         }
-        if (!_host.TryGetReceipt(operationId, out RuntimeV3DispatchReceipt? receipt) || receipt is null)
+        if (!_host.TryGetReceipt(new RuntimeV3OperationKey(instanceId, sessionId, leaseId, leaseEpoch, operationId), out RuntimeV3DispatchReceipt? receipt) || receipt is null)
         {
             return UnknownEnvelope(
                 "wait_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
@@ -343,21 +349,9 @@ internal sealed class RuntimeV3GameplaySupport
                 out status, operationId);
         }
         status = Accepted;
-        string outcome = "successor";
-        IReadOnlyList<LegalActionReference> receiptActions;
-        try
-        {
-            receiptActions = receipt.Observation is null
-                ? Array.Empty<LegalActionReference>()
-                : _host.LegalActions(receipt.Observation);
-        }
-        catch (Exception)
-        {
-            return UnknownEnvelope(
-                "wait_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
-                requestGeneration, "settlement_unproven", "recovery_required", out status,
-                operationId);
-        }
+        string outcome = receipt.Observation?.StateId == receipt.Before.StateId
+            ? "same_state_mutation" : "successor";
+        IReadOnlyList<LegalActionReference> receiptActions = receipt.LegalActions;
         return ReceiptEnvelope(
             "wait_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
             requestGeneration, receipt, receipt.Observation, receiptActions, outcome);
@@ -383,7 +377,7 @@ internal sealed class RuntimeV3GameplaySupport
         }
         if (recoveryKind == "reobserve")
         {
-            if (!TryCurrent(requestGeneration, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
+            if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
             {
                 return RecoveryState(
                     instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
@@ -406,7 +400,7 @@ internal sealed class RuntimeV3GameplaySupport
     }
 
     private bool TryCurrent(
-        ulong requestGeneration,
+        ulong? requestGeneration,
         out RuntimeV3GameplayObservation? observation,
         out IReadOnlyList<LegalActionReference>? actions,
         out string error)
@@ -421,7 +415,7 @@ internal sealed class RuntimeV3GameplaySupport
         try
         {
             observation = _host.Observe();
-            if (observation.Generation != requestGeneration)
+            if (requestGeneration is not null && observation.Generation != requestGeneration)
             {
                 observation = null;
                 actions = Array.Empty<LegalActionReference>();
@@ -493,6 +487,7 @@ internal sealed class RuntimeV3GameplaySupport
             || StringField(root, "provenance.generator") != RuntimeV3GameplayContract.Generator
             || !TryEpoch(root, "lease_epoch", leaseEpochText, out _)
             || !root.TryGetProperty("generation", out JsonElement generationElement)
+            || generationElement.ValueKind != JsonValueKind.Number
             || !generationElement.TryGetUInt64(out generation)
             || generation > RuntimeV3GameplayContract.MaxGeneration
             || !TryString(root, "kind", out string? parsedKind))
@@ -557,6 +552,7 @@ internal sealed class RuntimeV3GameplaySupport
     private static bool TryWait(JsonElement root)
     {
         return root.TryGetProperty("wait_for_millis", out JsonElement value)
+            && value.ValueKind == JsonValueKind.Number
             && value.TryGetInt32(out int waitForMillis)
             && waitForMillis is >= 1 and <= 120_000;
     }
@@ -961,7 +957,10 @@ internal sealed class RuntimeV3GameplaySupport
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (JsonProperty property in value.EnumerateObject())
         {
-            names.Add(property.Name);
+            if (!names.Add(property.Name))
+            {
+                return false;
+            }
         }
         if (names.Count != fields.Length)
         {
@@ -1017,6 +1016,7 @@ internal sealed class RuntimeV3GameplaySupport
         return ulong.TryParse(expected, out ulong expectedEpoch)
             && expectedEpoch <= RuntimeV3GameplayContract.MaxGeneration
             && root.TryGetProperty(property, out JsonElement element)
+            && element.ValueKind == JsonValueKind.Number
             && element.TryGetUInt64(out value)
             && value <= RuntimeV3GameplayContract.MaxGeneration
             && value == expectedEpoch;
@@ -1027,31 +1027,4 @@ internal sealed class RuntimeV3GameplaySupport
             && epoch <= RuntimeV3GameplayContract.MaxGeneration
             ? epoch
             : 0;
-}
-
-public static partial class ModEntry
-{
-    private const uint RuntimeRequestKindGameplay = 3;
-    private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
-
-    private static void InitializeRuntimeV3Gameplay()
-    {
-        _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
-    }
-
-    private static (int Status, string Response) ProcessRuntimeV3GameplayWork(
-        RuntimeContext context,
-        string body)
-    {
-        RuntimeV3GameplaySupport support = _runtimeV3Gameplay ?? RuntimeV3GameplaySupport.Unconfigured();
-        string response = support.Handle(
-            context.InstanceId,
-            context.SessionId,
-            context.LeaseId,
-            context.CorrelationId,
-            context.LeaseEpoch,
-            body,
-            out int status);
-        return (status, response);
-    }
 }

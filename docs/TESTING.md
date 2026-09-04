@@ -362,6 +362,20 @@ invalidates generation. This bounded observation is not a complete game-state re
 or a game-rule parity claim.
 ## Runtime-v3 and co-op checks
 
+The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
+~~~
+
+The probe links production source and supplies only a synthetic host and queue. It
+covers discovering a newer generation, exact-generation mutation/catalog fencing,
+settled and pending receipt replay, payload conflicts, session/epoch isolation,
+unrelated transitions remaining unknown, operation/action-bound completion, delayed
+completion polling, queue-time generation checks, and malformed numeric/duplicate
+fields. CI runs it with the pinned .NET SDK and warnings as errors. These are
+managed component results, not licensed-host gameplay evidence.
+
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
 operation identities, stale observations, host-thread queueing, settlement witnesses, projection
 redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local

@@ -144,6 +144,12 @@ typed catalog checks, host-thread adapter, co-op suspension rules, and postcondi
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
+The internal Runtime-v3 host-source interface receives scoped operation identities
+and must supply independent completion evidence. This safety correction leaves the
+wire profile unchanged. Host implementations must implement the completion port;
+an unavailable witness preserves an unknown outcome. Managed handler tests use
+synthetic completion events and do not promote the licensed-host compatibility row.
+
 ## Workshop package profile
 
 The first-party Workshop package has its own compatibility dimensions: consumer App ID, published

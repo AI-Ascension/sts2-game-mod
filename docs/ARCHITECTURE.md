@@ -274,6 +274,13 @@ from the current generation, records operation identities, and settles only with
 and transition witness. Dispatch, queue, host projection, and settlement exceptions become an
 explicit unknown/recovery result.
 
+Receipt lookup is scoped to instance/session/lease/epoch/operation and precedes new
+action admission. Replays use saved observation/catalog snapshots. Observation reads
+can discover a new generation; mutations and catalog-bound requests cannot bypass
+freshness checks. The injected host source supplies independent operation/action-bound
+completion evidence; a generation increase alone cannot settle an action. The managed
+component probe exercises this production handler without a licensed host.
+
 `FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
 The co-op projection adds peer identity, ally targets, and synchronization metadata; disagreement,
 missing peers, disconnect, invalid identities, or unsupported action shapes suspend mutation. No

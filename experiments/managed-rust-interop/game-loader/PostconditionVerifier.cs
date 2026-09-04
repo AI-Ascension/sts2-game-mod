@@ -5,6 +5,8 @@ using System;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed record RuntimeV3TransitionWitness(
+    RuntimeV3OperationKey Operation,
+    LegalActionReference Action,
     ulong FromGeneration,
     ulong ToGeneration,
     string StateId,
@@ -13,6 +15,8 @@ internal sealed record RuntimeV3TransitionWitness(
 internal static class PostconditionVerifier
 {
     internal static bool Verify(
+        RuntimeV3OperationKey operation,
+        LegalActionReference action,
         RuntimeV3GameplayObservation before,
         RuntimeV3GameplayObservation after,
         RuntimeV3TransitionWitness witness,
@@ -22,7 +26,9 @@ internal static class PostconditionVerifier
         {
             return false;
         }
-        if (after.Generation <= before.Generation
+        if (witness.Operation != operation || witness.Action != action
+            || action.Generation != before.Generation
+            || after.Generation <= before.Generation
             || witness.FromGeneration != before.Generation
             || witness.ToGeneration != after.Generation
             || !string.Equals(witness.StateId, after.StateId, StringComparison.Ordinal)

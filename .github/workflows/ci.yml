@@ -132,5 +132,8 @@ jobs:
       - name: Run source-linked host candidate safety regressions
         run: dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj --configuration Release
 
+      - name: Run managed Runtime-v3 request and settlement probe
+        run: dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
+
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

@@ -21,7 +21,7 @@ internal static class RuntimeV3GameplayContract
         !string.IsNullOrEmpty(value)
         && value.Length <= MaxTextBytes
         && AllAscii(value, static character =>
-            char.IsAsciiLetterOrDigit(character) || ".:/-_".IndexOf(character) >= 0);
+            char.IsAsciiLetterOrDigit(character) || ".:/-_".Contains(character));
 
     internal static bool IsText(string value)
     {
