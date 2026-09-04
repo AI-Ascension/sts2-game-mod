@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Include="../game-loader/WorkshopContent.cs" Link="WorkshopContent.cs" />
+    <Compile Include="../game-loader/WorkshopPackageIO.cs" Link="WorkshopPackageIO.cs" />
     <Compile Include="../game-loader/WorkshopContentModels.cs" Link="WorkshopContentModels.cs" />
   </ItemGroup>
 </Project>

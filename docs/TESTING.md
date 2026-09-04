@@ -1,5 +1,10 @@
 # Testing and evidence
 
+Workshop regression probes reject duplicate JSON properties, symlink install roots, oversized
+manifests without proportional allocation, and producer metadata/payload bounds before staging.
+Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic
+checks do not establish Windows junction behavior or safety against concurrent package replacement.
+
 ## Purpose
 
 Tests must prove observable boundary invariants without requiring a game whenever possible.

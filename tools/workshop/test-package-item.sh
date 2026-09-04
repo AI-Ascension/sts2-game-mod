@@ -63,3 +63,21 @@ if bash "$script_dir/package-item.sh" \
 fi
 
 printf '%s\n' 'Workshop package tool test passed.'
+
+expect_rejected() {
+    local output=$1
+    shift
+    if bash "$script_dir/package-item.sh" "$payload_dir" "$output" "$@" "$preview_file"; then
+        printf '%s\n' 'expected invalid package input to be rejected' >&2
+        exit 1
+    fi
+    [[ ! -e "$output" && ! -e "$output.vdf" ]]
+}
+expect_rejected "$temp_dir/leading-zero" 480 00123 0.107.1 0.1.0 commit-123
+expect_rejected "$temp_dir/app-overflow" 4294967296 123 0.107.1 0.1.0 commit-123
+expect_rejected "$temp_dir/item-overflow" 480 18446744073709551616 0.107.1 0.1.0 commit-123
+expect_rejected "$temp_dir/unsafe-version" 480 123 bad..version 0.1.0 commit-123
+expect_rejected "$payload_dir/nested" 480 123 0.107.1 0.1.0 commit-123
+truncate -s 268435457 "$payload_dir/AIAscensionSTS2GameMod.dll"
+expect_rejected "$temp_dir/large-payload" 480 123 0.107.1 0.1.0 commit-123
+printf '%s\n' 'Workshop package negative tests passed.'

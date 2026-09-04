@@ -47,12 +47,18 @@ be rebuilt with the assigned ID and must pass the runtime trust policy.
 
 - Steam title, author, tags, subscription state, and local folder location are not trust evidence.
 - Missing, pending, downloading, updating, corrupt, incompatible, partially installed, malformed,
-  unexpected, or changed-during-validation content fails closed.
+  unexpected, or digest-mismatching content fails closed at validation time.
 - Relative, absolute, traversal, case-collision, symlink, and reparse-point payload paths are
   rejected.
 - Pull-request CI never uploads to Steam and receives no Steam credentials.
 - Host assemblies, saves, profiles, credentials, Steamworks binaries, and generated release output
   remain outside the repository and Workshop staging input.
+
+The package must remain quiescent in an owner-controlled directory through native loading. Validation
+does not hold all payload handles through that later load, so concurrent replacement is not prevented.
+Manifest IDs and hashes establish compatibility and internal byte consistency, not publisher
+authentication. The managed assembly is already executing when this gate checks its package;
+Steam installation trust and managed assembly admission are separate, not implemented by this gate.
 
 ## Evidence boundary
 

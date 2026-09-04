@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-public static class WorkshopPackageValidator
+public static partial class WorkshopPackageValidator
 {
     public const string ManifestFileName = "sts2-workshop-manifest.json";
     public const string ChecksumFileName = "SHA256SUMS";
@@ -65,17 +65,15 @@ public static class WorkshopPackageValidator
             Reject("missing_install_directory", "Workshop install directory does not exist.");
         }
 
+        RejectReparsePath(root);
         RejectUnexpectedEntries(root);
         string manifestPath = Path.Combine(root, ManifestFileName);
-        byte[] manifestBytes = File.ReadAllBytes(manifestPath);
-        if (manifestBytes.Length > MaximumManifestBytes)
-        {
-            Reject("manifest_too_large", "Workshop manifest exceeds its byte bound.");
-        }
+        byte[] manifestBytes = ReadBoundedManifest(manifestPath);
 
         WorkshopManifest manifest;
         try
         {
+            RejectDuplicateProperties(manifestBytes);
             manifest = JsonSerializer.Deserialize<WorkshopManifest>(manifestBytes, JsonOptions)
                 ?? throw new JsonException("manifest is null");
         }
