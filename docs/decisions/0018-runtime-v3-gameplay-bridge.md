@@ -25,6 +25,16 @@ Observation reads (including recovery reobservation) return the current authorit
 generation even when the caller has an older one. New mutations and legal-catalog
 requests retain exact-generation admission checks.
 
+A stale dispatch returns `dispatch_action_response` with `rejected`,
+`stale_generation`, and the current authoritative observation/catalog. If the host
+is unavailable, dispatch retains that response kind and operation identity with
+`unknown`; neither path substitutes a reobservation response. The neutral catalog
+response has no failure variant, so failed catalog reads use an owner-local HTTP
+error body containing `correlation_id`, `error_code`, and `recovery: "reobserve"`:
+409 for stale state/generation, 503 for an unavailable host. This is not a neutral
+gameplay message or an observation; consumers must process non-success HTTP status
+before attempting to decode a successful catalog envelope. No schema change is made.
+
 The receipt key includes instance, session, lease, epoch, and operation identity.
 Exact retries replay the stored receipt before fresh admission; changing the state,
 action payload, or generation under that key is an idempotency conflict. Receipts

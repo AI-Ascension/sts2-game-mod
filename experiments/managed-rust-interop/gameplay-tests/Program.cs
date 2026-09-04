@@ -17,6 +17,7 @@ internal static class Program
             return;
         }
         ReadsDiscoverNewGenerations();
+        UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();
         UnrelatedTransitionDoesNotSettle();
         MismatchedCompletionDoesNotSettle();
@@ -43,9 +44,38 @@ internal static class Program
         Check(refreshedStatus == 200 && refreshed.RootElement.GetProperty("generation").GetUInt64() == 9,
             "refresh after unsolicited transition");
         using JsonDocument stale = Wire.Call(support, "dispatch_action_request", 8, out int staleStatus);
-        Check(staleStatus == 503 && source.Dispatches == 0, "new mutations retain exact generation checks");
+        Check(staleStatus == 409 && source.Dispatches == 0
+            && stale.RootElement.GetProperty("kind").GetString() == "dispatch_action_response"
+            && Wire.Status(stale) == "rejected" && Wire.Error(stale) == "stale_generation"
+            && stale.RootElement.GetProperty("generation").GetUInt64() == 9,
+            "stale mutations return the canonical rejection and current host observation");
         using JsonDocument catalog = Wire.Call(support, "legal_actions_request", 8, out int catalogStatus);
-        Check(catalogStatus == 503, "catalog requests retain exact generation checks");
+        Check(catalogStatus == 409 && Wire.Error(catalog) == "stale_generation"
+            && !catalog.RootElement.TryGetProperty("kind", out _)
+            && catalog.RootElement.GetProperty("recovery").GetString() == "reobserve",
+            "stale catalogs use explicit owner-local HTTP failure without masquerading as an observation");
+    }
+
+    private static void UnavailableOperationsKeepResponseKind()
+    {
+        var source = new FakeHost { ThrowReads = true };
+        foreach (RuntimeV3GameplaySupport support in new[] { RuntimeV3GameplaySupport.Unconfigured(),
+            RuntimeV3GameplaySupport.WithHost(source, new TestQueue()) })
+        {
+            using JsonDocument dispatch = Wire.Call(support, "dispatch_action_request", 1, out int dispatchStatus);
+            Check(dispatchStatus == 503 && Wire.Status(dispatch) == "unknown"
+                && dispatch.RootElement.GetProperty("kind").GetString() == "dispatch_action_response"
+                && dispatch.RootElement.GetProperty("operation_id").GetString() == "operation-1",
+                "unavailable dispatch retains canonical kind and requested operation identity");
+            using JsonDocument catalog = Wire.Call(support, "legal_actions_request", 1, out int catalogStatus);
+            Check(catalogStatus == 503 && !catalog.RootElement.TryGetProperty("kind", out _)
+                && catalog.RootElement.GetProperty("recovery").GetString() == "reobserve",
+                "unavailable catalog returns owner-local HTTP failure");
+            using JsonDocument recovery = Wire.Call(support, "recover_request", 1, out int recoveryStatus);
+            Check(recoveryStatus == 503 && Wire.Status(recovery) == "unknown"
+                && recovery.RootElement.GetProperty("kind").GetString() == "recover_response",
+                "unavailable recovery retains canonical recovery response kind");
+        }
     }
 
     private static void SettledReceiptIsReplayedBeforeAdmission()

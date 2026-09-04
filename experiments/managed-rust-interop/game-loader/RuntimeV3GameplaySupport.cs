@@ -197,32 +197,24 @@ internal sealed class RuntimeV3GameplaySupport
     {
         if (!TryString(root, "state_id", out string? requestedStateId))
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "invalid_legal_actions_request", out status);
+            return CatalogError(correlationId, "invalid_legal_actions_request", 400, out status);
         }
         if (!TryCurrent(
-                requestGeneration,
+                null,
                 out RuntimeV3GameplayObservation? observation,
                 out IReadOnlyList<LegalActionReference>? actions,
                 out string error))
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", error, out status);
+            return CatalogError(correlationId, error, Unavailable, out status);
         }
         if (observation is null || actions is null)
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "host_observation_unavailable", out status);
+            return CatalogError(correlationId, "host_observation_unavailable", Unavailable, out status);
         }
         if (!string.Equals(requestedStateId, observation.StateId, StringComparison.Ordinal)
             || observation.Generation != requestGeneration)
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "stale_generation", out status);
+            return CatalogError(correlationId, "stale_generation", Rejected, out status);
         }
         status = Accepted;
         return LegalActionsEnvelope(
@@ -240,20 +232,21 @@ internal sealed class RuntimeV3GameplaySupport
         ulong requestGeneration,
         out int status)
     {
+        TryString(root, "operation_id", out string? operationId);
         if (!TryString(root, "state_id", out string? stateId)
-            || !TryString(root, "operation_id", out string? operationId)
             || !TryAction(root, requestGeneration, out LegalActionReference? requestedAction)
             || _host is null)
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "host_not_configured_or_invalid_action", out status);
+            return UnknownEnvelope(
+                "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, "host_not_configured_or_invalid_action",
+                "recovery_required", out status, operationId);
         }
         if (operationId is null || stateId is null || requestedAction is null)
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "invalid_action", out status);
+            return UnknownEnvelope(
+                "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, "invalid_action", "recovery_required", out status, operationId);
         }
         RuntimeV3OperationKey operation = new(instanceId, sessionId, leaseId, leaseEpoch, operationId);
         if (_host.TryReplay(operation, stateId, requestedAction, out RuntimeV3DispatchReceipt? replay)
@@ -262,17 +255,17 @@ internal sealed class RuntimeV3GameplaySupport
             return RenderDispatchReceipt(
                 correlationId, instanceId, sessionId, leaseId, leaseEpoch, requestGeneration, replay, out status);
         }
-        if (!TryCurrent(requestGeneration, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
+        if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", error, out status);
+            return UnknownEnvelope(
+                "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, error, "recovery_required", out status, operationId);
         }
         if (observation is null || actions is null || requestedAction is null || operationId is null)
         {
-            return RecoveryState(
-                instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                "reobserve_response", "host_observation_unavailable", out status);
+            return UnknownEnvelope(
+                "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, "host_observation_unavailable", "recovery_required", out status, operationId);
         }
         if (!string.Equals(stateId, observation.StateId, StringComparison.Ordinal)
             || requestedAction.Generation != observation.Generation
@@ -380,15 +373,15 @@ internal sealed class RuntimeV3GameplaySupport
         {
             if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
             {
-                return RecoveryState(
-                    instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                    "reobserve_response", error, out status);
+                return UnknownEnvelope(
+                    "recover_response", correlationId, instanceId, sessionId, leaseId,
+                    leaseEpoch, requestGeneration, error, "recovery_required", out status, null);
             }
             if (observation is null || actions is null)
             {
-                return RecoveryState(
-                    instanceId, sessionId, leaseId, correlationId, leaseEpoch, requestGeneration,
-                    "reobserve_response", "host_observation_unavailable", out status);
+                return UnknownEnvelope(
+                    "recover_response", correlationId, instanceId, sessionId, leaseId,
+                    leaseEpoch, requestGeneration, "host_observation_unavailable", "recovery_required", out status, null);
             }
             status = Accepted;
             return ObservationEnvelope(
@@ -445,10 +438,11 @@ internal sealed class RuntimeV3GameplaySupport
                 return false;
             }
             actions = _host.LegalActions(observation);
-            if (!observation.Validate(out error))
+            if (!observation.Validate(out _))
             {
                 observation = null;
                 actions = Array.Empty<LegalActionReference>();
+                error = "host_observation_unavailable";
                 return false;
             }
             return true;
@@ -902,6 +896,15 @@ internal sealed class RuntimeV3GameplaySupport
         return RecoveryState(
             instanceId, sessionId, leaseId, correlationId, leaseEpoch, generation,
             kind, errorCode, out _);
+    }
+
+    // The neutral catalog response has no failure variant. This is an owner-local HTTP
+    // error, not a successful observation or another kind of gameplay response.
+    private static string CatalogError(string correlationId, string errorCode, int httpStatus, out int status)
+    {
+        status = httpStatus;
+        return JsonSerializer.Serialize(new { correlation_id = correlationId,
+            error_code = errorCode, recovery = "reobserve" });
     }
 
     private static string SerializeEnvelope(

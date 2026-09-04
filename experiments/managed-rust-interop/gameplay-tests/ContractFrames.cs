@@ -35,6 +35,10 @@ internal static class ContractFrames
         queue.Run();
         Emit(Wire.Call(rejected, "wait_request", 1, out _));
         Emit(Wire.Call(rejected, "recover_request", 1, out _, recoveryKind: "reconcile"));
+        RuntimeV3GameplaySupport stale = RuntimeV3GameplaySupport.WithHost(new FakeHost { Generation = 2 }, new TestQueue());
+        Emit(Wire.Call(stale, "dispatch_action_request", 1, out _));
+        Emit(Wire.Call(RuntimeV3GameplaySupport.Unconfigured(), "dispatch_action_request", 1, out _));
+        Emit(Wire.Call(RuntimeV3GameplaySupport.Unconfigured(), "recover_request", 1, out _));
     }
 
     private static void Emit(JsonDocument document)
