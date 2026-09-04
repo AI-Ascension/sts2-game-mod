@@ -28,6 +28,11 @@ and terminates only recorded child process groups and the recorded Windows game 
 The project does not promise a response time or a bounty. This policy is not permission to access
 another person's game profile, host installation, network, or data.
 
+The native HTTP listener bounds each accepted connection's socket I/O with one absolute
+10-second deadline and checks listener shutdown between short socket waits. This is a transport
+resource bound, not a host callback cancellation mechanism or a guarantee of real-time shutdown.
+Only loopback synthetic connections are used in the regression suite.
+
 ## Workshop package boundary
 
 Workshop packages are first-party executable content, not an extension point for arbitrary

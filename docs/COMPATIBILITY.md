@@ -92,6 +92,12 @@ warning, first deprecated release, earliest removal release, and compatibility t
 change needs explicit approval and coordinated updates to the adapter, schema, package, and
 consumers.
 
+The native listener's absolute 10-second socket-I/O deadline is a safety correction, not a new
+wire or ABI version. Clients must finish framing and consume responses within that budget;
+timeouts may close the connection without a response. The callback lifetime and synchronous
+calling convention are unchanged. Linux loopback regressions establish the new I/O behavior;
+Windows host reconfiguration and unload remain separately unverified.
+
 ## Runtime profile row
 
 | Managed/native target | Runtime profile | Evidence | Result |
