@@ -1,9 +1,13 @@
 # ADR 0011: Optional ModConfig settings bridge
 
-- Status: Accepted for the managed addon settings slice; host/runtime behavior unverified
+- Status: Historical; replaced by the built-in tab in merged PR #9 and ADR 0012
 - Date: 2026-09-02
 
 ## Context
+
+This records the earlier optional-framework proposal, not current executable behavior. The current
+`StandaloneProfileSettings` uses the native settings seam and has no ModConfig bridge or persisted
+one-shot unlock toggle. See `docs/ARCHITECTURE.md` for the implemented profile guards and controls.
 
 The native STS2 Installed Mods screen currently exposes mod enablement only. Its checkbox owns
 whether `AIAscensionSTS2Poc` is enabled; the folder action and mod details panel do not provide a

@@ -6,6 +6,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Timeline;
 
@@ -45,15 +46,15 @@ internal static class AutoProfileUnlock
         ScheduleNextFrame();
     }
 
-    internal static void ScheduleManualUnlock(int targetProfileId)
+    internal static string ScheduleManualUnlock(int targetProfileId)
     {
         if (!IsValidProfileId(targetProfileId))
         {
             GD.PrintErr($"{LogPrefix} rejected unlock request for invalid profile {targetProfileId}");
-            return;
+            return "Unlock rejected: invalid profile.";
         }
 
-        if (_queued || _attemptRunning) return;
+        if (_queued || _attemptRunning) return "Unlock already queued or running.";
         // A manual request is a new attempt, but never interrupt an existing one.
         _finished = false;
         _waitFrames = 0;
@@ -62,6 +63,8 @@ internal static class AutoProfileUnlock
             $"{LogPrefix} manual full unlock requested by in-game settings; "
             + $"target=profile {targetProfileId}");
         ScheduleNextFrame();
+        return _queued ? $"Unlock queued for Profile {targetProfileId}. See the addon log for the result."
+            : "Unlock unavailable: the host main thread is not ready.";
     }
 
     private static bool HasLaunchArgument()
@@ -131,6 +134,15 @@ internal static class AutoProfileUnlock
             SaveManager saveManager = SaveManager.Instance;
             if (!IsProfileReady(saveManager)) return AttemptResult.NotReady;
 
+            // Never switch profiles or alter progress beneath an active run or an unfinished save.
+            // This runs again on every deferred attempt, before any host mutation.
+            if (RunManager.Instance.IsInProgress
+                || saveManager.CurrentRunSaveTask is { IsCompletedSuccessfully: false })
+            {
+                GD.PrintErr($"{LogPrefix} unlock rejected: return to the main menu after a successful run save");
+                return AttemptResult.Failed;
+            }
+
             if (_targetProfileId is int targetProfileId)
             {
                 if (!IsValidProfileId(targetProfileId))
@@ -174,10 +186,11 @@ internal static class AutoProfileUnlock
             MarkMonsters(progress, monsterIds, ironcladId);
             RevealEpochs(saveManager, progress, epochIds);
 
-            progress.MaxMultiplayerAscension = 10;
+            progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, 10);
             foreach (ModelId characterId in characterIds)
             {
-                progress.GetOrCreateCharacterStats(characterId).MaxAscension = 10;
+                var stats = progress.GetOrCreateCharacterStats(characterId);
+                stats.MaxAscension = Math.Max(stats.MaxAscension, 10);
             }
 
             saveManager.SaveProgressFile();
@@ -185,7 +198,7 @@ internal static class AutoProfileUnlock
                 $"{LogPrefix} automatic full unlock applied: cards={cardIds.Length}; "
                 + $"relics={relicIds.Length}; potions={potionIds.Length}; events={eventIds.Length}; "
                 + $"acts={actIds.Length}; monsters={monsterIds.Length}; epochs={epochIds.Length}; "
-                + $"characters={characterIds.Length}; profile={saveManager.CurrentProfileId}; ascension=10");
+                + $"characters={characterIds.Length}; profile={saveManager.CurrentProfileId}; minimum_ascension=10");
             return AttemptResult.Applied;
         }
         catch (Exception exception)
@@ -198,7 +211,7 @@ internal static class AutoProfileUnlock
 
     private static bool IsProfileReady(SaveManager saveManager)
     {
-        try { return saveManager.IsProfileInitialized && saveManager.CurrentProfileId >= MinProfileId; }
+        try { return saveManager.IsProfileInitialized && IsValidProfileId(saveManager.CurrentProfileId); }
         catch (InvalidOperationException) { return false; }
     }
 

@@ -95,6 +95,13 @@ internal static partial class StandaloneProfileSettings
 
         content.AddChild(CreateDescriptionLabel(
             $"Authentication: {ModEntry.RuntimeAuthenticationStatus}. The token remains outside the settings UI."));
+        content.AddChild(CreateDescriptionLabel(
+            "Network exposure: non-loopback addresses, including All network interfaces, can allow other computers " +
+            "to reach this API. Use a trusted network and firewall; bearer authentication does not encrypt traffic."));
+        content.AddChild(CreateDescriptionLabel(
+            "Launch overrides take precedence: STS2_RUNTIME_PORT and STS2_RUNTIME_BIND_ADDRESS override saved values; " +
+            "STS2_RUNTIME_SESSION=1 keeps the API enabled even when this toggle is Off. " +
+            "Check the listener status for the effective endpoint."));
         Label listenerStatus = CreateDescriptionLabel($"Listener: {ModEntry.RuntimeListenerStatus}.");
         content.AddChild(listenerStatus);
 

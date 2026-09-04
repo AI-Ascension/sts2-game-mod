@@ -105,7 +105,8 @@ must cover:
 | Runtime validation | Ports outside `1024` through `65535` and invalid address values are rejected without overwriting the last saved settings. |
 | Live reconfiguration | Apply persists the values, stops only the native listener, starts it with the selected endpoint, and updates the listener status without restarting the game. Reset performs the same live update using defaults. |
 | Environment overrides | `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` retain precedence for automation; the bearer token remains outside the settings UI. |
-| One-shot reset | A launch unlock request remains enabled after any failed or incomplete operation. It is cleared only after the profile save succeeds and the settings write succeeds with a confirmed read-back of `false`. |
+| Launch unlock | Only the explicit CLI flag requests launch unlock; no persistent one-shot toggle exists. Each attempt ends on success, failure, or readiness timeout; a manual retry must be explicit. |
+| Profile/run isolation | Active runs and pending, canceled, or failed run saves reject before profile switching or progress mutation; checks repeat on each deferred frame. |
 | Manual retry and concurrency | Manual and launch requests share one readiness/main-thread attempt; concurrent requests do not double-save, while a failed, timed-out, or completed attempt can be retried without overlapping work. |
 | Bounded diagnostics | Registration/read/write, listener, and profile failures produce bounded, sanitized categories only; logs contain no credentials, setting values, saves, private paths, or raw host exception details. |
 
@@ -113,6 +114,20 @@ The managed loader requires operator-supplied exact `sts2.dll` and `GodotSharp.d
 they must remain outside the repository and package. Profile mutation and live listener
 reconfiguration remain `unverified` unless separately exercised with disposable data in an
 authorized host test that records the exact host tuple, setup, observations, and cleanup.
+
+The production-linked synthetic unlock probe runs without proprietary assemblies or real profiles:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
+~~~
+
+It covers invalid profile requests, active-run and save-task rejection, a run starting between
+frames, selected-profile switching, concurrent-request status, readiness timeout/manual retry,
+preservation of higher ascension values, and save-call failure reporting. Its original API-shaped
+fakes are not evidence that an exact game version accepts those API calls or persists them safely.
+The same probe writes only synthetic temporary settings files to check complete replacement,
+partial-write failure preserving the previous bytes, rename failure, and temporary-file cleanup.
+This checks atomic publication, not power-loss durability of the directory entry.
 
 ## Ephemeral session launcher
 
