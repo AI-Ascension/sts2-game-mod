@@ -7,7 +7,7 @@
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
-> **Status:** deterministic tests, managed load-smoke, and one exact-host runtime probe `confirmed` · host gameplay and broader compatibility `unverified`.
+> **Status:** deterministic tests, managed load-smoke, and one exact-host runtime probe `confirmed` · repeat-seed source/build path implemented; host UI/gameplay and broader compatibility `unverified`.
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
 > **Owner:** The mod owner is responsible for the managed loader package, host boundary, main-thread queue, ABI gate, HTTP admission, and Rust/native seam; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)
@@ -34,7 +34,8 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 
 - [experiments/managed-rust-interop/](experiments/managed-rust-interop/) contains the managed .NET 9
   loader package, its unique Rust companion library, the manifest, and the reproducible packaging
-  command. The package now contains the load-smoke/ABI path and the bounded runtime probe source.
+  command. The package now contains the load-smoke/ABI path, bounded runtime probe source, and
+  the opt-in repeat-seed practice replay settings path.
 - [crates/host/](crates/host/) owns the host port, bounded main-thread queue, dispatcher, and
   versioned ABI descriptor validation.
 - [crates/http-adapter/](crates/http-adapter/) owns a transport-free HTTP request boundary and
@@ -52,6 +53,8 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   witness for an accepted action.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) records the target boundary and dependency graph.
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records evidence levels and host claims.
+- [docs/repeat-seed.md](docs/repeat-seed.md) records the opt-in custom-run replay scope, safety
+  invariants, and runtime evidence boundary.
 - [docs/evidence/runtime-addon-load-smoke-20260902.md](docs/evidence/runtime-addon-load-smoke-20260902.md)
   records the exact installed-host load-smoke inputs and observed log marker.
 - [docs/evidence/runtime-v1-host-live-20260902.md](docs/evidence/runtime-v1-host-live-20260902.md)
@@ -60,10 +63,10 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   sixth-target and Wave 2 initialization decisions.
 - [tools/repo-policy/](tools/repo-policy/) is the target-local Rust governance checker.
 
-The managed loader, packaging, and bounded runtime route source are implemented for this sprint.
-The broader host adapter, gameplay action implementation, and game-rule mutation remain
-unimplemented. The POC's core port is still a fake seam in this repository, not the game
-implementation or a claim that the host can perform a gameplay action.
+The managed loader, packaging, bounded runtime route source, and narrow repeat-seed restart path
+are implemented for this sprint. The broader host adapter and coordinator gameplay contract remain
+unimplemented. The Rust POC core port is still a fake seam; the repeat-seed path is a managed host
+integration and remains runtime-unverified.
 
 ## Steam Workshop package
 
@@ -101,6 +104,11 @@ loader has also passed load-smoke in STS2 v0.107.1 and logged a successful Rust 
 runtime-v1 probe has confirmed live HTTP, managed main-thread dispatch, and a host-visible overlay
 witness in that exact host. Gameplay mutation, effect semantics beyond the probe, and broader
 compatibility remain unverified.
+
+The repeat-seed path is separately build-confirmed against the operator-supplied STS2 v0.107.1
+assemblies. It is limited to a confirmed single-player Custom run and restarts from the original
+seed beginning. Its settings UI, host cleanup, replacement run, history suppression, and protected
+mode behavior remain unverified until an authorized disposable runtime test.
 
 ## Local validation
 

@@ -61,6 +61,38 @@ Wave 2 claims unit/component coverage for the initialized ports, composition, an
 The runtime-v1 host report adds focused host and integration evidence for one exact disposable
 profile; it is not full conformance or a release-support claim.
 
+## Repeat-seed verification
+
+Run the source-linked controller probe without proprietary assemblies:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/replay-tests/ReplayValidationProbe.csproj --configuration Release
+~~~
+
+It links the production controller against synthetic API-shape fakes and covers unknown/protected
+mode rejection, duplicate queueing, opt-out before the frame or during saving, profile/run changes,
+replacement pending saves, failed saves, one same-seed restart, and sanitized post-cleanup failure.
+It does not establish real host API compatibility, Godot continuation scheduling, save atomicity,
+or the immutability of captured character/act/modifier model objects.
+
+The managed repeat-seed implementation is covered by the exact-host compile command in the host
+evidence section below. Static and build checks establish API shape and fail-closed source paths;
+they do not establish that a game UI click starts a replacement run. The feature-specific runtime
+cases are:
+
+| Case | Expected invariant | Current evidence |
+| --- | --- | --- |
+| Setting persistence | `allow_repeating_seeds` defaults to `false`, accepts the existing boolean spellings, and saves with the addon settings values | Source/build; runtime read-back unverified |
+| Explicit confirmation | The action warns that current progress is discarded and no history entry is created before accepting the request | Source/build; UI runtime unverified |
+| Custom single-player admission | Only an active one-player Custom run is accepted; standard, daily, multiplayer, and missing-state paths reject without cleanup | Source/build; exact-host runtime unverified |
+| Same-seed restart | Host-owned cleanup and current-save deletion precede one `NGame.StartNewSingleplayerRun` with the captured seed and `GameMode.Custom` | Source/build; exact-host runtime unverified |
+| No history mutation | The reset path does not call the run-ended/history pipeline | Source review; runtime history read-back unverified |
+| No later-floor claim | The UI and documentation describe a restart from the seed beginning, not checkpoint restoration | Source/documentation |
+
+The existing generic Runtime-v1/v2 duplicate-operation tests are not repeat-seed evidence. A future
+checkpoint or history-browser feature must add a separate owner-local contract and deterministic
+fixtures rather than extending this seed-only action implicitly.
+
 ## Required future behavior
 
 When implemented, tests must cover bounded request and response handling, status and error

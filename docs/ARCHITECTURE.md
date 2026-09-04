@@ -110,6 +110,21 @@ No concrete host gameplay API exists in this repository. The Runtime-v2 fake is 
 source/build/test evidence, not live STS2 gameplay evidence; live host mutation and settlement are
 unverified.
 
+## Repeat-seed practice replay
+
+`SeedReplayController` and the standalone settings partials own the narrow repeat-seed feature in
+the managed/game boundary. The persisted toggle is off by default. The one-shot action snapshots
+only the active host run's character, acts, modifiers, seed, and ascension, then schedules one
+main-thread operation. It accepts only a single-player, one-player Custom run; standard, daily,
+multiplayer, and missing-state paths fail closed.
+
+After confirmation, the controller uses `RunManager.CleanUp(graceful: true)`,
+`SaveManager.DeleteCurrentRun`, and `NGame.StartNewSingleplayerRun` with `GameMode.Custom`. It
+does not access save files directly or create a run-history entry. This resets to the seed's
+beginning; it is not a checkpoint or later-floor restoration mechanism. The exact-host UI and
+gameplay behavior remain unverified until a disposable host test is recorded in
+[`repeat-seed.md`](repeat-seed.md).
+
 ## System boundaries
 
 The target crosses four distinct boundaries:
