@@ -16,6 +16,10 @@ public static partial class ModEntry
 
     private static (int Status, string Response) ProcessRuntimeWork(RuntimeWork work)
     {
+        if (!ValidRuntimeContext(work.Context))
+        {
+            return (400, "{\"error_code\":\"invalid_runtime_context\"}");
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));
@@ -29,36 +33,28 @@ public static partial class ModEntry
 
     private static (int Status, string Response) ProcessRuntimeAction(RuntimeContext context, string body)
     {
-        using JsonDocument document = JsonDocument.Parse(body, new JsonDocumentOptions { MaxDepth = 8 });
-        JsonElement root = document.RootElement;
-        if (root.ValueKind != JsonValueKind.Object
-            || StringField(root, "protocol_version") != "runtime-v1"
-            || StringField(root, "schema_digest") != RuntimeSchemaDigest
-            || StringField(root, "kind") != "action_request"
-            || StringField(root, "instance_id") != context.InstanceId
-            || StringField(root, "session_id") != context.SessionId
-            || StringField(root, "lease_id") != context.LeaseId
-            || StringField(root, "correlation_id") != context.CorrelationId
-            || StringField(root, "provenance.artifact") != RuntimeArtifact
-            || StringField(root, "provenance.source") != RuntimeSchemaSource
-            || StringField(root, "provenance.generator") != RuntimeGenerator)
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(body, new JsonDocumentOptions { MaxDepth = 8 });
+        }
+        catch (JsonException)
         {
             return (400, RuntimeError(context, RuntimeRequestKindAction, "invalid_runtime_envelope"));
         }
-        if (!root.TryGetProperty("generation", out JsonElement generationElement)
-            || !generationElement.TryGetUInt64(out ulong expectedGeneration))
+        using JsonDocument parsed = document;
+        JsonElement root = parsed.RootElement;
+        if (!ValidRuntimeAction(root, context, out ulong expectedGeneration))
         {
-            return (400, RuntimeError(context, RuntimeRequestKindAction, "invalid_generation"));
+            return (400, RuntimeError(context, RuntimeRequestKindAction, "invalid_runtime_envelope"));
         }
         if (expectedGeneration != _runtimeGeneration)
         {
             return (RuntimeRejected, RuntimeActionResponse(context, expectedGeneration, "rejected", "sts2.game-mod/stale_generation", false));
         }
-        if (!root.TryGetProperty("action", out JsonElement action)
-            || action.ValueKind != JsonValueKind.Object
-            || StringField(action, "action_id") != "show_runtime_probe")
+        if (_runtimeActionCount >= 1024 || _runtimeGeneration >= RuntimeMaximumInteger)
         {
-            return (400, RuntimeError(context, RuntimeRequestKindAction, "unsupported_action"));
+            return (RuntimeRejected, RuntimeError(context, RuntimeRequestKindAction, "runtime_probe_limit"));
         }
         if (Engine.GetMainLoop() is not SceneTree tree || tree.Root == null)
         {
@@ -140,21 +136,7 @@ public static partial class ModEntry
             ? RuntimeActionResponse(context, _runtimeGeneration, "rejected", code, false)
             : JsonSerializer.Serialize(new Dictionary<string, object?>
             {
-                ["protocol_version"] = "runtime-v1",
-                ["schema_digest"] = RuntimeSchemaDigest,
-                ["provenance"] = RuntimeProvenance(),
-                ["correlation_id"] = context.CorrelationId,
-                ["instance_id"] = context.InstanceId,
-                ["session_id"] = context.SessionId,
-                ["lease_id"] = context.LeaseId,
-                ["lease_epoch"] = ParseEpoch(context.LeaseEpoch),
-                ["generation"] = _runtimeGeneration,
-                ["kind"] = "state_response",
-                ["observation"] = RuntimeObservation(),
-                ["action"] = null,
-                ["status"] = null,
-                ["error_code"] = code,
-                ["effect_witness"] = null
+                ["error_code"] = code
             });
     }
 

@@ -30,6 +30,12 @@ advance combat or mutate gameplay state.
 
 ## Consequences and evidence
 
+The managed action parser validates the complete closed request shape, provenance/action closure,
+duplicate-property absence, required null fields, bounded identities/numbers, and body/header
+epoch agreement before effects. Invalid callback context is an owner-local HTTP 400 transport
+error; state errors are not mislabeled canonical state responses (which require null error_code).
+The canonical observation limit of 1024 probe actions is enforced by pre-effect rejection.
+
 Safety correction: managed admission holds at most 64 pending requests and processes at most 16
 per frame. A five-second wait removes pending work atomically before execution can claim it.
 If execution has already begun, the timeout remains an unknown outcome; late completion cannot

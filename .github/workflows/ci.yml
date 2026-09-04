@@ -99,5 +99,8 @@ jobs:
         # The queue probe links production managed callback sources to original test doubles.
         run: dotnet run --project experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj --configuration Release
 
-      - name: Record exact-host precondition
+      - name: Run managed runtime-v1 contract regressions
+        run: dotnet run --project experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj --configuration Release
+
+      - name: Record concrete-host precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

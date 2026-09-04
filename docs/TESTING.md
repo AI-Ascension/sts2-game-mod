@@ -187,6 +187,17 @@ are hang detection, not a real-time scheduling guarantee. They do not prove that
 callbacks terminate safely, nor that native unload is safe in a live game.
 
 ~~~text
+dotnet run --project experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj --configuration Release
+~~~
+
+This probe links the actual managed Runtime-v1 contract/validation/ABI types to original minimal
+host doubles. It exercises strict required/unknown/duplicate fields, null request sentinels,
+numeric kinds/bounds, header/body epoch agreement, malformed JSON and invalid callback context,
+fresh versus stale actions, and refusal before exceeding the canonical 1024 probe-action count.
+It emits synthetic request/response JSON for independent canonical-schema checks. It does not
+establish concrete Godot rendering, live thread affinity, or full protocol conformance.
+
+~~~text
 dotnet run --project experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj --configuration Release
 ~~~
 
