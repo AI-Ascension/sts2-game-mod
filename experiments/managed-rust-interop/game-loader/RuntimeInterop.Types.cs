@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
@@ -74,8 +73,5 @@ public static partial class ModEntry
         public uint Kind { get; }
         public RuntimeContext Context { get; }
         public string Body { get; }
-        public int Status { get; set; } = RuntimeUnavailable;
-        public string Response { get; set; } = "{\"error_code\":\"runtime_unavailable\"}";
-        public ManualResetEventSlim Completed { get; } = new(false);
     }
 }
