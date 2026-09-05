@@ -26,18 +26,21 @@ $env:STS2_RUNTIME_SESSION = '1'
 $env:STS2_LIVE_COMBAT = '1'
 $env:STS2_LIVE_USER_DIR = $UserDirectory
 $env:STS2_LIVE_SEED = $Seed
-$env:STS2_LIVE_DISPLAY = "$Display"
-$env:STS2_LIVE_WIDTH = "$Width"
-$env:STS2_LIVE_HEIGHT = "$Height"
-$env:STS2_LIVE_WINDOW_MODE = $WindowMode
-$arguments = @('--resolution', "${Width}x${Height}", '--audio-driver', 'Dummy', '--log-file', ('"' + $LogPath + '"'))
-if ($Display -ge 0) { $arguments += @('--screen', "$Display") }
-switch ($WindowMode) {
+foreach ($entry in @(@('Display','DISPLAY'), @('Width','WIDTH'), @('Height','HEIGHT'), @('WindowMode','WINDOW_MODE'))) {
+    $name = 'STS2_LIVE_' + $entry[1]
+    if ($PSBoundParameters.ContainsKey($entry[0])) {
+        [Environment]::SetEnvironmentVariable($name, [string]$PSBoundParameters[$entry[0]], 'Process')
+    } else { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+}
+$arguments = @('--audio-driver', 'Dummy', '--log-file', ('"' + $LogPath + '"'))
+if ($PSBoundParameters.ContainsKey('Width') -and $PSBoundParameters.ContainsKey('Height')) { $arguments += @('--resolution', "${Width}x${Height}") }
+if ($PSBoundParameters.ContainsKey('Display') -and $Display -ge 0) { $arguments += @('--screen', "$Display") }
+if ($PSBoundParameters.ContainsKey('WindowMode')) { switch ($WindowMode) {
     'fullscreen' { $arguments += '--fullscreen' }
     'maximized' { $arguments += '--maximized' }
     'borderless' { $arguments += @('--windowed', '--borderless') }
     default { $arguments += '--windowed' }
-}
+} }
 $owned = Start-Process -FilePath "$HostDirectory\SlayTheSpire2.exe" -WorkingDirectory $HostDirectory -ArgumentList $arguments -PassThru
 try {
     Write-Output "OWNED_GAME_PID=$($owned.Id)"

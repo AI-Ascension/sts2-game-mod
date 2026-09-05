@@ -9,46 +9,32 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static class LiveCombatDisplay
 {
+    private static VideoPreferences _selected = VideoPreferences.Default;
     internal static void ConfigureSettings()
     {
-        int screen = Number("DISPLAY", -1, -1, DisplayServer.GetScreenCount() - 1);
-        if (screen == -1) screen = DisplayServer.GetPrimaryScreen();
-        int width = Number("WIDTH", 1280, 640, 16384);
-        int height = Number("HEIGHT", 720, 360, 16384);
-        var settings = SaveManager.Instance.SettingsSave;
+        VideoPreferences saved = VideoSettings.Load() ?? VideoPreferences.Default;
+        int screen = Number("DISPLAY", saved.Display, -1, DisplayServer.GetScreenCount() - 1);
+        int width = Number("WIDTH", saved.Width, 640, 16384);
+        int height = Number("HEIGHT", saved.Height, 360, 16384);
+        _selected = new(screen, width, height, Mode(saved.Mode));
         for (int index = 0; index < DisplayServer.GetScreenCount(); index++)
             GD.Print($"[AI-ASCENSION LIVE] available display={index}; " +
                 $"position={DisplayServer.ScreenGetPosition(index)}; size={DisplayServer.ScreenGetSize(index)}; " +
                 $"primary={index == DisplayServer.GetPrimaryScreen()}");
-        settings.TargetDisplay = screen;
-        settings.WindowSize = new Vector2I(width, height);
-        settings.Fullscreen = Mode() == "fullscreen";
-        settings.WindowPosition = DisplayServer.ScreenGetPosition(screen);
+        VideoSettings.ConfigureHost(_selected);
     }
 
     internal static void Apply()
     {
-        var settings = SaveManager.Instance.SettingsSave;
-        string mode = Mode();
-        DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
-        DisplayServer.WindowSetCurrentScreen(settings.TargetDisplay);
-        DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, mode == "borderless");
-        DisplayServer.WindowSetSize(settings.WindowSize);
-        DisplayServer.WindowSetPosition(settings.WindowPosition);
-        DisplayServer.WindowSetMode(mode switch
-        {
-            "fullscreen" => DisplayServer.WindowMode.Fullscreen,
-            "maximized" => DisplayServer.WindowMode.Maximized,
-            _ => DisplayServer.WindowMode.Windowed
-        });
+        VideoSettings.Apply(_selected);
         GD.Print($"[AI-ASCENSION LIVE] display={DisplayServer.WindowGetCurrentScreen()}; " +
             $"size={DisplayServer.WindowGetSize()}; mode={DisplayServer.WindowGetMode()}; " +
             $"borderless={DisplayServer.WindowGetFlag(DisplayServer.WindowFlags.Borderless)}");
     }
 
-    private static string Mode()
+    private static string Mode(string fallback)
     {
-        string mode = Environment.GetEnvironmentVariable("STS2_LIVE_WINDOW_MODE") ?? "windowed";
+        string mode = Environment.GetEnvironmentVariable("STS2_LIVE_WINDOW_MODE") ?? fallback;
         return mode is "windowed" or "fullscreen" or "borderless" or "maximized"
             ? mode : throw new InvalidOperationException("invalid launch window mode");
     }

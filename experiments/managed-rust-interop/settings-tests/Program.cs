@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
+VideoPreferencesTests.Run();
 var tree = (SceneTree)Engine.MainLoop!;
 var save = SaveManager.Instance;
 void Assert(bool value, string message)
