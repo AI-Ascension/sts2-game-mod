@@ -10,6 +10,11 @@ public static partial class ModEntry
     private static void InitializeRuntimeV3Gameplay()
     {
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
+        if (System.Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") == "1")
+        {
+            var source = new LiveCombatSource();
+            ConfigureRuntimeV3Gameplay(source, source);
+        }
     }
 
     private static void ConfigureRuntimeV3Gameplay(IRuntimeV3HostSource source, IRuntimeV3HostThread thread)
