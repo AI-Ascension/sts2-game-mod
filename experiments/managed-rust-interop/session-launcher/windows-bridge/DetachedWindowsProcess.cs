@@ -87,8 +87,8 @@ internal static class DetachedWindowsProcess
             if (child.Thread != IntPtr.Zero) CloseHandle(child.Thread);
             if (child.Process != IntPtr.Zero) CloseHandle(child.Process);
             if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment);
-            Marshal.FreeHGlobal(handles);
             if (initialized) DeleteProcThreadAttributeList(attributes);
+            Marshal.FreeHGlobal(handles);
             Marshal.FreeHGlobal(jobs);
             Marshal.FreeHGlobal(attributes);
         }
