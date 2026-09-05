@@ -176,6 +176,11 @@ the authorized disposable profile automatically.
 
 ## Ephemeral runtime session launcher
 
+The bridge now remains alive as an owned guardian; rebuild prebuilt bridge DLLs. Its receipt and
+startup are bounded, and the session has a one-hour maximum additionally capped by authorization.
+See [the handoff contract](../../docs/LAUNCHER_PROCESS_HANDOFF.md). Builds require `jq` and select
+Cargo's actual output paths, including configured alternate target directories.
+
 `session-launcher.sh` is the target-owned disposable orchestration entrypoint for the authenticated
 runtime proof. It first refuses an already-running `SlayTheSpire2.exe` with a restart-required
 error, builds and installs only the three addon artifacts, and then creates two fresh 48-byte

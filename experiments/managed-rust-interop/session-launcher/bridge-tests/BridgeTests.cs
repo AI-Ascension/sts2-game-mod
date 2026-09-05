@@ -10,6 +10,7 @@ internal static class BridgeTests
 {
     private static int Main(string[] args)
     {
+        if (GuardianTests.TryRunMode(args)) return 0;
         if (args is ["--probe-child"])
         {
             Console.Write(new string('x', 1024 * 1024));
@@ -19,8 +20,8 @@ internal static class BridgeTests
         }
         if (args is ["--launch-child"])
         {
-            using Process child = DetachedWindowsProcess.Start(Self("--probe-child"));
-            Console.WriteLine($"{child.Id} {child.StartTime.ToUniversalTime().Ticks}");
+            using Timer lease = ProcessGuardian.StartLease(30);
+            ProcessGuardian.Run(Self("--probe-child"), Console.In, Console.Out);
             return 0;
         }
 
@@ -34,10 +35,12 @@ internal static class BridgeTests
         Check(DetachedWindowsProcess.Quote("") == "\"\"", "empty argument");
         Check(DetachedWindowsProcess.Quote("a\\") == "\"a\\\\\"", "trailing slash");
         Check(DetachedWindowsProcess.Quote("a\"b") == "\"a\\\"b\"", "embedded quote");
+        GuardianTests.CredentialDeadline();
         if (OperatingSystem.IsWindows())
         {
             PipeIsolation();
             IdentityCleanup();
+            GuardianTests.Run();
             Console.WriteLine("PASS Windows NUL isolation and owned-process cleanup");
         }
         else Console.WriteLine("SKIP Windows process integration: Windows required");
@@ -50,27 +53,32 @@ internal static class BridgeTests
         ProcessStartInfo options = Self("--launch-child");
         options.RedirectStandardOutput = true;
         options.RedirectStandardError = true;
+        options.RedirectStandardInput = true;
         using Process launcher = Process.Start(options)!;
         Task<string?> identity = launcher.StandardOutput.ReadLineAsync();
         Check(identity.Wait(5000), "launch identity bounded");
-        string[] fields = (identity.Result ?? throw new InvalidOperationException("missing identity")).Split(' ');
-        using Process child = Process.GetProcessById(int.Parse(fields[0], CultureInfo.InvariantCulture));
+        Check(identity.Result == "STARTED=TRUE", "receipt header");
+        string pid = launcher.StandardOutput.ReadLine()!;
+        string ticks = launcher.StandardOutput.ReadLine()!;
+        using Process child = Process.GetProcessById(int.Parse(pid[4..], CultureInfo.InvariantCulture));
         _ = child.Handle;
         try
         {
-            Check(child.StartTime.ToUniversalTime().Ticks == long.Parse(fields[1], CultureInfo.InvariantCulture), "child identity");
-            Check(launcher.StandardOutput.ReadToEndAsync().Wait(1000), "stdout EOF before child exit");
-            Check(launcher.StandardError.ReadToEndAsync().Wait(1000), "stderr EOF before child exit");
-            Check(!child.HasExited, "pipe EOF while child alive");
-            Check(launcher.WaitForExit(1000) && launcher.ExitCode == 0, "launch helper exited");
+            Check(child.StartTime.ToUniversalTime().Ticks == long.Parse(ticks[12..], CultureInfo.InvariantCulture), "child identity");
             Check(child.WaitForExit(5000) && child.ExitCode == 17, "NUL writes do not block");
+            Task<string> stdout = launcher.StandardOutput.ReadToEndAsync();
+            Task<string> stderr = launcher.StandardError.ReadToEndAsync();
+            Check(stdout.Wait(1000) && stdout.Result.Length == 0, "child output not inherited");
+            Check(stderr.Wait(1000) && stderr.Result.Length == 0, "child errors not inherited");
+            Check(launcher.WaitForExit(1000) && launcher.ExitCode == 0, "guardian exited");
         }
         finally { if (!child.HasExited) { child.Kill(true); child.WaitForExit(5000); } }
     }
 
     private static void IdentityCleanup()
     {
-        using Process child = DetachedWindowsProcess.Start(Self("--probe-child"));
+        using WindowsJob job = WindowsJob.Create();
+        using Process child = DetachedWindowsProcess.Start(Self("--probe-child"), job);
         try
         {
             string pid = child.Id.ToString(CultureInfo.InvariantCulture);
@@ -86,7 +94,7 @@ internal static class BridgeTests
         finally { if (!child.HasExited) { child.Kill(true); child.WaitForExit(5000); } }
     }
 
-    private static ProcessStartInfo Self(string mode)
+    internal static ProcessStartInfo Self(string mode)
     {
         string executable = Environment.ProcessPath ?? throw new InvalidOperationException("missing executable");
         var options = new ProcessStartInfo(executable)
@@ -105,7 +113,7 @@ internal static class BridgeTests
         catch (InvalidOperationException) { return; }
         throw new InvalidOperationException("expected identity refusal");
     }
-    private static void Check(bool condition, string message)
+    internal static void Check(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
     }

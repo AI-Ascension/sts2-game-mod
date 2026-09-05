@@ -116,7 +116,7 @@ launcher_source=$(<"$launcher")
 [[ "$launcher_source" == *'validate_live_authorization'* ]] || fail 'launcher lacks live authorization preflight'
 [[ "$launcher_source" == *'--authorization-check'* ]] || fail 'launcher lacks authorization-only check'
 [[ "$launcher_source" == *'live-authorization.sh'* ]] || fail 'launcher does not load the shared authorization helper'
-[[ "$bridge_source" == *'Console.ReadLine()'* ]] || fail 'bridge does not read the token from stdin'
+[[ "$bridge_source" == *'ReadCredential(Console.In)'* ]] || fail 'bridge does not read the bounded token from stdin'
 [[ "$bridge_source" == *'STS2_RUNTIME_TOKEN'* ]] || fail 'bridge does not set the runtime token environment'
 [[ "$bridge_source" == *'FileName = options.GameExecutable'* ]] || fail 'bridge does not launch the requested game directly'
 [[ "$bridge_source" == *'WorkingDirectory = options.WorkingDirectory'* ]] || fail 'bridge does not preserve the game working directory'

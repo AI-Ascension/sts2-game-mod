@@ -18,6 +18,9 @@ disclosure, and publish a fix only after affected users can update.
 
 ## Runtime session handling
 
+The persistent guardian's bounded handoff, kill-on-close Job ownership, platform requirements and
+failure evidence are specified in [LAUNCHER_PROCESS_HANDOFF.md](docs/LAUNCHER_PROCESS_HANDOFF.md).
+
 The disposable session launcher generates a fresh runtime/mod credential and a distinct gateway
 credential from the operating system CSPRNG for every launch. Credentials are held only in process
 memory, passed to child environments or the Windows bridge stdin, and never accepted as launcher

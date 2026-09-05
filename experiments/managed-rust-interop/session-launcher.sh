@@ -83,6 +83,7 @@ die() {
 [[ -f "$session_launcher_authorization_script" ]] \
     || die 'live authorization helper is missing'
 source "$session_launcher_authorization_script"
+source "$session_launcher_dir/session-bridge.sh"
 
 take_value() {
     local option=$1
@@ -467,6 +468,7 @@ restore_addon() {
 
 cleanup_owned_processes() {
     set +e
+    stop_bridge_guardian || cleanup_failed=1
     if (( harness_started )); then
         stop_posix_group "$harness_group" "$harness_session" "$harness_pid"
     fi
@@ -791,9 +793,7 @@ main() {
         [[ -n "$gateway_dir_input" ]] || die 'pass --gateway-binary or --gateway-dir'
         provider_dir=$(to_wsl_path "$gateway_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "gateway Cargo.toml is missing: $gateway_dir_input"
-        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-gateway-runtime \
-            >/dev/null
-        gateway_binary="$provider_dir/target/debug/sts2-gateway-runtime"
+        gateway_binary=$(build_provider_binary "$provider_dir" sts2-gateway-runtime)
     fi
     [[ -x "$gateway_binary" ]] || die "gateway runtime binary is not executable: $gateway_binary"
 
@@ -804,9 +804,7 @@ main() {
         [[ -n "$harness_dir_input" ]] || die 'pass --harness-binary or --harness-dir'
         provider_dir=$(to_wsl_path "$harness_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "harness Cargo.toml is missing: $harness_dir_input"
-        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-harness-runtime \
-            >/dev/null
-        harness_binary="$provider_dir/target/debug/sts2-harness-runtime"
+        harness_binary=$(build_provider_binary "$provider_dir" sts2-harness-runtime)
     fi
     [[ -x "$harness_binary" ]] || die "harness runtime binary is not executable: $harness_binary"
 
@@ -817,9 +815,7 @@ main() {
         [[ -n "$mcp_dir_input" ]] || die 'pass --mcp-binary or --mcp-dir'
         provider_dir=$(to_wsl_path "$mcp_dir_input")
         [[ -f "$provider_dir/Cargo.toml" ]] || die "MCP Cargo.toml is missing: $mcp_dir_input"
-        run_with_live_authorization cargo build --locked --manifest-path "$provider_dir/Cargo.toml" --bin sts2-mcp-server \
-            >/dev/null
-        mcp_binary="$provider_dir/target/debug/sts2-mcp-server"
+        mcp_binary=$(build_provider_binary "$provider_dir" sts2-mcp-server)
     fi
     [[ -x "$mcp_binary" ]] || die "MCP runtime binary is not executable: $mcp_binary"
 
@@ -883,21 +879,11 @@ main() {
 
     assert_live_authorization_current
     refuse_if_game_running
-    bridge_output=$(printf '%s\n' "$runtime_token" \
-        | "$windows_dotnet" "$bridge_dll_windows" \
+    launch_owned_bridge "$windows_dotnet" "$bridge_dll_windows" \
             --game-executable "$game_exe_windows" \
             --working-directory "$game_dir_windows" \
             --bind-address "$bind_address" \
-            --port "$network_port" 2>/dev/null) \
-        || die 'Windows game launch bridge failed'
-    game_pid=$(printf '%s\n' "$bridge_output" | tr -d '\r' \
-        | awk -F= '$1 == "PID" && $2 ~ /^[0-9]+$/ { print $2; exit }')
-    game_start_ticks=$(printf '%s\n' "$bridge_output" | tr -d '\r' \
-        | awk -F= '$1 == "START_TICKS" && $2 ~ /^[0-9]+$/ { print $2; exit }')
-    [[ "$bridge_output" == *'STARTED=TRUE'* && "$game_pid" =~ ^[1-9][0-9]*$ \
-        && "$game_start_ticks" =~ ^[1-9][0-9]*$ ]] \
-        || die 'Windows game launch bridge did not confirm a game process'
-    game_started=1
+            --port "$network_port"
 
     wait_for_probe 'game listener' "$game_probe_host" "$network_port" /health/ready 401 '' windows "$game_pid"
     wait_for_probe 'authenticated game listener' "$game_probe_host" "$network_port" /health/ready 200 \
@@ -915,7 +901,7 @@ main() {
         STS2_LEASE_EPOCH=1 \
         STS2_MCP_SESSION_ID=mcp-session-1 \
         setsid "$harness_binary" \
-        </dev/null >/dev/null 2>&1 &
+        {bridge_input_fd}>&- {bridge_output_fd}<&- </dev/null >/dev/null 2>&1 &
     harness_pid=$!
     harness_started=1
     harness_identity=$(record_process_identity "$harness_pid") \

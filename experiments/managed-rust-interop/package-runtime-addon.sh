@@ -13,7 +13,6 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 managed_project="$repo_root/experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj"
 native_manifest="$repo_root/experiments/managed-rust-interop/native/Cargo.toml"
 managed_build_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2GameMod.dll"
-native_build_artifact="$repo_root/target/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll"
 manifest="$repo_root/experiments/managed-rust-interop/game-loader/mod_manifest.json"
 
 case "$game_data_input" in
@@ -51,6 +50,11 @@ case "$dotnet_resolved" in
         ;;
 esac
 
+# Ask Cargo for its effective output root: environment and Cargo configuration
+# may redirect it away from this checkout's target directory.
+native_target_dir=$(cargo metadata --locked --offline --no-deps --format-version 1 \
+    --manifest-path "$native_manifest" | jq -er '.target_directory | select(type == "string" and startswith("/"))')
+native_build_artifact="$native_target_dir/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll"
 cargo build --locked --release --target x86_64-pc-windows-gnu --manifest-path "$native_manifest"
 "$dotnet_command" restore "$managed_project_msbuild" -p:STS2GameDataDir="$game_data_msbuild"
 "$dotnet_command" build "$managed_project_msbuild" --configuration Release \

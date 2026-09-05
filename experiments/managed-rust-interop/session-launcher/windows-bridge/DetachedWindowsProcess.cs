@@ -11,7 +11,7 @@ namespace AiAscension.SessionWindowsBridge;
 // Only NUL handles may cross this boundary, never the bridge's credential or response pipes.
 internal static class DetachedWindowsProcess
 {
-    internal static Process Start(ProcessStartInfo options)
+    internal static Process Start(ProcessStartInfo options, WindowsJob job)
     {
         if (!OperatingSystem.IsWindows() || !Path.IsPathFullyQualified(options.FileName))
         {
@@ -24,21 +24,27 @@ internal static class DetachedWindowsProcess
         using SafeFileHandle nul = CreateFileW("NUL", 0xc0000000, 3, ref security, 3, 0, IntPtr.Zero);
         if (nul.IsInvalid) throw new Win32Exception();
         IntPtr size = IntPtr.Zero;
-        InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
+        InitializeProcThreadAttributeList(IntPtr.Zero, 2, 0, ref size);
         if (size == IntPtr.Zero) throw new Win32Exception();
         IntPtr attributes = Marshal.AllocHGlobal(size);
         IntPtr handles = Marshal.AllocHGlobal(IntPtr.Size);
+        IntPtr jobs = Marshal.AllocHGlobal(IntPtr.Size);
         IntPtr environment = IntPtr.Zero;
         bool initialized = false;
         ProcessInformation child = default;
         try
         {
-            if (!InitializeProcThreadAttributeList(attributes, 1, 0, ref size))
+            if (!InitializeProcThreadAttributeList(attributes, 2, 0, ref size))
                 throw new Win32Exception();
             initialized = true;
             Marshal.WriteIntPtr(handles, nul.DangerousGetHandle());
             // PROC_THREAD_ATTRIBUTE_HANDLE_LIST: do not inherit arbitrary parent handles.
             if (!UpdateProcThreadAttribute(attributes, 0, (IntPtr)0x20002, handles,
+                (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero)) throw new Win32Exception();
+            Marshal.WriteIntPtr(jobs, job.DangerousGetHandle());
+            // PROC_THREAD_ATTRIBUTE_JOB_LIST assigns ownership before the first child instruction.
+            // Unsupported Windows or incompatible enclosing Jobs fail without an unowned spawn.
+            if (!UpdateProcThreadAttribute(attributes, 0, (IntPtr)0x2000d, jobs,
                 (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero)) throw new Win32Exception();
             var startup = new StartupInfoEx
             {
@@ -63,6 +69,7 @@ internal static class DetachedWindowsProcess
             if (!CreateProcessW(options.FileName, commandBuffer, IntPtr.Zero, IntPtr.Zero, true,
                 0x08080400, environment, options.WorkingDirectory, ref startup, out child))
                 throw new Win32Exception();
+            GC.KeepAlive(job);
             try
             {
                 Process process = Process.GetProcessById(child.ProcessId);
@@ -82,6 +89,7 @@ internal static class DetachedWindowsProcess
             if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment);
             Marshal.FreeHGlobal(handles);
             if (initialized) DeleteProcThreadAttributeList(attributes);
+            Marshal.FreeHGlobal(jobs);
             Marshal.FreeHGlobal(attributes);
         }
     }

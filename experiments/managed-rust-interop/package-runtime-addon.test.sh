@@ -13,7 +13,14 @@ case ${0##*/} in
         fi
         exit 0 ;;
     cargo)
-        native="$PACKAGE_TEST_ROOT/target/x86_64-pc-windows-gnu/release"
+        target=${CARGO_TARGET_DIR:-${PACKAGE_TEST_CONFIG_TARGET:-"$PACKAGE_TEST_ROOT/target"}}
+        [[ $target == /* ]] || target="$PWD/$target"
+        if [[ $1 == metadata ]]; then
+            jq -n --arg target "$target" '{target_directory: $target}'
+            exit 0
+        fi
+        [[ $1 == build ]]
+        native="$target/x86_64-pc-windows-gnu/release"
         mkdir -p "$native"
         printf 'synthetic native' > "$native/ai_ascension_sts2_game_mod_native.dll"
         exit 0 ;;
@@ -51,7 +58,7 @@ setup_case() {
         ln -s "$test_script" "$PACKAGE_TEST_ROOT/tools/$tool"
     done
     export PATH="$PACKAGE_TEST_ROOT/tools:$original_path"
-    unset DOTNET_COMMAND
+    unset DOTNET_COMMAND CARGO_TARGET_DIR PACKAGE_TEST_CONFIG_TARGET
 }
 
 check_case() {
@@ -77,6 +84,13 @@ check_case() {
     for artifact in AIAscensionSTS2GameMod.dll AIAscensionSTS2GameMod.json AIAscensionSTS2GameModNative.dll; do
         [[ -s "$PACKAGE_TEST_ROOT/output/$artifact" ]]
     done
+    [[ $(< "$PACKAGE_TEST_ROOT/output/AIAscensionSTS2GameModNative.dll") == 'synthetic native' ]]
+}
+
+stale_default_artifact() {
+    local stale="$PACKAGE_TEST_ROOT/target/x86_64-pc-windows-gnu/release"
+    mkdir -p "$stale"
+    printf 'stale default binary' > "$stale/ai_ascension_sts2_game_mod_native.dll"
 }
 
 setup_case native-absolute
@@ -95,6 +109,18 @@ setup_case windows-symlink
 rm -- "$PACKAGE_TEST_ROOT/tools/dotnet"
 ln -s dotnet.exe "$PACKAGE_TEST_ROOT/tools/dotnet"
 check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 2
+setup_case redirected-absolute-target
+export CARGO_TARGET_DIR="$test_root/alternate cargo output"
+stale_default_artifact
+check_case "$PACKAGE_TEST_DATA" '' 0
+setup_case redirected-relative-target
+export CARGO_TARGET_DIR='relative cargo output'
+stale_default_artifact
+check_case "$PACKAGE_TEST_DATA" '' 0
+setup_case cargo-config-target
+export PACKAGE_TEST_CONFIG_TARGET="$test_root/configured cargo output"
+stale_default_artifact
+check_case "$PACKAGE_TEST_DATA" '' 0
 setup_case missing-sdk
 export DOTNET_COMMAND="$PACKAGE_TEST_ROOT/tools/missing-dotnet"
 if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TEST_ROOT/output" \
@@ -104,4 +130,4 @@ if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TES
 fi
 [[ $(< "$PACKAGE_TEST_ROOT/error") == *'dotnet command is unavailable'* ]]
 [[ ! -e "$PACKAGE_TEST_ROOT/restore.args" && ! -e "$PACKAGE_TEST_ROOT/output" ]]
-printf 'package-runtime-addon: 7 synthetic path-selection tests passed\n'
+printf 'package-runtime-addon: 10 synthetic path-selection tests passed\n'

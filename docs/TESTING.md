@@ -176,6 +176,8 @@ The target-owned launcher tests can run without a game or provider source:
 
 ~~~text
 bash experiments/managed-rust-interop/session-launcher.test.sh
+bash experiments/managed-rust-interop/session-bridge.test.sh
+bash experiments/managed-rust-interop/provider-build.test.sh
 bash experiments/managed-rust-interop/session-install.test.sh
 bash experiments/managed-rust-interop/live-authorization.test.sh
 bash experiments/managed-rust-interop/package-runtime-addon.test.sh
