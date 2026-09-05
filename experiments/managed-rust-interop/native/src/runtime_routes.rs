@@ -2,7 +2,8 @@
 
 use super::{
     CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
+    CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V3_ACTION, CALLBACK_RUNTIME_V3_OPERATION,
+    CALLBACK_RUNTIME_V3_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
     dispatch_with_body, http,
 };
 
@@ -29,9 +30,28 @@ pub(super) fn dispatch(
         ("POST", "/api/v2/runtime/action") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_RUNTIME_V2_ACTION, request, stream)
         }
+        ("GET", "/api/v3/runtime/state") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V3_STATE, request, stream)
+        }
+        ("POST", "/api/v3/runtime/action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V3_ACTION, request, stream)
+        }
         ("GET", path) if request.body.is_empty() => {
             let Some(operation_id) = path.strip_prefix("/api/v2/runtime/operations/") else {
-                return http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}");
+                let Some(operation_id) = path.strip_prefix("/api/v3/runtime/operations/") else {
+                    return http::write_response(
+                        stream,
+                        404,
+                        b"{\"error_code\":\"route_not_found\"}",
+                    );
+                };
+                return dispatch_operation(
+                    callback,
+                    CALLBACK_RUNTIME_V3_OPERATION,
+                    request,
+                    operation_id,
+                    stream,
+                );
             };
             dispatch_operation(
                 callback,
@@ -94,7 +114,7 @@ mod tests {
         let (mut server, _) = listener.accept()?;
         let request = http::Request {
             method: String::from("GET"),
-            path: String::from("/api/v2/runtime/operations/run/operation"),
+            path: String::from("/api/v3/runtime/operations/run/operation"),
             headers: [
                 "x-sts2-instance-id",
                 "x-sts2-caller-id",

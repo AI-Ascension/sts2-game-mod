@@ -1,5 +1,13 @@
 # Compatibility policy and matrix
 
+## Unmerged bounded gameplay candidate
+
+The retained bounded `runtime-v3-gameplay` proposal is incompatible with the selected Exo
+semantic profile. It adds `/api/v3/runtime/state`, `/api/v3/runtime/action` and operation reads
+for `play_card`, while preserving frozen v2 routes and bytes. This rebase is source-only;
+[historical build evidence](evidence/runtime-v3-gameplay-host-build-20260902.md) does not prove
+the current rebased host assembly, live legality or operation-bound completion.
+
 ## Separate dimensions
 
 Compatibility is tracked independently for the owner-local HTTP contract, managed loader metadata,

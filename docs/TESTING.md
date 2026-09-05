@@ -1,5 +1,14 @@
 # Testing and evidence
 
+## Bounded candidate rebase checks
+
+The host-candidate probe on this branch additionally links the bounded Runtime-v3 card files.
+Its production-linked synthetic cases cover v2/v3 shared identity, cross-profile mutation
+exclusion, uncertain completion, retry identity and queue expiry. The v2-only split regressions
+remain present. Native endpoint tests verify distinct v2 callback IDs 3–5 and bounded IDs 6–8.
+These checks do not establish proprietary host compatibility or support for the selected
+Exo semantic wire model; the bounded branch is retained as an unmerged alternative.
+
 Workshop regression probes reject duplicate JSON properties, symlink install roots, oversized
 manifests without proportional allocation, and producer metadata/payload bounds before staging.
 Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic

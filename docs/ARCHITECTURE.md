@@ -1,5 +1,15 @@
 # Architecture
 
+## Bounded Runtime-v3 alternative
+
+This branch retains the unmerged bounded `play_card` proposal after the independent v2 adapter
+landed in PR #26. Native callback IDs 6, 7 and 8 select its state, action and operation lookup;
+v2 keeps 3, 4 and 5. The managed host owns card/target legality, thread affinity and mutation.
+Both profiles share an identity fence and exclude a second mutation while either has an
+unknown operation. State changes alone do not prove operation-bound completion.
+The selected Exo semantic profile has a different wire model; this branch is not that profile.
+See [ADR 0017](decisions/0017-runtime-v3-gameplay-card-candidate.md). Host gameplay is unverified.
+
 ## Responsibility
 
 sts2-game-mod is the game-facing translation boundary. It adapts the managed loader and host

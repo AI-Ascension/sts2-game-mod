@@ -5,6 +5,10 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Rebased the bounded Runtime-v3 card candidate after independent Runtime-v2 extraction in
+  PR #26. Preserved v2 callback IDs, safety probes and launcher restoration. This unmerged
+  alternative remains a proposal; the selected Exo lane supersedes it only after that lane merges.
+
 - Completed the frozen Runtime-v1 artifact package with the canonical checksum inventory, golden
   messages, and referenced schema and conformance files from `sts2-protocol` commit
   `11e4252e39a77f0017b8e4f3720590e6162e8f53`. CI verifies the inventory; existing schema and

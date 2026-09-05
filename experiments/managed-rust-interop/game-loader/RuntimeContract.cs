@@ -20,9 +20,11 @@ public static partial class ModEntry
         {
             return (400, "{\"error_code\":\"invalid_runtime_context\"}");
         }
-        if (work.Kind >= RuntimeRequestKindRuntimeV2State && work.Kind <= RuntimeRequestKindRuntimeV2Operation)
+        if (work.Kind >= RuntimeRequestKindRuntimeV2State && work.Kind <= RuntimeRequestKindRuntimeV3Operation)
         {
-            return ProcessRuntimeV2Work(work);
+            return work.Kind <= RuntimeRequestKindRuntimeV2Operation
+                ? ProcessRuntimeV2Work(work)
+                : ProcessRuntimeV3GameplayWork(work);
         }
         if (work.Kind == RuntimeRequestKindState)
         {
@@ -136,9 +138,11 @@ public static partial class ModEntry
 
     private static string RuntimeError(RuntimeContext context, uint kind, string code)
     {
-        if (kind >= RuntimeRequestKindRuntimeV2State && kind <= RuntimeRequestKindRuntimeV2Operation)
+        if (kind >= RuntimeRequestKindRuntimeV2State && kind <= RuntimeRequestKindRuntimeV3Operation)
         {
-            return RuntimeV2PlainError(code);
+            return kind <= RuntimeRequestKindRuntimeV2Operation
+                ? RuntimeV2PlainError(code)
+                : RuntimeV3GameplayPlainError(code);
         }
 
         return kind == RuntimeRequestKindAction

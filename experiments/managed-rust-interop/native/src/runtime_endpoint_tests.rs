@@ -57,14 +57,14 @@ fn callback_cannot_claim_bytes_beyond_owned_output() -> std::io::Result<()> {
 }
 
 #[test]
-fn v2_routes_preserve_callback_ids_without_admitting_legacy_v3() -> std::io::Result<()> {
+fn v2_and_bounded_v3_routes_use_distinct_callback_ids() -> std::io::Result<()> {
     for (method, path, body, expected) in [
         ("GET", "/api/v2/runtime/state", "", 203),
         ("POST", "/api/v2/runtime/action", "{}", 204),
         ("GET", "/api/v2/runtime/operations/run/operation", "", 205),
-        ("GET", "/api/v3/runtime/state", "", 404),
-        ("POST", "/api/v3/runtime/action", "{}", 404),
-        ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
+        ("GET", "/api/v3/runtime/state", "", 206),
+        ("POST", "/api/v3/runtime/action", "{}", 207),
+        ("GET", "/api/v3/runtime/operations/run/operation", "", 208),
     ] {
         let request = format!(
             concat!(

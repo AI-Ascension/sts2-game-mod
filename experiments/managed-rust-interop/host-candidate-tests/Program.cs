@@ -118,5 +118,25 @@ public static partial class ModEntry
         Check(RuntimeQueue.Wait(expired, TimeSpan.Zero).Status == 504
             && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
             "shared queue removes expired candidate before host dispatch");
+        VerifyV2SplitRegressions(v2Body);
+    }
+
+    private static void VerifyV2SplitRegressions(string body)
+    {
+        Reset();
+        var result = ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), body));
+        Check(Status(result) == "unknown", "v2 independent dispatch remains uncertain");
+        result = ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(),
+            body.Replace("\"generation\":0", "\"generation\":1", StringComparison.Ordinal)));
+        Check(Status(result) == "rejected" && result.Response.Contains("idempotency_conflict", StringComparison.Ordinal),
+            "v2 changed-generation reuse conflicts without redispatch");
+        result = ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(),
+            body.Replace(",", ", ", StringComparison.Ordinal)));
+        Check(Status(result) == "unknown" && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 1,
+            "v2 formatting does not alter semantic replay");
+        Reset();
+        var other = new RuntimeContext("instance", "caller2", "session2", "lease2", "2", "corr");
+        Check(TryAuthorizeRuntimeV2Context(Context(), out _) && !TryAuthorizeRuntimeV2Context(other, out _),
+            "v2 identity fence survives bounded-lane rebase");
     }
 }

@@ -18,6 +18,9 @@ public static partial class ModEntry
     private const int RuntimeRequestKindRuntimeV2State = 3;
     private const int RuntimeRequestKindRuntimeV2Action = 4;
     private const int RuntimeRequestKindRuntimeV2Operation = 5;
+    private const int RuntimeRequestKindRuntimeV3State = 6;
+    private const int RuntimeRequestKindRuntimeV3Action = 7;
+    private const int RuntimeRequestKindRuntimeV3Operation = 8;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
@@ -191,6 +194,7 @@ public static partial class ModEntry
         {
         }
         TryFinalizePendingRuntimeV2();
+        TryFinalizePendingRuntimeV3Gameplay();
     }
 
     private static (int Status, string Response) ExecuteRuntimeWork(RuntimeWork work)

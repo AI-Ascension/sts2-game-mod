@@ -24,6 +24,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0014 | [Runtime-v2 fake boundary](0014-runtime-v2-fake-boundary.md) |
 | 0015 | [First-party Workshop package](0015-steam-workshop-first-party-package.md) |
 | 0016 | [Runtime-v2 host adapter candidate](0016-runtime-v2-host-adapter-candidate.md) |
+| 0017 | [Bounded Runtime-v3 gameplay card candidate](0017-runtime-v3-gameplay-card-candidate.md) |
 | 0019 | [Repeat-seed practice replay](0019-repeat-seed-practice-replay.md) |
 
 The last two decisions formerly both used 0011. Their content is unchanged apart from identifier
