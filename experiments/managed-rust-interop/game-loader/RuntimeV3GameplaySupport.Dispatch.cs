@@ -41,6 +41,17 @@ internal sealed partial class RuntimeV3GameplaySupport
             return RenderDispatchReceipt(
                 correlationId, instanceId, sessionId, leaseId, leaseEpoch, requestGeneration, replay, out status);
         }
+        return DispatchCurrent(operation, stateId, requestedAction, correlationId, requestGeneration, out status);
+    }
+
+    private string DispatchCurrent(RuntimeV3OperationKey operation, string stateId,
+        LegalActionReference requestedAction, string correlationId, ulong requestGeneration, out int status)
+    {
+        string instanceId = operation.InstanceId;
+        string sessionId = operation.SessionId;
+        string leaseId = operation.LeaseId;
+        ulong leaseEpoch = operation.LeaseEpoch;
+        string operationId = operation.OperationId;
         if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
         {
             return UnknownEnvelope(
@@ -70,7 +81,7 @@ internal sealed partial class RuntimeV3GameplaySupport
         RuntimeV3DispatchReceipt receipt;
         try
         {
-            receipt = _host.Dispatch(operation, observation, requestedAction);
+            receipt = _host!.Dispatch(operation, observation, requestedAction);
         }
         catch (Exception)
         {
@@ -157,22 +168,8 @@ internal sealed partial class RuntimeV3GameplaySupport
         }
         if (recoveryKind == "reobserve")
         {
-            if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation, out IReadOnlyList<LegalActionReference>? actions, out string error))
-            {
-                return UnknownEnvelope(
-                    "recover_response", correlationId, instanceId, sessionId, leaseId,
-                    leaseEpoch, requestGeneration, error, "recovery_required", out status, null);
-            }
-            if (observation is null || actions is null)
-            {
-                return UnknownEnvelope(
-                    "recover_response", correlationId, instanceId, sessionId, leaseId,
-                    leaseEpoch, requestGeneration, "host_observation_unavailable", "recovery_required", out status, null);
-            }
-            status = Accepted;
-            return ObservationEnvelope(
-                "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
-                observation, actions, "recovery-operation", "accepted", null, null);
+            return RecoverObservation(instanceId, sessionId, leaseId, correlationId,
+                leaseEpoch, requestGeneration, out status);
         }
         if (recoveryKind == "reconcile"
             && TryString(recovery, "operation_id", out string? operationId) && operationId is not null)
@@ -198,6 +195,28 @@ internal sealed partial class RuntimeV3GameplaySupport
         return UnknownEnvelope(
             "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
             requestGeneration, "recovery_requires_external_owner", "recovery_required", out status, null);
+    }
+
+    private string RecoverObservation(string instanceId, string sessionId, string leaseId,
+        string correlationId, ulong leaseEpoch, ulong requestGeneration, out int status)
+    {
+        if (!TryCurrent(null, out RuntimeV3GameplayObservation? observation,
+                out IReadOnlyList<LegalActionReference>? actions, out string error))
+        {
+            return UnknownEnvelope(
+                "recover_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, error, "recovery_required", out status, null);
+        }
+        if (observation is null || actions is null)
+        {
+            return UnknownEnvelope(
+                "recover_response", correlationId, instanceId, sessionId, leaseId,
+                leaseEpoch, requestGeneration, "host_observation_unavailable", "recovery_required", out status, null);
+        }
+        status = Accepted;
+        return ObservationEnvelope(
+            "recover_response", correlationId, instanceId, sessionId, leaseId, leaseEpoch,
+            observation, actions, "recovery-operation", "accepted", null, null);
     }
 
 }

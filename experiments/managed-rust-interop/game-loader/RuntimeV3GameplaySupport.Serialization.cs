@@ -31,12 +31,7 @@ internal sealed partial class RuntimeV3GameplaySupport
         {
             ["protocol_version"] = RuntimeV3GameplayContract.ProtocolVersion,
             ["schema_digest"] = RuntimeV3GameplayContract.SchemaDigest,
-            ["provenance"] = new Dictionary<string, string>
-            {
-                ["artifact"] = RuntimeV3GameplayContract.Artifact,
-                ["source"] = RuntimeV3GameplayContract.SchemaSource,
-                ["generator"] = RuntimeV3GameplayContract.Generator
-            },
+            ["provenance"] = EnvelopeProvenance(),
             ["correlation_id"] = correlationId,
             ["instance_id"] = instanceId,
             ["session_id"] = sessionId,
@@ -50,20 +45,33 @@ internal sealed partial class RuntimeV3GameplaySupport
             ["legal_actions"] = legalActions,
             ["action"] = action,
             ["status"] = status,
-            ["transition"] = witness is null
-                ? null
-                : new Dictionary<string, object?>
-                {
-                    ["from_generation"] = witness.FromGeneration,
-                    ["to_generation"] = witness.ToGeneration,
-                    ["state_id"] = witness.StateId,
-                    ["effect_kind"] = witness.EffectKind
-                },
+            ["transition"] = EnvelopeTransition(witness),
             ["error_code"] = errorCode,
             ["wait_for_millis"] = waitForMillis,
             ["wait_outcome"] = waitOutcome,
             ["recovery"] = null
         };
+        return SerializeBoundedEnvelope(envelope);
+    }
+
+    private static Dictionary<string, string> EnvelopeProvenance() => new()
+    {
+        ["artifact"] = RuntimeV3GameplayContract.Artifact,
+        ["source"] = RuntimeV3GameplayContract.SchemaSource,
+        ["generator"] = RuntimeV3GameplayContract.Generator
+    };
+
+    private static Dictionary<string, object?>? EnvelopeTransition(RuntimeV3TransitionWitness? witness) =>
+        witness is null ? null : new()
+        {
+            ["from_generation"] = witness.FromGeneration,
+            ["to_generation"] = witness.ToGeneration,
+            ["state_id"] = witness.StateId,
+            ["effect_kind"] = witness.EffectKind
+        };
+
+    private static string SerializeBoundedEnvelope(Dictionary<string, object?> envelope)
+    {
         string json = JsonSerializer.Serialize(envelope);
         using JsonDocument document = JsonDocument.Parse(json);
         if (json.Length > MaxResponseBytes

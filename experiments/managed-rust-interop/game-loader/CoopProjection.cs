@@ -37,6 +37,21 @@ internal sealed record CoopProjection(
             error = string.IsNullOrEmpty(error) ? "co-op projection identity or bounds are invalid" : error;
             return false;
         }
+        if (!ValidatePeers(players, synchronization.MissingPeers, out error))
+        {
+            return false;
+        }
+        projection = new CoopProjection(stateId, generation,
+            new List<CoopPeer>(players).AsReadOnly(), synchronization with
+            {
+                MissingPeers = new List<string>(synchronization.MissingPeers).AsReadOnly()
+            });
+        return true;
+    }
+
+    private static bool ValidatePeers(IReadOnlyList<CoopPeer> players,
+        IReadOnlyList<string> missingPeers, out string error)
+    {
         var peerIds = new HashSet<string>(StringComparer.Ordinal);
         var allyIds = new HashSet<string>(StringComparer.Ordinal);
         int localCount = 0;
@@ -63,7 +78,7 @@ internal sealed record CoopProjection(
             error = "co-op projection must contain one local peer and an ally";
             return false;
         }
-        foreach (string missingPeer in synchronization.MissingPeers)
+        foreach (string missingPeer in missingPeers)
         {
             if (!peerIds.Contains(missingPeer))
             {
@@ -72,11 +87,6 @@ internal sealed record CoopProjection(
             }
         }
         error = string.Empty;
-        projection = new CoopProjection(stateId, generation,
-            new List<CoopPeer>(players).AsReadOnly(), synchronization with
-            {
-                MissingPeers = new List<string>(synchronization.MissingPeers).AsReadOnly()
-            });
         return true;
     }
 

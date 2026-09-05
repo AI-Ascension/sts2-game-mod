@@ -36,7 +36,32 @@ internal sealed partial class RuntimeV3GameplaySupport
             return false;
         }
         root = document!.RootElement;
-        if (root.ValueKind != JsonValueKind.Object
+        if (!ValidateEnvelopeIdentity(root, instanceId, sessionId, leaseId, correlationId,
+                leaseEpochText, out generation, out string? parsedKind))
+        {
+            error = "invalid_runtime_v3_envelope";
+            document!.Dispose();
+            document = null;
+            return false;
+        }
+        kind = parsedKind!;
+        if (!ValidateRequestShape(root, kind, generation))
+        {
+            error = "invalid_runtime_v3_request_shape";
+            document!.Dispose();
+            document = null;
+            return false;
+        }
+        return true;
+    }
+
+    private static bool ValidateEnvelopeIdentity(JsonElement root, string instanceId,
+        string sessionId, string leaseId, string correlationId, string leaseEpochText,
+        out ulong generation, out string? parsedKind)
+    {
+        generation = 0;
+        parsedKind = null;
+        return !(root.ValueKind != JsonValueKind.Object
             || !HasExactFields(root, EnvelopeFields)
             || !RuntimeV3GameplayContract.IsIdentity(instanceId)
             || !RuntimeV3GameplayContract.IsIdentity(sessionId)
@@ -58,22 +83,7 @@ internal sealed partial class RuntimeV3GameplaySupport
             || generationElement.ValueKind != JsonValueKind.Number
             || !generationElement.TryGetUInt64(out generation)
             || generation > RuntimeV3GameplayContract.MaxGeneration
-            || !TryString(root, "kind", out string? parsedKind))
-        {
-            error = "invalid_runtime_v3_envelope";
-            document!.Dispose();
-            document = null;
-            return false;
-        }
-        kind = parsedKind!;
-        if (!ValidateRequestShape(root, kind, generation))
-        {
-            error = "invalid_runtime_v3_request_shape";
-            document!.Dispose();
-            document = null;
-            return false;
-        }
-        return true;
+            || !TryString(root, "kind", out parsedKind));
     }
 
     private static bool ValidateRequestShape(JsonElement root, string kind, ulong generation) =>
@@ -140,69 +150,6 @@ internal sealed partial class RuntimeV3GameplaySupport
 
     private static bool MatchesRecoveryKind(string? kind) =>
         kind is "reobserve" or "reconcile" or "release_lease" or "stop_episode";
-
-    private static bool TryAction(
-        JsonElement root,
-        ulong generation,
-        out LegalActionReference? action)
-    {
-        action = null;
-        if (!root.TryGetProperty("action", out JsonElement value)
-            || value.ValueKind != JsonValueKind.Object
-            || !HasExactFields(value, "action_id", "action")
-            || !TryString(value, "action_id", out string? actionId)
-            || !value.TryGetProperty("action", out JsonElement payload)
-            || payload.ValueKind != JsonValueKind.Object
-            || !TryString(payload, "kind", out string? kind))
-        {
-            return false;
-        }
-        string? selectedValue = null;
-        string? targetId = null;
-        string? field = kind switch
-        {
-            "start_run" => "character_id",
-            "select_map_node" => "node_id",
-            "choose_reward" => "reward_id",
-            "shop_purchase" => "item_id",
-            "shop_remove" or "smith" or "select_card" => "card_id",
-            "event_choice" => "choice_id",
-            "play_card" => "card_id",
-            "end_turn" or "skip_reward" or "rest" or "confirm_victory" or "save_quit" => null,
-            _ => "invalid"
-        };
-        if (field == "invalid")
-        {
-            return false;
-        }
-        if (field is null)
-        {
-            if (!HasExactFields(payload, "kind"))
-            {
-                return false;
-            }
-        }
-        else if (kind == "play_card")
-        {
-            if (!HasExactFields(payload, "kind", "card_id", "target_id")
-                || !TryString(payload, "card_id", out selectedValue)
-                || !TryOptionalString(payload, "target_id", out targetId))
-            {
-                return false;
-            }
-        }
-        else if (!HasExactFields(payload, "kind", field)
-            || !TryString(payload, field, out selectedValue))
-        {
-            return false;
-        }
-        if (actionId is null || kind is null)
-        {
-            return false;
-        }
-        action = new LegalActionReference(actionId, kind, selectedValue, targetId, generation);
-        return action.Validate(out _);
-    }
 
     private static string? StringField(JsonElement root, string path)
     {
