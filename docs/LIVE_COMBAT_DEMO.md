@@ -26,9 +26,16 @@ directory. Omitted launcher video options reuse those preferences; explicit opti
 individual saved fields. A disconnected saved display falls back to the current primary display.
 On Windows the resolution dropdown enumerates monitor-compatible modes for the selected
 display, deduplicates refresh-rate variants, and limits window sizes to its current desktop
-dimensions. Changing displays refreshes the list. If enumeration is unavailable, only the
-detected desktop size is offered; there is no fixed resolution preset list. Fullscreen and
-maximized use the desktop dimensions and disable the resolution selector.
+dimensions. Changing displays refreshes the list. On Linux the fallback uses the detected
+usable window area, excluding desktop panels, instead of advertising the full desktop as
+a window size. The current observed window size is also retained when it fits that area.
+There is no fixed resolution preset list. Fullscreen and maximized use the desktop
+dimensions and disable the resolution selector.
+
+Apply waits for the window manager before saving, verifies the resulting mode and display,
+and persists the actual client size when the desktop adjusts a window. The status text and
+resolution selector reflect that adjustment. For example, a 1024x768 GNOME desktop can
+allow a 958x736 borderless window but only a 958x699 decorated client area.
 
 For an authorized disposable-host menu check, build `GameLoaderProbe.csproj` with
 `-p:EnableVideoMenuProbe=true` and the usual `STS2GameDataDir`. This opt-in build opens the
@@ -38,6 +45,8 @@ saves `user://video-menu-probe.png`. Normal builds exclude this probe. Rebuild w
 property before the combat/relaunch check; retain external logs and compare the actual window
 report with the preferences saved by the menu. Source-only preference tests do not prove
 native menu behavior or monitor compatibility.
+Set `STS2_VIDEO_PROBE_VERIFY_SAVED=1` for a subsequent probe launch to verify the previously
+saved window size and mode before exercising the controls again.
 
 The game must have accepted this mod in the disposable profile. The local-only save
 backend preserves that consent, including after patch-triggered first-launch prompts.
