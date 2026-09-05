@@ -36,6 +36,9 @@ not launch the game or prove gameplay or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
 
+CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
+the POC, Runtime-v1, and Runtime-v3 checksum gates. A checksum failure fails the Rust CI job.
+
 The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
 and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
 rejects generation exhaustion before changing its observation or action count.
