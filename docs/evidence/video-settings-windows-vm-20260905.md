@@ -31,8 +31,32 @@ the test console uses an SSH tunnel. No host GPU is reassigned.
 
 ## Verification status
 
-Disk conversion and destination runtime verification are in progress. VM
-preparation alone is not a Windows game, menu, or full v3 gameplay pass.
+The replacement QCOW2 passed `qemu-img check`. Its complete 80 GiB virtual
+address space matched the frozen VHDX checkpoint in eight contiguous 10 GiB
+`qemu-img compare` ranges, all with exit status zero. The frozen source's file
+size and modification timestamp also remained unchanged during comparison.
+The transferred 15,994,975,744-byte image matched SHA-256
+`2348464ed6329e5e34949d69ceea873959fe4b269aae6b3253672aa3c5cfe395`
+before boot and passed another `qemu-img check` on the destination. This is a
+pre-boot transfer hash; a running guest subsequently changes its disk.
+
+Windows 11 Pro 10.0.26200 booted on KVM. The guest agent confirmed two CPUs,
+approximately 8 GiB RAM, active VirtIO networking, a running guest-agent
+service, and the expected probe DLL hash. The Red Hat VirtIO GPU DOD driver
+`100.103.104.30200` reported a 1280x800 desktop. Steam started in the interactive
+desktop session. Destination game/menu verification is still pending Steam
+sign-in; these OS checks do not establish a gameplay pass.
+
+Graphics preflights in both the temporary Hyper-V copy and the KVM guest started
+the actual game using `D3D12 12_0`, Forward+, and `Microsoft Basic Render Driver`.
+Hyper-V returned `ConnectToGlobalUser failed` without a signed-in account. KVM
+reached the game's Steam error screen while the Steam client was still verifying
+its installation. Both owned game processes were stopped afterward. These are
+software-renderer startup results, not menu passes.
+
+The uncapped KVM software-rendering launch made guest command execution
+unresponsive. The next probe launch uses `--max-fps 15`, `--resolution 800x600`,
+and `--windowed`; responsiveness under that limit is still unverified.
 
 Keep proprietary game assets, VM disks, credentials, private profiles, and raw
 guest logs outside the repository. The native menu procedure is documented in
