@@ -70,6 +70,12 @@ public static partial class ModEntry
                     false));
         }
 
+        return AdmitRuntimeV2Action(context, parsedRequest, observation);
+    }
+
+    private static (int Status, string Response) AdmitRuntimeV2Action(
+        RuntimeContext context, RuntimeV2Request parsedRequest, RuntimeV2HostObservation observation)
+    {
         if (parsedRequest.Generation != _runtimeGeneration)
         {
             RuntimeV2Operation rejected = RetainRuntimeV2Operation(
@@ -80,7 +86,7 @@ public static partial class ModEntry
             return (RuntimeRejected, RuntimeV2OperationResponse(context, rejected));
         }
 
-        if (_runtimeV2Pending != null)
+        if (_runtimeV2Pending != null || (_runtimeV3Gameplay?.HasPendingMutation ?? false))
         {
             RuntimeV2Operation rejected = RetainRuntimeV2Operation(
                 parsedRequest,
@@ -124,6 +130,13 @@ public static partial class ModEntry
             return (RuntimeTooManyRequests, RuntimeV2OperationResponse(context, rejected));
         }
 
+        return EnqueueRuntimeV2Action(context, parsedRequest, observation, player);
+    }
+
+    private static (int Status, string Response) EnqueueRuntimeV2Action(
+        RuntimeContext context, RuntimeV2Request parsedRequest,
+        RuntimeV2HostObservation observation, Player? player)
+    {
         RuntimeV2Operation operation = new(
             parsedRequest.OperationId,
             parsedRequest.CanonicalBody,

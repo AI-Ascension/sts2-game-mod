@@ -7,6 +7,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../game-loader/RuntimeV2*.cs" />
+    <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" />
+    <Compile Include="../game-loader/LegalActionCatalog.cs" />
+    <Compile Include="../game-loader/PostconditionVerifier.cs" />
+    <Compile Include="../game-loader/FairPlayProjection.cs" />
+    <Compile Include="../game-loader/PrivilegedFieldGuard.cs" />
+    <Compile Include="../gameplay-tests/FakeHost.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" />
     <Compile Include="../game-loader/RuntimeInterop.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Network.cs" />
