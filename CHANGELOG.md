@@ -5,6 +5,10 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Add opt-in visible single-player combat demonstration with host action-completion witnesses,
+  local-only demo saves, preserved mod consent, and prelaunch display, size and window mode.
+  See `docs/LIVE_COMBAT_DEMO.md` for exact runtime evidence and isolation limits.
+
 - Added opt-in same-seed practice replay for an active saved, single-player Custom run
   (PR #16), with explicit confirmation that current progress is discarded. Source-linked
   synthetic controller checks do not establish exact-host save lifecycle, UI confirmation,

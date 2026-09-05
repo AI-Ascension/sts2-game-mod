@@ -1,5 +1,10 @@
 # Testing and evidence
 
+For the opt-in exact-host LLM combat, repeat/replay evidence, launch settings and isolation
+limits, see [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md). Host-free CI does not replace this
+live evidence. Changed-seed replay must stop before dispatch; repeated same-seed choices
+must receive fresh host completion witnesses.
+
 Workshop regression probes reject duplicate JSON properties, symlink install roots, oversized
 manifests without proportional allocation, and producer metadata/payload bounds before staging.
 Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic

@@ -75,7 +75,13 @@ public static partial class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
+                LiveCombatDemo.Initialize();
                 InitializeRuntimeV3Gameplay();
+                if (System.Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") == "1")
+                {
+                    var source = new LiveCombatSource();
+                    ConfigureRuntimeV3Gameplay(source, source);
+                }
                 StandaloneProfileSettings.Initialize();
                 SeedReplayController.Initialize();
                 StartRuntimeServer(_nativeLibrary);
