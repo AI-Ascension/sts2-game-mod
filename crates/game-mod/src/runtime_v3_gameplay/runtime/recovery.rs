@@ -40,6 +40,15 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
             response.kind = RuntimeV3GameplayMessageKind::WaitResponse;
             return Ok(response);
         }
+        self.wait_receipt(request, operation_id, receipt)
+    }
+
+    fn wait_receipt(
+        &self,
+        request: &RuntimeV3GameplayMessage,
+        operation_id: &str,
+        receipt: &OperationReceipt,
+    ) -> Result<RuntimeV3GameplayMessage, RuntimeV3GameplayError> {
         match receipt.response.status {
             Some(RuntimeV3GameplayStatus::Settled) => {
                 let mut response = correlated(&receipt.response, request);

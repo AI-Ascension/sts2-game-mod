@@ -272,6 +272,10 @@ The Rust semantic runtime keeps configuration and entry points in `runtime_v3_ga
 Its child modules own admission, dispatch and completion proof, recovery polling, observation and
 response projection, and receipt updates. This source organization preserves the same host port,
 operation identity, queue ordering, and settlement rules without a file-size exemption.
+Admission separates retained-operation replay from queue insertion; dispatch separates freshness
+checks from post-dispatch outcome classification. Shape validators share only the conversion of a
+validated condition into the existing result-shape error. These function boundaries preserve the
+same validation order and host-completion requirements.
 
 ADR 0018 adds the managed source-only Runtime-v3 bridge. `RuntimeV3GameplayHost` owns the boundary
 between an injected host source and the host-thread queue: it accepts only validated typed actions

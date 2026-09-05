@@ -48,18 +48,24 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
         let dispatch_result = self
             .game
             .dispatch(&self.identity, &queued.operation_id, action);
-        if let Some(response) = self.proven_completion(&request) {
-            return Ok(self.finish(&queued.operation_id, response));
+        self.finish_dispatch(&queued.operation_id, &request, before, dispatch_result)
+    }
+
+    fn finish_dispatch(
+        &mut self,
+        operation_id: &str,
+        request: &RuntimeV3GameplayMessage,
+        before: RuntimeV3GameplayObservation,
+        dispatch_result: Result<(), RuntimeV3GameplayGameError>,
+    ) -> Result<RuntimeV3GameplayMessage, RuntimeV3GameplayError> {
+        if let Some(response) = self.proven_completion(request) {
+            return Ok(self.finish(operation_id, response));
         }
         let after_result = self.checked_snapshot();
         let (after, after_actions) = match after_result {
             Ok(value) => value,
             Err(_) => {
-                return Ok(self.finish_unknown(
-                    &queued.operation_id,
-                    &request,
-                    "settlement_unproven",
-                ));
+                return Ok(self.finish_unknown(operation_id, request, "settlement_unproven"));
             }
         };
         let response = match dispatch_result {
@@ -67,7 +73,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                 error @ (RuntimeV3GameplayGameError::Rejected
                 | RuntimeV3GameplayGameError::NotReady),
             ) if after == before => self.result_response(
-                &request,
+                request,
                 RuntimeV3GameplayStatus::Rejected,
                 Some(after),
                 Some(after_actions),
@@ -76,7 +82,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                 None,
             ),
             Ok(()) | Err(_) => self.result_response(
-                &request,
+                request,
                 RuntimeV3GameplayStatus::Unknown,
                 None,
                 None,
@@ -85,7 +91,7 @@ impl<G: RuntimeV3GameplayGamePort> RuntimeV3GameplayMod<G> {
                 None,
             ),
         };
-        Ok(self.finish(&queued.operation_id, response))
+        Ok(self.finish(operation_id, response))
     }
 
     pub(super) fn proven_completion(
