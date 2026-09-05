@@ -20,6 +20,25 @@ Available modes are `windowed`,
 display; resolution is the requested window size. The host checks screen availability,
 sets its isolated settings, and reports the actual screen, dimensions and mode.
 
+The native settings menu's AI-Ascension tab also offers display, resolution, and window mode.
+Apply updates the running window and atomically saves preferences in the active Godot user
+directory. Omitted launcher video options reuse those preferences; explicit options override
+individual saved fields. A disconnected saved display falls back to the current primary display.
+On Windows the resolution dropdown enumerates monitor-compatible modes for the selected
+display, deduplicates refresh-rate variants, and limits window sizes to its current desktop
+dimensions. Changing displays refreshes the list. If enumeration is unavailable, only the
+detected desktop size is offered; there is no fixed resolution preset list. Fullscreen and
+maximized use the desktop dimensions and disable the resolution selector.
+
+For an authorized disposable-host menu check, build `GameLoaderProbe.csproj` with
+`-p:EnableVideoMenuProbe=true` and the usual `STS2GameDataDir`. This opt-in build opens the
+native menu instead of starting combat, checks each display's resolution choices, emits the
+actual controls' selection/apply signals, checks persisted and observed window settings, and
+saves `user://video-menu-probe.png`. Normal builds exclude this probe. Rebuild without the
+property before the combat/relaunch check; retain external logs and compare the actual window
+report with the preferences saved by the menu. Source-only preference tests do not prove
+native menu behavior or monitor compatibility.
+
 The game must have accepted this mod in the disposable profile. The local-only save
 backend preserves that consent, including after patch-triggered first-launch prompts.
 It never silently grants consent to arbitrary installed mods. A patch that prevents the

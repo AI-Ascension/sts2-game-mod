@@ -7,6 +7,12 @@
     <AssemblyName>AIAscensionSTS2GameMod</AssemblyName>
     <RootNamespace>AiAscension.Sts2GameMod.Runtime</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(EnableVideoMenuProbe)' == 'true'">
+    <DefineConstants>$(DefineConstants);STS2_VIDEO_MENU_PROBE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableVideoMenuProbe)' == 'true'">
+    <Compile Include="../video-host-probe/VideoMenuProbe.cs" Link="VideoMenuProbe.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="sts2">

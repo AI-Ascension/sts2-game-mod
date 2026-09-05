@@ -31,6 +31,8 @@ internal static partial class StandaloneProfileSettings
         _initialized = true;
         EnsureSelectionLoaded();
 
+        VideoSettings.Initialize();
+
         if (Engine.GetMainLoop() is not SceneTree tree)
         {
             GD.PrintErr($"{LogPrefix} could not install profile settings: SceneTree is unavailable");
@@ -128,6 +130,7 @@ internal static partial class StandaloneProfileSettings
     private static void PopulateProfileSettings(VBoxContainer content)
     {
         EnsureSelectionLoaded();
+        PopulateVideoSettings(content);
         PopulateNetworkSettings(content);
         PopulateRepeatSeedSettings(content);
 

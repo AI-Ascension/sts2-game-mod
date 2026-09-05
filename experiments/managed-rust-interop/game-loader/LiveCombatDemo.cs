@@ -47,7 +47,11 @@ internal static class LiveCombatDemo
             if (++frames < 300 || NGame.Instance == null) return;
             tree.ProcessFrame -= start;
             LiveCombatDisplay.Apply();
+#if STS2_VIDEO_MENU_PROBE
+            _ = VideoMenuProbe.RunAsync(tree);
+#else
             _ = StartAsync();
+#endif
         };
         tree.ProcessFrame += start;
         GD.Print("[AI-ASCENSION LIVE] isolated local-only save backend installed");

@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 host_dir='' user_dir='' artifacts='' gateway='' mcp='' harness='' provider=''
 powershell=powershell.exe
-display=-1 width=1280 height=720 mode=windowed seed=AIASCENSIONREPLAY1 hold=300 replay=''
+display='' width='' height='' mode='' seed=AIASCENSIONREPLAY1 hold=300 replay=''
 usage() {
     cat <<'HELP'
 Usage: live-combat-session.sh --host-dir PATH --user-dir WINDOWS_PATH --artifacts-dir PATH
@@ -15,6 +15,7 @@ Usage: live-combat-session.sh --host-dir PATH --user-dir WINDOWS_PATH --artifact
   [--powershell-binary PATH]
 Requires an already prepared disposable host, accepted addon, Windows PowerShell,
 WSL, curl, jq and openssl. Display indexes are zero-based; -1 selects the primary display.
+Omitted video options use saved mod-menu choices, then the first-launch defaults.
 No installation is performed.
 HELP
 }
@@ -53,10 +54,17 @@ case "$provider_kind:$provider_name:$provider_model" in
     *) printf 'Unsupported provider identity\n' >&2; exit 2 ;;
 esac
 [[ -f "$host_dir/override.cfg" && -n "$user_dir" && -n "$artifacts" ]] || exit 2
-[[ "$display" =~ ^(-1|[0-9]+)$ && "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] || exit 2
+[[ -z "$display" || "$display" =~ ^(-1|[0-9]+)$ ]] || exit 2
+[[ -z "$width" || "$width" =~ ^[0-9]+$ ]] || exit 2
+[[ -z "$height" || "$height" =~ ^[0-9]+$ ]] || exit 2
 [[ "$hold" =~ ^[0-9]+$ && "$hold" -le 600 ]] || exit 2
 [[ "$seed" =~ ^[A-Za-z0-9_-]{1,128}$ ]] || exit 2
-case "$mode" in windowed|fullscreen|borderless|maximized) ;; *) exit 2 ;; esac
+case "$mode" in ''|windowed|fullscreen|borderless|maximized) ;; *) exit 2 ;; esac
+video_args=()
+[[ -z "$display" ]] || video_args+=(-Display "$display")
+[[ -z "$width" ]] || video_args+=(-Width "$width")
+[[ -z "$height" ]] || video_args+=(-Height "$height")
+[[ -z "$mode" ]] || video_args+=(-WindowMode "$mode")
 [[ -z "$replay" || -f "$replay" ]] || exit 2
 for command in wslpath curl jq openssl "$powershell"; do command -v "$command" >/dev/null; done
 umask 077
@@ -83,7 +91,7 @@ trap 'exit 130' INT TERM
 "$powershell" -NoProfile -File "$(wslpath -w "$script_dir/live-combat-demo.ps1")" \
     -HostDirectory "$(wslpath -w "$host_dir")" -UserDirectory "$user_dir" \
     -LogPath "$(wslpath -w "$run/game.log")" -StopFile "$(wslpath -w "$run/stop")" \
-    -Seed "$seed" -Display "$display" -Width "$width" -Height "$height" -WindowMode "$mode" \
+    -Seed "$seed" "${video_args[@]}" \
     <<<"$runtime_token" >"$run/guardian.log" 2>&1 &
 host_pid=$!
 printf 'Artifacts: %s\n' "$run"
@@ -123,7 +131,12 @@ jq -n --arg seed "$seed" --arg bridge "$STS2_EXO_REVISION" --arg mode "$mode" \
     --arg provider "$provider_name" --arg model "$provider_model" \
     --arg display "$display" --arg width "$width" --arg height "$height" --arg replay "$replay" \
     '{seed:$seed,bridge_sha256:$bridge,provider:$provider,model:$model,
-    display:$display,width:$width,height:$height,window_mode:$mode,replay:$replay}' >"$run/manifest.json"
+    display:($display | if . == "" then null else tonumber end),
+    width:($width | if . == "" then null else tonumber end),
+    height:($height | if . == "" then null else tonumber end),
+    window_mode:($mode | if . == "" then null else . end),
+    video_values:"requested overrides; null uses saved preference or default; actual values are in game.log",
+    replay:$replay}' >"$run/manifest.json"
 sha256sum "$gateway" "$mcp" "$harness" "$provider" >"$run/binaries.sha256"
 "$harness" >"$run/trajectory.jsonl" 2>"$run/harness.stderr" &
 harness_pid=$!

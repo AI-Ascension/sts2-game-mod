@@ -9,5 +9,6 @@
   <ItemGroup>
     <Compile Include="../game-loader/AutoProfileUnlock.cs" Link="AutoProfileUnlock.cs" />
     <Compile Include="../game-loader/SettingsPersistence.cs" Link="SettingsPersistence.cs" />
+    <Compile Include="../game-loader/VideoPreferences.cs" Link="VideoPreferences.cs" />
   </ItemGroup>
 </Project>
