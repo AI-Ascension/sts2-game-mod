@@ -34,6 +34,10 @@ session_launcher_caller_group=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
 game_started=0
 gateway_started=0
 harness_started=0
+owned_mods_dir=''
+owned_backup_dir=''
+owned_mod_artifacts=()
+owned_preexisting_artifacts=()
 
 input_automation_is_disabled() {
     local source_file
@@ -297,6 +301,7 @@ run_gateway_with_credentials() {
         STS2_INSTANCE_ID=instance-1 \
         STS2_CALLER_ID=harness \
         STS2_SESSION_ID=session-1 \
+        STS2_MCP_SESSION_ID=mcp-session-1 \
         STS2_LEASE_ID=lease-1 \
         STS2_LEASE_EPOCH=1 \
         "$@"
@@ -406,12 +411,13 @@ install_addon() {
     local artifact
     local current
     local -a artifacts=(AIAscensionSTS2GameMod.dll AIAscensionSTS2GameModNative.dll AIAscensionSTS2GameMod.json)
+    local -a legacy_artifacts=(AIAscensionSTS2Poc.dll ai_ascension_sts2_poc.dll AIAscensionSTS2Poc.json)
     local -a existing_files=()
 
     for current in "$mods_dir" "$stage_dir" "$backup_root"; do
         require_plain_install_path "$current"
     done
-    for artifact in "${artifacts[@]}"; do
+    for artifact in "${artifacts[@]}" "${legacy_artifacts[@]}"; do
         require_plain_install_path "$stage_dir/$artifact"
         require_plain_install_path "$mods_dir/$artifact"
     done
@@ -425,13 +431,13 @@ install_addon() {
     refuse_if_game_running
     [[ ! -L "$mods_dir" && ! -L "$stage_dir" && ! -L "$backup_root" ]] \
         || die 'addon directories must not be symbolic links'
-    for artifact in "${artifacts[@]}"; do
+    for artifact in "${artifacts[@]}" "${legacy_artifacts[@]}"; do
         [[ ! -L "$mods_dir/$artifact" && ! -L "$stage_dir/$artifact" ]] \
             || die 'addon files must not be symbolic links'
     done
     mkdir -p "$mods_dir" "$backup_root"
     backup_dir=$(mktemp -d "$backup_root/session.XXXXXX")
-    for artifact in "${artifacts[@]}"; do
+    for artifact in "${artifacts[@]}" "${legacy_artifacts[@]}"; do
         if [[ -f "$mods_dir/$artifact" ]]; then
             existing_files+=("$artifact")
             cp -p -- "$mods_dir/$artifact" "$backup_dir/$artifact"
@@ -450,6 +456,19 @@ install_addon() {
             die "installed addon artifact did not match the staged artifact: $artifact"
         fi
     done
+
+    # Retire only this project's old package while the owned session is active.
+    # Keep its exact prior bytes for restoration after positively confirmed stop.
+    for artifact in "${legacy_artifacts[@]}"; do
+        rm -f -- "$mods_dir/$artifact" || {
+            restore_addon "$mods_dir" "$backup_dir" "${artifacts[@]}" "${legacy_artifacts[@]}"
+            die "failed to retire legacy addon artifact: $artifact"
+        }
+    done
+    owned_mods_dir=$mods_dir
+    owned_backup_dir=$backup_dir
+    owned_mod_artifacts=("${artifacts[@]}" "${legacy_artifacts[@]}")
+    owned_preexisting_artifacts=("${existing_files[@]}")
 }
 
 restore_addon() {
@@ -466,9 +485,46 @@ restore_addon() {
     done
 }
 
+confirm_no_game_for_restore() {
+    local process_list
+    process_list=$(timeout --kill-after=1 "$probe_timeout_seconds" "$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null) || return 1
+    ! printf '%s\n' "$process_list" | tr -d '\r' \
+        | awk '$1 == "SlayTheSpire2.exe" { found = 1 } END { exit(found ? 0 : 1) }'
+}
+
+restore_owned_addon() {
+    local artifact current
+    [[ -d "$owned_mods_dir" && -d "$owned_backup_dir" ]] || return 1
+    # Check every path before the first write. An incomplete backup or changed
+    # link cannot be interpreted as permission to delete a formerly present file.
+    for artifact in "${owned_mod_artifacts[@]}"; do
+        for current in "$owned_mods_dir/$artifact" "$owned_backup_dir/$artifact"; do
+            while [[ "$current" != / && "$current" != . ]]; do
+                [[ ! -L "$current" ]] || return 1
+                current=$(dirname -- "$current")
+            done
+        done
+    done
+    for artifact in "${owned_preexisting_artifacts[@]}"; do
+        [[ -f "$owned_backup_dir/$artifact" ]] || return 1
+    done
+    restore_addon "$owned_mods_dir" "$owned_backup_dir" "${owned_mod_artifacts[@]}" || return 1
+    for artifact in "${owned_mod_artifacts[@]}"; do
+        if [[ -f "$owned_backup_dir/$artifact" ]]; then
+            cmp -s -- "$owned_backup_dir/$artifact" "$owned_mods_dir/$artifact" || return 1
+        else
+            [[ ! -e "$owned_mods_dir/$artifact" ]] || return 1
+        fi
+    done
+}
+
 cleanup_owned_processes() {
     set +e
-    stop_bridge_guardian || cleanup_failed=1
+    local game_stop_confirmed=true
+    if ! stop_bridge_guardian; then
+        cleanup_failed=1
+        game_stop_confirmed=false
+    fi
     if (( harness_started )); then
         stop_posix_group "$harness_group" "$harness_session" "$harness_pid"
     fi
@@ -479,6 +535,7 @@ cleanup_owned_processes() {
         if ! timeout --kill-after=2 10 "$windows_dotnet" "$bridge_dll_windows" --stop-owned \
             "$game_pid" "$game_start_ticks" "$game_exe_windows" </dev/null >/dev/null 2>&1; then
             cleanup_failed=1
+            game_stop_confirmed=false
         fi
     fi
     if (( gateway_started )) && probe_status "$gateway_host" "$gateway_port" /health/ready ANY ''; then
@@ -486,6 +543,22 @@ cleanup_owned_processes() {
     fi
     if (( game_started )) && probe_status "$game_probe_host" "$network_port" /health/ready ANY ''; then
         cleanup_failed=1
+        game_stop_confirmed=false
+    fi
+    if [[ -n "$owned_backup_dir" ]]; then
+        if [[ "$game_stop_confirmed" == true ]] && confirm_no_game_for_restore; then
+            if restore_owned_addon; then
+                owned_mods_dir=''
+                owned_backup_dir=''
+                owned_mod_artifacts=()
+                owned_preexisting_artifacts=()
+            else
+                cleanup_failed=1
+            fi
+        else
+            cleanup_failed=1
+        fi
+        [[ -z "$owned_backup_dir" ]] || printf '%s\n' 'Addon restoration deferred; backup retained=TRUE' >&2
     fi
     unset runtime_token gateway_token STS2_PROBE_TOKEN
     if (( cleanup_failed )); then
@@ -865,6 +938,7 @@ main() {
         STS2_INSTANCE_ID=instance-1 \
         STS2_CALLER_ID=harness \
         STS2_SESSION_ID=session-1 \
+        STS2_MCP_SESSION_ID=mcp-session-1 \
         STS2_LEASE_ID=lease-1 \
         STS2_LEASE_EPOCH=1 \
         setsid "$gateway_binary" \

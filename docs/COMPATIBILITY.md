@@ -28,8 +28,9 @@ cleanup, and evidence level. Absence of evidence remains unverified.
 | Runtime addon `AIAscensionSTS2GameMod` (renamed from `AIAscensionSTS2Poc`; evidence predates rename) | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Load smoke | Confirmed for the recorded pre-rename package; [dated runtime evidence](evidence/runtime-addon-load-smoke-20260902.md) |
 | Runtime-v1 listener and host probe | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Focused runtime | Confirmed; [dated host evidence](evidence/runtime-v1-host-live-20260902.md) |
 | Runtime-v2 fake boundary | No host; `sts2-protocol` commit `8d4b2f574cf860a71f2a5e4ce3308ac069cb1527` | Offline Rust toolchain | Deterministic source/build/test | Confirmed for the in-memory fake seam only; live host mutation and settlement unverified |
-| Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; no gameplay mutation is implemented |
 | Repeat-seed practice replay | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Managed build against exact host; gameplay not executed | Build confirmed; settings UI, cleanup, restart, history suppression, and protected-mode behavior unverified; see [repeat-seed](repeat-seed.md) |
+| Runtime-v2 host adapter candidate | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Managed/native build and package | Confirmed at source/build level; [build evidence](evidence/runtime-v2-host-build-20260902.md); live execution and settlement unverified |
+| Gameplay host behavior | STS2 v0.107.1, commit `59260271` | Windows x86-64 | Not executed | Unverified; the candidate has not been exercised in a live host |
 
 The project planning baseline names a host assembly identity, but this repository does not retain
 that proprietary file. The recorded load-smoke uses the operator's installed host assembly without
@@ -70,9 +71,11 @@ persistent, do not unlock achievements, and do not reduce ascension values alrea
 
 Runtime-v2 is pinned locally to schema digest
 `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` with provenance generator
-`hand-authored`. No concrete host gameplay API exists in this repository. The copied artifact,
-Rust contract, and fake lifecycle tests provide source/build/test evidence only; live host mutation
-and live host settlement are unverified.
+`hand-authored`. The host-adapter candidate uses the common verified symbols documented in the
+build evidence, including `CombatManager.IsInProgress`, `IsEnemyTurnStarted`,
+`PlayerActionsDisabled`, `DebugOnlyGetState`, and `PlayerCmd.EndTurn`. The copied artifact, Rust
+contract, fake lifecycle tests, and managed build provide source/build/test evidence only; live host
+mutation and live host settlement are unverified.
 
 ## Contract compatibility
 
@@ -129,6 +132,7 @@ Windows host reconfiguration and unload remain separately unverified.
 | Managed/native target | Runtime profile | Evidence | Result |
 | --- | --- | --- | --- |
 | `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -151,3 +155,17 @@ No row is promoted to Steam runtime support until an authorized disposable test 
 initialization, item creation/update or subscription, install callback/poll behavior,
 GetItemInstallInfo usage, game discovery, load smoke, and cleanup for an exact host/platform
 matrix.
+
+## Review correction (2026-09-04)
+
+The source review replaced the candidate's state-delta settlement inference. Neither a later turn
+nor changed energy/pile counts proves completion of a particular queued operation. The current
+adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
+blocks further v2 mutations until independent operation-bound completion is available. It does
+not emit a settlement witness from these host adapters. No such host completion binding has yet
+been established; this is an integration blocker, not a successful gameplay result.
+
+Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Exact semantic
+retries ignore transport correlation and JSON formatting; run/combat/player replacement
+invalidates generation. This bounded observation is not a complete game-state revision
+or a game-rule parity claim.

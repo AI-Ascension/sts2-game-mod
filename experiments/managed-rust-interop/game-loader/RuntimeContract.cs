@@ -20,6 +20,10 @@ public static partial class ModEntry
         {
             return (400, "{\"error_code\":\"invalid_runtime_context\"}");
         }
+        if (work.Kind >= RuntimeRequestKindRuntimeV2State && work.Kind <= RuntimeRequestKindRuntimeV2Operation)
+        {
+            return ProcessRuntimeV2Work(work);
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));
@@ -132,6 +136,11 @@ public static partial class ModEntry
 
     private static string RuntimeError(RuntimeContext context, uint kind, string code)
     {
+        if (kind >= RuntimeRequestKindRuntimeV2State && kind <= RuntimeRequestKindRuntimeV2Operation)
+        {
+            return RuntimeV2PlainError(code);
+        }
+
         return kind == RuntimeRequestKindAction
             ? RuntimeActionResponse(context, _runtimeGeneration, "rejected", code, false)
             : JsonSerializer.Serialize(new Dictionary<string, object?>

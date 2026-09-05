@@ -15,10 +15,14 @@ public static partial class ModEntry
     private const string RuntimeBindAddressVariable = "STS2_RUNTIME_BIND_ADDRESS";
     private const int RuntimeRequestKindState = 1;
     private const int RuntimeRequestKindAction = 2;
+    private const int RuntimeRequestKindRuntimeV2State = 3;
+    private const int RuntimeRequestKindRuntimeV2Action = 4;
+    private const int RuntimeRequestKindRuntimeV2Operation = 5;
+    private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
     private const int RuntimeUnavailable = 503;
-    private static readonly RuntimeDispatchQueue<RuntimeWork> RuntimeQueue = new(64);
+    private static readonly RuntimeDispatchQueue<RuntimeWork> RuntimeQueue = new(RuntimeQueueCapacity());
     private static RuntimeRequestCallback? _runtimeRequestCallback;
     private static Action? _runtimePumpCallback;
     private static int _runtimePumpReady;
@@ -122,42 +126,6 @@ public static partial class ModEntry
         }
     }
 
-    private static bool TryReadPort(out ushort port)
-    {
-        string? value = System.Environment.GetEnvironmentVariable(RuntimePortVariable);
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            int configuredPort = StandaloneProfileSettings.RuntimePort;
-            if (configuredPort <= 0 || configuredPort > ushort.MaxValue)
-            {
-                port = 0;
-                return false;
-            }
-
-            port = (ushort)configuredPort;
-            return true;
-        }
-        return ushort.TryParse(value, out port) && port > 0;
-    }
-
-    private static bool TryReadBindAddress(out string bindAddress)
-    {
-        string? value = System.Environment.GetEnvironmentVariable(RuntimeBindAddressVariable);
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            value = StandaloneProfileSettings.RuntimeBindAddress;
-        }
-
-        value = value.Trim();
-        if (!StandaloneProfileSettings.IsValidRuntimeBindAddress(value))
-        {
-            bindAddress = string.Empty;
-            return false;
-        }
-
-        bindAddress = value;
-        return true;
-    }
 
     private static void InstallRuntimePump()
     {
@@ -222,6 +190,7 @@ public static partial class ModEntry
         for (int index = 0; index < 16 && RuntimeQueue.ProcessOne(ExecuteRuntimeWork); index++)
         {
         }
+        TryFinalizePendingRuntimeV2();
     }
 
     private static (int Status, string Response) ExecuteRuntimeWork(RuntimeWork work)

@@ -31,7 +31,7 @@ cargo test --locked --offline --workspace --all-targets --all-features
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
 artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-separate dated host report records the authorized runtime lane; these ordinary commands still do
+managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
 not launch the game or prove gameplay or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
@@ -44,8 +44,29 @@ The focused `runtime_v2` test covers one admitted and settled `end_turn`, exactl
 application, duplicate replay, conflicting operation identity, outside-combat and enemy-turn
 rejection, stale generation and identity fencing, queue and receipt bounds, cancellation timing,
 post-write disconnect reconciliation, and pre-dispatch timeout removal. `sha256sum -c` verifies the
-copied release-like artifact from repository-relative paths. No test invokes STS2, a concrete host
-gameplay API, `AutoProfileUnlock`, or any persistent profile/save/provider path.
+copied release-like artifact from repository-relative paths. No Rust test invokes STS2 or any
+persistent profile/save/provider path; the managed build resolves concrete host symbols without
+executing them.
+
+## Runtime-v2 host-adapter build
+
+The managed candidate is built only with an operator-supplied exact host assembly outside the
+repository:
+
+~~~text
+dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  -p:STS2GameDataDir="<operator-supplied-host-data>"
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj --configuration Release \
+  -p:STS2GameDataDir="<operator-supplied-host-data>" --no-restore
+bash experiments/managed-rust-interop/package-runtime-addon.sh \
+  "<operator-supplied-host-data>" /tmp/sts2-runtime-v2-addon
+~~~
+
+For the recorded v0.107.1 host, the candidate builds with zero warnings and errors and the native
+crate passes six tests, including exact bearer-token matching at the native HTTP boundary. Exact
+hashes and verified common host symbols are recorded in
+[`runtime-v2-host-build-20260902.md`](evidence/runtime-v2-host-build-20260902.md). This is `L1`
+build/package evidence, not a live host result.
 
 ## Planned layers
 
@@ -279,11 +300,12 @@ x86-64 release cross-build. The managed loader project builds against operator-s
 `sts2.dll` and `GodotSharp.dll` without copying those assemblies into the repository. The checked-in
 `protocol-artifact/runtime-v1/` copy is the canonical message reference.
 
-The authorized probe confirmed starting the listener inside STS2, authenticated state/action
+The authorized probe confirmed starting the v1 listener inside STS2, authenticated state/action
 requests, main-thread queue execution, a visible overlay witness, and reversible disposable-profile
-cleanup for the recorded host. Gameplay mutation, process supervision/restart, multi-instance
-behavior, other host versions, and other platforms remain `unverified`. Do not count a successful
-build or ABI load-smoke as any of those remaining runtime results.
+cleanup for the recorded host. The Runtime-v2 candidate build does not promote to live gameplay
+evidence. Gameplay mutation/settlement, process supervision/restart, multi-instance behavior, other
+host versions, and other platforms remain `unverified`. Do not count a successful build or ABI
+load-smoke as any of those remaining runtime results.
 
 ## Workshop package checks
 
@@ -310,3 +332,31 @@ paths, sorted inventory, allowlist and compatibility drift, install readiness, u
 reparse-point policy, file-size/digest mismatch, and content-digest mismatch. They do not prove
 Steam App Admin settings, Steam callbacks, subscription/download behavior, game discovery, or
 host compatibility.
+
+## Review correction (2026-09-04)
+
+Run the host-free regression executable with the pinned .NET SDK:
+
+```text
+dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj --configuration Release
+```
+
+It links the actual v2 managed candidate files against handwritten synthetic host doubles.
+After the main-safety rebase it also links the production shared callback, lifecycle, network,
+queue and strict v1 contract sources. Candidate requests pass through `ProcessRuntimeWork`;
+combined queue cases check one uncertain dispatch and removal before an expired dispatch.
+It checks semantic replay, identity ownership, run freshness, and uncertain outcomes.
+It does not prove exact-host ABI compatibility or gameplay behavior. CI runs this separately
+from the generic managed ABI and Workshop probes.
+
+The source review replaced the candidate's state-delta settlement inference. Neither a later turn
+nor changed energy/pile counts proves completion of a particular queued operation. The current
+adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
+blocks further v2 mutations until independent operation-bound completion is available. It does
+not emit a settlement witness from these host adapters. No such host completion binding has yet
+been established; this is an integration blocker, not a successful gameplay result.
+
+Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Exact semantic
+retries ignore transport correlation and JSON formatting; run/combat/player replacement
+invalidates generation. This bounded observation is not a complete game-state revision
+or a game-rule parity claim.

@@ -146,6 +146,7 @@ pub(super) fn write_response(
         401 => "Unauthorized",
         404 => "Not Found",
         409 => "Conflict",
+        429 => "Too Many Requests",
         413 => "Payload Too Large",
         500 => "Internal Server Error",
         503 => "Service Unavailable",
