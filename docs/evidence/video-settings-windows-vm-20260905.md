@@ -29,6 +29,12 @@ Microsoft-key Secure Boot firmware, a SATA boot disk, VirtIO networking and
 guest-agent channel, and a virtual display. Its VNC listener is loopback-only;
 the test console uses an SSH tunnel. No host GPU is reassigned.
 
+The VNC console also has a live and persistent `qemu-vdagent` clipboard channel.
+The Windows SPICE agent installer matched its publisher's SHA-256 checksum and
+exited successfully. The service, interactive agent, and channel connection were
+confirmed; user clipboard contents were not inspected. Actual paste confirmation
+remains an operator check.
+
 ## Verification status
 
 The replacement QCOW2 passed `qemu-img check`. Its complete 80 GiB virtual
