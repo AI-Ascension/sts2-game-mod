@@ -18,6 +18,7 @@ Run from the target root:
 ~~~text
 cargo metadata --locked --no-deps --format-version 1
 (cd protocol-artifact/poc-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-v1 && sha256sum -c SHA256SUMS)
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)

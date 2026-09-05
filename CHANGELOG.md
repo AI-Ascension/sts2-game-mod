@@ -5,6 +5,11 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Completed the frozen Runtime-v1 artifact package with the canonical checksum inventory, golden
+  messages, and referenced schema and conformance files from `sts2-protocol` commit
+  `11e4252e39a77f0017b8e4f3720590e6162e8f53`. CI verifies the inventory; existing schema and
+  manifest bytes are unchanged. This is packaging evidence only, not new host verification.
+
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses
   an already-running game, verifies unauthenticated rejection plus authenticated game/gateway and
