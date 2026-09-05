@@ -20,4 +20,3 @@ markdown_preferred = 500
 markdown_max = 700
 
 [exemptions]
-"crates/game-mod/src/runtime_v3_gameplay/runtime.rs" = "Handwritten host-thread adapter retained as one review unit; split at the next runtime contract revision."
