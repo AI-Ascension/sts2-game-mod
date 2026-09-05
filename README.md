@@ -7,7 +7,7 @@
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
-> **Status:** deterministic tests, managed load-smoke, and one exact-host runtime probe `confirmed` · repeat-seed source/build path implemented; host UI/gameplay and broader compatibility `unverified`.
+> **Status:** deterministic tests, managed load-smoke, and an isolated runtime-v3 LLM combat/replay `confirmed` · full campaign and broader compatibility `unverified`. See [live combat scope](docs/LIVE_COMBAT_DEMO.md).
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
 > **Owner:** The mod owner is responsible for the managed loader package, host boundary, main-thread queue, ABI gate, HTTP admission, and Rust/native seam; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)

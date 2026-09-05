@@ -13,8 +13,9 @@ this repository. The original Steam installation is not the demo install target.
 read from stdin. The launcher owns only its spawned process and stops it on stop-file,
 exit, or the 15-minute deadline.
 
-Before launch, select `-Display 0 -Width 1280 -Height 720 -WindowMode windowed`.
-Display indexes are zero-based Godot screen indexes. Available modes are `windowed`,
+Before launch, select `-Display -1 -Width 1280 -Height 720 -WindowMode windowed`.
+Display indexes are zero-based Godot screen indexes; -1 (default) selects the primary display.
+Available modes are `windowed`,
 `fullscreen`, `borderless`, and `maximized`. Fullscreen/maximized dimensions follow the
 display; resolution is the requested window size. The host checks screen availability,
 sets its isolated settings, and reports the actual screen, dimensions and mode.
@@ -30,10 +31,23 @@ successfully and a visible effect. Unknown outcomes reconcile under the same ope
 Seed visibility is intentional. Card descriptions, powers and enemy intent details are
 not yet projected; the current intent value is explicitly unknown.
 
-Confirmed on 2026-09-05 with host v0.107.1 (59260271): a real Ollama model selected
-14 actions, each received a host completion witness, and the combat reached Reward.
-The observed window was display 0, 1280x720, windowed. Other launch modes and action
-replay remain under verification.
+Confirmed on 2026-09-05 with host v0.107.1 (59260271): the Rust Ollama bridge selected
+18 actions, each received a host completion witness, and the combat reached Reward.
+Fresh-process replay repeated all 18 choices and checked each visible pre-action observation.
+Fullscreen replay also checked the terminal observation. Windowed 1280x720 on display 0
+and fullscreen 2560x1440 on primary display 2 were observed. A changed seed was rejected
+before the first replay dispatch.
+Borderless 1024x768 on display 1 and maximized 1920x1009 on display 0 were also observed.
+
+Use `bash experiments/managed-rust-interop/live-combat-session.sh --help` for the complete
+repeatable operator entrypoint. Supply explicit host/user/artifact directories and gateway,
+MCP, harness and provider executable paths. It creates fresh role-separated credentials,
+launches the visible host, runs the configured model through the harness, and retains bounded
+external logs. Use `--display`, `--width`, `--height`, and `--window-mode` before launching.
+`--replay-trajectory` replays a completed model trajectory without inference; use the same seed.
+The selected semantic action must exist in the fresh catalog and visible game content must
+match. Live observation generation numbers are deliberately not compared across processes.
+`--hold-seconds` keeps the result visible after completion (default 300; maximum 600).
 
 During initial isolation setup before the addon loaded, the host wrote two Steam local-cache
 files. Both were restored from the original local saves and byte-checked. Full external

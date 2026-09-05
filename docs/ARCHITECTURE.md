@@ -2,6 +2,12 @@
 
 ## Responsibility
 
+The opt-in live combat composition is documented in [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md).
+Only the host loader references its exact-host source; source-only protocol probes remain
+independent of proprietary host assemblies. The source queues real host actions and observes
+their completion through the existing runtime-v3 boundary. The operator session script owns
+process startup and cleanup; model decisions remain in the harness provider port.
+
 sts2-game-mod is the game-facing translation boundary. It adapts the managed loader and host
 callbacks into owned Rust values, schedules host work on the game main thread, exposes the
 authoritative local HTTP surface, and composes the narrow native seam.

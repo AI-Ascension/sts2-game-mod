@@ -1,5 +1,10 @@
 # Compatibility policy and matrix
 
+The 2026-09-05 isolated live combat row is confirmed only for Windows host v0.107.1
+(59260271), Ironclad, the selected weak encounter and runtime-v3 gameplay. It includes
+real Ollama decisions and fresh-process action replay. See [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md)
+for projection limits, display evidence, and the initial Steam-cache isolation incident.
+
 ## Separate dimensions
 
 Compatibility is tracked independently for the owner-local HTTP contract, managed loader metadata,

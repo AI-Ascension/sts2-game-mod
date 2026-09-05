@@ -2,6 +2,11 @@
 
 ## Scope
 
+The optional live-combat session uses separate ephemeral gateway and game credentials.
+Its host receives the game credential through stdin. Logs and trajectories belong in external
+operator storage. A disposable game copy alone does not isolate Steam cache writes before
+the mod loads; see `docs/LIVE_COMBAT_DEMO.md` for the observed incident and local-only backend.
+
 Report vulnerabilities in the managed loader, native ABI, host boundary, local HTTP adapter, policy
 tooling, or packaging documentation. Do not include game binaries, saves, credentials, personal
 paths, or unredacted logs in a report.
