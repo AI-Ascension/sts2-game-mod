@@ -40,6 +40,8 @@ pub enum AbiError {
     VersionMismatch { expected: u32, actual: u32 },
     /// The offered pointer width is not supported.
     PointerWidthMismatch { expected: u8, actual: u8 },
+    /// The offered descriptor uses bytes reserved for future ABI versions.
+    NonzeroReservedBytes,
 }
 
 /// Validates a native boundary before host work is admitted.
@@ -57,6 +59,9 @@ pub fn validate_abi(port: &impl AbiPort) -> Result<(), AbiError> {
             expected: expected_width,
             actual: offered.pointer_width,
         });
+    }
+    if offered.reserved != [0; 3] {
+        return Err(AbiError::NonzeroReservedBytes);
     }
     Ok(())
 }
