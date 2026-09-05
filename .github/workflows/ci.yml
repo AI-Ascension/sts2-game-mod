@@ -24,12 +24,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify semantic boundary remains fail-closed
+        run: |
+          git diff --check
+          if grep -REn '\b(unwrap|expect|todo!|unimplemented!)\b|panic!' crates/game-mod/src; then exit 1; fi
+          if grep -En 'raw_memory|random_state|future_rng|host_object|process_command|screen_coordinate|input_event' experiments/managed-rust-interop/game-loader/RuntimeV3GameplayObservation.cs; then exit 1; fi
+
       - name: Verify copied POC artifact checksums
         working-directory: protocol-artifact/poc-v1
         run: sha256sum -c SHA256SUMS
 
       - name: Verify copied Runtime-v1 artifact checksums
         working-directory: protocol-artifact/runtime-v1
+        run: sha256sum -c SHA256SUMS
+
+      - name: Verify canonical Runtime-v3 artifact checksums
+        working-directory: protocol-artifact/runtime-v3-gameplay
         run: sha256sum -c SHA256SUMS
 
       - name: Validate copied POC JSON fixtures
@@ -125,6 +135,9 @@ jobs:
 
       - name: Run source-linked host candidate safety regressions
         run: dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj --configuration Release
+
+      - name: Run managed Runtime-v3 request and settlement probe
+        run: dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
 
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

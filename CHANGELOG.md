@@ -5,6 +5,10 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Integrated the semantic gameplay callback as kind 6 alongside frozen v2 IDs 3–5. Both
+  profiles share host identity and pending-operation admission fences; source-linked regressions
+  cover delayed dispatch, retries and reconciliation without promoting host compatibility.
+
 - Completed the frozen Runtime-v1 artifact package with the canonical checksum inventory, golden
   messages, and referenced schema and conformance files from `sts2-protocol` commit
   `11e4252e39a77f0017b8e4f3720590e6162e8f53`. CI verifies the inventory; existing schema and
@@ -20,6 +24,12 @@ and has no released product behavior.
 - Enforced the ABI version 1 descriptor's zero-reserved-byte requirement. Invalid descriptors
   return `AbiError::NonzeroReservedBytes`; valid descriptor layout and version remain unchanged.
   Synthetic regression tests cover every reserved byte, without extending host evidence.
+- Split the managed Runtime-v3 handler by responsibility and removed its managed
+  file-budget exemptions; source-linked probe coverage remains unchanged.
+
+- Added the source-only Runtime-v3 fair-play host bridge, generation-bound typed legal-action
+  catalog, postcondition receipt path, fail-closed unknown outcomes, and additive co-op projection.
+  Licensed host assembly/build and live gameplay compatibility remain unverified.
 
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses

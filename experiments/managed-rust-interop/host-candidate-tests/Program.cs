@@ -38,6 +38,7 @@ public static partial class ModEntry
         _runtimeV2Pending = null;
         _runtimeV2HostBaseline = false;
         _runtimeGeneration = 0;
+        InitializeRuntimeV3Gameplay();
 
     }
 
@@ -94,5 +95,6 @@ public static partial class ModEntry
         Check(RuntimeQueue.Wait(expired, TimeSpan.Zero).Status == 504
             && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
             "shared queue removes expired candidate before host dispatch");
+        CheckSharedGameplayBoundary();
     }
 }

@@ -138,6 +138,30 @@ The profile's `show_runtime_probe` action proves only a host-visible status-over
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
 another host version, another platform, or a valued profile.
 
+The separate `runtime-v3-gameplay` bridge is source-derived and uses the neutral protocol digest
+`b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c`. Its fair-play projection,
+typed catalog checks, host-thread adapter, separate co-op helpers, and postcondition verifier are
+covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
+settlement, and multiplayer behavior remain `unverified`.
+
+Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
+Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
+This corrects admission without changing the protocol digest. The unmerged semantic callback
+now uses kind 6 to preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
+It does not permit a GET observation route to dispatch a mutation merely because its body names
+an action request. Both profiles share host identity and pending-operation admission fences.
+
+The internal Runtime-v3 host-source interface receives scoped operation identities
+and must supply independent completion evidence. The internal completion correction
+leaves message shapes unchanged. Separately, the unmerged protocol revision tightens
+schema shape validation, explicit nullable fields, and closed tagged variants.
+Consumers must update together to the new digest above; old-digest requests fail closed.
+Host implementations must implement the completion port;
+an unavailable witness preserves an unknown outcome. Managed handler tests use
+synthetic completion events and do not promote the licensed-host compatibility row.
+The co-op helpers are not connected to the managed gameplay request path; their
+source-only validation does not establish multiplayer mutation fencing.
+
 ## Workshop package profile
 
 The first-party Workshop package has its own compatibility dimensions: consumer App ID, published

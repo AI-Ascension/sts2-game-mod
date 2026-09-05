@@ -5,7 +5,10 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-fn exchange(request: &[u8], callback: super::RuntimeRequestCallback) -> std::io::Result<String> {
+pub(super) fn exchange(
+    request: &[u8],
+    callback: super::RuntimeRequestCallback,
+) -> std::io::Result<String> {
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let mut peer = TcpStream::connect(listener.local_addr()?)?;
     peer.set_read_timeout(Some(Duration::from_secs(2)))?;
@@ -57,13 +60,19 @@ fn callback_cannot_claim_bytes_beyond_owned_output() -> std::io::Result<()> {
 }
 
 #[test]
-fn v2_routes_preserve_callback_ids_without_admitting_legacy_v3() -> std::io::Result<()> {
+fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
     for (method, path, body, expected) in [
         ("GET", "/api/v2/runtime/state", "", 203),
         ("POST", "/api/v2/runtime/action", "{}", 204),
         ("GET", "/api/v2/runtime/operations/run/operation", "", 205),
-        ("GET", "/api/v3/runtime/state", "", 404),
-        ("POST", "/api/v3/runtime/action", "{}", 404),
+        ("GET", "/api/v3/runtime/state", "", 400),
+        (
+            "GET",
+            "/api/v3/runtime/state",
+            r#"{"kind":"state_request"}"#,
+            206,
+        ),
+        ("POST", "/api/v3/runtime/action", "{}", 400),
         ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
     ] {
         let request = format!(

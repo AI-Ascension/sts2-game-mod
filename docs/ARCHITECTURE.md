@@ -266,6 +266,69 @@ has separate build evidence, but live `end_turn` mutation/settlement, process su
 action semantics beyond the frozen profile remain unverified. The v1 probe is deliberately not a
 gameplay mutation.
 
+## Runtime-v3 gameplay bridge
+
+The Rust semantic runtime keeps configuration and entry points in `runtime_v3_gameplay/runtime.rs`.
+Its child modules own admission, dispatch and completion proof, recovery polling, observation and
+response projection, and receipt updates. This source organization preserves the same host port,
+operation identity, queue ordering, and settlement rules without a file-size exemption.
+Admission separates retained-operation replay from queue insertion; dispatch separates freshness
+checks from post-dispatch outcome classification. Shape validators share only the conversion of a
+validated condition into the existing result-shape error. These function boundaries preserve the
+same validation order and host-completion requirements.
+
+ADR 0018 adds the managed source-only Runtime-v3 bridge. `RuntimeV3GameplayHost` owns the boundary
+between an injected host source and the host-thread queue: it accepts only validated typed actions
+from the current generation, records operation identities, and settles only with a fresh observation
+and transition witness. Dispatch, queue, host projection, and settlement exceptions become an
+explicit unknown/recovery result.
+
+Before entering the managed callback, the native HTTP adapter checks the exact method/route
+against the top-level JSON request kind. State, legal-actions, action, wait, reobserve, and recover
+accept only their corresponding message kinds. Malformed JSON, non-object roots, duplicate root
+fields, and kind mismatches fail before callback invocation. The shared gameplay ABI callback
+kind is 6; frozen v2 state/action/operation callbacks keep IDs 3, 4 and 5. Full payload/schema
+validation remains the managed handler's responsibility.
+
+The v2 and semantic handlers share `TryAuthorizeRuntimeV2Context` as the bound host identity
+fence: instance, caller, session, lease and epoch must agree across both profiles. V2 admission
+checks semantic accepted/unknown receipts. Semantic dispatch checks the injected v2-pending
+predicate immediately before the host call, including work delayed in its queue. A pending
+operation in either profile therefore excludes a fresh mutation through the other. Exact retries
+replay retained receipts before fresh admission; observations and read-only reconciliation remain
+available while the outcome is uncertain.
+
+`InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
+configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
+
+Receipt lookup is scoped to instance/session/lease/epoch/operation and precedes new
+action admission. Replays use saved observation/catalog snapshots. Observation reads
+can discover a new generation; mutations and catalog-bound requests cannot bypass
+freshness checks. The injected host source supplies independent operation/action-bound
+completion evidence; a generation increase alone cannot settle an action. The managed
+component probe exercises this production handler without a licensed host.
+
+`FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
+The separate co-op helper validates peer identity and synchronization metadata, and
+reports whether mutation would be allowed. It is not wired into the gameplay host,
+wire observation, or mutation admission; this PR does not implement co-op enforcement.
+No
+provider policy, raw input, host object, save, executable, or future random state is represented.
+The bridge is source/build evidence only until the exact licensed host assemblies are available.
+
+Read-only recovery reconciliation returns the scoped stored receipt, including a
+terminal rejection, and can query independent completion without dispatching again.
+Wait responses cannot encode rejection in the canonical profile; they direct the
+caller to reconciliation instead of representing rejection as an endless timeout.
+Stored observations and catalogs own copies of mutable source collections.
+
+The separate Rust `RuntimeV3GameplayMod` test seam follows the same rule: dispatch
+is not settlement. Its host port supplies an owned completion snapshot bound to
+instance/session/lease/epoch, operation, action and prior generation. Wait and
+reconciliation can inspect that proof, while replay uses the current transport
+correlation and never reads the changed host merely to return a retained receipt.
+The Rust fake explicitly generates synthetic completion evidence; it is not a host binding.
+
 ## Steam Workshop boundary
 
 [ADR 0015](decisions/0015-steam-workshop-first-party-package.md) adds a first-party executable Workshop package path for the existing runtime addon. The

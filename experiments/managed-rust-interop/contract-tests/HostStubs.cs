@@ -34,6 +34,9 @@ namespace AiAscension.Sts2GameMod.Runtime
             throw new InvalidOperationException("v1 test crossed into v2");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
+        private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>
+            throw new InvalidOperationException("v1 test crossed into shared gameplay authority");
+        private static object? _runtimeV2Pending => null;
         private const int RuntimeAccepted = 200;
         private const int RuntimeRejected = 409;
         private const int RuntimeUnavailable = 503;

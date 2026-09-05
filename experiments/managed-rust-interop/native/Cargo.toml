@@ -10,5 +10,9 @@ license.workspace = true
 name = "ai_ascension_sts2_game_mod_native"
 crate-type = ["cdylib"]
 
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
 [lints]
 workspace = true
