@@ -12,6 +12,14 @@ those rules.
 
 ## Decision
 
+The 2026-09-05 integration preserves the independently merged v2 adapter from PR #26. V2
+callback IDs remain 3, 4 and 5; the semantic gameplay callback becomes 6. Both handlers use the
+same bound instance/caller/session/lease/epoch authorizer. An accepted or unknown semantic
+receipt blocks new v2 admission. Semantic dispatch checks an injected v2-pending predicate
+immediately before mutation, so a queue delay cannot bypass the shared exclusion. Exact receipt
+replay, observation and read-only reconciliation remain available. The current initializer is
+still unconfigured; no concrete host source or live gameplay evidence is added by this wiring.
+
 The managed handler is split into partial files for routing, observation, dispatch,
 request validation, response construction, and serialization. These files share one
 host owner and remain subject to the normal managed file budgets; no licensed SDK

@@ -287,7 +287,19 @@ Before entering the managed callback, the native HTTP adapter checks the exact m
 against the top-level JSON request kind. State, legal-actions, action, wait, reobserve, and recover
 accept only their corresponding message kinds. Malformed JSON, non-object roots, duplicate root
 fields, and kind mismatches fail before callback invocation. The shared gameplay ABI callback
-kind remains 3; full payload/schema validation remains the managed handler's responsibility.
+kind is 6; frozen v2 state/action/operation callbacks keep IDs 3, 4 and 5. Full payload/schema
+validation remains the managed handler's responsibility.
+
+The v2 and semantic handlers share `TryAuthorizeRuntimeV2Context` as the bound host identity
+fence: instance, caller, session, lease and epoch must agree across both profiles. V2 admission
+checks semantic accepted/unknown receipts. Semantic dispatch checks the injected v2-pending
+predicate immediately before the host call, including work delayed in its queue. A pending
+operation in either profile therefore excludes a fresh mutation through the other. Exact retries
+replay retained receipts before fresh admission; observations and read-only reconciliation remain
+available while the outcome is uncertain.
+
+`InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
+configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 
 Receipt lookup is scoped to instance/session/lease/epoch/operation and precedes new
 action admission. Replays use saved observation/catalog snapshots. Observation reads

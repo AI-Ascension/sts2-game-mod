@@ -146,9 +146,10 @@ settlement, and multiplayer behavior remain `unverified`.
 
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
-This corrects admission in an unmerged transport implementation without changing the protocol
-digest or gameplay callback ABI kind 3. It does not permit a GET observation route to dispatch
-a mutation merely because its body names an action request.
+This corrects admission without changing the protocol digest. The unmerged semantic callback
+now uses kind 6 to preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
+It does not permit a GET observation route to dispatch a mutation merely because its body names
+an action request. Both profiles share host identity and pending-operation admission fences.
 
 The internal Runtime-v3 host-source interface receives scoped operation identities
 and must supply independent completion evidence. The internal completion correction

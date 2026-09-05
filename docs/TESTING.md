@@ -362,6 +362,12 @@ invalidates generation. This bounded observation is not a complete game-state re
 or a game-rule parity claim.
 ## Runtime-v3 and co-op checks
 
+The combined `HostCandidateProbe` now runs 47 source-linked synthetic checks: the 12 v2-only
+regressions plus shared v2/semantic identity and mutation-exclusion cases in both directions,
+delayed queue admission, uncertainty, exact retries, read-only reconciliation and release after
+independent completion. It compiles production routing and handler sources against owned fakes.
+These checks do not load a host, touch a profile/save, or contact a provider.
+
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 
 ~~~text
@@ -398,7 +404,7 @@ JSON-safe generation exhaustion without fake mutation.
 Native loopback tests exercise all six Runtime-v3 method/route mappings against all six request
 kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
 counter establishes that rejected combinations never cross the ABI and accepted combinations
-retain gameplay callback kind 3. These are HTTP admission tests, not full message conformance
+retain gameplay callback kind 6 alongside v2 kinds 3–5. These are HTTP admission tests, not full message conformance
 or managed/live-host mutation evidence; the existing auth and absolute-deadline tests still run.
 
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
