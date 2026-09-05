@@ -167,20 +167,31 @@ This checks atomic publication, not power-loss durability of the directory entry
 
 ## Ephemeral session launcher
 
+The owned launcher and Windows bridge always pass `--headless --audio-driver Dummy` to the game.
+Source checks establish that the launcher requests these flags and contains no listed system-input
+API calls. They do not establish that the proprietary host obeys the flags or cannot affect the
+desktop. That requires a separately authorized exact-host test.
+
 The target-owned launcher tests can run without a game or provider source:
 
 ~~~text
 bash experiments/managed-rust-interop/session-launcher.test.sh
+bash experiments/managed-rust-interop/session-bridge.test.sh
+bash experiments/managed-rust-interop/provider-build.test.sh
+bash experiments/managed-rust-interop/session-install.test.sh
+bash experiments/managed-rust-interop/live-authorization.test.sh
+bash experiments/managed-rust-interop/package-runtime-addon.test.sh
+bash experiments/managed-rust-interop/dev-cycle.test.sh
 experiments/managed-rust-interop/session-launcher.sh --self-test
 ~~
 
 They cover OS-CSPRNG output of at least 32 bytes, bounded whitespace-free encoding, per-launch
 credential difference, runtime/mod versus gateway role separation, argument-leakage absence,
 missing/wrong/correct authorization status handling, the already-running refusal predicate,
-bounded startup timeout, owned process-group cleanup, and the stdin-only WSL-to-Windows bridge
-contract. The bridge project is also built as a managed warning-as-error check. These are synthetic
-tests and do not prove that an external provider binary or the proprietary game accepts the
-environment.
+bounded startup timeout, owned process-group cleanup, the stdin-only WSL-to-Windows bridge, and the
+fail-closed `LIVE_AUTHORIZATION` preflight. The bridge project is also built as a managed
+warning-as-error check. These are synthetic tests and do not prove that an external provider binary
+or the proprietary game accepts the environment.
 
 An authorized disposable live session uses the exact provider binaries or explicit source
 directories from their owning target revisions:
@@ -198,6 +209,27 @@ game and gateway readiness, and successful harness/MCP completion, then observe 
 cleanup and closed listeners. `--keep-alive` is reserved for manual inspection and must be
 interrupted before evidence is recorded. The command output is boolean-only; credentials, saves,
 host assemblies, private paths, and provider logs remain outside the repository and CI artifacts.
+Before that command can inspect or mutate a host, its complete non-secret `LIVE_AUTHORIZATION`
+record must be exported. `--authorization-check` validates the record without host access; an
+expired, incomplete, non-loopback, or provider-enabled record is rejected by the owned launcher.
+
+The synthetic installation test uses only temporary fake payloads. It verifies renamed package
+filenames, refusal on process-inspection failure, direct symlink refusal, and expired admission.
+Authorization metadata is an operator attestation; these tests do not prove profile isolation.
+
+Run the Windows bridge integration and mocked process-guard checks without a game:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/session-launcher/bridge-tests/SessionWindowsBridgeTests.csproj --configuration Release -warnaserror
+pwsh -NoProfile -NonInteractive -File experiments/managed-rust-interop/dev-cycle-process-tests.ps1
+~~~
+
+The bridge test checks PID/start-time/executable identity and argument quoting on any platform;
+on Windows it also launches only its own synthetic child to verify captured output reaches EOF
+while that child lives, NUL output does not block, and wrong identities cannot terminate it.
+Windows cases explicitly skip elsewhere. The process guard test mocks enumeration and process
+objects; it never discovers or kills real game processes. Package tests substitute fake compilers
+and path converters, not proprietary assemblies. Neither suite proves live WSL/game behavior.
 
 ## Security and evidence language
 

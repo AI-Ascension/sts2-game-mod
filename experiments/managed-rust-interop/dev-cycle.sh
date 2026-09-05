@@ -5,6 +5,7 @@ set -Eeuo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 repo_root=$(cd -- "$script_dir/../.." && pwd -P)
 package_script="$script_dir/package-runtime-addon.sh"
+authorization_script="$script_dir/live-authorization.sh"
 
 game_dir_input=${STS2_GAME_DIR:-}
 stage_dir=${STS2_RUNTIME_ADDON_STAGE_DIR:-"$repo_root/.sts2-dev/runtime-addon"}
@@ -27,8 +28,8 @@ usage() {
         'Options:' \
         '  --game-dir PATH       STS2 install directory (or use STS2_GAME_DIR)' \
         '  --stage-dir PATH      ignored staging directory for packaged files' \
-        '  --wait-seconds N      wait after taskkill (default: 20)' \
-        '  --no-kill             leave the game running before installation' \
+        '  --wait-seconds N      wait for selected process exit (default: 20)' \
+        '  --no-kill             require the selected installation to be stopped' \
         '  --no-launch           do not relaunch after installation' \
         '  --no-backup           do not save replaced mod files before copying' \
         '  --unlock-all          pass the opt-in full-unlock flag on game launch' \
@@ -45,6 +46,9 @@ die() {
     printf 'error: %s\n' "$1" >&2
     exit 1
 }
+
+[[ -f "$authorization_script" ]] || die 'live authorization helper is missing'
+source "$authorization_script"
 
 take_value() {
     local option=$1
@@ -120,8 +124,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ ! "$wait_seconds" =~ ^[0-9]+$ ]]; then
-    die '--wait-seconds must be a non-negative integer'
+if [[ ! "$wait_seconds" =~ ^(0|[1-9][0-9]{0,2})$ ]] || (( wait_seconds > 600 )); then
+    die '--wait-seconds must be an integer from 0 through 600'
+fi
+
+if [[ "$dry_run" != true ]]; then
+    # Installation, stopping, and relaunching are live mutations. Require the
+    # same explicit record as the single-instance runtime launcher before any
+    # host path is resolved or any build/child action begins.
+    validate_live_authorization
 fi
 
 to_wsl_path() {
@@ -224,7 +235,7 @@ printf '  unlock on launch: %s\n' "$unlock_all_on_launch"
 if [[ "$dry_run" == true ]]; then
     printf '%s\n' 'dry-run: would build and stage the three addon artifacts.'
     if [[ "$stop_game" == true ]]; then
-        printf '%s\n' 'dry-run: would stop SlayTheSpire2.exe after the build succeeds.'
+        printf '%s\n' 'dry-run: would stop only the selected installation after the build succeeds.'
     fi
     printf '%s\n' 'dry-run: would copy the staged DLLs and manifest into the game mods directory.'
     if [[ "$launch_game" == true ]]; then
@@ -236,66 +247,74 @@ if [[ "$dry_run" == true ]]; then
     exit 0
 fi
 
+powershell_cmd=$(find_windows_tool powershell.exe) \
+    || die 'Windows PowerShell is required to inspect the selected game installation'
+
+assert_plain_path() {
+    local current=$1
+    while [[ "$current" != / && "$current" != . ]]; do
+        [[ ! -L "$current" ]] || die 'symlinks are not accepted in installation or staging paths'
+        current=$(dirname -- "$current")
+    done
+}
+
+inspect_selected_installation() {
+    local mode=$1
+    assert_live_authorization_current
+    run_with_live_authorization "$powershell_cmd" -NoProfile -NonInteractive \
+        -File "$(to_windows_path "$script_dir/dev-cycle-process.ps1")" \
+        -ExecutablePath "$(to_windows_path "$game_exe")" \
+        -StagePath "$(to_windows_path "$stage_dir")" \
+        -BackupPath "$(to_windows_path "$backup_root")" \
+        -Mode "$mode" -WaitSeconds "$wait_seconds" \
+        -DeadlineEpoch "$live_authorization_deadline" \
+        || die 'selected-installation process/path inspection or termination failed'
+}
+
+for path in "$mods_dir" "$stage_dir" "$backup_root"; do
+    assert_plain_path "$path"
+done
+stage_dir=$(realpath -m -- "$stage_dir")
+backup_root=$(realpath -m -- "$backup_root")
+assert_disjoint_paths() {
+    local left=${1%/} right=${2%/}
+    [[ "$left" != "$right" && "$left" != "$right/"* && "$right" != "$left/"* ]] \
+        || die 'game installation, staging, and backup paths must not overlap'
+}
+assert_disjoint_paths "$stage_dir" "$game_dir"
+assert_disjoint_paths "$backup_root" "$game_dir"
+assert_disjoint_paths "$stage_dir" "$backup_root"
+inspect_selected_installation Inspect
 printf '%s\n' 'Building and staging addon artifacts...'
-bash "$package_script" "$game_data_dir" "$stage_dir"
+run_with_live_authorization bash "$package_script" "$game_data_dir" "$stage_dir"
 
 for artifact in "${artifacts[@]}"; do
-    [[ -s "$stage_dir/$artifact" ]] \
+    [[ -f "$stage_dir/$artifact" && ! -L "$stage_dir/$artifact" && -s "$stage_dir/$artifact" ]] \
         || die "expected staged artifact is missing or empty: $stage_dir/$artifact"
 done
 
-tasklist_cmd=''
-taskkill_cmd=''
-powershell_cmd=''
-if [[ "$stop_game" == true || "$launch_game" == true ]]; then
-    tasklist_cmd=$(find_windows_tool tasklist.exe) \
-        || die 'tasklist.exe is unavailable; run this script from WSL on Windows'
-fi
 if [[ "$stop_game" == true ]]; then
-    taskkill_cmd=$(find_windows_tool taskkill.exe) \
-        || die 'taskkill.exe is unavailable; run this script from WSL on Windows'
+    printf '%s\n' 'Stopping only processes belonging to the selected installation...'
+    inspect_selected_installation Stop
 fi
-if [[ "$launch_game" == true ]]; then
-    powershell_cmd=$(find_windows_tool powershell.exe) \
-        || die 'Windows PowerShell is unavailable; cannot relaunch the game'
-fi
-
-game_is_running() {
-    "$tasklist_cmd" /FI 'IMAGENAME eq SlayTheSpire2.exe' /NH 2>/dev/null \
-        | tr -d '\r' \
-        | awk '$1 == "SlayTheSpire2.exe" { found = 1 } END { exit(found ? 0 : 1) }'
-}
-
-if [[ "$stop_game" == true ]]; then
-    if game_is_running; then
-        printf '%s\n' 'Stopping SlayTheSpire2.exe...'
-        "$taskkill_cmd" /IM SlayTheSpire2.exe /T /F >/dev/null 2>&1 || true
-
-        for ((second = 0; second < wait_seconds; second++)); do
-            if ! game_is_running; then
-                break
-            fi
-            sleep 1
-        done
-
-        if game_is_running; then
-            die "SlayTheSpire2.exe did not exit within ${wait_seconds}s"
-        fi
-        printf '%s\n' 'Game stopped.'
-    else
-        printf '%s\n' 'Game is not running.'
-    fi
-elif [[ "$launch_game" == true ]] && game_is_running; then
-    printf '%s\n' 'warning: --no-kill was requested while the game is running; installation may be locked.' >&2
-fi
+# Always inspect, including --no-kill --no-launch. Inspection errors cannot be
+# treated as an idle game, and a newly started instance prevents installation.
+inspect_selected_installation AssertStopped
+assert_live_authorization_current
+assert_plain_path "$mods_dir"
+for artifact in "${artifacts[@]}"; do
+    [[ ! -e "$mods_dir/$artifact" || -f "$mods_dir/$artifact" ]] \
+        || die 'installed artifact is not a regular file'
+    assert_plain_path "$mods_dir/$artifact"
+done
 
 mkdir -p "$mods_dir"
 
 backup_dir=''
 existing_files=()
 if [[ "$backup_installed" == true ]]; then
-    backup_dir="$backup_root/$(date -u +%Y%m%dT%H%M%SZ)"
-    mkdir -p "$backup_dir"
+    mkdir -p "$backup_root"
+    backup_dir=$(mktemp -d "$backup_root/$(date -u +%Y%m%dT%H%M%SZ).XXXXXXXX")
 
     for artifact in "${artifacts[@]}"; do
         if [[ -f "$mods_dir/$artifact" ]]; then
@@ -313,7 +332,7 @@ restore_previous_install() {
 
     for artifact in "${artifacts[@]}"; do
         if [[ -f "$backup_dir/$artifact" ]]; then
-            cp -f -- "$backup_dir/$artifact" "$mods_dir/$artifact"
+            cp --remove-destination -- "$backup_dir/$artifact" "$mods_dir/$artifact"
         else
             for existing in "${existing_files[@]}"; do
                 [[ "$existing" == "$artifact" ]] && continue 2
@@ -324,8 +343,9 @@ restore_previous_install() {
 }
 
 install_failed=false
+assert_live_authorization_current
 for artifact in "${artifacts[@]}"; do
-    if ! cp -f -- "$stage_dir/$artifact" "$mods_dir/$artifact"; then
+    if ! cp --remove-destination -- "$stage_dir/$artifact" "$mods_dir/$artifact"; then
         install_failed=true
         break
     fi
@@ -348,18 +368,26 @@ if [[ "$backup_installed" == true && ${#existing_files[@]} -gt 0 ]]; then
 fi
 
 if [[ "$launch_game" == true ]]; then
+    inspect_selected_installation AssertStopped
+    assert_live_authorization_current
     game_exe_windows=$(to_windows_path "$game_exe")
     game_dir_windows=$(to_windows_path "$game_dir")
     escaped_game_exe=${game_exe_windows//\'/\'\'}
     escaped_game_dir=${game_dir_windows//\'/\'\'}
-    launch_arguments=''
+    launch_arguments='--headless --audio-driver Dummy'
     if [[ "$unlock_all_on_launch" == true ]]; then
-        launch_arguments=" -ArgumentList '--ai-ascension-unlock-all'"
+        launch_arguments+=" --ai-ascension-unlock-all"
     fi
 
     printf '%s\n' 'Relaunching SlayTheSpire2.exe...'
-    "$powershell_cmd" -NoProfile -NonInteractive -Command \
-        "Start-Process -FilePath '$escaped_game_exe' -WorkingDirectory '$escaped_game_dir'$launch_arguments"
+    run_with_live_authorization "$powershell_cmd" -NoProfile -NonInteractive -Command \
+        "\$startInfo = New-Object System.Diagnostics.ProcessStartInfo; \
+\$startInfo.FileName = '$escaped_game_exe'; \
+\$startInfo.WorkingDirectory = '$escaped_game_dir'; \
+\$startInfo.UseShellExecute = \$false; \
+\$startInfo.CreateNoWindow = \$true; \
+if ('$launch_arguments' -ne '') { \$startInfo.Arguments = '$launch_arguments' }; \
+[void][System.Diagnostics.Process]::Start(\$startInfo)"
     printf '%s\n' 'Game launch requested.'
 else
     printf '%s\n' 'Game was not relaunched (--no-launch).'

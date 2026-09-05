@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 using System.Diagnostics;
-using System.IO;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AiAscension.SessionWindowsBridge;
@@ -10,78 +11,49 @@ internal static partial class Program
 {
     private const int MinimumCredentialLength = 43;
     private const int MaximumCredentialLength = 256;
-    private static readonly char[] LineSeparators = new[] { '\r', '\n' };
 
-    private static int Main(string[] args)
+    internal static int Main(string[] args)
     {
         try
         {
+            if (args.Length > 0 && args[0] == "--stop-owned")
+            {
+                OwnedProcess.Stop(args);
+                Console.WriteLine("STOPPED=TRUE");
+                return 0;
+            }
             Options options = Options.Parse(args);
-            string credential = Console.ReadLine() ?? string.Empty;
+            using Timer lease = ProcessGuardian.StartLease(options.LeaseSeconds);
+            string credential = ReadCredential(Console.In);
             if (!CredentialIsSafe(credential))
             {
                 Console.Error.WriteLine("runtime session credential is missing or unsafe");
                 return 2;
             }
 
-            string powerShell = Path.Combine(
-                Environment.SystemDirectory,
-                "WindowsPowerShell",
-                "v1.0",
-                "powershell.exe");
             var startInfo = new ProcessStartInfo
             {
-                FileName = powerShell,
+                FileName = options.GameExecutable,
+                WorkingDirectory = options.WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
             };
+            startInfo.ArgumentList.Add("--headless");
+            startInfo.ArgumentList.Add("--audio-driver");
+            startInfo.ArgumentList.Add("Dummy");
             startInfo.Environment["STS2_RUNTIME_TOKEN"] = credential;
             startInfo.Environment["STS2_RUNTIME_BIND_ADDRESS"] = options.BindAddress;
             startInfo.Environment["STS2_RUNTIME_PORT"] = options.Port;
             startInfo.Environment["STS2_RUNTIME_SESSION"] = "1";
-            startInfo.ArgumentList.Add("-NoProfile");
-            startInfo.ArgumentList.Add("-NonInteractive");
-            startInfo.ArgumentList.Add("-Command");
-            startInfo.ArgumentList.Add(
-                $"$game = Start-Process -FilePath {QuotePowerShell(options.GameExecutable)} "
-                + $"-WorkingDirectory {QuotePowerShell(options.WorkingDirectory)} -PassThru; "
-                + "Write-Output ('PID=' + $game.Id)");
 
-            using Process process = Process.Start(startInfo)
-                ?? throw new InvalidOperationException("game process did not start");
-            Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
-            Task<string> errorTask = process.StandardError.ReadToEndAsync();
-            process.WaitForExit();
-            _ = errorTask.GetAwaiter().GetResult();
-            string processOutput = outputTask.GetAwaiter().GetResult();
-            if (process.ExitCode != 0)
-            {
-                throw new InvalidOperationException("Windows process handoff failed");
-            }
-            string? gamePid = processOutput
-                .Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .FirstOrDefault(line => line.StartsWith("PID=", StringComparison.Ordinal));
-            if (gamePid is null || !int.TryParse(gamePid[4..], out int parsedPid) || parsedPid <= 0)
-            {
-                throw new InvalidOperationException("Windows process handoff returned no game PID");
-            }
-            Console.WriteLine("STARTED=TRUE");
-            Console.WriteLine($"PID={parsedPid}");
+            ProcessGuardian.Run(startInfo, Console.In, Console.Out);
             return 0;
         }
         catch (Exception)
         {
-            Console.Error.WriteLine("runtime session game launch failed");
+            Console.Error.WriteLine("runtime session process operation failed");
             return 1;
         }
-    }
-
-    private static string QuotePowerShell(string value)
-    {
-        return $"'{value.Replace("'", "''", StringComparison.Ordinal)}'";
     }
 
     private static bool CredentialIsSafe(string value)
@@ -90,23 +62,38 @@ internal static partial class Program
             && SafeCredentialPattern().IsMatch(value);
     }
 
+    private static string ReadCredential(TextReader input)
+    {
+        var value = new StringBuilder();
+        while (value.Length <= MaximumCredentialLength)
+        {
+            int next = input.Read();
+            if (next is -1 or '\n') return value.ToString().TrimEnd('\r');
+            value.Append((char)next);
+        }
+        return string.Empty;
+    }
+
     [GeneratedRegex("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant)]
     private static partial Regex SafeCredentialPattern();
 
     private sealed class Options
     {
-        private Options(string gameExecutable, string workingDirectory, string bindAddress, string port)
+        private Options(string gameExecutable, string workingDirectory, string bindAddress, string port,
+            int leaseSeconds)
         {
             GameExecutable = gameExecutable;
             WorkingDirectory = workingDirectory;
             BindAddress = bindAddress;
             Port = port;
+            LeaseSeconds = leaseSeconds;
         }
 
         internal string GameExecutable { get; }
         internal string WorkingDirectory { get; }
         internal string BindAddress { get; }
         internal string Port { get; }
+        internal int LeaseSeconds { get; }
 
         internal static Options Parse(string[] args)
         {
@@ -114,6 +101,7 @@ internal static partial class Program
             string? workingDirectory = null;
             string? bindAddress = null;
             string? port = null;
+            int leaseSeconds = 0;
             for (int index = 0; index < args.Length; index++)
             {
                 string value = args[index];
@@ -137,6 +125,11 @@ internal static partial class Program
                     case "--port":
                         port = optionValue;
                         break;
+                    case "--lease-seconds":
+                        if (!int.TryParse(optionValue, NumberStyles.None, CultureInfo.InvariantCulture,
+                            out leaseSeconds) || leaseSeconds is < 1 or > 3600)
+                            throw new ArgumentException("invalid guardian lease");
+                        break;
                     default:
                         throw new ArgumentException("unknown bridge option");
                 }
@@ -145,12 +138,12 @@ internal static partial class Program
             if (string.IsNullOrWhiteSpace(gameExecutable)
                 || string.IsNullOrWhiteSpace(workingDirectory)
                 || string.IsNullOrWhiteSpace(bindAddress)
-                || string.IsNullOrWhiteSpace(port))
+                || string.IsNullOrWhiteSpace(port) || leaseSeconds == 0)
             {
                 throw new ArgumentException("bridge options are incomplete");
             }
 
-            return new Options(gameExecutable, workingDirectory, bindAddress, port);
+            return new Options(gameExecutable, workingDirectory, bindAddress, port, leaseSeconds);
         }
     }
 }

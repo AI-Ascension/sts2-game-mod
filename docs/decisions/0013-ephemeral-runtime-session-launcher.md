@@ -23,14 +23,26 @@ credentials exist only in launcher memory, child environments, and the bridge st
 The launcher refuses an existing `SlayTheSpire2.exe` before building, installing, or generating a
 session. It uses a checked-in .NET bridge with `UseShellExecute=false`; the bridge receives the
 runtime credential from stdin and sets the game's inherited `STS2_RUNTIME_TOKEN`, bind address,
-port, and non-secret `STS2_RUNTIME_SESSION=1`. That flag is an ephemeral launch override for a
+port, and non-secret `STS2_RUNTIME_SESSION=1`. The bridge also always launches the host with
+`--headless --audio-driver Dummy`; source checks prove flag selection, not host compliance or
+desktop isolation. The session environment flag is an ephemeral launch override for a
 saved-off Runtime API setting and does not write settings. Provider binaries are explicit inputs or
 are built from explicit source directories; this target does not edit gateway, harness, or MCP.
+
+Before any host inspection, installation, profile access, listener setup, or child-process creation,
+the launcher requires the shared non-secret `LIVE_AUTHORIZATION` environment record. The record
+names the exact host/install and disposable profile, authorizes process/profile/listener/network
+actions, names cleanup and restore ownership, expires at a checked epoch deadline, and must state
+that provider calls are prohibited. The preflight metadata is removed before child creation. An
+authorization-only check is available without host access; synthetic self-tests and dry-runs do
+not enter the live lane.
 
 The default endpoint is loopback and the launcher bounds provider/game readiness and harness
 completion. It first verifies unauthenticated rejection, then authenticated game and gateway
 readiness, runs the existing harness/MCP trace, and terminates only recorded child process groups
-and the recorded Windows game PID. A successful one-shot run verifies both listeners are closed.
+and the recorded Windows game PID with matching creation time and executable path. The bridge
+gives the child only NUL standard handles through an explicit Windows handle allowlist; it does
+not inherit the launcher's stdin or captured-output pipe. A successful one-shot run verifies both listeners are closed.
 `--keep-alive` is available for manual inspection and remains subject to the same owned cleanup.
 
 ## Consequences

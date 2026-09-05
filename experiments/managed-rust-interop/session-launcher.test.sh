@@ -18,6 +18,24 @@ credential_is_safe "$runtime_token" || fail 'runtime encoding or length'
 credential_is_safe "$gateway_token" || fail 'gateway encoding or length'
 [[ "$runtime_token" != "$gateway_token" ]] || fail 'credential reuse'
 
+export \
+    STS2_LIVE_AUTHORIZATION_APPROVED=yes \
+    STS2_LIVE_AUTHORIZATION_SCOPE='runtime-v2 live disposable trace' \
+    STS2_LIVE_AUTHORIZATION_HOST_IDENTITY='synthetic-host' \
+    STS2_LIVE_AUTHORIZATION_HOST_INSTALL_LABEL='synthetic-install' \
+    STS2_LIVE_AUTHORIZATION_PROFILE_IDENTITY='disposable-profile-2' \
+    STS2_LIVE_AUTHORIZATION_PROCESS_ACTIONS='install launch stop terminate' \
+    STS2_LIVE_AUTHORIZATION_PROFILE_MUTATIONS='mutate disposable selected profile only' \
+    STS2_LIVE_AUTHORIZATION_LISTENER_ACTIONS='bind loopback connect loopback' \
+    STS2_LIVE_AUTHORIZATION_NETWORK_ACTIONS='loopback only' \
+    STS2_LIVE_AUTHORIZATION_CLEANUP_OWNER='synthetic-test' \
+    STS2_LIVE_AUTHORIZATION_RESTORE_POINT='synthetic-backup' \
+    STS2_LIVE_AUTHORIZATION_EXPIRY_EPOCH=$((EPOCHSECONDS + 300)) \
+    STS2_LIVE_AUTHORIZATION_PUBLICATION_AUTHORITY='none' \
+    STS2_LIVE_AUTHORIZATION_PROVIDER_CALLS=prohibited
+validate_live_authorization || fail 'LIVE_AUTHORIZATION preflight'
+[[ -z ${STS2_LIVE_AUTHORIZATION_APPROVED:-} ]] || fail 'authorization approval leaked after preflight'
+
 gateway_addr=127.0.0.1:15525
 mod_addr=127.0.0.1:15526
 mcp_binary=/bin/true
@@ -94,18 +112,35 @@ if (wait_for_probe 'synthetic timeout' 127.0.0.1 1 /health/ready 200 '' posix "$
 fi
 
 bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
-[[ "$bridge_source" == *'Console.ReadLine()'* ]] || fail 'bridge does not read the token from stdin'
+launcher_source=$(<"$launcher")
+[[ "$launcher_source" == *'validate_live_authorization'* ]] || fail 'launcher lacks live authorization preflight'
+[[ "$launcher_source" == *'--authorization-check'* ]] || fail 'launcher lacks authorization-only check'
+[[ "$launcher_source" == *'live-authorization.sh'* ]] || fail 'launcher does not load the shared authorization helper'
+[[ "$bridge_source" == *'ReadCredential(Console.In)'* ]] || fail 'bridge does not read the bounded token from stdin'
 [[ "$bridge_source" == *'STS2_RUNTIME_TOKEN'* ]] || fail 'bridge does not set the runtime token environment'
+[[ "$bridge_source" == *'FileName = options.GameExecutable'* ]] || fail 'bridge does not launch the requested game directly'
+[[ "$bridge_source" == *'WorkingDirectory = options.WorkingDirectory'* ]] || fail 'bridge does not preserve the game working directory'
 [[ "$bridge_source" == *'UseShellExecute = false'* ]] || fail 'bridge shell boundary is not explicit'
+[[ "$bridge_source" == *'ArgumentList.Add("--headless")'* ]] || fail 'bridge does not force headless launch'
+[[ "$bridge_source" == *'ArgumentList.Add("--audio-driver")'* ]] || fail 'bridge does not select dummy audio'
+[[ "$bridge_source" == *'ArgumentList.Add("Dummy")'* ]] || fail 'bridge does not select the dummy audio driver'
+[[ "$bridge_source" != *'Start-Process'* ]] || fail 'bridge delegates game launch to PowerShell'
 [[ "$bridge_source" != *'ArgumentList.Add(credential)'* ]] || fail 'bridge passes a token as an argument'
 [[ "$bridge_source" != *'QuotePowerShell(credential)'* ]] || fail 'bridge interpolates a token into PowerShell'
+input_automation_is_disabled || fail 'launcher or bridge contains a system-input control seam'
+dev_cycle_source=$(<"$script_dir/dev-cycle.sh")
+[[ "$dev_cycle_source" == *'UseShellExecute'* ]] || fail 'development cycle does not use a non-shell launch boundary'
+[[ "$dev_cycle_source" == *'--headless --audio-driver Dummy'* ]] || fail 'development cycle does not force headless launch'
+[[ "$dev_cycle_source" != *'Start-Process'* ]] || fail 'development cycle delegates game launch to PowerShell'
 
 printf '%s\n' \
     'CSPRNG/encoding/difference=TRUE' \
     'Role separation=TRUE' \
     'Argument leakage=FALSE' \
     'Auth missing/wrong/correct=TRUE' \
+    'LIVE_AUTHORIZATION preflight=TRUE' \
     'Already-running refusal predicate=TRUE' \
     'Startup timeout=TRUE' \
     'Owned cleanup=TRUE' \
-    'WSL-to-Windows stdin boundary=TRUE'
+    'WSL-to-Windows stdin boundary=TRUE' \
+    'System input automation=FALSE'
