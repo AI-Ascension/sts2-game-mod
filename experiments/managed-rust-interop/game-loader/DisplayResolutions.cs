@@ -15,7 +15,8 @@ internal static class DisplayResolutions
             ? requested : DisplayServer.GetPrimaryScreen();
         Vector2I position = DisplayServer.ScreenGetPosition(screen);
         Vector2I desktop = DisplayServer.ScreenGetSize(screen);
-        var choices = new HashSet<Vector2I> { desktop };
+        Vector2I usable = DisplayServer.ScreenGetUsableRect(screen).Size;
+        var choices = new HashSet<Vector2I> { OperatingSystem.IsWindows() ? desktop : usable };
         try
         {
             foreach (var size in WindowsDisplayModes.Read(position.X, position.Y, desktop.X, desktop.Y))
@@ -26,6 +27,11 @@ internal static class DisplayResolutions
         {
             GD.PrintErr("[AI-ASCENSION VIDEO] display modes unavailable; using detected desktop size");
         }
+        Vector2I current = DisplayServer.WindowGetSize();
+        if (DisplayServer.WindowGetCurrentScreen() == screen
+            && DisplayServer.WindowGetMode() == DisplayServer.WindowMode.Windowed
+            && current.X >= 640 && current.Y >= 360 && current.X <= usable.X && current.Y <= usable.Y)
+            choices.Add(current);
         return choices.OrderBy(size => size.X).ThenBy(size => size.Y).ToList();
     }
 }

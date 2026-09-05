@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Godot;
 using MegaCrit.Sts2.Core.Saves;
 using Environment = System.Environment;
@@ -47,7 +48,7 @@ internal static class VideoSettings
         settings.WindowPosition = DisplayServer.ScreenGetPosition(screen);
     }
 
-    internal static void Apply(VideoPreferences value)
+    private static void ApplyWindow(VideoPreferences value)
     {
         ConfigureHost(value);
         var settings = SaveManager.Instance.SettingsSave;
@@ -64,32 +65,51 @@ internal static class VideoSettings
         });
     }
 
-    internal static bool TryApplyAndSave(VideoPreferences value, out string message)
+    internal static async Task ApplyAsync(VideoPreferences value)
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        if (DisplayServer.WindowGetMode() != DisplayServer.WindowMode.Windowed)
+        {
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+            // Let the desktop finish leaving fullscreen/maximized before requesting another mode.
+            for (int frame = 0; frame < 12; frame++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+        ApplyWindow(value);
+        for (int frame = 0; frame < 12; frame++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+    }
+
+    internal static async Task<string> ApplyAndSaveAsync(VideoPreferences value)
     {
         if (!value.IsValid || value.Display >= DisplayServer.GetScreenCount())
         {
-            message = "Select an available display and valid resolution.";
-            return false;
+            return "Select an available display and valid resolution.";
         }
         VideoPreferences before = Current();
         try
         {
-            Apply(value);
-            SettingsPersistence.WriteAllLines(SettingsPath, new[] { JsonSerializer.Serialize(value) });
-            message = "Video settings applied and saved.";
-            return true;
+            await ApplyAsync(value);
+            VideoPreferences actual = Current();
+            if (actual.Mode != value.Mode || actual.Display != value.ResolveDisplay(
+                DisplayServer.GetScreenCount(), DisplayServer.GetPrimaryScreen()))
+                throw new InvalidOperationException("The window manager did not apply the selected mode or display");
+            VideoPreferences saved = value.Mode is "windowed" or "borderless"
+                ? value with { Width = actual.Width, Height = actual.Height } : value;
+            if (!saved.IsValid) throw new InvalidOperationException("The resulting window size is unsupported");
+            SettingsPersistence.WriteAllLines(SettingsPath, new[] { JsonSerializer.Serialize(saved) });
+            return saved == value ? "Video settings applied and saved."
+                : $"Desktop adjusted the window to {saved.Width} × {saved.Height}. Actual size saved.";
         }
         catch (Exception error)
         {
-            message = "Could not save video settings. Previous display restored.";
-            try { Apply(before); }
+            string message = "Could not apply or save video settings. Previous settings requested again.";
+            try { await ApplyAsync(before); }
             catch (Exception restoreError)
             {
                 message = "Could not save or restore video settings. Select another display mode.";
                 GD.PrintErr($"[AI-ASCENSION VIDEO] restore failed: {restoreError.GetType().Name}");
             }
             GD.PrintErr($"[AI-ASCENSION VIDEO] apply failed: {error.GetType().Name}");
-            return false;
+            return message;
         }
     }
 
@@ -99,11 +119,15 @@ internal static class VideoSettings
             || Engine.GetMainLoop() is not SceneTree tree) return;
         int frames = 0;
         Action? restore = null;
-        restore = () =>
+        restore = async () =>
         {
             if (++frames < 300) return;
             tree.ProcessFrame -= restore;
-            if (Load() is { } value) Apply(value);
+            if (Load() is { } value)
+            {
+                try { await ApplyAsync(value); }
+                catch (Exception error) { GD.PrintErr($"[AI-ASCENSION VIDEO] restore failed: {error.GetType().Name}"); }
+            }
         };
         tree.ProcessFrame += restore;
     }

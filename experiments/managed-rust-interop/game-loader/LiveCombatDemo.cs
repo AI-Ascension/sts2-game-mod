@@ -42,11 +42,11 @@ internal static class LiveCombatDemo
             throw new InvalidOperationException("demo host tree unavailable");
         int frames = 0;
         Action? start = null;
-        start = () =>
+        start = async () =>
         {
             if (++frames < 300 || NGame.Instance == null) return;
             tree.ProcessFrame -= start;
-            LiveCombatDisplay.Apply();
+            await LiveCombatDisplay.ApplyAsync();
 #if STS2_VIDEO_MENU_PROBE
             _ = VideoMenuProbe.RunAsync(tree);
 #else

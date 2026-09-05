@@ -27,9 +27,10 @@ internal static partial class StandaloneProfileSettings
         var resolution = VideoDropdown(content, "Resolution", "VideoResolution");
         var sizes = new List<Vector2I>();
         Vector2I selectedSize = new(current.Width, current.Height);
-        void RefreshResolutions()
+        void RefreshResolutions(Vector2I? preferred = null)
         {
-            if (resolution.Selected >= 0 && resolution.Selected < sizes.Count) selectedSize = sizes[resolution.Selected];
+            if (preferred is { } actual) selectedSize = actual;
+            else if (resolution.Selected >= 0 && resolution.Selected < sizes.Count) selectedSize = sizes[resolution.Selected];
             sizes = DisplayResolutions.ForDisplay(display.Selected - 1);
             resolution.Clear();
             foreach (Vector2I size in sizes) resolution.AddItem($"{size.X} × {size.Y}");
@@ -49,7 +50,7 @@ internal static partial class StandaloneProfileSettings
             CustomMinimumSize = new Vector2(220, 36), FocusMode = Control.FocusModeEnum.All };
         var status = CreateDescriptionLabel("Changes apply immediately and are saved for future launches.");
         status.Name = "VideoStatus";
-        apply.Pressed += () =>
+        apply.Pressed += async () =>
         {
             Vector2I size = sizes[resolution.Selected];
             if (!DisplayResolutions.ForDisplay(display.Selected - 1).Contains(size))
@@ -59,8 +60,14 @@ internal static partial class StandaloneProfileSettings
                 return;
             }
             var selected = new VideoPreferences(display.Selected - 1, size.X, size.Y, modes[mode.Selected]);
-            VideoSettings.TryApplyAndSave(selected, out string message);
+            apply.Disabled = display.Disabled = mode.Disabled = resolution.Disabled = true;
+            status.Text = "Applying video settings…";
+            string message = await VideoSettings.ApplyAndSaveAsync(selected);
+            if (!GodotObject.IsInstanceValid(apply)) return;
             status.Text = message;
+            RefreshResolutions(DisplayServer.WindowGetSize());
+            apply.Disabled = display.Disabled = mode.Disabled = false;
+            resolution.Disabled = modes[mode.Selected] is "fullscreen" or "maximized";
         };
         content.AddChild(apply);
         content.AddChild(status);

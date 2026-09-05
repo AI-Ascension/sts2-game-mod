@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using System.Threading.Tasks;
 using Godot;
 using MegaCrit.Sts2.Core.Saves;
 using Environment = System.Environment;
@@ -24,9 +25,9 @@ internal static class LiveCombatDisplay
         VideoSettings.ConfigureHost(_selected);
     }
 
-    internal static void Apply()
+    internal static async Task ApplyAsync()
     {
-        VideoSettings.Apply(_selected);
+        await VideoSettings.ApplyAsync(_selected);
         GD.Print($"[AI-ASCENSION LIVE] display={DisplayServer.WindowGetCurrentScreen()}; " +
             $"size={DisplayServer.WindowGetSize()}; mode={DisplayServer.WindowGetMode()}; " +
             $"borderless={DisplayServer.WindowGetFlag(DisplayServer.WindowFlags.Borderless)}");
