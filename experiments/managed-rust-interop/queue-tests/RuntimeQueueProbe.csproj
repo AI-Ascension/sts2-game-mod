@@ -6,6 +6,8 @@
   <ItemGroup>
     <Compile Include="../game-loader/RuntimeDispatchQueue.cs" Link="RuntimeDispatchQueue.cs" />
     <Compile Include="../game-loader/RuntimeInterop.cs" Link="RuntimeInterop.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Network.cs" Link="RuntimeInterop.Network.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Queue.cs" Link="RuntimeInterop.Queue.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
   </ItemGroup>
 </Project>

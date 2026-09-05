@@ -28,6 +28,12 @@ namespace AiAscension.Sts2GameMod.Runtime
     {
         private const int RuntimeRequestKindState = 1;
         private const int RuntimeRequestKindAction = 2;
+        private const int RuntimeRequestKindRuntimeV2State = 3;
+        private const int RuntimeRequestKindRuntimeV2Operation = 5;
+        private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
+            throw new InvalidOperationException("v1 test crossed into v2");
+        private static string RuntimeV2PlainError(string code) =>
+            throw new InvalidOperationException("v1 error crossed into v2");
         private const int RuntimeAccepted = 200;
         private const int RuntimeRejected = 409;
         private const int RuntimeUnavailable = 503;

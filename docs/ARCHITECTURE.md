@@ -7,9 +7,10 @@ callbacks into owned Rust values, schedules host work on the game main thread, e
 authoritative local HTTP surface, and composes the narrow native seam.
 
 This document records boundaries, the initialized source-level seams, the managed load-smoke
-package, and dependency direction. The Rust source proves deterministic port composition plus one
-local fake `poc-v1` mapping; the managed package separately proves loader discovery and the native
-ABI smoke call in one recorded game version.
+package, the Runtime-v2 host-adapter candidate, and dependency direction. The Rust source proves
+deterministic port composition plus one local fake `poc-v1` mapping; the managed package separately
+proves loader discovery and the native ABI smoke call in one recorded game version. Runtime-v2 host
+execution remains a separate controlled-host gate.
 
 ## Initialized source seam
 
@@ -34,10 +35,25 @@ debug banner with the verified ABI and result when the process was launched with
 `AIAscensionSTS2GameModNative.dll` on Windows. The package script stages only the managed DLL, native DLL,
 and manifest; it never copies proprietary host assemblies into the repository or package.
 
-This is a load-smoke implementation, not the game behavior implementation. It does not expose an
-HTTP listener as part of the loader-only smoke path, access host game objects outside the bounded
-runtime callback, mutate a run, or claim gameplay action/effect compatibility. The separate runtime
-bridge described below owns the new host-visible probe.
+The Runtime-v1 portion is a load-smoke implementation, not a game behavior implementation. It does
+not claim gameplay action/effect compatibility. The separate runtime bridge owns the host-visible
+probe and the Runtime-v2 host-adapter candidate described below.
+
+### Runtime-v2 host-adapter candidate
+
+The managed experiment also contains the frozen Runtime-v2 `end_turn` path. Its native listener
+adds only the fixed v2 state, action, and operation routes. The managed bridge validates the complete
+v2 envelope and context, reads `CombatManager` state on the Godot main thread, rechecks player-turn
+legality and `PlayerActionsDisabled`, and queues an `EndPlayerTurnAction` through `ActionQueueSynchronizer.RequestEnqueue`.
+It retains the operation as `unknown` pending independent completion evidence; operation lookup
+is read-only. A later turn alone cannot establish completion.
+
+The adapter uses only symbols present in the recorded v0.107.1 host: `IsInProgress`,
+`IsEnemyTurnStarted`, `PlayerActionsDisabled`, and `DebugOnlyGetState`, plus
+`RunManager.DebugOnlyGetState` and `LocalContext.GetMe`. The earlier build report names a
+`PlayerCmd.EndTurn` path that differs from the committed queued-action implementation. A newer host has
+`IsPlayPhase`, but the adapter does not depend on that release-specific property. The candidate is
+source/build evidence only until exercised in an explicitly authorized disposable host profile.
 
 ### Ephemeral session orchestration
 
@@ -118,9 +134,9 @@ application, fresh settlement witnesses, idempotent replay, fail-closed identity
 phase checks, bounded capacity, cancellation timing, unknown outcomes, reconciliation, and timeout
 removal. Runtime-v1 routes and tests are unchanged.
 
-No concrete host gameplay API exists in this repository. The Runtime-v2 fake is deterministic
-source/build/test evidence, not live STS2 gameplay evidence; live host mutation and settlement are
-unverified.
+The fake and host-adapter candidate are deterministic/source-build evidence, not live STS2 gameplay
+evidence. The candidate's host mutation and settlement remain unverified until a controlled-host
+trace is recorded.
 
 ## Repeat-seed practice replay
 
@@ -199,9 +215,9 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 ## Protocol and data rules
 
 The owner-local HTTP contract remains separate from the copied POC artifact. The runtime adapter owns
-the bounded `runtime-v1` route/ABI mapping and its sanitized errors; MCP envelopes and gateway leases
-remain outside this repository. Broader gameplay routes, semantics, ordering, and versioning require
-later project-owned requirements and fixtures.
+the bounded `runtime-v1` and frozen Runtime-v2 route/ABI mappings and their sanitized errors; MCP
+envelopes and gateway leases remain outside this repository. Broader gameplay routes, semantics,
+ordering, and versioning require a new project-owned profile and fixtures.
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
@@ -243,10 +259,12 @@ checks that the overlay is present, then advances generation and emits the effec
 listener, token, identity, lease, and correlation checks are owner-local enforcement; the gateway
 still owns external authorization, lease issuance, and fencing.
 
-The route/ABI implementation and tests are confirmed at source/build level, and the dated host
+The v1 route/ABI implementation and tests are confirmed at source/build level, and the dated host
 report confirms a real request, live main-thread dispatch, and the bounded host-visible effect for
-STS2 v0.107.1 on Windows x86-64. Game-rule compatibility, process supervision, and the action's
-semantics beyond this probe remain unverified. The action is deliberately not a gameplay mutation.
+STS2 v0.107.1 on Windows x86-64. The v2 host-adapter candidate builds against that exact host and
+has separate build evidence, but live `end_turn` mutation/settlement, process supervision, and
+action semantics beyond the frozen profile remain unverified. The v1 probe is deliberately not a
+gameplay mutation.
 
 ## Steam Workshop boundary
 
@@ -268,3 +286,17 @@ companion, emits the manifest/checksum inventory, and writes the operator-only S
 outside the content directory. The Steam API callback/initialization adapter is intentionally not
 implemented without the Steamworks SDK. Steam publication, subscription/download behavior, and
 Workshop-driven game discovery are therefore still unverified.
+
+## Review correction (2026-09-04)
+
+The source review replaced the candidate's state-delta settlement inference. Neither a later turn
+nor changed energy/pile counts proves completion of a particular queued operation. The current
+adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
+blocks further v2 mutations until independent operation-bound completion is available. It does
+not emit a settlement witness from these host adapters. No such host completion binding has yet
+been established; this is an integration blocker, not a successful gameplay result.
+
+Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Exact semantic
+retries ignore transport correlation and JSON formatting; run/combat/player replacement
+invalidates generation. This bounded observation is not a complete game-state revision
+or a game-rule parity claim.

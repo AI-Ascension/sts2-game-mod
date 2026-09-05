@@ -59,6 +59,11 @@ Only loopback synthetic connections are used in the regression suite.
 
 ## Workshop package boundary
 
+The Runtime-v2 candidate enforces an instance/caller/session/lease fence. An
+unresolved queued mutation excludes further gameplay mutations through this profile; restarting
+the listener does not clear uncertain receipts. Independent host completion and authoritative lease
+handoff remain unimplemented and must be established before autonomous gameplay use.
+
 Workshop packages are first-party executable content, not an extension point for arbitrary
 third-party code. The checked-in package tool stages an exact allowlist, records sizes and SHA-256
 digests, and emits a manifest and checksum inventory. The managed loader rejects unexpected files,

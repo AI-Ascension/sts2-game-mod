@@ -26,7 +26,8 @@ versioned ABI validation, a transport-free bounded HTTP adapter, and their compo
 POC additionally maps one copied artifact through a fake core port. Deterministic fake tests cover
 those seams. A narrow runtime slice now adds the managed loader entry point, unique Rust companion
 package, manifest, ABI smoke call, bounded runtime routes (default loopback), managed main-thread
-queue, and manual staging path. It adds no game rules or gameplay mutation.
+queue, and manual staging path. A separate Runtime-v2 candidate adds only the frozen
+argument-free `end_turn` host translation and settlement path; it is not yet live-host confirmed.
 
 ## Future scope
 
@@ -48,7 +49,9 @@ make those runtime claims.
 
 The current repository has confirmed load-smoke and focused runtime evidence for one exact installed
 host. The initialized Rust seams and POC fake mapping do not prove gameplay mutation, settlement of
-game rules, or fault isolation. See the dated runtime evidence reports for the precise boundaries.
+game rules, or fault isolation. The Runtime-v2 host-adapter candidate has separate source/build
+evidence, but no live v2 mutation has yet been exercised. See the dated runtime evidence reports for
+the precise boundaries.
 
 ## Runtime vertical slice
 
@@ -62,6 +65,21 @@ applies and persists the listener's enablement, local bind address, and port for
 the bearer token
 remains an environment-controlled secret.
 
-This slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The
-source, build, and exact-host probe gates are `confirmed`; gameplay mutation, process lifecycle, and
-broader compatibility remain outside the evidence.
+The v1 slice does not claim to change game rules, advance combat, or settle a gameplay mutation. The
+v2 candidate does call the exact host end-turn command only on the main thread, but its source/build
+gate is distinct from live mutation/settlement evidence. Process lifecycle, restart behavior,
+multi-instance behavior, and broader compatibility remain outside the evidence.
+
+## Review correction (2026-09-04)
+
+The source review replaced the candidate's state-delta settlement inference. Neither a later turn
+nor changed energy/pile counts proves completion of a particular queued operation. The current
+adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
+blocks further v2 mutations until independent operation-bound completion is available. It does
+not emit a settlement witness from these host adapters. No such host completion binding has yet
+been established; this is an integration blocker, not a successful gameplay result.
+
+Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Exact semantic
+retries ignore transport correlation and JSON formatting; run/combat/player replacement
+invalidates generation. This bounded observation is not a complete game-state revision
+or a game-rule parity claim.

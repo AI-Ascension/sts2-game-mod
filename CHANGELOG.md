@@ -9,6 +9,13 @@ and has no released product behavior.
   messages, and referenced schema and conformance files from `sts2-protocol` commit
   `11e4252e39a77f0017b8e4f3720590e6162e8f53`. CI verifies the inventory; existing schema and
   manifest bytes are unchanged. This is packaging evidence only, not new host verification.
+- Split the Runtime-v2 host adapter and guarded launcher restoration from PR #14, preserving
+  frozen wire bytes and callback IDs 3–5. Bounded Runtime-v3 card routes remain outside this
+  change. Removed raw provider-output logging; the source-only adapter retains unknown outcomes.
+
+- Repaired host-candidate semantic retries, identity ownership, run freshness, and
+  mutation-then-exception uncertainty. Removed unsupported state-delta settlement inference;
+  independent host completion remains a blocker. Added source-linked managed regressions in CI.
 
 - Enforced the ABI version 1 descriptor's zero-reserved-byte requirement. Invalid descriptors
   return `AbiError::NonzeroReservedBytes`; valid descriptor layout and version remain unchanged.

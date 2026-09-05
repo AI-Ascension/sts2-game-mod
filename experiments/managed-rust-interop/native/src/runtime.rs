@@ -6,8 +6,10 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-const CALLBACK_STATE: u32 = 1;
 const CALLBACK_ACTION: u32 = 2;
+const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
+const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
+const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
 const MAX_RESPONSE_BYTES: usize = 64 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
@@ -16,6 +18,8 @@ const BIND_FAILED: i32 = 3;
 const THREAD_FAILED: i32 = 4;
 const STOP_FAILED: i32 = 5;
 
+#[path = "runtime_auth.rs"]
+mod auth;
 #[cfg(test)]
 #[path = "runtime_endpoint_tests.rs"]
 mod endpoint_tests;
@@ -28,6 +32,8 @@ mod io;
 mod io_tests;
 #[path = "runtime_listener.rs"]
 mod listener;
+#[path = "runtime_routes.rs"]
+mod routes;
 
 pub type RuntimeRequestCallback = unsafe extern "C" fn(
     request: *const RuntimeRequest,
@@ -195,31 +201,27 @@ fn handle_connection(
     if !http::headers_are_allowed(&request.headers) {
         return http::write_response(stream, 400, b"{\"error_code\":\"unsupported_header\"}");
     }
-    let mut auth = b"Bearer ".to_vec();
-    auth.extend_from_slice(token);
-    if request.headers.get("authorization").map(String::as_bytes) != Some(auth.as_slice()) {
+    if !auth::bearer_token_matches(request.headers.get("authorization"), token) {
         return http::write_response(stream, 401, b"{\"error_code\":\"unauthorized\"}");
     }
 
-    match (request.method.as_str(), request.path.as_str()) {
-        ("GET", "/health/ready") if request.body.is_empty() => {
-            let response = format!(r#"{{"status":"ready","listener":"{listener_address}"}}"#);
-            http::write_response(stream, 200, response.as_bytes())
-        }
-        ("GET", "/api/v1/runtime/state") if request.body.is_empty() => {
-            dispatch(callback, CALLBACK_STATE, &request, stream)
-        }
-        ("POST", "/api/v1/runtime/action") if request.content_type_is_json() => {
-            dispatch(callback, CALLBACK_ACTION, &request, stream)
-        }
-        _ => http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}"),
-    }
+    routes::dispatch(callback, &request, listener_address, stream)
 }
 
 fn dispatch(
     callback: RuntimeRequestCallback,
     kind: u32,
     request: &http::Request,
+    stream: &mut io::Connection<'_>,
+) -> std::io::Result<()> {
+    dispatch_with_body(callback, kind, request, &request.body, stream)
+}
+
+fn dispatch_with_body(
+    callback: RuntimeRequestCallback,
+    kind: u32,
+    request: &http::Request,
+    body: &[u8],
     stream: &mut io::Connection<'_>,
 ) -> std::io::Result<()> {
     let Some(instance_id) = request.headers.get("x-sts2-instance-id") else {
@@ -268,8 +270,8 @@ fn dispatch(
         lease_epoch_len: lease_epoch.len(),
         correlation_id: correlation_id.as_bytes().as_ptr(),
         correlation_id_len: correlation_id.len(),
-        body: request.body.as_ptr(),
-        body_len: request.body.len(),
+        body: body.as_ptr(),
+        body_len: body.len(),
     };
     let mut output = vec![0_u8; MAX_RESPONSE_BYTES];
     let mut output_length = 0_usize;

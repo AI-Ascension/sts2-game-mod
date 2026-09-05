@@ -113,6 +113,9 @@ fi
 
 bridge_source=$(<"$script_dir/session-launcher/windows-bridge/Program.cs")
 launcher_source=$(<"$launcher")
+[[ "$launcher_source" != *'STS2_RUNTIME_DEBUG_LOG_DIR'* ]] || fail 'launcher exposes a raw provider log sink'
+[[ "$launcher_source" != *'gateway_log_file'* && "$launcher_source" != *'harness_log_file'* ]] \
+    || fail 'launcher captures provider output in files'
 [[ "$launcher_source" == *'validate_live_authorization'* ]] || fail 'launcher lacks live authorization preflight'
 [[ "$launcher_source" == *'--authorization-check'* ]] || fail 'launcher lacks authorization-only check'
 [[ "$launcher_source" == *'live-authorization.sh'* ]] || fail 'launcher does not load the shared authorization helper'

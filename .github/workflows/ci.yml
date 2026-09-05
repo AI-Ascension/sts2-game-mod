@@ -70,6 +70,7 @@ jobs:
       - name: Run ephemeral session launcher synthetic checks
         run: |
           bash experiments/managed-rust-interop/session-launcher.test.sh
+          bash experiments/managed-rust-interop/session-restore.test.sh
           bash experiments/managed-rust-interop/session-bridge.test.sh
           bash experiments/managed-rust-interop/provider-build.test.sh
           bash experiments/managed-rust-interop/session-install.test.sh
@@ -122,5 +123,8 @@ jobs:
           dotnet build experiments/managed-rust-interop/session-launcher/windows-bridge/SessionWindowsBridge.csproj --configuration Release -warnaserror
           dotnet run --project experiments/managed-rust-interop/session-launcher/bridge-tests/SessionWindowsBridgeTests.csproj --configuration Release -warnaserror
 
-      - name: Record exact host-loader precondition
+      - name: Run source-linked host candidate safety regressions
+        run: dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj --configuration Release
+
+      - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."
