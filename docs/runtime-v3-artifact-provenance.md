@@ -1,7 +1,7 @@
 # Consumer provenance
 
 The eight upstream artifact files, source schema, and conformance case are copied
-byte-for-byte from [sts2-protocol commit 8250736](https://github.com/AI-Ascension/sts2-protocol/tree/82507361890c1bdce6cffeaf7e616d93e53a7d99).
+byte-for-byte from [sts2-protocol commit be0f3f2](https://github.com/AI-Ascension/sts2-protocol/tree/be0f3f230911f119dbe8e19c71e8249b22f53e59).
 `SHA256SUMS` is unchanged and resolves its two relative source paths in this tree.
 The schema digest is
 `b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c`.
