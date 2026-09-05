@@ -5,6 +5,11 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added opt-in same-seed practice replay for an active saved, single-player Custom run
+  (PR #16), with explicit confirmation that current progress is discarded. Source-linked
+  synthetic controller checks do not establish exact-host save lifecycle, UI confirmation,
+  replacement-run behavior, or history effects; cleanup and restart have no rollback.
+
 - Added the missing Runtime-v2 artifact checksum gate to CI alongside POC, Runtime-v1,
   and Runtime-v3 verification. Frozen artifact bytes remain unchanged.
 

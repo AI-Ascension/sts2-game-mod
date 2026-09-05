@@ -89,8 +89,8 @@ fn server_slot() -> &'static Mutex<Option<RuntimeHandle>> {
 /// Starts the listener with copied configuration and a borrowed callback.
 ///
 /// # Safety
-/// Input pointers must be valid for their declared lengths; `callbacks` must be
-/// aligned and readable. The callback must remain callable until stop returns,
+/// Inputs must be valid for their lengths and unmodified during copying; `callbacks` must be
+/// aligned, readable and unmodified. The callback must remain callable on the listener thread until stop joins it,
 /// must not unwind across the ABI, and must return within its own bounded time.
 /// It may only access request/output pointers during the call and may not write
 /// beyond output capacity. Calling stop from the callback itself is unsupported.
@@ -102,6 +102,9 @@ pub unsafe extern "C" fn sts2_game_mod_runtime_start(
     token_len: usize,
     callbacks: *const RuntimeCallbacks,
 ) -> i32 {
+    // SAFETY: The caller supplies readable, unmodified input for the declared length.
+    // copy_input checks null/bounds and copies synchronously into a Rust-owned Vec;
+    // no caller allocation is freed, retained, or accessed by the listener thread.
     let bind_address = match unsafe {
         copy_input(
             bind_address,
@@ -115,12 +118,18 @@ pub unsafe extern "C" fn sts2_game_mod_runtime_start(
         Some(value) if listener::valid_bind_address(&value) => value,
         _ => return INVALID_ARGUMENT,
     };
+    // SAFETY: The same caller input contract applies to the token; copying is local
+    // and read-only, with no ownership transfer or caller pointer retained after start.
     let token = match unsafe { copy_input(token, token_len, 256) } {
         Ok(value) if !value.is_empty() && value.iter().all(|byte| !byte.is_ascii_whitespace()) => {
             value
         }
         _ => return INVALID_ARGUMENT,
     };
+    // SAFETY: A non-null callbacks pointer is caller-owned, aligned and readable,
+    // with no mutation during this borrow. Only the function pointer is copied;
+    // the caller keeps its code/delegate alive on the listener thread through stop/join.
+    // Neither the table nor callback is freed here; unload must wait for that join.
     let callback = match unsafe { callbacks.as_ref() }.and_then(|value| value.request) {
         Some(value) => value,
         None => return INVALID_ARGUMENT,
@@ -281,6 +290,11 @@ fn dispatch_with_body(
     };
     let mut output = vec![0_u8; MAX_RESPONSE_BYTES];
     let mut output_length = 0_usize;
+    // SAFETY: Request fields borrow live, read-only buffers for this synchronous call.
+    // Output and length are distinct, exclusively borrowed Rust-owned storage; the
+    // callback must obey capacity, retain/free no pointers, and never unwind.
+    // The start caller guarantees callback validity on this listener thread until
+    // stop joins it, before delegate release or native-library unload.
     let status = unsafe {
         callback(
             &native_request,
@@ -299,6 +313,9 @@ unsafe fn copy_input(pointer: *const u8, length: usize, maximum: usize) -> Resul
     if pointer.is_null() || length > maximum {
         return Err(INVALID_ARGUMENT);
     }
+    // SAFETY: Callers guarantee one readable allocation, unmodified for this borrow;
+    // null/length checks above bound it, including non-null for an empty slice.
+    // This thread only reads and copies; the caller retains allocation ownership.
     let bytes = unsafe { std::slice::from_raw_parts(pointer, length) };
     Ok(bytes.to_vec())
 }

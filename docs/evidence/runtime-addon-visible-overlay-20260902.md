@@ -50,9 +50,8 @@ AI-ASCENSION STS2 POC
 WORKING | Rust ABI 1 | 19 + 23 = 42
 ~~~
 
-An operator screenshot was captured at
-`C:\Users\timot\AppData\Local\Temp\sts2-runtime-addon-window.png`; it is intentionally not
-stored in the repository.
+An operator screenshot was captured in an operator-local temporary directory;
+it is intentionally not stored in the repository.
 
 The test used the existing Steam-backed modded profile and caused the game's normal profile/save
 sync writes during startup. No in-game action was performed. This confirms addon discovery,
