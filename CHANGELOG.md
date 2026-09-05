@@ -10,6 +10,10 @@ and has no released product behavior.
   `11e4252e39a77f0017b8e4f3720590e6162e8f53`. CI verifies the inventory; existing schema and
   manifest bytes are unchanged. This is packaging evidence only, not new host verification.
 
+- Enforced the ABI version 1 descriptor's zero-reserved-byte requirement. Invalid descriptors
+  return `AbiError::NonzeroReservedBytes`; valid descriptor layout and version remain unchanged.
+  Synthetic regression tests cover every reserved byte, without extending host evidence.
+
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses
   an already-running game, verifies unauthenticated rejection plus authenticated game/gateway and

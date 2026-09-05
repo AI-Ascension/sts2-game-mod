@@ -76,6 +76,10 @@ and live host settlement are unverified.
 
 ## Contract compatibility
 
+The target-local ABI descriptor validator rejects nonzero reserved bytes, as required by ABI
+version 1. This is a source-tested validation correction; the descriptor layout, version, and
+zero-filled descriptors are unchanged. It does not establish host compatibility.
+
 The managed Runtime-v1 request validator enforces the copied schema's closed required shape,
 null sentinels, identity bounds and maximum safe integer. It additionally rejects duplicate JSON
 properties and requires the body epoch to match the transport context. Numeric values use the

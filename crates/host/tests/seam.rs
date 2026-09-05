@@ -100,3 +100,16 @@ fn closed_queue_rejects_new_work() {
     queue.close();
     assert_eq!(queue.enqueue(1), Err(QueueError::Closed));
 }
+
+#[test]
+fn abi_validation_rejects_each_reserved_byte() {
+    for reserved in [[1, 0, 0], [0, 1, 0], [0, 0, 1], [255; 3]] {
+        assert_eq!(
+            validate_abi(&FakeAbi(AbiDescriptor {
+                reserved,
+                ..AbiDescriptor::current()
+            })),
+            Err(AbiError::NonzeroReservedBytes)
+        );
+    }
+}
