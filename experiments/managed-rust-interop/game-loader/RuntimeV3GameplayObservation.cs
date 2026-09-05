@@ -70,6 +70,13 @@ internal sealed record RuntimeV3GameplayObservation(
             return false;
         }
 
+        return ValidateCards(out error)
+            && ValidateStateValues(out error)
+            && ValidateVisibleEntities(out error);
+    }
+
+    private bool ValidateCards(out string error)
+    {
         foreach (IReadOnlyList<RuntimeV3GameplayCard> cards in new[]
         {
             Player.Hand,
@@ -94,6 +101,12 @@ internal sealed record RuntimeV3GameplayObservation(
             }
         }
 
+        error = string.Empty;
+        return true;
+    }
+
+    private bool ValidateStateValues(out string error)
+    {
         if (StateValues.Count > RuntimeV3GameplayContract.MaxEntities
             || Enemies.Count > RuntimeV3GameplayContract.MaxEntities
             || ShopItems.Count > RuntimeV3GameplayContract.MaxEntities)
@@ -127,6 +140,12 @@ internal sealed record RuntimeV3GameplayObservation(
             }
         }
 
+        error = string.Empty;
+        return true;
+    }
+
+    private bool ValidateVisibleEntities(out string error)
+    {
         foreach (RuntimeV3GameplayEnemy enemy in Enemies)
         {
             if (!RuntimeV3GameplayContract.IsIdentity(enemy.EnemyId)
