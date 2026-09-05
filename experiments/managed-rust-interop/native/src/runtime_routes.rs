@@ -29,10 +29,10 @@ pub(super) fn dispatch(
         ("POST", "/api/v2/runtime/action") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_RUNTIME_V2_ACTION, request, stream)
         }
-        ("GET", path) if request.body.is_empty() => {
-            let Some(operation_id) = path.strip_prefix("/api/v2/runtime/operations/") else {
-                return http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}");
-            };
+        ("GET", path)
+            if request.body.is_empty() && path.starts_with("/api/v2/runtime/operations/") =>
+        {
+            let operation_id = &path["/api/v2/runtime/operations/".len()..];
             dispatch_operation(
                 callback,
                 CALLBACK_RUNTIME_V2_OPERATION,
@@ -41,8 +41,24 @@ pub(super) fn dispatch(
                 stream,
             )
         }
-        _ => http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}"),
+        _ => dispatch_gameplay(callback, request, stream),
     }
+}
+
+fn dispatch_gameplay(
+    callback: RuntimeRequestCallback,
+    request: &http::Request,
+    stream: &mut super::io::Connection<'_>,
+) -> std::io::Result<()> {
+    let expected = super::gameplay_route::expected_kind(&request.method, &request.path)
+        .filter(|_| request.content_type_is_json());
+    let Some(expected) = expected else {
+        return http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}");
+    };
+    if !super::gameplay_route::body_matches(&request.body, expected) {
+        return http::write_response(stream, 400, b"{\"error_code\":\"invalid_route_message\"}");
+    }
+    dispatch_callback(callback, super::CALLBACK_GAMEPLAY, request, stream)
 }
 
 fn dispatch_operation(

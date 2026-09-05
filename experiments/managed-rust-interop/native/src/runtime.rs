@@ -10,7 +10,8 @@ const CALLBACK_ACTION: u32 = 2;
 const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
 const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
 const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
-const MAX_RESPONSE_BYTES: usize = 64 * 1024;
+const CALLBACK_GAMEPLAY: u32 = 6;
+const MAX_RESPONSE_BYTES: usize = 128 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
 const ALREADY_STARTED: i32 = 2;
@@ -23,6 +24,11 @@ mod auth;
 #[cfg(test)]
 #[path = "runtime_endpoint_tests.rs"]
 mod endpoint_tests;
+#[path = "runtime_gameplay_route.rs"]
+mod gameplay_route;
+#[cfg(test)]
+#[path = "runtime_gameplay_route_tests.rs"]
+mod gameplay_route_tests;
 #[path = "runtime_http.rs"]
 mod http;
 #[path = "runtime_io.rs"]
