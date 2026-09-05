@@ -49,6 +49,12 @@ The selected semantic action must exist in the fresh catalog and visible game co
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).
 
+Select the harness's `sts2-astra-bridge` as `--provider-binary` to play with OpenAI
+`gpt-6-astra` using an existing Codex login. The launcher reads `--describe` before launch,
+records the provider/model identity, and explicitly inherits only HOME/PATH for this provider.
+The Ollama bridge remains selectable. Additional providers are future work and require a
+provider adapter, without changing the game action or replay contracts.
+
 During initial isolation setup before the addon loaded, the host wrote two Steam local-cache
 files. Both were restored from the original local saves and byte-checked. Full external
 backups were retained. Steam app cloud sync was disabled; remote cloud state was not verified.

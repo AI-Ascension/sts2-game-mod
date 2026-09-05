@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Read provider identity before live-combat launch, support the OpenAI Astra bridge, and
+  record the selected provider/model instead of hardcoding Ollama.
+
 - Add opt-in visible single-player combat demonstration with host action-completion witnesses,
   local-only demo saves, preserved mod consent, and prelaunch display, size and window mode.
   See `docs/LIVE_COMBAT_DEMO.md` for exact runtime evidence and isolation limits.
