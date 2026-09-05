@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Added the missing Runtime-v2 artifact checksum gate to CI alongside POC, Runtime-v1,
+  and Runtime-v3 verification. Frozen artifact bytes remain unchanged.
+
 - Integrated the semantic gameplay callback as kind 6 alongside frozen v2 IDs 3–5. Both
   profiles share host identity and pending-operation admission fences; source-linked regressions
   cover delayed dispatch, retries and reconciliation without promoting host compatibility.
