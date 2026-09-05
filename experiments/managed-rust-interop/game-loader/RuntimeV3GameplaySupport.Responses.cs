@@ -31,14 +31,7 @@ internal sealed partial class RuntimeV3GameplaySupport
         }
         using JsonDocument document = JsonDocument.Parse(projection);
         JsonElement root = document.RootElement;
-        var observationObject = new Dictionary<string, object?>
-        {
-            ["state_id"] = root.GetProperty("state_id").Clone(),
-            ["generation"] = root.GetProperty("generation").Clone(),
-            ["visible_seed"] = root.GetProperty("visible_seed").Clone(),
-            ["player"] = root.GetProperty("player").Clone(),
-            ["state"] = root.GetProperty("state").Clone()
-        };
+        Dictionary<string, object?> observationObject = ReceiptObservation(root);
         return SerializeEnvelope(
             kind,
             correlationId,
@@ -135,14 +128,7 @@ internal sealed partial class RuntimeV3GameplaySupport
         }
         using JsonDocument document = JsonDocument.Parse(projection);
         JsonElement root = document.RootElement;
-        var observationObject = new Dictionary<string, object?>
-        {
-            ["state_id"] = root.GetProperty("state_id").Clone(),
-            ["generation"] = root.GetProperty("generation").Clone(),
-            ["visible_seed"] = root.GetProperty("visible_seed").Clone(),
-            ["player"] = root.GetProperty("player").Clone(),
-            ["state"] = root.GetProperty("state").Clone()
-        };
+        Dictionary<string, object?> observationObject = ReceiptObservation(root);
         return SerializeEnvelope(
             kind,
             correlationId,
@@ -162,6 +148,15 @@ internal sealed partial class RuntimeV3GameplaySupport
             null,
             waitOutcome);
     }
+
+    private static Dictionary<string, object?> ReceiptObservation(JsonElement root) => new()
+    {
+        ["state_id"] = root.GetProperty("state_id").Clone(),
+        ["generation"] = root.GetProperty("generation").Clone(),
+        ["visible_seed"] = root.GetProperty("visible_seed").Clone(),
+        ["player"] = root.GetProperty("player").Clone(),
+        ["state"] = root.GetProperty("state").Clone()
+    };
 
     private static string RecoveryState(
         string instanceId,

@@ -12,6 +12,13 @@ those rules.
 
 ## Decision
 
+Managed request methods separate envelope identity validation, typed action payload validation,
+receipt replay, fresh dispatch admission, and recovery observation. Response construction separates
+owned observation projection, provenance, transition projection, and bounded serialization.
+Co-op projection validates peer membership before copying the owned result. These responsibility
+splits retain validation order, wire fields, error codes, and receipt semantics while keeping new
+or modified methods within the 60-line refactoring threshold; no policy exemption is used.
+
 The 2026-09-05 integration preserves the independently merged v2 adapter from PR #26. V2
 callback IDs remain 3, 4 and 5; the semantic gameplay callback becomes 6. Both handlers use the
 same bound instance/caller/session/lease/epoch authorizer. An accepted or unknown semantic
