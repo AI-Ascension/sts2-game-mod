@@ -43,6 +43,15 @@ done
 for binary in "$gateway" "$mcp" "$harness" "$provider"; do
     [[ -x "$binary" ]] || { printf 'Missing executable\n' >&2; exit 2; }
 done
+provider_metadata=$("$provider" --describe)
+provider_kind=$(jq -er '.kind' <<<"$provider_metadata")
+provider_name=$(jq -er '.provider' <<<"$provider_metadata")
+provider_model=$(jq -er '.model' <<<"$provider_metadata")
+case "$provider_kind:$provider_name:$provider_model" in
+    openai-astra:openai:gpt-6-astra) command -v codex >/dev/null; command -v timeout >/dev/null ;;
+    ollama:ollama:gemma4:31b-cloud) ;;
+    *) printf 'Unsupported provider identity\n' >&2; exit 2 ;;
+esac
 [[ -f "$host_dir/override.cfg" && -n "$user_dir" && -n "$artifacts" ]] || exit 2
 [[ "$display" =~ ^(-1|[0-9]+)$ && "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] || exit 2
 [[ "$hold" =~ ^[0-9]+$ && "$hold" -le 600 ]] || exit 2
@@ -102,12 +111,18 @@ export STS2_RUNTIME_PROFILE=runtime-v3-gameplay STS2_MCP_BINARY="$mcp"
 export STS2_EXO_BRIDGE_BINARY="$provider" STS2_EXO_BRIDGE_ARGS_JSON='[]'
 export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
-export STS2_PROVIDER_KIND=ollama STS2_COMBAT_DEMO=true STS2_EXO_FORWARD_VISIBLE_SEED=true
+export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true STS2_EXO_FORWARD_VISIBLE_SEED=true
+if [[ "$provider_kind" == openai-astra ]]; then
+    export STS2_EXO_INHERITED_ENV_JSON='["HOME","PATH"]'
+else
+    export STS2_EXO_INHERITED_ENV_JSON='[]'
+fi
 export STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
 export STS2_REPLAY_TRAJECTORY="$replay"
 jq -n --arg seed "$seed" --arg bridge "$STS2_EXO_REVISION" --arg mode "$mode" \
+    --arg provider "$provider_name" --arg model "$provider_model" \
     --arg display "$display" --arg width "$width" --arg height "$height" --arg replay "$replay" \
-    '{seed:$seed,bridge_sha256:$bridge,provider:"ollama",model:"gemma4:31b-cloud",
+    '{seed:$seed,bridge_sha256:$bridge,provider:$provider,model:$model,
     display:$display,width:$width,height:$height,window_mode:$mode,replay:$replay}' >"$run/manifest.json"
 sha256sum "$gateway" "$mcp" "$harness" "$provider" >"$run/binaries.sha256"
 "$harness" >"$run/trajectory.jsonl" 2>"$run/harness.stderr" &
