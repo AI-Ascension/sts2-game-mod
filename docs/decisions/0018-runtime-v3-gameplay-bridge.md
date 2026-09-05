@@ -12,6 +12,11 @@ those rules.
 
 ## Decision
 
+The managed handler is split into partial files for routing, observation, dispatch,
+request validation, response construction, and serialization. These files share one
+host owner and remain subject to the normal managed file budgets; no licensed SDK
+is required to validate this organization with the source-linked gameplay probe.
+
 Keep the managed Runtime-v3 bridge behind `RuntimeV3GameplayHost` and its injected host source and
 main-thread queue. It serializes only the bounded fair-play projection, rejects unknown or
 privileged fields, requires a generation-matching typed action from the host catalog, records
