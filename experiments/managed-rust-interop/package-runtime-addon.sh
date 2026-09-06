@@ -44,7 +44,6 @@ output_dir=$2
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 managed_project="$repo_root/experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj"
 native_manifest="$repo_root/experiments/managed-rust-interop/native/Cargo.toml"
-managed_build_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2GameMod.dll"
 manifest="$repo_root/experiments/managed-rust-interop/game-loader/mod_manifest.json"
 
 case "$game_data_input" in
@@ -86,11 +85,20 @@ esac
 # may redirect it away from this checkout's target directory.
 native_target_dir=$(cargo metadata --locked --offline --no-deps --format-version 1 \
     --manifest-path "$native_manifest" | jq -er '.target_directory | select(type == "string" and startswith("/"))')
+managed_output_root="$native_target_dir/managed/$platform"
+managed_build_artifact="$managed_output_root/Release/net9.0/AIAscensionSTS2GameMod.dll"
+managed_output_msbuild=$managed_output_root
+case "$dotnet_resolved" in
+    *.[eE][xX][eE])
+        managed_output_msbuild=$(wslpath -w "$managed_output_root")
+        ;;
+esac
 native_build_artifact="$native_target_dir/$native_target/release/$native_file"
 cargo build --locked --release --target "$native_target" --manifest-path "$native_manifest"
-"$dotnet_command" restore "$managed_project_msbuild" -p:STS2GameDataDir="$game_data_msbuild"
+"$dotnet_command" restore "$managed_project_msbuild" -p:STS2GameDataDir="$game_data_msbuild" \
+    -p:BaseOutputPath="$managed_output_msbuild/"
 "$dotnet_command" build "$managed_project_msbuild" --configuration Release \
-    -p:STS2GameDataDir="$game_data_msbuild" --no-restore
+    -p:STS2GameDataDir="$game_data_msbuild" -p:BaseOutputPath="$managed_output_msbuild/" --no-restore
 
 if [[ ! -f "$managed_build_artifact" || ! -f "$native_build_artifact" ]]; then
     printf 'build did not produce the expected %s addon artifacts\n' "$platform" >&2

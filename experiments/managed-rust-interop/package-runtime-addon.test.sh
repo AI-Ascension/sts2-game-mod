@@ -39,7 +39,17 @@ case ${0##*/} in
     dotnet|dotnet.exe)
         printf '%s\0' "$@" > "$PACKAGE_TEST_ROOT/$1.args"
         if [[ $1 == build ]]; then
-            managed="$PACKAGE_TEST_ROOT/experiments/managed-rust-interop/game-loader/bin/Release/net9.0"
+            managed=''
+            for argument in "$@"; do
+                if [[ $argument == -p:BaseOutputPath=* ]]; then
+                    managed=${argument#-p:BaseOutputPath=}
+                fi
+            done
+            if [[ $managed == WINDOWS::* ]]; then
+                managed="$PACKAGE_TEST_ROOT/target/managed/windows-x86_64"
+            fi
+            [[ -n "$managed" ]]
+            managed=${managed%/}/Release/net9.0
             mkdir -p "$managed"
             printf 'synthetic managed' > "$managed/AIAscensionSTS2GameMod.dll"
         fi
@@ -125,11 +135,11 @@ setup_case native-unc-input
 check_case '\\server\Fake Host' '' 1
 setup_case windows-sdk
 export DOTNET_COMMAND="$PACKAGE_TEST_ROOT/tools/dotnet.exe"
-check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 2
+check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 3
 setup_case windows-symlink
 rm -- "$PACKAGE_TEST_ROOT/tools/dotnet"
 ln -s dotnet.exe "$PACKAGE_TEST_ROOT/tools/dotnet"
-check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 2
+check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 3
 setup_case redirected-absolute-target
 export CARGO_TARGET_DIR="$test_root/alternate cargo output"
 stale_default_artifact
