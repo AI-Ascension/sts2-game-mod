@@ -13,9 +13,8 @@ trap cleanup EXIT
 export SOURCE_DATE_EPOCH=0
 version=0.4.0
 platform=linux-x86_64
-for output in first second; do
-    (cd "$repo_root" && bash "$script_dir/build-source-bundle.sh" "$version" "$platform" "$test_dir/$output" HEAD)
-done
+(umask 022; cd "$repo_root" && bash "$script_dir/build-source-bundle.sh" "$version" "$platform" "$test_dir/first" HEAD)
+(umask 077; cd "$repo_root" && bash "$script_dir/build-source-bundle.sh" "$version" "$platform" "$test_dir/second" HEAD)
 
 first_archive=$(find "$test_dir/first" -maxdepth 1 -type f -name '*.tar.gz' -print -quit)
 second_archive=$(find "$test_dir/second" -maxdepth 1 -type f -name '*.tar.gz' -print -quit)

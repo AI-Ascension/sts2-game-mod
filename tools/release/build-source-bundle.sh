@@ -50,7 +50,10 @@ trap cleanup EXIT
 archive_root="$work_dir/$artifact_name"
 mkdir -p -- "$archive_root"
 
-git archive --format=tar "$source_commit" | tar -xf - -C "$archive_root"
+# Preserve the executable bits from Git independently of the caller's umask. Directory modes are
+# normalized below because Git does not store them as tree metadata.
+git archive --format=tar "$source_commit" | tar --extract --same-permissions --no-same-owner -f - -C "$archive_root"
+find "$archive_root" -type d -exec chmod 0755 {} +
 
 # A source bundle must never silently acquire a host binary, profile, save, or build tree.
 while IFS= read -r -d '' path; do
@@ -85,6 +88,7 @@ cat > "$archive_root/RELEASE-MANIFEST.json" <<EOF
   "workshop_publication_evidence": "unverified"
 }
 EOF
+chmod 0644 "$archive_root/RELEASE-MANIFEST.json"
 
 (
     cd -- "$archive_root"
@@ -93,6 +97,7 @@ EOF
         sha256sum -- "$relative"
     done < <(find . -type f ! -name SHA256SUMS -printf '%P\n' | LC_ALL=C sort)
 ) > "$archive_root/SHA256SUMS"
+chmod 0644 "$archive_root/SHA256SUMS"
 
 archive_path="$output_dir/$artifact_name.tar.gz"
 tar --create --file=- --sort=name --mtime="@${SOURCE_DATE_EPOCH:-0}" \
