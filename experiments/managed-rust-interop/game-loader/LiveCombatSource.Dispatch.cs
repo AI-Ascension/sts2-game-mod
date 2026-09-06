@@ -25,6 +25,8 @@ internal sealed partial class LiveCombatSource
         if (_pending.ContainsKey(operation) || _pending.Count >= 4096) return false;
         RuntimeV3GameplayObservation before = Observe();
         if (action.Generation != before.Generation || !LegalActions(before).Contains(action)) return false;
+        if (LiveCombatDemo.Campaign && before.State != RuntimeV3GameplayState.Combat)
+            return DispatchCampaign(operation, action, before);
         var player = CurrentPlayer();
         if (player?.PlayerCombatState == null) return false;
         GameAction queued;
@@ -51,6 +53,7 @@ internal sealed partial class LiveCombatSource
     public RuntimeV3HostCompletion? Completion(RuntimeV3OperationKey operation, LegalActionReference action)
     {
         RequireThread();
+        if (_campaignPending.ContainsKey(operation)) return CampaignCompletion(operation, action);
         if (!_pending.TryGetValue(operation, out PendingAction? pending) || pending.Action != action)
             return null;
         GameAction queued = pending.HostAction;
