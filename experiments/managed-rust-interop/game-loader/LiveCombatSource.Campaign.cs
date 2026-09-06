@@ -37,7 +37,7 @@ internal sealed partial class LiveCombatSource
                 map.IsTravelEnabled && !map.IsTraveling && points.Length > 0
                     && MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal == null);
         }
-        if (NOverlayStack.Instance?.ScreenCount > 0) return ProjectRewardOverlay(observation);
+        if (overlay != null) return ProjectRewardOverlay(observation);
         if (CurrentRestSite() is { } rest) return ProjectRestSite(observation, rest);
         if (CurrentTreasure() is { } treasure) return ProjectTreasure(observation, treasure);
         if (CurrentShop() is { } shop) return ProjectShop(observation, shop);

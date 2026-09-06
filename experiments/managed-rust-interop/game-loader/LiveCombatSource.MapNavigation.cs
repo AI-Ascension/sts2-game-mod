@@ -9,7 +9,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
-    private async Task NavigateCampaignMapAsync(MoveToMapCoordAction queued)
+    private async Task NavigateCampaignMapAsync(MoveToMapCoordAction queued, Func<bool> arrived)
     {
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(queued);
         // A queue task can complete outside the host thread. Wait through host frames
@@ -21,8 +21,15 @@ internal sealed partial class LiveCombatSource
             {
                 await queued.CompletionTask;
                 RequireThread();
-                await OpenEnteredShopAsync();
-                return;
+                if (queued.Exception != null)
+                    throw new InvalidOperationException("native map navigation failed");
+                // The host can finish the queued move before installing its destination.
+                // Never inspect/open a merchant until the destination predicates hold.
+                if (arrived())
+                {
+                    await OpenEnteredShopAsync();
+                    return;
+                }
             }
             await WaitCampaignFrameAsync();
         }

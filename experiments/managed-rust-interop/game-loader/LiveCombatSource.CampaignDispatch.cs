@@ -52,9 +52,9 @@ internal sealed partial class LiveCombatSource
             var destination = point.Point.coord;
             var previousRoom = run.CurrentRoom;
             var queued = new MoveToMapCoordAction(CurrentPlayer()!, destination);
-            invoke = () => NavigateCampaignMapAsync(queued);
             postcondition = () => queued.State == GameActionState.Finished && queued.Exception == null
                 && run.CurrentMapCoord == destination && run.CurrentRoom != previousRoom;
+            invoke = () => NavigateCampaignMapAsync(queued, postcondition);
             effect = "map_room_entered";
             diagnostics = () => $"queue_state={queued.State}; queue_task={queued.CompletionTask.Status}; "
                 + $"queue_error={queued.Exception?.GetType().Name ?? "none"}; "
@@ -69,7 +69,9 @@ internal sealed partial class LiveCombatSource
             postcondition = () => option.WasChosen;
             effect = "event_choice_completed";
         }
-        else if (!PrepareReward(action, out invoke, out postcondition, out effect)
+        else if (!PrepareCombatChoice(action, out invoke, out postcondition, out effect)
+            && !PrepareEventCardChoice(action, out invoke, out postcondition, out effect)
+            && !PrepareReward(action, out invoke, out postcondition, out effect)
             && !PrepareRest(action, before, out invoke, out postcondition, out effect)
             && !PrepareTreasure(action, out invoke, out postcondition, out effect)
             && !PrepareShop(action, out invoke, out postcondition, out effect)) return false;
@@ -85,6 +87,8 @@ internal sealed partial class LiveCombatSource
         LegalActionReference action)
     {
         CampaignPending pending = _campaignPending[operation];
+        if (pending.Action == action && EventChoiceBoundary(operation, pending) is { } choice)
+            return choice;
         if (pending.Diagnostics != null && ++pending.CompletionChecks is 1 or 10 or 60)
             Godot.GD.Print($"[AI-ASCENSION LIVE] map completion check={pending.CompletionChecks}; "
                 + $"work={pending.Work?.Status}; work_error={pending.Work?.Exception?.GetBaseException().GetType().Name ?? "none"}; "

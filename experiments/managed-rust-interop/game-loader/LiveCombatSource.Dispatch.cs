@@ -57,6 +57,8 @@ internal sealed partial class LiveCombatSource
         if (!_pending.TryGetValue(operation, out PendingAction? pending) || pending.Action != action)
             return null;
         GameAction queued = pending.HostAction;
+        if (queued.State == GameActionState.GatheringPlayerChoice)
+            return CombatChoiceBoundary(operation, pending);
         if (queued.State != GameActionState.Finished || !queued.CompletionTask.IsCompletedSuccessfully
             || queued.Exception != null) return null;
         RuntimeV3GameplayObservation after = Observe();
