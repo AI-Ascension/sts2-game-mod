@@ -8,6 +8,11 @@ Cargo dependencies must be locked and reviewed before they are added. Their lice
 requirements belong here or in a generated release notice derived from the exact lockfile. The
 current policy tool has no third-party Cargo dependency.
 
+The optional mod-loading operator tool uses the locked `serde`/`serde_json` packages (MIT or
+Apache-2.0) and RustCrypto `sha2` 0.10.9 (MIT or Apache-2.0), with their locked transitive
+dependencies. No dependency implementation is copied into project source. Release notices must
+include the exact locked dependency licenses with the distributed operator binary.
+
 The optional runtime-only ModConfig-STS2 API integration is based on the authoritative repository
 at https://github.com/xhyrzldf/ModConfig-STS2, inspected at commit
 639eb97fa7824e94a43339913c51433117207d05. Attribution: PiPiFanDev. The upstream project is

@@ -1,0 +1,15 @@
+[package]
+name = "sts2-game-mod-loading"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "=0.10.9"
+
+[lints]
+workspace = true
