@@ -1,9 +1,16 @@
 # Changelog
 
-All notable changes to this target are recorded here. The repository is in foundation preparation
-and has no released product behavior.
+All notable changes to this target are recorded here. The repository has no released product
+behavior; the dated runtime records below remain scoped to their named STS2 v0.107.1 fixtures and
+do not establish release support.
 
 ## Unreleased
+
+- Record bounded native v0.107.1 Windows/Linux runtime-v3 campaigns and fresh replays through the
+  host adapter, plus forced terminal Victory observation with disabled input and no legal catalog.
+  The campaigns reached Defeat; the forced fixture is observation-only and does not establish a
+  model-played Victory, native multiplayer, or broader host compatibility. See
+  `docs/evidence/native-victory-observation-20260906.md` and the harness campaign records.
 
 - Translate merchant purchases, card removal and shop exit through native controls;
   verified Windows Astra relic purchase and shop exit. Reject potion reward claims when
@@ -57,7 +64,8 @@ and has no released product behavior.
 
 - Added the source-only Runtime-v3 fair-play host bridge, generation-bound typed legal-action
   catalog, postcondition receipt path, fail-closed unknown outcomes, and additive co-op projection.
-  Licensed host assembly/build and live gameplay compatibility remain unverified.
+  That source-only addition did not establish licensed host assembly/build or live gameplay
+  compatibility; the separate dated native records cover only their named scenarios and artifacts.
 
 - Added a target-owned ephemeral runtime-session launcher and Windows environment bridge. Each
   launch creates distinct in-memory runtime/mod and gateway credentials with the OS CSPRNG, refuses
@@ -72,8 +80,9 @@ and has no released product behavior.
 - Added the owner-local Runtime-v2 release-like artifact copy pinned to schema digest
   `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and a bounded deterministic
   in-memory fake seam for `end_turn`, receipt replay, reconciliation, cancellation, and timeout
-  fencing. No concrete host gameplay API exists here; live host mutation and settlement remain
-  unverified, and Runtime-v1 routes/tests are unchanged.
+  fencing. For this Runtime-v2 fake seam, no concrete host gameplay API was included; its live
+  host mutation and settlement remain unverified. This historical entry does not describe the
+  separate managed/native Runtime-v3 host path, and Runtime-v1 routes/tests are unchanged.
 
 - Added a bounded runtime listener (default loopback), managed main-thread queue bridge, `runtime-v1`
   artifact copy, and the host-visible `show_runtime_probe` action with stale-generation handling.
