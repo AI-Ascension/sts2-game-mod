@@ -1,6 +1,6 @@
 # Native victory observation, 2026-09-06
 
-Evidence scope: forced native Windows v0.107.1 terminal observation in the isolated Train
+Evidence scope: forced native Windows and Linux v0.107.1 terminal observation in isolated Train
 practice fixture. This is not LLM control, a played boss fight, campaign victory, or replay.
 
 The normal adapter now observes a living local single-player character, same active-run
@@ -48,4 +48,26 @@ hash-verified, and launched again.
 
 The source-only managed build, Workshop validation probe, Rust workspace tests, Clippy with
 warnings denied, formatting, and strict repository policy passed.
-Normal Linux native victory and a model-played campaign win remain unverified.
+A model-played campaign win remains unverified.
+
+## Linux native terminal verification
+
+The same source-owned fixture was compiled against the exact Linux v0.107.1 assemblies
+and launched separately after the prior replay controller had stopped. It selected the
+last act and boss coordinate, force-ended that test fight through native APIs, and used
+the native Proceed control. The host entered its visible victory event with `WinTime=19`,
+80 HP, `IsInProgress=true`, and `IsGameOver=false`.
+
+All assertions passed: Victory, disabled input, empty legal catalog, refusal of late
+attachment, refusal of unchanged and absent markers, and restoration of the fresh result.
+A read-only native capture independently showed the victory event and living player.
+This is forced terminal-observation evidence, not model gameplay or replay.
+
+| Linux fixture artifact | SHA-256 |
+| --- | --- |
+| Probe addon | `3f87bed72079bebbc0b0c0432abbbb04009fd85ed9094a92dc605973c3539bc4` |
+| Preserved native log | `ad240d79072eeeb0af65dac26899db1238a52a5f52891a7e0e9d0d8b120282d0` |
+| Native capture | `79fc1f1fbad19a183b189c682adb67d0208ae80637b309acfc014e9b46ce5ff0` |
+
+The fixture addon, launcher and logs were backed up before its owned process was stopped.
+The ordinary seeded launcher was retained separately; it does not enable the terminal fixture.

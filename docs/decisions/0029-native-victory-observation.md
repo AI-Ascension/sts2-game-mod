@@ -1,6 +1,6 @@
 # ADR 0029: Current-run native victory observation
 
-Status: implemented; native Windows forced-terminal verification confirmed.
+Status: implemented; native Windows and Linux forced-terminal verification confirmed.
 
 The live source previously detected player death but had no native victory classification.
 The candidate requires a living local single-player character, a non-abandoned run, a newly
@@ -24,3 +24,5 @@ coordinate and native reward Proceed control. `WinTime` was 13 seconds, the play
 80 HP, and the projection was Victory with disabled input and no legal mutations. Missing and
 unchanged win markers and late attachment were rejected. See the
 [native evidence](../evidence/native-victory-observation-20260906.md) for exact builds and limits.
+The separate Linux v0.107.1 fixture repeated all terminal and stale-result checks with
+`WinTime=19` and 80 HP. Both are forced native fixtures, not model-played campaign wins.

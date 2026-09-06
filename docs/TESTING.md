@@ -3,7 +3,7 @@
 The separately compiled [native terminal fixture](../experiments/managed-rust-interop/terminal-host-probe/README.md)
 checks fresh Victory, living terminal player state, disabled input, empty legal actions,
 and rejection of stale/missing win markers and late attachment. Its
-[Windows evidence](evidence/native-victory-observation-20260906.md) is a forced host test,
+[Windows and Linux evidence](evidence/native-victory-observation-20260906.md) is a forced host test,
 not a played campaign win; normal builds exclude the fixture.
 
 For bounded native Astra treasure opening, relic acquisition and map continuation, see
