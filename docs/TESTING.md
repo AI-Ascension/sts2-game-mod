@@ -1,5 +1,9 @@
 # Testing and evidence
 
+For bounded native Astra rest-site healing, smithing and map continuation, see
+[the Windows evidence](evidence/native-rest-sites-20260906.md). Treasure entry remained
+unresolved; this does not establish full campaign completion.
+
 For the opt-in exact-host LLM combat, repeat/replay evidence, launch settings and isolation
 limits, see [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md). Host-free CI does not replace this
 live evidence. Changed-seed replay must stop before dispatch; repeated same-seed choices
