@@ -64,7 +64,7 @@ done < <(find "$archive_root" \( -type l -o -type b -o -type c -o -type p \) -pr
 while IFS= read -r -d '' path; do
     relative=${path#"$archive_root/"}
     case "$relative" in
-        .git/*|target/*|*/target/*|bin/*|*/bin/*|obj/*|*/obj/*|*.dll|*.dylib|*.so|*.pdb|*.save|*.sav|*.sts2profile|.env|.env.*)
+        .git/*|target/*|*/target/*|bin/*|*/bin/*|obj/*|*/obj/*|*.dll|*.dylib|*.so|*.pdb|*.save|*.sav|*.sts2profile|.env|.env.*|*/.env|*/.env.*)
             printf 'unsupported release input in source tree: %s\n' "$relative" >&2
             exit 1
             ;;

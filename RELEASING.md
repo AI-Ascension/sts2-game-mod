@@ -68,6 +68,20 @@ If the new payload fails verification or load smoke, stop it, restore the prior 
 rerun its hash check, and record the source commit and both archive checksums. This is an operator
 procedure; no host installation or rollback is performed by CI.
 
+## Workshop platform boundary
+
+The current Workshop contract is a Windows x86-64 package. `tools/workshop/package-item.sh` stages
+exactly `AIAscensionSTS2GameMod.dll`, `AIAscensionSTS2GameMod.json`, and
+`AIAscensionSTS2GameModNative.dll`; the managed validator applies the same allowlist and checks the
+exact `windows-x86_64` platform. The Linux-labelled source archive is source distribution evidence,
+not a Linux executable payload or Workshop support claim.
+
+Do not overwrite one Workshop item with a native payload for another platform. If Linux runtime
+support is approved later, use a distinct first-party published-file ID and a separately reviewed
+manifest, file allowlist, native loader, and exact host/platform evidence. A single multi-platform
+item would require those contract and loader changes before any arbitrary `.so` or other native file
+could be admitted. Until then, only the Windows package path may be staged or published.
+
 ## Workshop publication
 
 Workshop staging is a release-preparation action, not an ordinary CI action:

@@ -31,6 +31,19 @@ Steam assigns an ID, rebuild the package with that exact ID before treating it a
 candidate. The runtime consumer separately applies its exact App ID, item ID, game version, platform,
 loader-contract, and file-role policy.
 
+## Platform boundary
+
+The checked-in package path is Windows x86-64 only: its manifest is emitted with
+`windows-x86_64`, its payload allowlist names `AIAscensionSTS2GameModNative.dll`, and the managed
+validator accepts that same three-file inventory. The Rust manifest shape allows other native
+extensions as a data-model detail, but that does not enable a Linux loader or a Linux Workshop
+package. The `linux-x86_64` source bundle is source distribution evidence only.
+
+Keep native payloads for different platforms under separate first-party published-file IDs. Never
+replace a Windows item in place with incompatible native bytes. A shared multi-platform item needs
+a reviewed manifest/loader contract and exact per-platform runtime evidence before its allowlist can
+admit any additional native file.
+
 ## Upload boundary
 
 Valve documents the `ISteamUGC` create/update flow and the separate `steamcmd.exe` VDF flow at
