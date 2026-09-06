@@ -1,8 +1,8 @@
 # Compatibility policy and matrix
 
-Current-run Victory observation has focused native Windows v0.107.1 evidence from an
-isolated forced-terminal fixture; normal Windows/Linux addon builds compile and exclude
-the fixture. This does not establish a model-played win or Linux native victory. See
+Current-run Victory observation has focused native Windows and Linux v0.107.1 evidence from
+isolated forced-terminal fixtures; normal Windows/Linux addon builds compile and exclude
+the fixture. This does not establish a model-played win. See
 [the exact terminal evidence](evidence/native-victory-observation-20260906.md).
 
 Native merchant and potion-capacity behavior is documented in
