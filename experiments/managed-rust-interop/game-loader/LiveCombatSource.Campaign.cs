@@ -39,6 +39,7 @@ internal sealed partial class LiveCombatSource
         }
         if (NOverlayStack.Instance?.ScreenCount > 0) return ProjectRewardOverlay(observation);
         if (CurrentRestSite() is { } rest) return ProjectRestSite(observation, rest);
+        if (CurrentTreasure() is { } treasure) return ProjectTreasure(observation, treasure);
         NEventOptionButton[] options = EventButtons();
         if (options.Length > 0)
             return Surface(observation, RuntimeV3GameplayState.Event,
@@ -83,6 +84,8 @@ internal sealed partial class LiveCombatSource
     {
         if (!observation.InputEnabled) return Array.Empty<LegalActionReference>();
         if (observation.State == RuntimeV3GameplayState.Rest) return RestActions(observation);
+        if (observation.State == RuntimeV3GameplayState.Reward && RewardOverlay() == null
+            && CurrentTreasure() is { } treasure) return TreasureActions(observation, treasure);
         if (observation.State is RuntimeV3GameplayState.Reward or RuntimeV3GameplayState.Selection)
             return RewardActions(observation);
         string? kind = observation.State switch
