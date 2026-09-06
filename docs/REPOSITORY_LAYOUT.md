@@ -52,6 +52,7 @@ the existing experiment directory and is packaged only by the explicit load-smok
 | conformance/cases/runtime-v2.json | protocol release consumer | inert copied Runtime-v2 conformance evidence |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
+| tools/mod-loading | mod launch maintainers | offline intended-addon consent preparation |
 | tools/workshop | mod and release maintainers | first-party Workshop package staging and checks |
 | experiments/managed-rust-interop | mod | managed loader package, native companion, and load-smoke staging |
 

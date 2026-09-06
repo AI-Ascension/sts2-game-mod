@@ -16,6 +16,7 @@ launch_game=true
 backup_installed=true
 dry_run=false
 unlock_all_on_launch=false
+mod_settings_input=''
 
 usage() {
     printf '%s\n' \
@@ -33,6 +34,7 @@ usage() {
         '  --no-launch           do not relaunch after installation' \
         '  --no-backup           do not save replaced mod files before copying' \
         '  --unlock-all          pass the opt-in full-unlock flag on game launch' \
+        '  --mod-settings PATH   prepare intended-addon loading in this explicit settings.save' \
         '  --dry-run             show the cycle without building or changing files' \
         '  -h, --help            show this help' \
         '' \
@@ -90,6 +92,10 @@ while [[ $# -gt 0 ]]; do
         --no-kill)
             stop_game=false
             shift
+            ;;
+        --mod-settings)
+            mod_settings_input=$(take_value "$1" "${2:-}")
+            shift 2
             ;;
         --no-launch)
             launch_game=false
@@ -238,6 +244,9 @@ if [[ "$dry_run" == true ]]; then
         printf '%s\n' 'dry-run: would stop only the selected installation after the build succeeds.'
     fi
     printf '%s\n' 'dry-run: would copy the staged DLLs and manifest into the game mods directory.'
+    if [[ -n "$mod_settings_input" ]]; then
+        printf '%s\n' 'dry-run: would back up and prepare intended-addon loading in the explicit settings file.'
+    fi
     if [[ "$launch_game" == true ]]; then
         printf '%s\n' 'dry-run: would relaunch SlayTheSpire2.exe.'
         if [[ "$unlock_all_on_launch" == true ]]; then
@@ -274,6 +283,11 @@ inspect_selected_installation() {
 for path in "$mods_dir" "$stage_dir" "$backup_root"; do
     assert_plain_path "$path"
 done
+if [[ -n "$mod_settings_input" ]]; then
+    mod_settings_path=$(to_wsl_path "$mod_settings_input")
+    [[ -f "$mod_settings_path" ]] || die 'explicit mod settings file is missing'
+    assert_plain_path "$mod_settings_path"
+fi
 stage_dir=$(realpath -m -- "$stage_dir")
 backup_root=$(realpath -m -- "$backup_root")
 assert_disjoint_paths() {
@@ -365,6 +379,19 @@ done
 printf 'Installed %d addon artifacts into %s\n' "${#artifacts[@]}" "$mods_dir"
 if [[ "$backup_installed" == true && ${#existing_files[@]} -gt 0 ]]; then
     printf 'Previous files backed up to %s\n' "$backup_dir"
+fi
+
+if [[ -n "$mod_settings_input" ]]; then
+    # This pre-loader operation belongs to the launch owner: the addon cannot
+    # answer Load Mods before it has been loaded. Never infer a profile path.
+    inspect_selected_installation AssertStopped
+    mkdir -p "$backup_root"
+    settings_digest=$(sha256sum -- "$mod_settings_path")
+    settings_digest=${settings_digest%% *}
+    run_with_live_authorization cargo run --locked --offline \
+        --manifest-path "$repo_root/Cargo.toml" --package sts2-game-mod-loading -- \
+        --settings-file "$mod_settings_path" --mods-dir "$mods_dir" \
+        --backup-dir "$backup_root" --expected-sha256 "$settings_digest" --apply
 fi
 
 if [[ "$launch_game" == true ]]; then
