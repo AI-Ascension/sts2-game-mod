@@ -23,6 +23,12 @@ internal static class CombatSettlementChecks
         if (!RuntimeV3GameplayCombatSettlement.Ready(reward, true)
             || !RuntimeV3GameplayCombatSettlement.TurnEnded(before, reward))
             throw new InvalidOperationException("actionable rewards complete an end-turn despite reset turn index");
+        var demoReward = reward with { IsActionable = false, InputEnabled = false, ModalBlocking = true };
+        if (!RuntimeV3GameplayCombatSettlement.Ready(demoReward, false, combatOnly: true)
+            || RuntimeV3GameplayCombatSettlement.Ready(demoReward, false)
+            || RuntimeV3GameplayCombatSettlement.Ready(recovery, false, combatOnly: true)
+            || RuntimeV3GameplayCombatSettlement.Ready(dead, true, combatOnly: true))
+            throw new InvalidOperationException("only a combat-only reward is terminal without next controls");
         if (RuntimeV3GameplayCombatSettlement.TurnEnded(before, before)
             || !RuntimeV3GameplayCombatSettlement.TurnEnded(before, before with { TurnIndex = 11 }))
             throw new InvalidOperationException("continuing combat requires the next turn");
