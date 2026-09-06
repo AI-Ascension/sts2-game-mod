@@ -1,5 +1,8 @@
 # Testing and evidence
 
+The [combat-only terminal settlement regression](evidence/combat-only-settlement-20260906.md)
+has a native Windows Astra run and a source check that keeps campaign reward readiness strict.
+
 The separately compiled [native terminal fixture](../experiments/managed-rust-interop/terminal-host-probe/README.md)
 checks fresh Victory, living terminal player state, disabled input, empty legal actions,
 and rejection of stale/missing win markers and late attachment. Its
