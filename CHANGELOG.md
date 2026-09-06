@@ -6,6 +6,11 @@ do not establish release support.
 
 ## Unreleased
 
+- Added deterministic source-only Windows/Linux release bundle preparation with exact Git source
+  and tree identities, embedded checksum inventory, fixed archive timestamps, proprietary-file
+  refusal, and reproducibility self-tests. Native addon installation and Workshop lifecycle remain
+  separately gated by exact host and publisher evidence.
+
 - Record bounded native v0.107.1 Windows/Linux runtime-v3 campaigns and fresh replays through the
   host adapter, plus forced terminal Victory observation with disabled input and no legal catalog.
   The campaigns reached Defeat; the forced fixture is observation-only and does not establish a

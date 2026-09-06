@@ -45,6 +45,29 @@ license, and user documentation while keeping host assemblies outside the packag
 The host-loader smoke test must use an operator-supplied exact host installation and disposable
 data. CI must not download or redistribute proprietary host files.
 
+## Reproducible source bundles
+
+The checked-in source bundle tool is the portable Windows/Linux release preparation path:
+
+```text
+SOURCE_DATE_EPOCH=0 bash tools/release/test-source-bundle.sh
+SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 windows-x86_64 /tmp/release/windows HEAD
+SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 linux-x86_64 /tmp/release/linux HEAD
+```
+
+It archives tracked files from the resolved commit, rejects tracked host binaries, saves, profiles,
+and build output, and writes `RELEASE-MANIFEST.json`, `SHA256SUMS`, and an external archive checksum.
+The two platform labels make the compatibility target explicit; they do not claim that the managed
+loader or native companion runs on Linux. The current executable addon build remains Windows-only
+and needs the exact operator-supplied `sts2.dll` and `GodotSharp.dll` inputs.
+
+Before distribution, extract each archive in a clean directory and run the embedded checksum check.
+For an update, retain the prior verified archive and manifest, stop the target disposable game
+profile, install the new staged three-file payload, and verify its manifest and hashes before launch.
+If the new payload fails verification or load smoke, stop it, restore the prior verified payload,
+rerun its hash check, and record the source commit and both archive checksums. This is an operator
+procedure; no host installation or rollback is performed by CI.
+
 ## Workshop publication
 
 Workshop staging is a release-preparation action, not an ordinary CI action:
@@ -63,7 +86,10 @@ Workshop staging is a release-preparation action, not an ordinary CI action:
 
 The current repository has no Steamworks SDK or committed App ID/item ID. Package staging and
 fixture validation are implemented; Steam configuration, upload, subscription, callback, and
-host-runtime evidence remain unverified.
+host-runtime evidence remain unverified. The public consumer app is Steam app `2868840` (Slay the
+Spire 2); the intended first-party published-file ID and publisher entitlement must be supplied by
+the authorized owner before any create/update or subscription test. Synthetic IDs in fixture tests
+are not publication destinations.
 
 ## Failure and post-release checks
 
