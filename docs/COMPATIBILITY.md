@@ -1,5 +1,10 @@
 # Compatibility policy and matrix
 
+Native merchant and potion-capacity behavior is documented in
+[the dated shop evidence](evidence/native-shop-controls-20260906.md). Windows v0.107.1
+relic purchase and shop exit are confirmed; other merchant purchase types and card removal
+remain unverified. No protocol or ABI revision changes for these native controls.
+
 The 2026-09-05 isolated live combat row is confirmed only for Windows host v0.107.1
 (59260271), Ironclad, the selected weak encounter and runtime-v3 gameplay. It includes
 real Ollama decisions and fresh-process action replay. See [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md)

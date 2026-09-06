@@ -37,9 +37,10 @@ internal sealed partial class LiveCombatSource
                 map.IsTravelEnabled && !map.IsTraveling && points.Length > 0
                     && MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal == null);
         }
-        if (NOverlayStack.Instance?.ScreenCount > 0) return ProjectRewardOverlay(observation);
+        if (overlay != null) return ProjectRewardOverlay(observation);
         if (CurrentRestSite() is { } rest) return ProjectRestSite(observation, rest);
         if (CurrentTreasure() is { } treasure) return ProjectTreasure(observation, treasure);
+        if (CurrentShop() is { } shop) return ProjectShop(observation, shop);
         NEventOptionButton[] options = EventButtons();
         if (options.Length > 0)
             return Surface(observation, RuntimeV3GameplayState.Event,
@@ -83,6 +84,8 @@ internal sealed partial class LiveCombatSource
     private LegalActionReference[] CampaignActions(RuntimeV3GameplayObservation observation)
     {
         if (!observation.InputEnabled) return Array.Empty<LegalActionReference>();
+        if (observation.State == RuntimeV3GameplayState.Shop && CurrentShop() is { } shop)
+            return ShopActions(observation, shop);
         if (observation.State == RuntimeV3GameplayState.Rest) return RestActions(observation);
         if (observation.State == RuntimeV3GameplayState.Reward && RewardOverlay() == null
             && CurrentTreasure() is { } treasure) return TreasureActions(observation, treasure);

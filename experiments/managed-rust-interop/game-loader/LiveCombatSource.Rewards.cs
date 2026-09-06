@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Rewards;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
@@ -21,7 +22,13 @@ internal sealed partial class LiveCombatSource
     {
         Node? screen = NOverlayStack.Instance?.ScreenCount > 0
             ? NOverlayStack.Instance.Peek() as Node : null;
-        return screen is CanvasItem canvas && canvas.IsVisibleInTree() ? screen : null;
+        if (screen is CanvasItem canvas && canvas.IsVisibleInTree()) return screen;
+        // Some native event selectors are attached outside the overlay stack. Admit only
+        // one visible typed selector; an ambiguous scene remains unavailable.
+        if (MegaCrit.Sts2.Core.Nodes.NGame.Instance is not { } game) return null;
+        NCardGridSelectionScreen[] selectors = Descendants(game).OfType<NCardGridSelectionScreen>()
+            .Where(candidate => GodotObject.IsInstanceValid(candidate) && candidate.IsVisibleInTree()).ToArray();
+        return selectors.Length == 1 ? selectors[0] : null;
     }
 
     private static bool Clickable(NClickableControl control) =>
@@ -34,6 +41,9 @@ internal sealed partial class LiveCombatSource
     private static string RewardId(NRewardButton button) =>
         button.Reward is { } reward ? $"reward:{reward.RewardsSetIndex}:{reward.GetType().Name}"
             : throw new InvalidOperationException("reward control is unbound");
+
+    private static bool CanClaimReward(NRewardButton button) => button.Reward is { } reward
+        && (reward is not PotionReward || reward.Player.PotionSlots.Any(slot => slot == null));
 
     private static NCardHolder[] RewardCards(Node screen) => Descendants(screen)
         .OfType<NCardHolder>().Where(holder => holder.IsVisibleInTree()
@@ -50,9 +60,10 @@ internal sealed partial class LiveCombatSource
             return Surface(observation, RuntimeV3GameplayState.Reward,
                 RewardButtons(screen).Select(RewardId).GroupBy(value => value)
                     .Where(group => group.Count() == 1).Select(group => group.Key).ToArray(), !modal);
-        if (screen is NCardRewardSelectionScreen)
+        if (screen != null && (screen is NCardRewardSelectionScreen || HasCombatChoice(screen)
+            || HasEventCardChoice(screen)))
             return Surface(observation, RuntimeV3GameplayState.Selection,
-                RewardCards(screen).Select(RewardCardId).ToArray(), !modal);
+                AvailableRewardCards(screen).Select(RewardCardId).ToArray(), !modal);
         return observation with { IsActionable = false, InputEnabled = false, ModalBlocking = true };
     }
 
@@ -73,10 +84,13 @@ internal sealed partial class LiveCombatSource
         Node? screen = RewardOverlay();
         var actions = new List<LegalActionReference>();
         string? kind = screen is NRewardsScreen ? "choose_reward"
-            : screen is NCardRewardSelectionScreen ? "select_card" : null;
-        if (kind == null) return Array.Empty<LegalActionReference>();
-        IEnumerable<string> values = screen is NCardRewardSelectionScreen
-            ? RewardCards(screen).Select(RewardCardId) : observation.StateValues;
+            : screen is NCardRewardSelectionScreen || HasCombatChoice(screen)
+                || HasEventCardChoice(screen) ? "select_card" : null;
+        if (kind == null || screen == null) return Array.Empty<LegalActionReference>();
+        IEnumerable<string> values = kind == "select_card"
+            ? AvailableRewardCards(screen).Select(RewardCardId)
+            : RewardButtons(screen).Where(CanClaimReward).Select(RewardId)
+                .GroupBy(value => value).Where(group => group.Count() == 1).Select(group => group.Key);
         foreach (string value in values)
             actions.Add(new($"{kind}:{observation.Generation}:{value}", kind, value, null,
                 observation.Generation));

@@ -60,9 +60,10 @@ internal sealed partial class LiveCombatSource
         throw new InvalidOperationException("smith confirmation did not become available");
     }
 
-    private static async Task WaitCampaignFrameAsync()
+    private static SignalAwaiter WaitCampaignFrameAsync()
     {
         NGame game = NGame.Instance ?? throw new InvalidOperationException("host scene is unavailable");
-        await game.ToSignal(game.GetTree(), SceneTree.SignalName.ProcessFrame);
+        // Return the host awaiter directly so the caller resumes on the signal thread.
+        return game.ToSignal(game.GetTree(), SceneTree.SignalName.ProcessFrame);
     }
 }
