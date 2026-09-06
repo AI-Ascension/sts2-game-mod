@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "tools/repo-policy",
+    "tools/mod-loading",
     "experiments/managed-rust-interop/native",
     "crates/host",
     "crates/http-adapter",

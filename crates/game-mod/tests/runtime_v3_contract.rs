@@ -32,7 +32,7 @@ fn canonical_artifact_bytes_and_provenance_match() -> Result<(), Box<dyn Error>>
         "{}",
         String::from_utf8_lossy(&output.stdout)
     );
-    assert_eq!(String::from_utf8(output.stdout)?.lines().count(), 8);
+    assert_eq!(String::from_utf8(output.stdout)?.lines().count(), 11);
     let manifest: Value = serde_json::from_str(include_str!(
         "../../../protocol-artifact/runtime-v3-gameplay/manifest.json"
     ))?;
@@ -49,9 +49,23 @@ fn canonical_artifact_bytes_and_provenance_match() -> Result<(), Box<dyn Error>>
     // Pin the authoritative producer, not merely a consumer's self-consistent manifest.
     assert_eq!(
         RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST,
-        "b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c"
+        "8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63"
     );
-    for golden in [REQUEST, STATE, DISPATCH, SETTLED] {
+    for golden in [
+        REQUEST,
+        STATE,
+        DISPATCH,
+        SETTLED,
+        include_str!(
+            "../../../protocol-artifact/runtime-v3-gameplay/golden/dispatch-proceed-request.json"
+        ),
+        include_str!(
+            "../../../protocol-artifact/runtime-v3-gameplay/golden/dispatch-confirm-selection-request.json"
+        ),
+        include_str!(
+            "../../../protocol-artifact/runtime-v3-gameplay/golden/dispatch-cancel-selection-request.json"
+        ),
+    ] {
         let message: RuntimeV3GameplayMessage = serde_json::from_str(golden)?;
         message.validate()?;
         assert_eq!(

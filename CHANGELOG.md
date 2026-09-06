@@ -5,6 +5,19 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Translate merchant purchases, card removal and shop exit through native controls;
+  verified Windows Astra relic purchase and shop exit. Reject potion reward claims when
+  native potion storage is full. See native shop evidence for unverified paths.
+
+- Expose native treasure chest and relic choices through reward actions, with verified
+  Windows Astra chest opening, Gorget acquisition and map continuation.
+
+- Translate rest-site healing, single-card smithing and proceed through native controls;
+  confirmed bounded Windows Astra healing, Bash upgrade and map continuation.
+
+- Consume the coordinated Runtime-v3 continuation schema with argument-free proceed,
+  confirm-selection and cancel-selection actions; reject mixed revisions and extra arguments.
+
 - Read provider identity before live-combat launch, support the OpenAI Astra bridge, and
   record the selected provider/model instead of hardcoding Ollama.
 

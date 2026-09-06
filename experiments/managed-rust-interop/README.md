@@ -170,9 +170,13 @@ an inaccessible identity fails closed before termination or installation. It doe
 image name or terminate an uninspected descendant tree. Existing installed files are backed up in
 unique directories under the ignored `.sts2-dev/backups/`; linked installation/staging paths are
 refused. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect the actions, or
-`--no-kill` to require the selected installation already stopped. The script does
-not enable the addon in the game's Mods menu; that remains a one-time manual step if the profile has
-not already accepted the addon.
+`--no-kill` to require the selected installation already stopped. To prepare the intended addon's
+Load Mods consent before launch, pass `--mod-settings /absolute/path/to/settings.save`. The optional
+Rust preparation tool validates the selected addon directory, backs up the explicit settings file,
+and applies a digest-fenced update while the game is stopped. It preserves unrelated settings and
+rejects newly enabling another listed addon. Without this option, native consent remains manual.
+See [mod-loading preparation](../../tools/mod-loading/README.md) for scope, restore instructions,
+and native Windows/Linux evidence.
 
 The installation is a checked three-file replacement, not a crash-atomic transaction. Copy or
 verification failures attempt restoration from the unique backup, but process interruption, power

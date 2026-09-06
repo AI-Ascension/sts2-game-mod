@@ -13,6 +13,18 @@
   <ItemGroup Condition="'$(EnableVideoMenuProbe)' == 'true'">
     <Compile Include="../video-host-probe/VideoMenuProbe.cs" Link="VideoMenuProbe.cs" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(EnableHandChoiceProbe)' == 'true'">
+    <DefineConstants>$(DefineConstants);STS2_HAND_CHOICE_PROBE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableHandChoiceProbe)' == 'true'">
+    <Compile Include="../hand-host-probe/HandChoiceProbe.cs" Link="HandChoiceProbe.cs" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(EnableTerminalProbe)' == 'true'">
+    <DefineConstants>$(DefineConstants);STS2_TERMINAL_PROBE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableTerminalProbe)' == 'true'">
+    <Compile Include="../terminal-host-probe/TerminalProbe.cs" Link="TerminalProbe.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="sts2">

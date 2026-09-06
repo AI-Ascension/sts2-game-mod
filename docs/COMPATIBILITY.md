@@ -1,5 +1,15 @@
 # Compatibility policy and matrix
 
+Current-run Victory observation has focused native Windows and Linux v0.107.1 evidence from
+isolated forced-terminal fixtures; normal Windows/Linux addon builds compile and exclude
+the fixture. This does not establish a model-played win. See
+[the exact terminal evidence](evidence/native-victory-observation-20260906.md).
+
+Native merchant and potion-capacity behavior is documented in
+[the dated shop evidence](evidence/native-shop-controls-20260906.md). Windows v0.107.1
+relic purchase and shop exit are confirmed; other merchant purchase types and card removal
+remain unverified. No protocol or ABI revision changes for these native controls.
+
 The 2026-09-05 isolated live combat row is confirmed only for Windows host v0.107.1
 (59260271), Ironclad, the selected weak encounter and runtime-v3 gameplay. It includes
 real Ollama decisions and fresh-process action replay. See [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md)
@@ -144,7 +154,7 @@ reproduced in an authorized disposable host. It is not a support claim for gamep
 another host version, another platform, or a valued profile.
 
 The separate `runtime-v3-gameplay` bridge is source-derived and uses the neutral protocol digest
-`b37c80f583aeaf4f81ede2083bcfb4129196baf5eb092470e8738173c4b7226c`. Its fair-play projection,
+`8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63`. Its fair-play projection,
 typed catalog checks, host-thread adapter, separate co-op helpers, and postcondition verifier are
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.

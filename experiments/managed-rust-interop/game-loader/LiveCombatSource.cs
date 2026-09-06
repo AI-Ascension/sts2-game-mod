@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -48,7 +47,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     public RuntimeV3GameplayObservation Observe()
     {
         RequireThread();
-        Player? player = CurrentPlayer();
+        Player? player = CurrentPlayer() ?? TerminalPlayer();
         PlayerCombatState? combat = player?.PlayerCombatState;
         CombatManager manager = CombatManager.Instance;
         CombatState? hostCombat = manager.DebugOnlyGetState();
@@ -72,7 +71,11 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
             TurnIndex = (ushort)Math.Clamp(combat?.TurnNumber ?? 0, 0, 1024),
             IsActionable = enabled, InputEnabled = enabled, ModalBlocking = !enabled
         };
-        string fingerprint = JsonSerializer.Serialize(result);
+        if (LiveCombatDemo.Campaign) result = ProjectCampaign(result);
+        result = ProjectVictory(result);
+        // Host legality can change after animation/queue completion without changing the
+        // visible player projection. Fence that catalog change with a fresh generation too.
+        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
@@ -109,6 +112,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         RequireThread();
         var actions = new List<LegalActionReference>();
         Player? player = CurrentPlayer();
+        if (LiveCombatDemo.Campaign && observation.State != RuntimeV3GameplayState.Combat)
+            return CampaignActions(observation);
         if (!observation.InputEnabled || player?.PlayerCombatState is not { } combat) return actions;
         foreach (CardModel card in combat.Hand.Cards)
         {

@@ -17,6 +17,10 @@ internal static class Program
             return;
         }
         ReadsDiscoverNewGenerations();
+        FingerprintChecks.Run();
+        CombatSettlementChecks.Run();
+        ContinuationChecks.Run();
+        RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();
         UnrelatedTransitionDoesNotSettle();

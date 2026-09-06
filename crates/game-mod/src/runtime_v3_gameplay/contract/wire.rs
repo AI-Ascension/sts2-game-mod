@@ -127,6 +127,9 @@ pub(super) enum Action {
     },
     ConfirmVictory {},
     SaveQuit {},
+    Proceed {},
+    ConfirmSelection {},
+    CancelSelection {},
 }
 
 impl From<Action> for RuntimeV3GameplayAction {
@@ -146,6 +149,9 @@ impl From<Action> for RuntimeV3GameplayAction {
             Action::SelectCard { card_id } => Self::SelectCard { card_id },
             Action::ConfirmVictory {} => Self::ConfirmVictory,
             Action::SaveQuit {} => Self::SaveQuit,
+            Action::Proceed {} => Self::Proceed,
+            Action::ConfirmSelection {} => Self::ConfirmSelection,
+            Action::CancelSelection {} => Self::CancelSelection,
         }
     }
 }

@@ -25,6 +25,8 @@ internal sealed partial class LiveCombatSource
         if (_pending.ContainsKey(operation) || _pending.Count >= 4096) return false;
         RuntimeV3GameplayObservation before = Observe();
         if (action.Generation != before.Generation || !LegalActions(before).Contains(action)) return false;
+        if (LiveCombatDemo.Campaign && before.State != RuntimeV3GameplayState.Combat)
+            return DispatchCampaign(operation, action, before);
         var player = CurrentPlayer();
         if (player?.PlayerCombatState == null) return false;
         GameAction queued;
@@ -51,15 +53,21 @@ internal sealed partial class LiveCombatSource
     public RuntimeV3HostCompletion? Completion(RuntimeV3OperationKey operation, LegalActionReference action)
     {
         RequireThread();
+        if (_campaignPending.ContainsKey(operation)) return CampaignCompletion(operation, action);
         if (!_pending.TryGetValue(operation, out PendingAction? pending) || pending.Action != action)
             return null;
         GameAction queued = pending.HostAction;
+        if (queued.State == GameActionState.GatheringPlayerChoice)
+            return CombatChoiceBoundary(operation, pending);
         if (queued.State != GameActionState.Finished || !queued.CompletionTask.IsCompletedSuccessfully
             || queued.Exception != null) return null;
         RuntimeV3GameplayObservation after = Observe();
+        // A finished killing action can precede the reward screen. Keep polling the
+        // retained action until the host exposes a supported post-action state.
+        if (!RuntimeV3GameplayCombatSettlement.Ready(after, LegalActions(after).Count > 0)) return null;
         bool effect = action.Kind == "play_card"
             ? pending.Card?.Pile?.Type != PileType.Hand
-            : after.TurnIndex > pending.Before.TurnIndex || !after.InputEnabled;
+            : RuntimeV3GameplayCombatSettlement.TurnEnded(pending.Before, after);
         if (!effect || after.Generation <= pending.Before.Generation) return null;
         var witness = new RuntimeV3TransitionWitness(operation, action, pending.Before.Generation,
             after.Generation, after.StateId, action.Kind == "play_card" ? "play_card_settled" : "turn_end_settled");
