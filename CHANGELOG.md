@@ -6,6 +6,11 @@ do not establish release support.
 
 ## Unreleased
 
+- Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
+  managed native-library validation, and a checksum-gated install/update/rollback tool with
+  synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
+  separately gated.
+
 - Added deterministic source-only Windows/Linux release bundle preparation with exact Git source
   and tree identities, embedded checksum inventory, fixed archive timestamps, proprietary-file
   refusal, and reproducibility self-tests. Native addon installation and Workshop lifecycle remain

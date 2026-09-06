@@ -2,10 +2,42 @@
 
 set -euo pipefail
 
+# Keep native linker metadata reproducible by default. A release may override this
+# with the approved source timestamp, but an unset environment must not embed wall-clock time.
+: "${SOURCE_DATE_EPOCH:=0}"
+export SOURCE_DATE_EPOCH
+
+platform=windows-x86_64
+if [[ ${1:-} == '--platform' ]]; then
+    [[ $# -eq 4 ]] || {
+        printf 'usage: %s [--platform windows-x86_64|linux-x86_64] <sts2-data-directory> <output-directory>\n' "$0" >&2
+        exit 2
+    }
+    platform=$2
+    shift 2
+fi
+
 if [[ $# -ne 2 ]]; then
-    printf 'usage: %s <sts2-data-directory> <output-directory>\n' "$0" >&2
+    printf 'usage: %s [--platform windows-x86_64|linux-x86_64] <sts2-data-directory> <output-directory>\n' "$0" >&2
     exit 2
 fi
+
+case "$platform" in
+    windows-x86_64)
+        native_target=x86_64-pc-windows-gnu
+        native_file=ai_ascension_sts2_game_mod_native.dll
+        native_output=AIAscensionSTS2GameModNative.dll
+        ;;
+    linux-x86_64)
+        native_target=x86_64-unknown-linux-gnu
+        native_file=libai_ascension_sts2_game_mod_native.so
+        native_output=libAIAscensionSTS2GameModNative.so
+        ;;
+    *)
+        printf 'unsupported platform: %s\n' "$platform" >&2
+        exit 2
+        ;;
+esac
 
 game_data_input=$1
 output_dir=$2
@@ -54,23 +86,23 @@ esac
 # may redirect it away from this checkout's target directory.
 native_target_dir=$(cargo metadata --locked --offline --no-deps --format-version 1 \
     --manifest-path "$native_manifest" | jq -er '.target_directory | select(type == "string" and startswith("/"))')
-native_build_artifact="$native_target_dir/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll"
-cargo build --locked --release --target x86_64-pc-windows-gnu --manifest-path "$native_manifest"
+native_build_artifact="$native_target_dir/$native_target/release/$native_file"
+cargo build --locked --release --target "$native_target" --manifest-path "$native_manifest"
 "$dotnet_command" restore "$managed_project_msbuild" -p:STS2GameDataDir="$game_data_msbuild"
 "$dotnet_command" build "$managed_project_msbuild" --configuration Release \
     -p:STS2GameDataDir="$game_data_msbuild" --no-restore
 
 if [[ ! -f "$managed_build_artifact" || ! -f "$native_build_artifact" ]]; then
-    printf 'build did not produce the expected Windows addon artifacts\n' >&2
+    printf 'build did not produce the expected %s addon artifacts\n' "$platform" >&2
     exit 1
 fi
 
 mkdir -p "$output_dir"
 cp --remove-destination -- "$managed_build_artifact" "$output_dir/AIAscensionSTS2GameMod.dll"
-cp --remove-destination -- "$native_build_artifact" "$output_dir/AIAscensionSTS2GameModNative.dll"
+cp --remove-destination -- "$native_build_artifact" "$output_dir/$native_output"
 cp --remove-destination -- "$manifest" "$output_dir/AIAscensionSTS2GameMod.json"
 
 sha256sum \
     "$output_dir/AIAscensionSTS2GameMod.dll" \
     "$output_dir/AIAscensionSTS2GameMod.json" \
-    "$output_dir/AIAscensionSTS2GameModNative.dll"
+    "$output_dir/$native_output"

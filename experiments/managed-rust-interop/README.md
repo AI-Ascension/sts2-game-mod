@@ -21,10 +21,13 @@ Standard, daily, multiplayer, and unavailable states are protected. This behavio
 verified against operator-supplied host assemblies but remains runtime-unverified.
 
 The managed project references the operator-supplied `sts2.dll` and `GodotSharp.dll` only at build
-time, exposes the host's `ModInitializer`, loads `AIAscensionSTS2GameModNative.dll`, verifies ABI version
-1, and checks that the native `19 + 23` smoke call returns `42`. The companion is a Windows x86-64
-Rust `cdylib`. `package-runtime-addon.sh` builds and stages the three files required by the game:
-the managed DLL, the unique native DLL, and `AIAscensionSTS2GameMod.json`.
+time, exposes the host's `ModInitializer`, selects the native companion by runtime OS, verifies ABI
+version 1, and checks that the native `19 + 23` smoke call returns `42`. The companion is a Rust
+`cdylib` built for Windows x86-64 or Linux x86-64. `package-runtime-addon.sh` keeps the existing
+two-argument Windows path and accepts `--platform linux-x86_64` for the Linux target; it stages the
+managed DLL, the platform's unique native library, and `AIAscensionSTS2GameMod.json`. It sets
+`SOURCE_DATE_EPOCH=0` when unset so native linker timestamps do not vary between builds; a release
+may supply its approved source timestamp explicitly.
 
 The source also contains a Runtime-v2 `end_turn` host-adapter candidate. It validates the frozen
 Runtime-v2 envelope, reads combat state on the Godot main thread, queues `EndPlayerTurnAction` through the host synchronizer, retains operation status as `unknown`,

@@ -6,7 +6,7 @@ the Steamworks SDK, the proprietary STS2 host assembly, or generated release out
 
 ## Package boundary
 
-`package-item.sh` accepts an already-built mod payload and an operator-supplied Steam consumer App ID,
+`package-item.sh` accepts an already-built Windows mod payload and an operator-supplied Steam consumer App ID,
 published file ID, game version, package version, source revision, and preview image. It accepts only
 the three current first-party runtime files:
 
@@ -33,16 +33,23 @@ loader-contract, and file-role policy.
 
 ## Platform boundary
 
-The checked-in package path is Windows x86-64 only: its manifest is emitted with
-`windows-x86_64`, its payload allowlist names `AIAscensionSTS2GameModNative.dll`, and the managed
-validator accepts that same three-file inventory. The Rust manifest shape allows other native
-extensions as a data-model detail, but that does not enable a Linux loader or a Linux Workshop
-package. The `linux-x86_64` source bundle is source distribution evidence only.
+`package-platform-item.sh` requires an explicit `windows-x86_64` or `linux-x86_64` platform and emits
+the exact native filename for that target. Windows packages contain
+`AIAscensionSTS2GameModNative.dll`; Linux packages contain
+`libAIAscensionSTS2GameModNative.so`. Both packages contain the managed assembly, loader manifest,
+and the same manifest/checksum contract. `package-item.sh` remains a Windows compatibility wrapper.
+The managed loader chooses the same native filename from its runtime OS and validates the manifest
+allowlist against the requested `STS2_WORKSHOP_PLATFORM` value before loading the library.
 
 Keep native payloads for different platforms under separate first-party published-file IDs. Never
 replace a Windows item in place with incompatible native bytes. A shared multi-platform item needs
 a reviewed manifest/loader contract and exact per-platform runtime evidence before its allowlist can
 admit any additional native file.
+
+Build a native payload first with `package-runtime-addon.sh` (Windows is the default for existing
+callers; pass `--platform linux-x86_64` for the Linux target), then pass the resulting directory to
+`package-platform-item.sh`. The tool is a deterministic staging step, not an installer: it refuses
+symlinks, unexpected files, missing/empty payload files, unsafe metadata, and pre-existing outputs.
 
 ## Upload boundary
 
@@ -64,5 +71,5 @@ Run the fixture-only self-test from this directory:
 bash tools/workshop/test-package-item.sh
 ```
 
-The test uses synthetic files and a synthetic preview only. It does not contact Steam, use a game
-profile, or build/load executable code.
+The test covers both platform allowlists with synthetic files and a synthetic preview. It does not
+contact Steam, use a game profile, or build/load executable code.
