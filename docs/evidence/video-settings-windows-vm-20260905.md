@@ -32,8 +32,8 @@ the test console uses an SSH tunnel. No host GPU is reassigned.
 The VNC console also has a live and persistent `qemu-vdagent` clipboard channel.
 The Windows SPICE agent installer matched its publisher's SHA-256 checksum and
 exited successfully. The service, interactive agent, and channel connection were
-confirmed; user clipboard contents were not inspected. Actual paste confirmation
-remains an operator check.
+confirmed; user clipboard contents were not inspected. The operator completed
+Steam sign-in through this console.
 
 ## Verification status
 
@@ -50,8 +50,8 @@ Windows 11 Pro 10.0.26200 booted on KVM. The guest agent confirmed two CPUs,
 approximately 8 GiB RAM, active VirtIO networking, a running guest-agent
 service, and the expected probe DLL hash. The Red Hat VirtIO GPU DOD driver
 `100.103.104.30200` reported a 1280x800 desktop. Steam started in the interactive
-desktop session. Destination game/menu verification is still pending Steam
-sign-in; these OS checks do not establish a gameplay pass.
+desktop session. After operator sign-in, the game initialized Steam successfully
+and installed the isolated local-only save backend.
 
 Graphics preflights in both the temporary Hyper-V copy and the KVM guest started
 the actual game using `D3D12 12_0`, Forward+, and `Microsoft Basic Render Driver`.
@@ -61,8 +61,29 @@ its installation. Both owned game processes were stopped afterward. These are
 software-renderer startup results, not menu passes.
 
 The uncapped KVM software-rendering launch made guest command execution
-unresponsive. The next probe launch uses `--max-fps 15`, `--resolution 800x600`,
-and `--windowed`; responsiveness under that limit is still unverified.
+unresponsive. With a 15 FPS cap and below-normal process priority, the native
+menu probe completed, although the operator still reported poor performance.
+This cap is not a measured frame rate or a hardware-acceleration result.
+
+## Confirmed native-menu results
+
+The display reported a 1280x800 desktop and 1280x752 usable area. Its detected
+catalog contained 640x480, 800x600, 1024x768, 1280x720, 1280x768, and 1280x800.
+The probe confirmed borderless and windowed 1024x768, fullscreen 1280x800,
+maximized 1280x729, and a return to windowed mode. Actual mode, display, and
+client size matched persisted preferences; the selector and scrolling content
+remained visible. Independent fresh launches restored both windowed and
+fullscreen preferences and completed the menu probe again.
+
+Private evidence SHA-256 digests:
+
+- Initial menu log: `85126e5ceda147994688e5e06d09052341f9028013f00ecc91e4d12c72671593`.
+- Native viewport image: `c6cdca977b10cc582926f80deb31b067d0731592622554b06985e5b7154de78a`.
+- Windowed restoration log: `e68a3fe0e5c9533d81497b853529f7dca52c1fa5838be92e00a300eab79a030d`.
+- Fullscreen restoration log: `32973df2cdbc7b7200bddcbe50e5edc45781144d3d1c244f704c6b4ce4a13491`.
+
+These are Windows native-menu passes using the software renderer. They do not
+establish GPU acceleration, LLM-controlled gameplay, or replay on this VM.
 
 Keep proprietary game assets, VM disks, credentials, private profiles, and raw
 guest logs outside the repository. The native menu procedure is documented in
