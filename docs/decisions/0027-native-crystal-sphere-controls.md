@@ -1,6 +1,7 @@
 # ADR 0027: Native Crystal Sphere controls and combat settlement
 
-Status: source implemented; native event verification pending.
+Status: implemented; native Linux event exit verified. See
+[live evidence](../evidence/crystal-sphere-linux-20260906.md).
 
 The Crystal Sphere event opens a custom native screen while its parent event task remains
 pending. The ordinary event-choice boundary previously waited for card selection or completion,
