@@ -1,0 +1,17 @@
+[Unit]
+Description=Prepare the isolated STS2 Intel GPU virtual function
+Requires=sys-kernel-debug.mount
+After=sys-kernel-debug.mount network.target
+Before=libvirt-guests.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StateDirectory=sts2-gpu-lifecycle
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/local/libexec/sts2-gpu-lifecycle/boot.sh
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target
