@@ -2,7 +2,8 @@
 
 use super::{
     CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
+    CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT, RuntimeRequestCallback,
+    dispatch as dispatch_callback,
     dispatch_with_body, http,
 };
 
@@ -40,6 +41,9 @@ pub(super) fn dispatch(
                 operation_id,
                 stream,
             )
+        }
+        ("GET", "/api/v4/runtime/expert-state") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

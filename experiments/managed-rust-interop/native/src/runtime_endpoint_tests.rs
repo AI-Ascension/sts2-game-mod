@@ -73,6 +73,7 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
             206,
         ),
         ("POST", "/api/v3/runtime/action", "{}", 400),
+        ("GET", "/api/v4/runtime/expert-state", "", 207),
         ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
     ] {
         let request = format!(
