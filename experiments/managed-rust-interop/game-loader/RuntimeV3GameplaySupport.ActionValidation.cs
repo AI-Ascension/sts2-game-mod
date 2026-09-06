@@ -51,6 +51,7 @@ internal sealed partial class RuntimeV3GameplaySupport
             "event_choice" => "choice_id",
             "play_card" => "card_id",
             "end_turn" or "skip_reward" or "rest" or "confirm_victory" or "save_quit" => null,
+            "proceed" or "confirm_selection" or "cancel_selection" => null,
             _ => "invalid"
         };
         if (field == "invalid")

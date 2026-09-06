@@ -18,7 +18,7 @@ internal sealed partial class LiveCombatSource
 {
     private static readonly string[] CampaignCharacters = { "ironclad" };
 
-    private static RuntimeV3GameplayObservation ProjectCampaign(RuntimeV3GameplayObservation observation)
+    private RuntimeV3GameplayObservation ProjectCampaign(RuntimeV3GameplayObservation observation)
     {
         RunState? run = RunManager.Instance.DebugOnlyGetState();
         if (!RunManager.Instance.IsInProgress && !RunManager.Instance.IsGameOver)
@@ -27,14 +27,17 @@ internal sealed partial class LiveCombatSource
         if (run == null || CurrentPlayer() == null) return observation;
         observation = observation with { NodeId = CurrentNodeId(run) };
         if (observation.State == RuntimeV3GameplayState.Defeat) return observation;
-        if (NOverlayStack.Instance?.ScreenCount > 0) return observation;
         NMapScreen? map = NMapScreen.Instance;
-        if (map?.IsOpen == true)
+        Node? overlay = RewardOverlay();
+        TraceCampaignSurface(overlay);
+        if (map?.IsOpen == true && map.IsVisibleInTree())
         {
             string[] points = TravelablePoints().Select(point => MapId(point, run)).ToArray();
             return Surface(observation, RuntimeV3GameplayState.Map, points,
-                map.IsTravelEnabled && !map.IsTraveling && points.Length > 0);
+                map.IsTravelEnabled && !map.IsTraveling && points.Length > 0
+                    && MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal == null);
         }
+        if (NOverlayStack.Instance?.ScreenCount > 0) return ProjectRewardOverlay(observation);
         NEventOptionButton[] options = EventButtons();
         if (options.Length > 0)
             return Surface(observation, RuntimeV3GameplayState.Event,
@@ -75,9 +78,11 @@ internal sealed partial class LiveCombatSource
 
     private static string EventId(NEventOptionButton button) => "event:" + button.Option.TextKey;
 
-    private static LegalActionReference[] CampaignActions(RuntimeV3GameplayObservation observation)
+    private LegalActionReference[] CampaignActions(RuntimeV3GameplayObservation observation)
     {
         if (!observation.InputEnabled) return Array.Empty<LegalActionReference>();
+        if (observation.State is RuntimeV3GameplayState.Reward or RuntimeV3GameplayState.Selection)
+            return RewardActions(observation);
         string? kind = observation.State switch
         {
             RuntimeV3GameplayState.Setup => "start_run",

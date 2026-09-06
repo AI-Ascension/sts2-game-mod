@@ -67,7 +67,7 @@ internal sealed partial class LiveCombatSource
             postcondition = () => option.WasChosen;
             effect = "event_choice_completed";
         }
-        else return false;
+        else if (!PrepareReward(action, out invoke, out postcondition, out effect)) return false;
         // Retain identity before invoking host code. A synchronous failure remains unknown.
         var pending = new CampaignPending(action, before, postcondition, effect);
         _campaignPending.Add(operation, pending);

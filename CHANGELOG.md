@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Consume the coordinated Runtime-v3 continuation schema with argument-free proceed,
+  confirm-selection and cancel-selection actions; reject mixed revisions and extra arguments.
+
 - Read provider identity before live-combat launch, support the OpenAI Astra bridge, and
   record the selected provider/model instead of hardcoding Ollama.
 

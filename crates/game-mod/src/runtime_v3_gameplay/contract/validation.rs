@@ -118,6 +118,9 @@ impl RuntimeV3GameplayLegalAction {
             | RuntimeV3GameplayAction::SkipReward
             | RuntimeV3GameplayAction::Rest
             | RuntimeV3GameplayAction::ConfirmVictory
+            | RuntimeV3GameplayAction::Proceed
+            | RuntimeV3GameplayAction::ConfirmSelection
+            | RuntimeV3GameplayAction::CancelSelection
             | RuntimeV3GameplayAction::SaveQuit => [None, None],
         };
         if identifiers
