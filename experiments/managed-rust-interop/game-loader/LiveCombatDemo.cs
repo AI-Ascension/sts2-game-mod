@@ -71,8 +71,12 @@ internal static class LiveCombatDemo
                 }
             }
             Ready = true;
+#if STS2_HAND_CHOICE_PROBE
+            await HandChoiceProbe.PrepareAsync();
+#else
             if (!Campaign) _ = StartAsync();
             else GD.Print("[AI-ASCENSION LIVE] campaign setup ready for model selection");
+#endif
 #endif
         };
         tree.ProcessFrame += start;

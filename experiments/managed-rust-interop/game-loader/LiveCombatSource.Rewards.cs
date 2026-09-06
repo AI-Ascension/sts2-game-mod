@@ -82,6 +82,8 @@ internal sealed partial class LiveCombatSource
     private LegalActionReference[] RewardActions(RuntimeV3GameplayObservation observation)
     {
         Node? screen = RewardOverlay();
+        if (screen == null && SelectingHand() is { } hand)
+            return HandChoiceActions(observation, hand);
         var actions = new List<LegalActionReference>();
         string? kind = screen is NRewardsScreen ? "choose_reward"
             : screen is NCardRewardSelectionScreen || HasCombatChoice(screen)

@@ -29,7 +29,9 @@ internal sealed partial class LiveCombatSource
     private RuntimeV3HostCompletion? CombatChoiceBoundary(RuntimeV3OperationKey operation,
         PendingAction pending)
     {
-        if (!ReferenceEquals(CombatChoiceParent(), pending) || !HasCombatChoice(RewardOverlay()))
+        if (!ReferenceEquals(CombatChoiceParent(), pending)
+            || !(HasCombatChoice(RewardOverlay()) || RewardOverlay() == null
+                && SelectingHand() is { } hand && HandUpgradeChoices(hand).Length > 0))
             return null;
         RuntimeV3GameplayObservation after = Observe();
         if (after.State != RuntimeV3GameplayState.Selection || !after.InputEnabled
