@@ -14,6 +14,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
+    private string? _lastHandDiagnostic;
     private static NPlayerHand? SelectingHand() => NPlayerHand.Instance is { } hand
         && GodotObject.IsInstanceValid(hand) && hand.IsVisibleInTree() && hand.IsInCardSelection
             ? hand : null;
@@ -21,13 +22,22 @@ internal sealed partial class LiveCombatSource
     private NHandCardHolder[] HandUpgradeChoices(NPlayerHand hand) =>
         hand.CurrentMode == NPlayerHand.Mode.UpgradeSelect && CombatChoiceParent() != null
             ? hand.ActiveHolders.Where(holder => GodotObject.IsInstanceValid(holder)
-                && holder.IsVisibleInTree() && holder.InSelectMode && holder.CardModel != null
+                && holder.IsVisibleInTree() && holder.CardModel != null
                 && Clickable(holder.Hitbox)).ToArray()
             : Array.Empty<NHandCardHolder>();
 
     private RuntimeV3GameplayObservation ProjectHandChoice(RuntimeV3GameplayObservation before,
         NPlayerHand hand)
     {
+        string diagnostic = $"mode={hand.CurrentMode}; parent={CombatChoiceParent() != null}; "
+            + $"holders={hand.ActiveHolders.Count}; visible={hand.ActiveHolders.Count(h => h.IsVisibleInTree())}; "
+            + $"select_mode={hand.ActiveHolders.Count(h => h.InSelectMode)}; "
+            + $"clickable={hand.ActiveHolders.Count(h => Clickable(h.Hitbox))}";
+        if (_lastHandDiagnostic != diagnostic)
+        {
+            _lastHandDiagnostic = diagnostic;
+            GD.Print("[AI-ASCENSION LIVE] hand selection " + diagnostic);
+        }
         string[] choices = HandUpgradeChoices(hand).Select(RewardCardId).ToArray();
         return Surface(before, RuntimeV3GameplayState.Selection, choices,
             choices.Length > 0 && NModalContainer.Instance?.OpenModal == null);
