@@ -10,8 +10,10 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace AiAscension.Sts2GameMod.Runtime;
@@ -72,8 +74,8 @@ internal sealed partial class LiveCombatSource
             Statuses = PublicStatuses(player?.Creature, "Statuses"),
             Relics = Relics(player),
             Potions = Potions(player),
-            PotionSlots = PublicCount(player, "Potions"),
-            MaxPotionSlots = PublicCount(player, "PotionSlots")
+            PotionSlots = OccupiedPotionCount(player),
+            MaxPotionSlots = MaxPotionCount(player)
         };
         return result;
     }
@@ -171,9 +173,9 @@ internal sealed partial class LiveCombatSource
             RuntimeV3GameplayState.Setup => state with { Characters = observation.StateValues },
             RuntimeV3GameplayState.Map => state with
             {
-                CurrentNodeId = observation.NodeId,
-                Nodes = null,
-                Edges = null,
+                CurrentNodeId = CurrentMapNodeId() ?? observation.NodeId,
+                Nodes = VisibleMapNodes(),
+                Edges = VisibleMapEdges(),
                 Options = observation.StateValues
             },
             RuntimeV3GameplayState.Combat => state with
@@ -202,6 +204,19 @@ internal sealed partial class LiveCombatSource
             },
             _ => state
         };
+    }
+
+    private static string? CurrentMapNodeId()
+    {
+        try
+        {
+            RunState? run = RunManager.Instance.DebugOnlyGetState();
+            return run?.CurrentMapPoint is { } point ? MapId(point, run) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     private static RuntimeV4ExpertGameplayEnemy ProjectEnemy(RuntimeV3GameplayEnemy enemy)
@@ -327,6 +342,91 @@ internal sealed partial class LiveCombatSource
         }
         return PublicBool(potion, "PassesCustomUsabilityCheck");
     }
+
+    private static byte? OccupiedPotionCount(Player? player)
+    {
+        if (player is null) return null;
+        try
+        {
+            int occupied = player.PotionSlots.Count(potion => potion is not null);
+            return occupied is >= 0 and <= byte.MaxValue ? (byte)occupied : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static byte? MaxPotionCount(Player? player)
+    {
+        if (player is null || player.MaxPotionCount is < 0 or > byte.MaxValue) return null;
+        return (byte)player.MaxPotionCount;
+    }
+
+    /// <summary>
+    /// Projects only map points currently rendered by the ordinary map screen. The run model also
+    /// contains future map data, so reading its complete grid would disclose unrevealed content.
+    /// </summary>
+    private static RuntimeV4ExpertGameplayMapNode[]? VisibleMapNodes()
+    {
+        if (NMapScreen.Instance is not { IsOpen: true } map || !map.IsVisibleInTree()) return null;
+        try
+        {
+            RunState? run = RunManager.Instance.DebugOnlyGetState();
+            if (run is null) return null;
+            return Descendants(map).OfType<NMapPoint>()
+                .Where(point => point.IsVisibleInTree() && point.Point is not null)
+                .Select(point => new RuntimeV4ExpertGameplayMapNode(
+                    MapId(point, run),
+                    ByteCoordinate(run.CurrentActIndex)
+                        ?? throw new InvalidOperationException("map act is outside the wire bound"),
+                    ByteCoordinate(point.Point.coord.row)
+                        ?? throw new InvalidOperationException("map row is outside the wire bound"),
+                    ByteCoordinate(point.Point.coord.col)
+                        ?? throw new InvalidOperationException("map column is outside the wire bound"),
+                    point.Point.PointType.ToString().ToLowerInvariant(),
+                    point.State == MapPointState.Travelable))
+                .OrderBy(node => node.Row)
+                .ThenBy(node => node.Col)
+                .ThenBy(node => node.NodeId, StringComparer.Ordinal)
+                .ToArray();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static RuntimeV4ExpertGameplayMapEdge[]? VisibleMapEdges()
+    {
+        if (NMapScreen.Instance is not { IsOpen: true } map || !map.IsVisibleInTree()) return null;
+        try
+        {
+            RunState? run = RunManager.Instance.DebugOnlyGetState();
+            if (run is null) return null;
+            var visible = Descendants(map).OfType<NMapPoint>()
+                .Where(point => point.IsVisibleInTree() && point.Point is not null)
+                .ToDictionary(point => MapId(point, run), StringComparer.Ordinal);
+            return visible.Values
+                .SelectMany(point => point.Point.Children
+                    .Where(child => child is not null)
+                    .Select(child => new { From = MapId(point, run), Child = child }))
+                .Where(edge => visible.ContainsKey(MapId(edge.Child, run)))
+                .Select(edge => new RuntimeV4ExpertGameplayMapEdge(
+                    edge.From, MapId(edge.Child, run)))
+                .Distinct()
+                .OrderBy(edge => edge.From, StringComparer.Ordinal)
+                .ThenBy(edge => edge.To, StringComparer.Ordinal)
+                .ToArray();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static byte? ByteCoordinate(int value) =>
+        value is >= 0 and <= byte.MaxValue ? (byte)value : null;
 
     private static RuntimeV4ExpertGameplayStatus[]? PublicStatuses(
         object? host,

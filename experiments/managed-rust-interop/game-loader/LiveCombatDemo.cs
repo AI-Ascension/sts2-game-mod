@@ -85,16 +85,20 @@ internal static class LiveCombatDemo
         GD.Print("[AI-ASCENSION LIVE] isolated local-only save backend installed");
     }
 
-    internal static async Task<RunState> StartCampaignAsync()
+    internal static async Task<RunState> StartCampaignAsync(string characterId)
     {
         if (!Campaign || !Ready || RunManager.Instance.IsInProgress)
             throw new InvalidOperationException("campaign setup is not available");
-        if (!RunOptions.Practice) return await LiveCampaignStart.StandardAsync();
+        CharacterModel character = ModelDb.AllCharacters.SingleOrDefault(candidate =>
+            string.Equals(candidate.Id.Entry, characterId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("requested character is unavailable");
+        if (!character.IsPlayable) throw new InvalidOperationException("requested character is not playable");
+        if (!RunOptions.Practice) return await LiveCampaignStart.StandardAsync(character);
         string seed = RunOptions.Seed!;
         SaveManager.Instance.SetFtuesEnabled(false);
         var acts = ModelDb.ActsByIndex.Select(options => options[0]).ToArray();
         // Normal host setup. The model chooses the next travelable map point; no debug room entry.
-        return await NGame.Instance!.StartNewSingleplayerRun(ModelDb.Character<Ironclad>(), false,
+        return await NGame.Instance!.StartNewSingleplayerRun(character, false,
             acts, Array.Empty<ModifierModel>(), seed, GameMode.Custom);
     }
 

@@ -34,9 +34,10 @@ internal sealed partial class LiveCombatSource
         Func<bool> postcondition;
         string effect;
         Func<string>? diagnostics = null;
-        if (action.Kind == "start_run" && action.Value == "ironclad")
+        if (action.Kind == "start_run" && IsCampaignCharacter(action.Value))
         {
-            invoke = async () => { await LiveCombatDemo.StartCampaignAsync(); };
+            string characterId = action.Value!;
+            invoke = async () => { await LiveCombatDemo.StartCampaignAsync(characterId); };
             postcondition = () => CurrentPlayer() != null
                 && (LiveCombatDemo.RunOptions.Practice
                     ? RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed == before.VisibleSeed
@@ -88,6 +89,10 @@ internal sealed partial class LiveCombatSource
         pending.Work = invoke();
         return true;
     }
+
+    private static bool IsCampaignCharacter(string? characterId) =>
+        characterId is not null
+        && CampaignCharacters().Contains(characterId, StringComparer.Ordinal);
 
     private RuntimeV3HostCompletion? CampaignCompletion(RuntimeV3OperationKey operation,
         LegalActionReference action)

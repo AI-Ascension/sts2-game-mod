@@ -14,7 +14,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static class LiveCampaignStart
 {
-    internal static async Task<RunState> StandardAsync()
+    internal static async Task<RunState> StandardAsync(CharacterModel? requestedCharacter = null)
     {
         LoadProgress();
         if (SaveManager.Instance.HasRunSave)
@@ -26,7 +26,10 @@ internal static class LiveCampaignStart
         stack.PushSubmenuType<NCharacterSelectScreen>();
         if (screen.Lobby.GameMode != GameMode.Standard)
             throw new InvalidOperationException("host character lobby is not standard mode");
-        screen.Lobby.SetLocalCharacter(ModelDb.Character<Ironclad>());
+        CharacterModel character = requestedCharacter ?? ModelDb.Character<Ironclad>();
+        if (!character.IsPlayable)
+            throw new InvalidOperationException("requested character is not playable");
+        screen.Lobby.SetLocalCharacter(character);
         // The host lobby owns random seed, act selection, and the normal saving-enabled start.
         screen.Lobby.SetReady(true);
         for (int frame = 0; frame < 1800; frame++)
