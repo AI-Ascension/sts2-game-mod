@@ -50,3 +50,12 @@ Real Astra verified both Amalgamator picks on Windows: two distinct Strikes were
 Ultimate Strike through the host event, and the model continued to the map. This UI binding is
 host-version-sensitive and is not evidence for every deck selector. See the
 [native choice evidence](../evidence/native-card-choices-20260906.md).
+
+The retained event boundary also supports native deck-enchantment and simple card-addition screens.
+For enchantment, the selected card must remain in the deck and acquire a different enchantment
+reference or amount. For addition, the offered card must be absent from the deck before selection
+and present afterward. Both paths invoke only the native holder and optional unique confirmation
+control, require the screen to close, and require the retained parent callback and postcondition
+to complete. A different result remains unknown rather than being inferred from screen closure.
+Linux Astra verification covered Sapphire Seed enchantment and Brain Leech adding Whirlwind;
+see [the event evidence](../evidence/native-event-card-choices-20260906.md).

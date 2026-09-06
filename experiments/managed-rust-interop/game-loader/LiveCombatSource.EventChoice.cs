@@ -20,6 +20,7 @@ internal sealed partial class LiveCombatSource
     }
 
     private bool HasEventCardChoice(Node? screen) => screen is NDeckUpgradeSelectScreen or NDeckCardSelectScreen
+        or NDeckEnchantSelectScreen or NSimpleCardSelectScreen
         && EventChoiceParent() != null && RewardCards(screen).Length > 0;
 
     private RuntimeV3HostCompletion? EventChoiceBoundary(RuntimeV3OperationKey operation,
@@ -39,6 +40,8 @@ internal sealed partial class LiveCombatSource
         out Func<bool> postcondition, out string effect)
     {
         if (PrepareEventRemoval(action, out invoke, out postcondition, out effect)) return true;
+        if (PrepareEventEnchantment(action, out invoke, out postcondition, out effect)) return true;
+        if (PrepareEventCardAddition(action, out invoke, out postcondition, out effect)) return true;
         invoke = () => Task.CompletedTask;
         postcondition = () => false;
         effect = "";
