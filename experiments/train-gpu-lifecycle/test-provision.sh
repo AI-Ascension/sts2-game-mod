@@ -98,3 +98,11 @@ rejected() { if "$@" >/dev/null 2>&1; then fail 'expected refusal'; exit 1; fi; 
     check
     echo 'PASS corrupt rollback record causes no resource writes'
 )
+(
+    fixture check_workload
+    apply
+    podman() { printf 'true\n'; }
+    rejected check
+    rejected apply
+    echo 'PASS read-only checks and matching apply reject a conflicting workload'
+)

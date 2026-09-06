@@ -97,7 +97,9 @@ jobs:
         run: bash tools/workshop/test-package-item.sh
 
       - name: Validate GPU fixture refusal and rollback boundaries
-        run: bash experiments/train-gpu-lifecycle/test-provision.sh
+        run: |
+          bash experiments/train-gpu-lifecycle/test-provision.sh
+          bash experiments/train-gpu-lifecycle/test-boot.sh
 
   managed-source:
     name: Managed source-only boundary

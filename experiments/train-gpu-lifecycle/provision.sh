@@ -57,6 +57,11 @@ profile() {
         add "$gt/vf1/preempt_timeout_us" 500000
     done
 }
+workload_idle() {
+    local state
+    state=$(podman inspect --format '{{.State.Running}}' "$llama") || return
+    [[ $state == false ]] || { fail 'conflicting GPU workload is running or unknown'; return 1; }
+}
 idle() {
     local state driver
     state=$(LC_ALL=C virsh -c qemu:///system domstate "$domain") || return
@@ -65,11 +70,11 @@ idle() {
         driver=$(basename "$(readlink -f "$pci/virtfn0/driver")")
         [[ $driver != vfio-pci ]] || { fail 'VF still bound to VFIO; reconcile ownership'; return 1; }
     fi
-    state=$(podman inspect --format '{{.State.Running}}' "$llama") || return
-    [[ $state == false ]] || { fail 'conflicting GPU workload is running or unknown'; return 1; }
+    workload_idle
 }
 check() {
     identity || return
+    workload_idle || return
     [[ $count == 1 ]] || { fail 'VF is not enabled'; return 1; }
     local i value
     for i in "${!paths[@]}"; do
@@ -95,7 +100,7 @@ apply() {
         original[i]=$(number "${paths[i]}") || return
         [[ ${original[i]} == "${expected[i]}" ]] || same=0
     done
-    if [[ $count == 1 && $same == 1 ]]; then return 0; fi
+    if [[ $count == 1 && $same == 1 ]]; then check; return; fi
     idle || return
     snapshot || return
     for i in "${!paths[@]}"; do
