@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Expose native treasure chest and relic choices through reward actions, with verified
+  Windows Astra chest opening, Gorget acquisition and map continuation.
+
 - Translate rest-site healing, single-card smithing and proceed through native controls;
   confirmed bounded Windows Astra healing, Bash upgrade and map continuation.
 

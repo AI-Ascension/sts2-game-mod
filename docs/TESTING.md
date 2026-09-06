@@ -1,5 +1,8 @@
 # Testing and evidence
 
+For bounded native Astra treasure opening, relic acquisition and map continuation, see
+[the treasure evidence](evidence/native-treasure-20260906.md). Shop entry remained unresolved.
+
 For bounded native Astra rest-site healing, smithing and map continuation, see
 [the Windows evidence](evidence/native-rest-sites-20260906.md). Treasure entry remained
 unresolved; this does not establish full campaign completion.
