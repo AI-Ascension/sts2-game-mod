@@ -23,7 +23,7 @@ internal sealed partial class LiveCombatSource
         RunState? run = RunManager.Instance.DebugOnlyGetState();
         if (!RunManager.Instance.IsInProgress && !RunManager.Instance.IsGameOver)
             return Surface(observation, RuntimeV3GameplayState.Setup, CampaignCharacters, LiveCombatDemo.Ready)
-                with { VisibleSeed = System.Environment.GetEnvironmentVariable("STS2_LIVE_SEED") ?? "AIASCENSIONREPLAY1" };
+                with { VisibleSeed = LiveCombatDemo.RunOptions.Seed };
         if (run == null || CurrentPlayer() == null) return observation;
         observation = observation with { NodeId = CurrentNodeId(run) };
         if (observation.State == RuntimeV3GameplayState.Defeat) return observation;

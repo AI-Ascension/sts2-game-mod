@@ -35,7 +35,10 @@ internal sealed partial class LiveCombatSource
         {
             invoke = async () => { await LiveCombatDemo.StartCampaignAsync(); };
             postcondition = () => CurrentPlayer() != null
-                && RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed == before.VisibleSeed;
+                && (LiveCombatDemo.RunOptions.Practice
+                    ? RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed == before.VisibleSeed
+                    : RunManager.Instance.ShouldSave
+                        && RunManager.Instance.DebugOnlyGetState()?.GameMode == GameMode.Standard);
             effect = "campaign_started";
         }
         else if (action.Kind == "select_map_node" && RunManager.Instance.DebugOnlyGetState() is { } run)

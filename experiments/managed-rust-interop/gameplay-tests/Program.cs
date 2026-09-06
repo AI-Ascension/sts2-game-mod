@@ -18,6 +18,7 @@ internal static class Program
         }
         ReadsDiscoverNewGenerations();
         FingerprintChecks.Run();
+        RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();
         UnrelatedTransitionDoesNotSettle();
