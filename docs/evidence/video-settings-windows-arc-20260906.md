@@ -72,6 +72,11 @@ HP, and the terminal player, reward state, seed, and legal-action content
 matched. The replay used the accelerated RDP session at 60 FPS. These are real
 isolated-combat results, not a full campaign or Linux v3 gameplay pass.
 
+A subsequent fresh Astra-controlled run in the RDP session also completed with
+17 model decisions, 17 settled actions, and 29/80 HP at the reward screen, while
+the game logged 60 FPS. The Linux test VM was returned to its running state;
+the GPU Llama container remained stopped for the Windows GPU allocation.
+
 Private evidence SHA-256 digests:
 
 - Arc D3D12 menu log: `422911dc66d4ff1e7b4cb3e9d622b4f59cb3d9becfd3e19b6b4301fa27f2eef8`.
@@ -80,6 +85,12 @@ Private evidence SHA-256 digests:
 - Replay trajectory: `b861436bd441d890215008e243827b3757a2b10f9935a3118d9548131b319d68`.
 - RDP replay game log: `e261a01d5ef50e077e1d4bcd42d62d6884c7c4ff421f6bc5f618a5bd369129e4`.
 - RDP reward screenshot: `fdcdf82c2b889d5d577d4bb504b8dcd6ba9b2c3a40fb45fb4d0fb8a72b31d60b`.
+- Fresh RDP Astra trajectory: `77fca659eb81a96b01caad4f46cfcdd60efa3dcf313edd0ae5d811119f1b4cc3`.
+- Fresh RDP Astra game log: `d0538851b74ca3db4259701e561efbb81ee5ea31350cbcf2cd809ea7856086cc`.
+
+The setup follows [Intel's SR-IOV toolkit](https://github.com/intel/GFX-SRIOV-Toolkit)
+and Microsoft's documented
+[RDP hardware rendering policy](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-terminalserver#ts_dx_use_full_hwgpu).
 
 The VF provisioning is currently runtime-only. The stopped Llama workload needs
 its original GPU memory capacity restored before restart. Source CI does not
