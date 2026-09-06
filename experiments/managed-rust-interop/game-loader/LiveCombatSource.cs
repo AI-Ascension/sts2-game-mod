@@ -47,7 +47,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     public RuntimeV3GameplayObservation Observe()
     {
         RequireThread();
-        Player? player = CurrentPlayer();
+        Player? player = CurrentPlayer() ?? TerminalPlayer();
         PlayerCombatState? combat = player?.PlayerCombatState;
         CombatManager manager = CombatManager.Instance;
         CombatState? hostCombat = manager.DebugOnlyGetState();
@@ -72,6 +72,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
             IsActionable = enabled, InputEnabled = enabled, ModalBlocking = !enabled
         };
         if (LiveCombatDemo.Campaign) result = ProjectCampaign(result);
+        result = ProjectVictory(result);
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
         string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));

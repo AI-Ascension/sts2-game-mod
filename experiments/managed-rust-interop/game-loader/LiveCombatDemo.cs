@@ -73,6 +73,8 @@ internal static class LiveCombatDemo
             Ready = true;
 #if STS2_HAND_CHOICE_PROBE
             await HandChoiceProbe.PrepareAsync();
+#elif STS2_TERMINAL_PROBE
+            await TerminalProbe.RunAsync();
 #else
             if (!Campaign) _ = StartAsync();
             else GD.Print("[AI-ASCENSION LIVE] campaign setup ready for model selection");
