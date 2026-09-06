@@ -28,8 +28,9 @@ No release may contain:
 - an unreviewed dependency or fixture with unknown licensing.
 
 The managed loader and each native artifact must be paired for the exact supported
-operating-system and architecture. The package must include the manifest, applicable notices,
-license, and user documentation while keeping host assemblies outside the package.
+operating-system and architecture. Source archives include the manifest, applicable notices,
+license, and user documentation; the Workshop runtime item is the separately defined five-file
+package and keeps host assemblies outside both distributions.
 
 ## Prepare and verify
 

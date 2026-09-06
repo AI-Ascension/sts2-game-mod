@@ -22,6 +22,7 @@ public static partial class WorkshopPackageValidator
     private const string ContentKind = "first_party_executable";
     private const string Entrypoint = "AIAscensionSTS2GameMod.json";
     private const int MaximumManifestBytes = 64 * 1024;
+    private const int MaximumChecksumBytes = 64 * 1024;
     private const long MaximumPayloadBytes = 256 * 1024 * 1024;
 
     private static readonly (string Path, string Role)[] WindowsExpectedPayload =
@@ -84,6 +85,7 @@ public static partial class WorkshopPackageValidator
         }
 
         ValidateManifest(root, manifest, expectedConsumerAppId, expectedPublishedFileId, expectedGameVersion, expectedPlatform, expectedPayload);
+        ValidateChecksumInventory(root, expectedPayload);
         return new WorkshopPackageValidationResult
         {
             InstallDirectory = root,

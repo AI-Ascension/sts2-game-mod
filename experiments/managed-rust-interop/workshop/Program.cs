@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using AiAscension.Sts2GameMod.Runtime;
 
@@ -42,7 +43,7 @@ internal static class Program
             File.WriteAllText(
                 Path.Combine(root, WorkshopPackageValidator.ManifestFileName),
                 JsonSerializer.Serialize(manifest, WorkshopPackageValidator.JsonOptions));
-            File.WriteAllText(Path.Combine(root, WorkshopPackageValidator.ChecksumFileName), "synthetic fixture\n");
+            WriteChecksumInventory(root, files);
 
             WorkshopPackageValidationResult result = WorkshopPackageValidator.ValidateDirectory(
                 root, AppId, PublishedFileId, GameVersion, Platform);
@@ -60,6 +61,13 @@ internal static class Program
             ExpectFailure("unexpected_file", () => WorkshopPackageValidator.ValidateDirectory(
                 root, AppId, PublishedFileId, GameVersion, Platform));
             File.Delete(Path.Combine(root, "unexpected.txt"));
+
+            string checksumPath = Path.Combine(root, WorkshopPackageValidator.ChecksumFileName);
+            string checksums = File.ReadAllText(checksumPath);
+            File.WriteAllText(checksumPath, new string('0', 64) + checksums[64..]);
+            ExpectFailure("checksum_mismatch", () => WorkshopPackageValidator.ValidateDirectory(
+                root, AppId, PublishedFileId, GameVersion, Platform));
+            File.WriteAllText(checksumPath, checksums);
 
             File.AppendAllText(Path.Combine(root, "AIAscensionSTS2GameMod.json"), "changed\n");
             ExpectFailure("file_digest_mismatch", () => WorkshopPackageValidator.ValidateDirectory(
@@ -133,7 +141,7 @@ internal static class Program
             File.WriteAllText(
                 Path.Combine(root, WorkshopPackageValidator.ManifestFileName),
                 JsonSerializer.Serialize(manifest, WorkshopPackageValidator.JsonOptions));
-            File.WriteAllText(Path.Combine(root, WorkshopPackageValidator.ChecksumFileName), "synthetic fixture\n");
+            WriteChecksumInventory(root, files);
             WorkshopPackageValidator.ValidateDirectory(root, AppId, PublishedFileId, GameVersion, platform);
         }
         finally
@@ -182,6 +190,25 @@ internal static class Program
             SizeBytes = (ulong)file.Length,
             Sha256 = WorkshopPackageValidator.ComputeFileDigest(file.FullName)
         };
+    }
+
+    private static void WriteChecksumInventory(string root, WorkshopFile[] files)
+    {
+        StringBuilder checksums = new();
+        foreach (WorkshopFile file in files)
+        {
+            checksums.Append(WorkshopPackageValidator.ComputeFileDigest(Path.Combine(root, file.Path!)));
+            checksums.Append("  ");
+            checksums.Append(file.Path);
+            checksums.Append('\n');
+        }
+
+        string manifestPath = Path.Combine(root, WorkshopPackageValidator.ManifestFileName);
+        checksums.Append(WorkshopPackageValidator.ComputeFileDigest(manifestPath));
+        checksums.Append("  ");
+        checksums.Append(WorkshopPackageValidator.ManifestFileName);
+        checksums.Append('\n');
+        File.WriteAllText(Path.Combine(root, WorkshopPackageValidator.ChecksumFileName), checksums.ToString());
     }
 
     private static void ExpectFailure(string code, Action action)

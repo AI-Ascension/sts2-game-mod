@@ -34,9 +34,9 @@ sts2-workshop-manifest-v1; it records package and compatibility identities, sort
 sizes, SHA-256 digests, a deterministic content digest, and source revision.
 
 The Rust sts2-game-mod Workshop module owns pure manifest shape validation and Steam install-state
-decisions. The managed loader owns actual directory inspection, reparse-point rejection, file
-hashing, content-digest verification, and the final handoff gate. Steam callback translation remains
-a future adapter seam; no Steam ABI is fabricated while the SDK is absent.
+decisions. The managed loader owns actual directory inspection, reparse-point rejection, file and
+SHA256SUMS inventory hashing, content-digest verification, and the final handoff gate. Steam callback
+translation remains a future adapter seam; no Steam ABI is fabricated while the SDK is absent.
 
 The target-local tools/workshop/package-item.sh accepts an already-built payload, creates the
 deterministic manifest/checksum inventory, and emits a Steam Workshop VDF beside the content

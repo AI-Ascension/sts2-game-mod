@@ -345,6 +345,14 @@ The fixture-only package staging test uses synthetic payloads and a synthetic pr
 bash tools/workshop/test-package-item.sh
 ~~~
 
+The disposable fixture lifecycle test covers file-scoped install, update, checksum refusal,
+symlink-root refusal, non-regular rollback targets, rollback, unrelated-file preservation, and both
+platform native filenames:
+
+~~~text
+bash tools/release/test-runtime-lifecycle.sh
+~~~
+
 The managed validator is exercised without a host assembly by the .NET 9 probe:
 
 ~~~text
@@ -353,7 +361,8 @@ dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidatio
 
 These checks cover manifest shape, unknown fields, path traversal, duplicate/case-collision
 paths, sorted inventory, allowlist and compatibility drift, install readiness, unexpected files,
-reparse-point policy, file-size/digest mismatch, and content-digest mismatch. They do not prove
+reparse-point policy, file-size/digest mismatch, SHA256SUMS inventory/content mismatch, and
+content-digest mismatch. They do not prove
 Steam App Admin settings, Steam callbacks, subscription/download behavior, game discovery, or
 host compatibility.
 

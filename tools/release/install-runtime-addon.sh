@@ -41,6 +41,42 @@ case "$operation" in
 esac
 
 export LC_ALL=C
+
+reject_symlink_components() {
+    local path=$1 label=$2
+    local absolute=$path current=/ component index
+    local -a components=() normalized=()
+
+    [[ "$absolute" = /* ]] || absolute="$PWD/$absolute"
+    absolute=$(printf '%s' "$absolute" | sed -E 's#/{2,}#/#g')
+    IFS='/' read -r -a components <<< "${absolute#/}"
+    for component in "${components[@]}"; do
+        case "$component" in
+            ''|.) continue ;;
+            ..)
+                if ((${#normalized[@]} > 0)); then
+                    unset "normalized[${#normalized[@]}-1]"
+                fi
+                current=/
+                for index in "${!normalized[@]}"; do
+                    current="${current%/}/${normalized[index]}"
+                done
+                ;;
+            *)
+                current="${current%/}/$component"
+                [[ ! -L "$current" ]] || die "$label path contains a symlink: $current"
+                normalized+=("$component")
+                ;;
+        esac
+    done
+}
+
+reject_symlink_components "$install_arg" install
+reject_symlink_components "$backup_arg" backup
+if [[ "$operation" == install ]]; then
+    reject_symlink_components "$package_arg" package
+fi
+
 install_dir=$(realpath -m -- "$install_arg") || die "could not resolve install directory: $install_arg"
 backup_dir=$(realpath -m -- "$backup_arg") || die "could not resolve backup directory: $backup_arg"
 [[ "$install_dir" != "/" && "$backup_dir" != "/" ]] || die 'root directory is not a valid install or backup target'
@@ -213,6 +249,10 @@ PY
     for file in "${package_files[@]}"; do
         mv -f -- "$stage_dir/$file" "$install_dir/$file"
     done
+    for file in "${package_files[@]}"; do
+        cmp -s -- "$package_dir/$file" "$install_dir/$file" \
+            || die "installed payload does not match package: $file"
+    done
     rmdir -- "$stage_dir"
     trap - ERR
     printf 'runtime addon %s installed at %s\n' "$platform" "$install_dir"
@@ -258,9 +298,17 @@ else
         fi
         target="$install_dir/$file"
         [[ ! -L "$target" ]] || die "install target is a symlink: $target"
+        if [[ -e "$target" ]]; then
+            [[ -f "$target" ]] || die "install target is not a regular file: $target"
+        fi
         temporary="$install_dir/.$file.rollback.$$"
         [[ ! -e "$temporary" && ! -L "$temporary" ]] || die "rollback temporary path already exists: $temporary"
     done
+
+    if cmp -s "$backup_dir/$CHECKSUM_NAME.state" <(printf 'present\n'); then
+        (cd "$backup_dir" && sha256sum --check --strict "$CHECKSUM_NAME") >/dev/null \
+            || die 'rollback backup checksum inventory failed'
+    fi
 
     for file in "${package_files[@]}"; do
         state="$backup_dir/$file.state"
@@ -269,6 +317,16 @@ else
             mv -f -- "$install_dir/.$file.rollback.$$" "$install_dir/$file"
         else
             rm -f -- "$install_dir/$file"
+        fi
+    done
+    for file in "${package_files[@]}"; do
+        state="$backup_dir/$file.state"
+        if cmp -s "$state" <(printf 'present\n'); then
+            cmp -s -- "$backup_dir/$file" "$install_dir/$file" \
+                || die "rollback payload does not match backup: $file"
+        else
+            [[ ! -e "$install_dir/$file" && ! -L "$install_dir/$file" ]] \
+                || die "rollback did not remove missing payload: $file"
         fi
     done
     printf 'runtime addon rollback restored from %s\n' "$backup_dir"

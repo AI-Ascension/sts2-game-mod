@@ -36,6 +36,24 @@ bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
 [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
 [[ -f "$install_dir/user-notes.txt" ]]
 
+ln -s -- "$temp_dir/package-v2" "$temp_dir/package-link"
+if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
+    "$temp_dir/package-link" "$install_dir" "$temp_dir/backup-package-link" >/dev/null 2>&1; then
+    printf '%s\n' 'symlinked package root was accepted' >&2
+    exit 1
+fi
+[[ ! -e "$temp_dir/backup-package-link" ]]
+rm -- "$temp_dir/package-link"
+
+ln -s -- "$install_dir" "$temp_dir/install-link"
+if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
+    "$temp_dir/package-v2" "$temp_dir/install-link" "$temp_dir/backup-install-link" >/dev/null 2>&1; then
+    printf '%s\n' 'symlinked install root was accepted' >&2
+    exit 1
+fi
+[[ ! -e "$temp_dir/backup-install-link" ]]
+rm -- "$temp_dir/install-link"
+
 bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
     "$temp_dir/package-v2" "$install_dir" "$temp_dir/backup-v2" >/dev/null
 [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v2' ]]
@@ -43,6 +61,17 @@ bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
 bash "$script_dir/install-runtime-addon.sh" rollback "$install_dir" "$temp_dir/backup-v2" >/dev/null
 [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
 [[ -f "$install_dir/user-notes.txt" ]]
+
+mv -- "$install_dir/AIAscensionSTS2GameMod.dll" "$temp_dir/rollback-target-original"
+mkdir -- "$install_dir/AIAscensionSTS2GameMod.dll"
+if bash "$script_dir/install-runtime-addon.sh" rollback "$install_dir" "$temp_dir/backup-v2" >/dev/null 2>&1; then
+    printf '%s\n' 'rollback accepted a non-regular target' >&2
+    exit 1
+fi
+[[ -d "$install_dir/AIAscensionSTS2GameMod.dll" ]]
+[[ -z "$(find "$install_dir/AIAscensionSTS2GameMod.dll" -mindepth 1 -maxdepth 1 -print -quit)" ]]
+rmdir -- "$install_dir/AIAscensionSTS2GameMod.dll"
+mv -- "$temp_dir/rollback-target-original" "$install_dir/AIAscensionSTS2GameMod.dll"
 
 cp -a -- "$temp_dir/package-v1" "$temp_dir/tampered-package"
 printf 'tampered\n' >> "$temp_dir/tampered-package/AIAscensionSTS2GameMod.dll"
