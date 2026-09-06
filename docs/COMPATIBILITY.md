@@ -1,5 +1,10 @@
 # Compatibility policy and matrix
 
+Current-run Victory observation has focused native Windows v0.107.1 evidence from an
+isolated forced-terminal fixture; normal Windows/Linux addon builds compile and exclude
+the fixture. This does not establish a model-played win or Linux native victory. See
+[the exact terminal evidence](evidence/native-victory-observation-20260906.md).
+
 Native merchant and potion-capacity behavior is documented in
 [the dated shop evidence](evidence/native-shop-controls-20260906.md). Windows v0.107.1
 relic purchase and shop exit are confirmed; other merchant purchase types and card removal

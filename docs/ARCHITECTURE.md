@@ -8,6 +8,12 @@ independent of proprietary host assemblies. The source queues real host actions 
 their completion through the existing runtime-v3 boundary. The operator session script owns
 process startup and cleanup; model decisions remain in the harness provider port.
 
+Terminal Victory projection is read-only and requires same-run active observation lineage,
+a changed positive native win marker, a living local single-player character, and a visible
+native victory surface. The terminal observation preserves public player state and disables
+input. The forced terminal fixture is compiled separately; see
+[ADR 0029](decisions/0029-native-victory-observation.md).
+
 sts2-game-mod is the game-facing translation boundary. It adapts the managed loader and host
 callbacks into owned Rust values, schedules host work on the game main thread, exposes the
 authoritative local HTTP surface, and composes the narrow native seam.
