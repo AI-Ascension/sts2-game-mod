@@ -19,6 +19,12 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// <summary>Explicit isolated combat demonstration; not a normal full-run bootstrap.</summary>
 internal static class LiveCombatDemo
 {
+    internal static bool Campaign => Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN") == "1";
+    internal static bool Ready { get; private set; }
+    internal static RuntimeV3GameplayRunOptions RunOptions => RuntimeV3GameplayRunOptions.Parse(
+        Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN_MODE"),
+        Environment.GetEnvironmentVariable("STS2_LIVE_SEED"));
+
     internal static void Initialize()
     {
         if (Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") != "1") return;
@@ -29,7 +35,8 @@ internal static class LiveCombatDemo
         // The game still executes real combat. Only the save backend is replaced with local
         // storage so this demonstration has no Steam cloud save writer.
         var acceptedMods = SaveManager.Instance.SettingsSave.ModSettings;
-        SaveManager.MockInstanceForTesting(new SaveManager(new GodotFileIo("user://live-demo"), true));
+        string saveRoot = Campaign && !RunOptions.Practice ? "user://live-campaign" : "user://live-demo";
+        SaveManager.MockInstanceForTesting(new SaveManager(new GodotFileIo(saveRoot), true));
         SaveManager.Instance.InitProfileId(1);
         SaveManager.Instance.InitSettingsData();
         SaveManager.Instance.SettingsSave.ModSettings = acceptedMods;
@@ -50,11 +57,39 @@ internal static class LiveCombatDemo
 #if STS2_VIDEO_MENU_PROBE
             _ = VideoMenuProbe.RunAsync(tree);
 #else
-            _ = StartAsync();
+            if (Campaign && Environment.GetEnvironmentVariable("STS2_LIVE_RESUME") == "1")
+            {
+                try
+                {
+                    if (RunOptions.Practice) throw new InvalidOperationException("practice cannot resume a standard save");
+                    await LiveCampaignStart.ResumeAsync();
+                }
+                catch (Exception exception)
+                {
+                    GD.PrintErr($"[AI-ASCENSION LIVE] campaign resume failed: {exception.GetType().Name}");
+                    return;
+                }
+            }
+            Ready = true;
+            if (!Campaign) _ = StartAsync();
+            else GD.Print("[AI-ASCENSION LIVE] campaign setup ready for model selection");
 #endif
         };
         tree.ProcessFrame += start;
         GD.Print("[AI-ASCENSION LIVE] isolated local-only save backend installed");
+    }
+
+    internal static async Task<RunState> StartCampaignAsync()
+    {
+        if (!Campaign || !Ready || RunManager.Instance.IsInProgress)
+            throw new InvalidOperationException("campaign setup is not available");
+        if (!RunOptions.Practice) return await LiveCampaignStart.StandardAsync();
+        string seed = RunOptions.Seed!;
+        SaveManager.Instance.SetFtuesEnabled(false);
+        var acts = ModelDb.ActsByIndex.Select(options => options[0]).ToArray();
+        // Normal host setup. The model chooses the next travelable map point; no debug room entry.
+        return await NGame.Instance!.StartNewSingleplayerRun(ModelDb.Character<Ironclad>(), false,
+            acts, Array.Empty<ModifierModel>(), seed, GameMode.Custom);
     }
 
     private static async Task StartAsync()
