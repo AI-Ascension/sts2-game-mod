@@ -79,8 +79,9 @@ internal sealed partial class LiveCombatSource
         {
             if (CrystalSphereProceed(screen) is not { } proceed) return false;
             invoke = () => { proceed.ForceClick(); return Task.CompletedTask; };
-            postcondition = () => CrystalSphereScreen() != screen && (EventButtons().Length > 0
-                || NMapScreen.Instance is { IsOpen: true } map && map.IsVisibleInTree());
+            postcondition = () => NMapScreen.Instance is { IsOpen: true, IsTravelEnabled: true } map
+                && map.IsVisibleInTree()
+                || !ReferenceEquals(RewardOverlay(), screen) && EventButtons().Length > 0;
             effect = "crystal_sphere_completed";
             return true;
         }

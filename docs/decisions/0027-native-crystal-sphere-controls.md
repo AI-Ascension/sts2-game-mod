@@ -20,7 +20,8 @@ cell count produces no admitted cell actions.
 Leaving Crystal Sphere loot returns to the custom screen rather than directly to the map.
 That reward operation settles only after the original sphere is again on top and its native
 Proceed control is clickable. The separate `crystal_sphere:proceed` action invokes that control
-and verifies that the screen closes to native event choices or the map. This final screen exit
+and verifies native event choices take over or the map becomes visible and travelable. The native
+screen can remain alive behind the map, so node removal is not an exit requirement. This final screen exit
 does not depend on the earlier parent event task remaining incomplete.
 
 Separately, a combat action may complete while the host is between combat and its reward screen.
