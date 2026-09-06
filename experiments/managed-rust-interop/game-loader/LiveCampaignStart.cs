@@ -50,6 +50,7 @@ internal static class LiveCampaignStart
         await NGame.Instance!.LoadRun(run, data.PreFinishedRoom);
         if (!RunManager.Instance.ShouldSave || run.GameMode != GameMode.Standard)
             throw new InvalidOperationException("resumed campaign mode or saving state is invalid");
+        await LiveCombatSource.OpenEnteredShopAsync();
         GD.Print("[AI-ASCENSION LIVE] standard campaign resumed through host save APIs");
     }
 

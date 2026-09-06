@@ -5,6 +5,10 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Translate merchant purchases, card removal and shop exit through native controls;
+  verified Windows Astra relic purchase and shop exit. Reject potion reward claims when
+  native potion storage is full. See native shop evidence for unverified paths.
+
 - Expose native treasure chest and relic choices through reward actions, with verified
   Windows Astra chest opening, Gorget acquisition and map continuation.
 

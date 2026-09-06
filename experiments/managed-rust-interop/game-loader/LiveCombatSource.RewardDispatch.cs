@@ -23,7 +23,8 @@ internal sealed partial class LiveCombatSource
         Node? screen = RewardOverlay();
         if (action.Kind == "choose_reward" && screen is NRewardsScreen)
         {
-            var matches = RewardButtons(screen).Where(button => RewardId(button) == action.Value).ToArray();
+            var matches = RewardButtons(screen).Where(button => RewardId(button) == action.Value
+                && CanClaimReward(button)).ToArray();
             if (matches.Length != 1) return false;
             var button = matches[0];
             var reward = button.Reward;

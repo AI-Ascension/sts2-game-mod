@@ -22,6 +22,8 @@ internal sealed partial class LiveCombatSource
         internal Func<bool> Postcondition { get; } = postcondition;
         internal string Effect { get; } = effect;
         internal Task? Work { get; set; }
+        internal Func<string>? Diagnostics { get; set; }
+        internal int CompletionChecks { get; set; }
     }
 
     private bool DispatchCampaign(RuntimeV3OperationKey operation, LegalActionReference action,
@@ -31,6 +33,7 @@ internal sealed partial class LiveCombatSource
         Func<Task> invoke;
         Func<bool> postcondition;
         string effect;
+        Func<string>? diagnostics = null;
         if (action.Kind == "start_run" && action.Value == "ironclad")
         {
             invoke = async () => { await LiveCombatDemo.StartCampaignAsync(); };
@@ -49,14 +52,13 @@ internal sealed partial class LiveCombatSource
             var destination = point.Point.coord;
             var previousRoom = run.CurrentRoom;
             var queued = new MoveToMapCoordAction(CurrentPlayer()!, destination);
-            invoke = () =>
-            {
-                RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(queued);
-                return queued.CompletionTask;
-            };
+            invoke = () => NavigateCampaignMapAsync(queued);
             postcondition = () => queued.State == GameActionState.Finished && queued.Exception == null
                 && run.CurrentMapCoord == destination && run.CurrentRoom != previousRoom;
             effect = "map_room_entered";
+            diagnostics = () => $"queue_state={queued.State}; queue_task={queued.CompletionTask.Status}; "
+                + $"queue_error={queued.Exception?.GetType().Name ?? "none"}; "
+                + $"coord_matches={run.CurrentMapCoord == destination}; room_changed={run.CurrentRoom != previousRoom}";
         }
         else if (action.Kind == "event_choice")
         {
@@ -69,9 +71,11 @@ internal sealed partial class LiveCombatSource
         }
         else if (!PrepareReward(action, out invoke, out postcondition, out effect)
             && !PrepareRest(action, before, out invoke, out postcondition, out effect)
-            && !PrepareTreasure(action, out invoke, out postcondition, out effect)) return false;
+            && !PrepareTreasure(action, out invoke, out postcondition, out effect)
+            && !PrepareShop(action, out invoke, out postcondition, out effect)) return false;
         // Retain identity before invoking host code. A synchronous failure remains unknown.
         var pending = new CampaignPending(action, before, postcondition, effect);
+        pending.Diagnostics = diagnostics;
         _campaignPending.Add(operation, pending);
         pending.Work = invoke();
         return true;
@@ -81,6 +85,10 @@ internal sealed partial class LiveCombatSource
         LegalActionReference action)
     {
         CampaignPending pending = _campaignPending[operation];
+        if (pending.Diagnostics != null && ++pending.CompletionChecks is 1 or 10 or 60)
+            Godot.GD.Print($"[AI-ASCENSION LIVE] map completion check={pending.CompletionChecks}; "
+                + $"work={pending.Work?.Status}; work_error={pending.Work?.Exception?.GetBaseException().GetType().Name ?? "none"}; "
+                + pending.Diagnostics());
         if (pending.Action != action || pending.Work?.IsCompletedSuccessfully != true
             || !pending.Postcondition()) return null;
         RuntimeV3GameplayObservation after = Observe();

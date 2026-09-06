@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Rewards;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
@@ -34,6 +35,9 @@ internal sealed partial class LiveCombatSource
     private static string RewardId(NRewardButton button) =>
         button.Reward is { } reward ? $"reward:{reward.RewardsSetIndex}:{reward.GetType().Name}"
             : throw new InvalidOperationException("reward control is unbound");
+
+    private static bool CanClaimReward(NRewardButton button) => button.Reward is { } reward
+        && (reward is not PotionReward || reward.Player.PotionSlots.Any(slot => slot == null));
 
     private static NCardHolder[] RewardCards(Node screen) => Descendants(screen)
         .OfType<NCardHolder>().Where(holder => holder.IsVisibleInTree()
@@ -74,9 +78,11 @@ internal sealed partial class LiveCombatSource
         var actions = new List<LegalActionReference>();
         string? kind = screen is NRewardsScreen ? "choose_reward"
             : screen is NCardRewardSelectionScreen ? "select_card" : null;
-        if (kind == null) return Array.Empty<LegalActionReference>();
+        if (kind == null || screen == null) return Array.Empty<LegalActionReference>();
         IEnumerable<string> values = screen is NCardRewardSelectionScreen
-            ? RewardCards(screen).Select(RewardCardId) : observation.StateValues;
+            ? RewardCards(screen).Select(RewardCardId)
+            : RewardButtons(screen).Where(CanClaimReward).Select(RewardId)
+                .GroupBy(value => value).Where(group => group.Count() == 1).Select(group => group.Key);
         foreach (string value in values)
             actions.Add(new($"{kind}:{observation.Generation}:{value}", kind, value, null,
                 observation.Generation));
