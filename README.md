@@ -7,7 +7,7 @@
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
-> **Status:** deterministic tests, managed load-smoke, and an isolated runtime-v3 LLM combat/replay `confirmed` · full campaign and broader compatibility `unverified`. See [live combat scope](docs/LIVE_COMBAT_DEMO.md).
+> **Status:** deterministic tests, managed load-smoke, and bounded native STS2 v0.107.1 Windows/Linux runtime-v3 evidence `confirmed` · model-controlled campaigns reached Defeat and replayed in fresh processes; forced native Victory fixtures confirm terminal observation only · model-played Victory, all campaign paths, and broader compatibility `unverified`. See [live combat scope](docs/LIVE_COMBAT_DEMO.md) and the [dated evidence](docs/evidence/).
 > **Proof:** [45-second browser replay](https://ai-ascension.github.io/proof.html) · [Evidence ledger](https://ai-ascension.github.io/evidence.html) · [This repository on the map](https://ai-ascension.github.io/repositories.html#sts2-game-mod)
 > **Owner:** The mod owner is responsible for the managed loader package, host boundary, main-thread queue, ABI gate, HTTP admission, and Rust/native seam; the game host stays authoritative.
 > **Contribute:** [Organization guide](https://github.com/AI-Ascension/.github/blob/main/CONTRIBUTING.md) · [First tasks](https://ai-ascension.github.io/contributing.html)
@@ -15,15 +15,17 @@
 > AI-Ascension is an independent project. It is not affiliated with or endorsed by Mega Crit or Valve and grants no rights to game files, assets, or marks.
 
 Status: the target-owned boundary seams and one deterministic `poc-v1` fake mapping compile and
-have tests. A thin managed loader package now loads the Rust companion and has passed a real
-load-smoke launch against the recorded STS2 host; gameplay remains outside this slice. The bounded
-runtime probe has also passed in an authorized disposable profile.
+have tests. A thin managed loader package loads the Rust companion and has passed a real load-smoke
+launch against the recorded STS2 host. The bounded runtime probe and the runtime-v3 gameplay bridge
+have also been exercised in authorized disposable profiles. Current native evidence is scoped to
+STS2 v0.107.1 on the tested Windows and Linux guests; it records model-controlled setup-to-Defeat
+campaigns and fresh replays, plus separate forced terminal-observation fixtures.
 
 ## Responsibility and consumers
 
 The mod owner maintains the managed loader, host translation, main-thread boundary, authoritative
 local HTTP adapter, and narrow Rust/native seam. The game host is the authority for live state and
-mutations. The future gateway consumes the mod's owner-local HTTP contract; MCP and harness traffic
+mutations. The gateway consumes the mod's owner-local HTTP contract; MCP and harness traffic
 reaches it only through their separate gateway and coordinator responsibilities.
 
 This target does not own domain policy, gateway lifecycle or routing, MCP framing, or
@@ -41,7 +43,7 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 - [crates/http-adapter/](crates/http-adapter/) owns a transport-free HTTP request boundary and
   bounded admission guard; it does not open a listener or define public routes.
 - [crates/game-mod/](crates/game-mod/) composes those seams and makes admission-versus-pump
-  behavior explicit for the future managed host integration.
+  behavior explicit for the managed host integration.
 - [protocol-artifact/poc-v1/](protocol-artifact/poc-v1/) is the offline copied artifact consumed by
   the deterministic mod/core boundary test.
 - [protocol-artifact/runtime-v2/](protocol-artifact/runtime-v2/) is the offline copied release-like
@@ -59,14 +61,18 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   records the exact installed-host load-smoke inputs and observed log marker.
 - [docs/evidence/runtime-v1-host-live-20260902.md](docs/evidence/runtime-v1-host-live-20260902.md)
   records the focused runtime probe against the exact installed host and disposable profile.
+- [docs/evidence/native-victory-observation-20260906.md](docs/evidence/native-victory-observation-20260906.md)
+  records forced Windows/Linux terminal observation with the fixture excluded from normal builds.
+- [docs/evidence/train-gpu-lifecycle-20260906.md](docs/evidence/train-gpu-lifecycle-20260906.md)
+  records the authorized Train GPU lifecycle and post-boot isolated combat scope.
 - [docs/decisions/](docs/decisions/) records the managed/native, ownership, scaffold, and
   sixth-target and Wave 2 initialization decisions.
 - [tools/repo-policy/](tools/repo-policy/) is the target-local Rust governance checker.
 
-The managed loader, packaging, bounded runtime route source, and narrow repeat-seed restart path
-are implemented for this sprint. The broader host adapter and coordinator gameplay contract remain
-unimplemented. The Rust POC core port is still a fake seam; the repeat-seed path is a managed host
-integration and remains runtime-unverified.
+The managed loader, packaging, authenticated runtime routes, and runtime-v3 gameplay host source
+are implemented for the reviewed bounded path. The Rust POC core port remains a fake seam. Native
+evidence confirms the exact v0.107.1 Windows/Linux campaign and replay paths recorded by the harness;
+it does not establish every character, seed, branch, host patch, or multiplayer behavior.
 
 ## Steam Workshop package
 
@@ -87,9 +93,10 @@ under the configured App ID and published file ID are accepted. Arbitrary third-
 DLLs, native libraries, scripts, archives, and renamed executables are rejected. Steam publication,
 subscription/download callbacks, game discovery, and host compatibility remain unverified.
 
-The Runtime-v2 seam is also fake-only: it proves bounded admission, exactly-once in-memory
-application, retained receipts, and reconciliation for argument-free `end_turn`. No concrete host
-gameplay API exists in this repository; live host mutation and settlement are unverified.
+The Runtime-v2 seam described above is intentionally fake-only: its deterministic tests prove bounded
+admission, exactly-once in-memory application, retained receipts, and reconciliation for argument-free
+`end_turn`. Those tests do not characterize the separate managed/native Runtime-v3 host path; see the
+dated campaign records above for that path's bounded evidence and limits.
 
 ## Evidence and provenance
 
@@ -101,14 +108,19 @@ uses the operator's installed host assembly without adding it to this repository
 The POC behavior is test-confirmed only for the local fake core port: a state read, one accepted
 action, and one zero-unit rejection preserve the bounded state and effect witness. The managed
 loader has also passed load-smoke in STS2 v0.107.1 and logged a successful Rust ABI call. The
-runtime-v1 probe has confirmed live HTTP, managed main-thread dispatch, and a host-visible overlay
-witness in that exact host. Gameplay mutation, effect semantics beyond the probe, and broader
-compatibility remain unverified.
+runtime-v1 probe confirmed live HTTP, managed main-thread dispatch, and a host-visible overlay
+witness in that exact host. Later dated evidence confirms bounded runtime-v3 model-controlled
+campaigns and fresh-process replays to Defeat on Windows and Linux, while a separate forced native
+fixture confirms Victory observation and disabled input. The fixture does not prove a model-played
+Victory; broader compatibility remains unverified. See the [Windows campaign and replay](https://github.com/AI-Ascension/sts2-harness/blob/main/docs/evidence/seeded-astra-campaign-20260906.md)
+and [Linux campaign and replay](https://github.com/AI-Ascension/sts2-harness/blob/main/docs/evidence/linux-seeded-campaign-20260906.md)
+records.
 
 The repeat-seed path is separately build-confirmed against the operator-supplied STS2 v0.107.1
-assemblies. It is limited to a confirmed single-player Custom run and restarts from the original
-seed beginning. Its settings UI, host cleanup, replacement run, history suppression, and protected
-mode behavior remain unverified until an authorized disposable runtime test.
+assemblies and remains limited to an isolated single-player Custom-run scope. The dated campaign
+records use an explicit seed and fresh-process replay through the normal runtime path; they do not
+establish support for later-floor checkpoints, standard/daily/multiplayer modes, another host
+version, or every settings and cleanup permutation.
 
 ## Local validation
 
@@ -136,6 +148,7 @@ The listener requires `STS2_RUNTIME_TOKEN` and the built-in Runtime API toggle. 
 port are staged, persisted, and applied immediately by the AI-Ascension settings tab;
 `STS2_RUNTIME_BIND_ADDRESS` and `STS2_RUNTIME_PORT` override those values for automation. The
 listener is disabled when its toggle is off, its token is absent, or its address or port is invalid.
-The exact STS2 v0.107.1 Windows x86-64 probe is recorded as confirmed in the dated host evidence;
-the package still does not implement gameplay mutation or claim compatibility with another host or
-platform.
+The exact STS2 v0.107.1 Windows x86-64 probe is recorded as confirmed in the dated host evidence.
+The separate runtime-v3 gameplay path has bounded native Windows/Linux campaign evidence, while
+the supported action and observation surface remains limited to the recorded host/version and
+the [live combat scope](docs/LIVE_COMBAT_DEMO.md); no other host or platform is implied.
