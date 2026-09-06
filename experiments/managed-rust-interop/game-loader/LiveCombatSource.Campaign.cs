@@ -40,6 +40,7 @@ internal sealed partial class LiveCombatSource
         if (CrystalSphereScreen() is { } sphere && ReferenceEquals(overlay, sphere))
             return ProjectCrystalSphere(observation, sphere);
         if (overlay != null) return ProjectRewardOverlay(observation);
+        if (SelectingHand() is { } hand) return ProjectHandChoice(observation, hand);
         if (CurrentRestSite() is { } rest) return ProjectRestSite(observation, rest);
         if (CurrentTreasure() is { } treasure) return ProjectTreasure(observation, treasure);
         if (CurrentShop() is { } shop) return ProjectShop(observation, shop);

@@ -74,7 +74,8 @@ internal sealed partial class LiveCombatSource
             postcondition = () => option.WasChosen;
             effect = "event_choice_completed";
         }
-        else if (!PrepareCombatChoice(action, out invoke, out postcondition, out effect)
+        else if (!PrepareHandChoice(action, out invoke, out postcondition, out effect)
+            && !PrepareCombatChoice(action, out invoke, out postcondition, out effect)
             && !PrepareEventCardChoice(action, out invoke, out postcondition, out effect)
             && !PrepareReward(action, out invoke, out postcondition, out effect)
             && !PrepareRest(action, before, out invoke, out postcondition, out effect)
