@@ -40,6 +40,13 @@ internal sealed partial class LiveCombatSource
             var buttons = Descendants(screen).OfType<NProceedButton>().Where(Clickable).ToArray();
             if (buttons.Length != 1) return false;
             invoke = () => { buttons[0].ForceClick(); return Task.CompletedTask; };
+            if (CrystalSphereScreen() is { } sphere)
+            {
+                postcondition = () => ReferenceEquals(RewardOverlay(), sphere)
+                    && CrystalSphereProceed(sphere) != null;
+                effect = "reward_proceed_returned_to_event";
+                return true;
+            }
             postcondition = () => NMapScreen.Instance is { IsOpen: true } map
                 && map.IsVisibleInTree() && !Clickable(buttons[0]);
             effect = "reward_proceed_opened_map";

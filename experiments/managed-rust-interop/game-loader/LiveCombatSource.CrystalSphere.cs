@@ -5,12 +5,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
+    private static readonly string[] CrystalSphereExit = { "crystal_sphere:proceed" };
     private int _lastCrystalSphereCellCount = -1;
     private static NCrystalSphereScreen? CrystalSphereScreen()
     {
@@ -29,9 +32,18 @@ internal sealed partial class LiveCombatSource
     private static string CrystalSphereId(NCrystalSphereCell cell) =>
         $"crystal_sphere:reveal_with_current_tool:{cell.Entity.X}:{cell.Entity.Y}";
 
+    private static NProceedButton? CrystalSphereProceed(NCrystalSphereScreen screen)
+    {
+        var buttons = Descendants(screen).OfType<NProceedButton>().Where(Clickable).ToArray();
+        return buttons.Length == 1 ? buttons[0] : null;
+    }
+
     private RuntimeV3GameplayObservation ProjectCrystalSphere(RuntimeV3GameplayObservation observation,
         NCrystalSphereScreen screen)
     {
+        if (CrystalSphereProceed(screen) != null)
+            return Surface(observation, RuntimeV3GameplayState.Event, CrystalSphereExit,
+                NModalContainer.Instance?.OpenModal == null);
         NCrystalSphereCell[] cells = CrystalSphereCells(screen);
         if (_lastCrystalSphereCellCount != cells.Length)
         {
@@ -62,8 +74,17 @@ internal sealed partial class LiveCombatSource
         invoke = () => Task.CompletedTask;
         postcondition = () => false;
         effect = "";
-        if (CrystalSphereScreen() is not { } screen || !ReferenceEquals(RewardOverlay(), screen)
-            || EventChoiceParent() is not { } parent) return false;
+        if (CrystalSphereScreen() is not { } screen || !ReferenceEquals(RewardOverlay(), screen)) return false;
+        if (action.Value == "crystal_sphere:proceed")
+        {
+            if (CrystalSphereProceed(screen) is not { } proceed) return false;
+            invoke = () => { proceed.ForceClick(); return Task.CompletedTask; };
+            postcondition = () => CrystalSphereScreen() != screen && (EventButtons().Length > 0
+                || NMapScreen.Instance is { IsOpen: true } map && map.IsVisibleInTree());
+            effect = "crystal_sphere_completed";
+            return true;
+        }
+        if (EventChoiceParent() is not { } parent) return false;
         NCrystalSphereCell? cell = CrystalSphereCells(screen)
             .SingleOrDefault(candidate => CrystalSphereId(candidate) == action.Value);
         if (cell == null) return false;

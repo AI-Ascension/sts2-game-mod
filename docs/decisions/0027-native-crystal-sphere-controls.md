@@ -17,6 +17,12 @@ or force minigame completion. Public native APIs and visible control state are i
 Tool selection is not exposed by this change. A missing or ambiguous screen, modal, or excessive
 cell count produces no admitted cell actions.
 
+Leaving Crystal Sphere loot returns to the custom screen rather than directly to the map.
+That reward operation settles only after the original sphere is again on top and its native
+Proceed control is clickable. The separate `crystal_sphere:proceed` action invokes that control
+and verifies that the screen closes to native event choices or the map. This final screen exit
+does not depend on the earlier parent event task remaining incomplete.
+
 Separately, a combat action may complete while the host is between combat and its reward screen.
 A recovery observation during that transition cannot establish a settled gameplay boundary.
 The combat completion probe therefore retains the operation until an authoritative actionable
