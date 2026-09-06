@@ -5,6 +5,9 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Translate rest-site healing, single-card smithing and proceed through native controls;
+  confirmed bounded Windows Astra healing, Bash upgrade and map continuation.
+
 - Consume the coordinated Runtime-v3 continuation schema with argument-free proceed,
   confirm-selection and cancel-selection actions; reject mixed revisions and extra arguments.
 
