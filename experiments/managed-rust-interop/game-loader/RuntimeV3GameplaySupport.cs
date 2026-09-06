@@ -37,10 +37,26 @@ internal sealed partial class RuntimeV3GameplaySupport
     internal static RuntimeV3GameplaySupport WithHost(
         IRuntimeV3HostSource source,
         IRuntimeV3HostThread thread,
-        Func<bool>? canDispatch = null) =>
-        new(new RuntimeV3GameplayHost(source, thread, canDispatch));
+        Func<bool>? canDispatch = null,
+        RuntimeV3GameplayRecoveryStore? recovery = null,
+        bool recoveryRequired = false) =>
+        new(new RuntimeV3GameplayHost(source, thread, canDispatch, recovery, recoveryRequired));
 
     internal bool HasPendingMutation => _host?.HasPendingMutation ?? false;
+
+    internal RuntimeV3HostFence? CurrentHostFence => _host?.CurrentHostFence;
+
+    internal bool TryReplaceHostFence(
+        RuntimeV3HostBootstrapRequest request, out string error) =>
+        _host is not null && _host.TryReplaceHostFence(request, out error)
+            ? true
+            : SetRecoveryError("recovery_not_configured", out error);
+
+    private static bool SetRecoveryError(string value, out string error)
+    {
+        error = value;
+        return false;
+    }
 
     internal string Handle(
         string instanceId,

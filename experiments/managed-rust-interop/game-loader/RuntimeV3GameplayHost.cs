@@ -41,27 +41,38 @@ internal interface IRuntimeV3HostSource
 internal interface IRuntimeV3HostThread { void Enqueue(Action work); }
 
 /// <summary>Host-thread owner; source reads, completion checks and mutations run on that thread.</summary>
-internal sealed class RuntimeV3GameplayHost
+internal sealed partial class RuntimeV3GameplayHost
 {
-    private const int MaxReceipts = 4096;
+    private const int MaxReceipts = 16_384;
     private readonly IRuntimeV3HostSource _source;
     private readonly IRuntimeV3HostThread _thread;
     private readonly Func<bool> _canDispatch;
+    private readonly RuntimeV3GameplayRecoveryStore? _recovery;
+    private readonly bool _recoveryRequired;
     private readonly ConcurrentDictionary<RuntimeV3OperationKey, RuntimeV3DispatchReceipt> _receipts = new();
     private readonly object _receiptGate = new();
 
     internal RuntimeV3GameplayHost(IRuntimeV3HostSource source, IRuntimeV3HostThread thread,
-        Func<bool>? canDispatch = null)
+        Func<bool>? canDispatch = null, RuntimeV3GameplayRecoveryStore? recovery = null,
+        bool recoveryRequired = false)
     {
         _source = source;
         _thread = thread;
         _canDispatch = canDispatch ?? (() => true);
+        _recovery = recovery;
+        _recoveryRequired = recoveryRequired;
     }
+
+    internal bool HasDurableRecovery => _recovery is not null;
 
     internal bool HasPendingMutation
     {
         get
         {
+            if (_recovery?.HasPendingMutation == true)
+            {
+                return true;
+            }
             foreach (RuntimeV3DispatchReceipt receipt in _receipts.Values)
             {
                 if (receipt.Status is RuntimeV3DispatchStatus.Accepted or RuntimeV3DispatchStatus.Unknown)
@@ -121,7 +132,21 @@ internal sealed class RuntimeV3GameplayHost
     internal bool TryReplay(RuntimeV3OperationKey operation, string stateId,
         LegalActionReference action, out RuntimeV3DispatchReceipt? receipt)
     {
-        if (!_receipts.TryGetValue(operation, out receipt))
+        if (!_receipts.TryGetValue(operation, out receipt) || receipt is null)
+        {
+            if (_recovery is null
+                || !_recovery.TryGet(operation, out RuntimeV3HostOperationRecord? durable)
+                || durable is null
+                || !TryRestoreReceipt(durable, out RuntimeV3DispatchReceipt? restored)
+                || restored is null)
+            {
+                receipt = null;
+                return false;
+            }
+            receipt = restored;
+            _receipts.TryAdd(operation, receipt);
+        }
+        if (receipt is null)
         {
             return false;
         }
@@ -143,6 +168,16 @@ internal sealed class RuntimeV3GameplayHost
         {
             return accepted with { Status = RuntimeV3DispatchStatus.Rejected, ErrorCode = "invalid_action" };
         }
+        if (_recoveryRequired && _recovery is null)
+        {
+            return accepted with
+            {
+                Status = RuntimeV3DispatchStatus.Unknown,
+                ErrorCode = "persistence_unavailable"
+            };
+        }
+        RuntimeV3HostAdmissionTicket? ticket = null;
+        bool enqueue = false;
         lock (_receiptGate)
         {
             if (TryReplay(operation, observation.StateId, action, out RuntimeV3DispatchReceipt? existing)
@@ -155,89 +190,64 @@ internal sealed class RuntimeV3GameplayHost
                 return accepted with { Status = RuntimeV3DispatchStatus.Unknown,
                     ErrorCode = "receipt_capacity_exhausted" };
             }
-            _receipts[operation] = accepted;
+            if (_recovery is not null)
+            {
+                RuntimeV3RecoveryAdmission admission = _recovery.TryAdmit(
+                    operation,
+                    action,
+                    observation,
+                    Array.Empty<LegalActionReference>(),
+                    out RuntimeV3HostAdmissionTicket? issuedTicket,
+                    out RuntimeV3HostOperationRecord? durable,
+                    out string durableError);
+                if (admission == RuntimeV3RecoveryAdmission.Duplicate
+                    && durable is not null
+                    && TryRestoreReceipt(durable, out RuntimeV3DispatchReceipt? restored)
+                    && restored is not null)
+                {
+                    _receipts[operation] = restored;
+                    return restored;
+                }
+                if (admission != RuntimeV3RecoveryAdmission.New || issuedTicket is null)
+                {
+                    return accepted with
+                    {
+                        Status = admission == RuntimeV3RecoveryAdmission.Conflict
+                            ? RuntimeV3DispatchStatus.Rejected
+                            : RuntimeV3DispatchStatus.Unknown,
+                        ErrorCode = durableError
+                    };
+                }
+                ticket = issuedTicket;
+                _receipts[operation] = accepted;
+                enqueue = true;
+            }
+            else
+            {
+                _receipts[operation] = accepted;
+                enqueue = true;
+            }
         }
-        // A synchronous queue may call the host immediately. Never hold the receipt lock
-        // across host callbacks or queue implementations.
-        try { _thread.Enqueue(() => Settle(operation)); }
-        catch (Exception)
+        // Durable ticket publication and receipt insertion are complete before queueing. No
+        // callback runs under the receipt lock, including synchronous test queues.
+        if (enqueue)
         {
-            _receipts[operation] = _receipts[operation] with {
-                Status = RuntimeV3DispatchStatus.Unknown, ErrorCode = "dispatch_queue_unavailable" };
+            try { _thread.Enqueue(() => Settle(operation, ticket)); }
+            catch (Exception) { MarkUnknown(operation, "dispatch_queue_unavailable"); }
         }
-        return _receipts[operation];
+        return CurrentReceipt(operation, accepted);
     }
 
     internal bool TryGetReceipt(RuntimeV3OperationKey operation, out RuntimeV3DispatchReceipt? receipt)
     {
         CheckCompletion(operation);
-        return _receipts.TryGetValue(operation, out receipt);
-    }
-
-    private void Settle(RuntimeV3OperationKey operation)
-    {
-        RuntimeV3DispatchReceipt receipt = _receipts[operation];
-        try
+        if (_receipts.TryGetValue(operation, out receipt))
         {
-            RuntimeV3GameplayObservation current = Observe();
-            IReadOnlyList<LegalActionReference> actions = LegalActions(current);
-            string? rejection = !_canDispatch() ? "operation_in_progress"
-                : current.Generation != receipt.Before.Generation
-                || current.StateId != receipt.Before.StateId ? "stale_generation"
-                : !current.IsActionable || current.ModalBlocking || !current.InputEnabled ? "input_disabled"
-                : !new LegalActionCatalog(current.Generation, actions).ContainsExact(receipt.Action)
-                    ? "action_not_current" : null;
-            if (rejection is not null)
-            {
-                _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Rejected,
-                    Observation = current, LegalActions = actions, ErrorCode = rejection };
-                return;
-            }
-            // Mark uncertainty before invoking a callback that may mutate then throw.
-            receipt = receipt with { Status = RuntimeV3DispatchStatus.Unknown,
-                WasDispatched = true, ErrorCode = "dispatch_outcome_unknown" };
-            _receipts[operation] = receipt;
-            if (!_source.Dispatch(operation, receipt.Action))
-            {
-                _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Rejected,
-                    Observation = current, LegalActions = actions, ErrorCode = "action_rejected" };
-                return;
-            }
-            _receipts[operation] = receipt with { ErrorCode = "settlement_unproven" };
-            CheckCompletion(operation);
+            return true;
         }
-        catch (Exception)
-        {
-            _receipts[operation] = _receipts[operation] with {
-                Status = RuntimeV3DispatchStatus.Unknown, ErrorCode = "settlement_unproven" };
-        }
-    }
-
-    private void CheckCompletion(RuntimeV3OperationKey operation)
-    {
-        if (!_receipts.TryGetValue(operation, out RuntimeV3DispatchReceipt? receipt)
-            || !receipt.WasDispatched || receipt.Status != RuntimeV3DispatchStatus.Unknown)
-        {
-            return;
-        }
-        try
-        {
-            RuntimeV3HostCompletion? completion = _source.Completion(operation, receipt.Action);
-            if (completion is null || !PostconditionVerifier.Verify(
-                operation, receipt.Action, receipt.Before, completion.Observation, completion.Witness, out _))
-            {
-                return;
-            }
-            IReadOnlyList<LegalActionReference> actions = SnapshotActions(
-                completion.Observation, completion.LegalActions);
-            _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Settled,
-                Observation = SnapshotObservation(completion.Observation), Witness = completion.Witness,
-                LegalActions = actions, ErrorCode = null };
-        }
-        catch (Exception)
-        {
-            // Preserve explicit uncertainty on completion-source or catalog failure.
-            _receipts[operation] = receipt with { ErrorCode = "settlement_unproven" };
-        }
+        return _recovery is not null
+            && _recovery.TryGet(operation, out RuntimeV3HostOperationRecord? durable)
+            && durable is not null
+            && TryRestoreReceipt(durable, out receipt);
     }
 }

@@ -30,6 +30,7 @@ internal static class Program
         RecoveryReconcilesScopedReceipts();
         TextBoundsUseUtf8Bytes();
         HelpersCompileAndRejectInvalidCoop();
+        RecoveryChecks.Run();
         Console.WriteLine("Runtime-v3 managed request, receipt, and settlement checks passed.");
     }
 
