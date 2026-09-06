@@ -64,7 +64,8 @@ internal sealed partial class LiveCombatSource
         RuntimeV3GameplayObservation after = Observe();
         // A finished killing action can precede the reward screen. Keep polling the
         // retained action until the host exposes a supported post-action state.
-        if (!RuntimeV3GameplayCombatSettlement.Ready(after, LegalActions(after).Count > 0)) return null;
+        if (!RuntimeV3GameplayCombatSettlement.Ready(after, LegalActions(after).Count > 0,
+            combatOnly: !LiveCombatDemo.Campaign)) return null;
         bool effect = action.Kind == "play_card"
             ? pending.Card?.Pile?.Type != PileType.Hand
             : RuntimeV3GameplayCombatSettlement.TurnEnded(pending.Before, after);
