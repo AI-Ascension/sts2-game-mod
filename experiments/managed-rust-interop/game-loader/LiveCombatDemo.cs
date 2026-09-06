@@ -92,7 +92,8 @@ internal static class LiveCombatDemo
         CharacterModel character = ModelDb.AllCharacters.SingleOrDefault(candidate =>
             string.Equals(candidate.Id.Entry, characterId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException("requested character is unavailable");
-        if (!character.IsPlayable) throw new InvalidOperationException("requested character is not playable");
+        if (!LiveCombatSource.IsCampaignCharacterUnlocked(character))
+            throw new InvalidOperationException("requested character is not unlocked in the native profile");
         if (!RunOptions.Practice) return await LiveCampaignStart.StandardAsync(character);
         string seed = RunOptions.Seed!;
         SaveManager.Instance.SetFtuesEnabled(false);

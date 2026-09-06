@@ -12,29 +12,48 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
-    private static readonly string[] FallbackCampaignCharacters = { "ironclad" };
-
     private static string[] CampaignCharacters()
     {
         try
         {
-            string[] characters = ModelDb.AllCharacters
+            // The native character-select screen constructs each button from AllCharacters,
+            // then locks it from SaveManager.GenerateUnlockStateFromProgress().Characters.
+            // Use that same profile-derived set here; IsPlayable alone also includes globally
+            // playable characters whose native lobby button is still locked.
+            string[] characters = SaveManager.Instance.GenerateUnlockStateFromProgress().Characters
                 .Where(character => character.IsPlayable
                     && RuntimeV3GameplayContract.IsIdentity(character.Id.Entry))
                 .Select(character => character.Id.Entry)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray();
-            return characters.Length == 0 ? FallbackCampaignCharacters : characters;
+            return characters;
         }
         catch (Exception)
         {
-            return FallbackCampaignCharacters;
+            return Array.Empty<string>();
+        }
+    }
+
+    internal static bool IsCampaignCharacterUnlocked(CharacterModel character)
+    {
+        if (!character.IsPlayable || !RuntimeV3GameplayContract.IsIdentity(character.Id.Entry))
+            return false;
+        try
+        {
+            return SaveManager.Instance.GenerateUnlockStateFromProgress().Characters.Any(
+                candidate => string.Equals(candidate.Id.Entry, character.Id.Entry,
+                    StringComparison.Ordinal));
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 
