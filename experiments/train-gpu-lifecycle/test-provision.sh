@@ -79,6 +79,14 @@ rejected() { if "$@" >/dev/null 2>&1; then fail 'expected refusal'; exit 1; fi; 
     echo 'PASS VFIO-bound VF refuses resource changes'
 )
 (
+    fixture xe_foreign
+    mkdir -p "$test_root/xe_foreign/xe-vfio-pci"
+    ln -s "$test_root/xe_foreign/xe-vfio-pci" "$pci/virtfn0/driver"
+    rejected apply
+    [[ ! -e $record ]]
+    echo 'PASS xe-vfio-pci-bound VF refuses resource changes'
+)
+(
     fixture ordering
     write_checked() {
         if [[ $1 == "$pci/sriov_numvfs" && $2 == 1 ]]; then

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
-# Operator fixture candidate. Not installed, not host-verified.
+# Operator fixture. Native lifecycle evidence is recorded under docs/evidence.
 set -euo pipefail
 
 pci_id=0000:07:00.0
@@ -43,18 +43,18 @@ profile() {
     local gt role
     paths=(); expected=()
     # PF resources first, then VF quotas, enable last.
-    add gt0/pf/lmem_spare 4294967296
+    add sriov/pf/tile0/vram_spare 4294967296
     for gt in gt0 gt1; do
-        add "$gt/pf/exec_quantum_ms" 25
-        add "$gt/pf/preempt_timeout_us" 500000
+        add "sriov/pf/tile0/$gt/exec_quantum_ms" 25
+        add "sriov/pf/tile0/$gt/preempt_timeout_us" 500000
     done
-    add gt0/vf1/lmem_quota 6442450944
+    add sriov/vf1/tile0/vram_quota 6442450944
+    add sriov/vf1/tile0/ggtt_quota 671088640
     for gt in gt0 gt1; do
-        add "$gt/vf1/ggtt_quota" 671088640
-        add "$gt/vf1/contexts_quota" 8192
-        add "$gt/vf1/doorbells_quota" 60
-        add "$gt/vf1/exec_quantum_ms" 25
-        add "$gt/vf1/preempt_timeout_us" 500000
+        add "sriov/vf1/tile0/$gt/contexts_quota" 8192
+        add "sriov/vf1/tile0/$gt/doorbells_quota" 60
+        add "sriov/vf1/tile0/$gt/exec_quantum_ms" 25
+        add "sriov/vf1/tile0/$gt/preempt_timeout_us" 500000
     done
 }
 workload_idle() {
@@ -68,7 +68,7 @@ idle() {
     [[ $state == 'shut off' ]] || { fail 'Windows fixture must be shut off'; return 1; }
     if [[ -e $pci/virtfn0/driver ]]; then
         driver=$(basename "$(readlink -f "$pci/virtfn0/driver")")
-        [[ $driver != vfio-pci ]] || { fail 'VF still bound to VFIO; reconcile ownership'; return 1; }
+        [[ $driver != *vfio*pci* ]] || { fail 'VF still bound to VFIO; reconcile ownership'; return 1; }
     fi
     workload_idle
 }

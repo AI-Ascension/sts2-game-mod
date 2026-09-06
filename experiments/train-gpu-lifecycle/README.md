@@ -1,11 +1,12 @@
-# Train GPU fixture lifecycle candidate
+# Train GPU fixture lifecycle
 
-Status: **undeployed and not host-verified**. This directory is an operator fixture,
-not part of the addon package. Source tests cover refusal and write ordering only.
-They do not establish that xe accepts the proposed resource paths/order.
+Status: **installed; native lifecycle, two host reboots, and post-boot Astra passed on 2026-09-06**.
+This directory is an operator fixture,
+not part of the addon package. See the [host evidence](../../docs/evidence/train-gpu-lifecycle-20260906.md)
+for the distinction between cold VF/service checks and a physical host reboot.
 
-The isolated Windows domain retains a VF in its persistent XML, but VF creation and
-quotas currently disappear at host reboot. `provision.sh` prepares guarded apply,
+The isolated Windows domain retains a VF in its persistent XML, but xe VF creation and
+quotas require reapplication after host reboot. `provision.sh` provides guarded apply,
 check, and restore operations for the exact tested Intel PF/VF pair. It preserves
 the PF's xe driver, requires the Windows domain shut off, refuses a VF still bound
 to VFIO, and checks the conflicting GPU container before changing allocations.
@@ -37,7 +38,7 @@ bash test-boot.sh
    root-owned rollback directory. Use a new rollback record for each boot/application
    cycle; never overwrite a partial-failure record. Invoke with exactly three
    arguments: `bash provision.sh check|apply|restore DEBUG_DIRECTORY RECORD`.
-   The boot service and start gate below are source candidates, not installed configuration.
+   The boot service and start gate below have separate native verification requirements.
 4. Exercise apply/check/restore with real readbacks, including a failed preflight,
    repeated apply, and cold VF removal/recreation. Verify the Windows driver and
    visible game after the guest restarts.
@@ -50,7 +51,7 @@ bash test-boot.sh
    ordering, failed-service behavior, rollback, and subsequent visible Astra control.
    Source checks or a manually reapplied VF do not prove boot persistence.
 
-## Boot and startup candidates
+## Boot and startup configuration
 
 `sts2-gpu-lifecycle.service` runs `boot.sh` before the distribution's `libvirt-guests`
 service. It creates a private state directory and uses the kernel boot ID for the
@@ -87,8 +88,20 @@ record using the reviewed helper, and remove only the installed files whose hash
 still match the recorded deployment. Preserve the record and journal. Do not re-enable
 the conflicting workload or change domain autostart as an incidental cleanup step.
 
-On the read-only host inspection, the hooks directory existed but the main qemu hook,
-qemu.d directory, and STS2 service did not. Sudo remained unavailable. No helper,
-service, hook, or resource change has been installed. The source tests cover failure
-propagation, boot-record identity, and hook scope; real deployment, hook rejection,
-driver acceptance, reboot ordering, and post-reboot visible gameplay remain unverified.
+The authorized native test installed the helpers, service, and distinct qemu.d hook
+after confirming no destination existed. Live xe uses `sriov/{pf,vf1}/tile0/` for
+VRAM/GGTT and GT subdirectories for scheduling, contexts, and doorbells. The profile
+uses these canonical tile-level controls rather than legacy per-GT memory aliases.
+The ownership guard also rejects the host's `xe-vfio-pci` driver.
+
+The native test verified quota readbacks, VF removal/recreation, idempotence, rollback,
+actual libvirt admission refusal, service failure, and recovery. The service is enabled;
+Windows autostart remains disabled. After the second actual host reboot, automatic
+provisioning passed before libvirt-guests, and visible Windows Astra completed twenty
+settled actions to Reward at 24 HP with 60 FPS reported by the game.
+
+The host's migrated-stack startup script also explicitly started the conflicting model,
+despite its separate compose unit being disabled. The authorized deployment removed only
+that model's startup argument and its proxy dependency; the model definition remains.
+Review the evidence record for exact configuration hashes and rollback requirements.
+Disabling a compose unit alone does not establish this workload hold.
