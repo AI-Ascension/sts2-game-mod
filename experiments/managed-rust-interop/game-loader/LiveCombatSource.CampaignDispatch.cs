@@ -60,6 +60,11 @@ internal sealed partial class LiveCombatSource
                 + $"queue_error={queued.Exception?.GetType().Name ?? "none"}; "
                 + $"coord_matches={run.CurrentMapCoord == destination}; room_changed={run.CurrentRoom != previousRoom}";
         }
+        else if (action.Kind == "event_choice"
+            && action.Value?.StartsWith("crystal_sphere:", StringComparison.Ordinal) == true)
+        {
+            if (!PrepareCrystalSphere(action, out invoke, out postcondition, out effect)) return false;
+        }
         else if (action.Kind == "event_choice")
         {
             var button = EventButtons().SingleOrDefault(candidate => EventId(candidate) == action.Value);
@@ -89,6 +94,8 @@ internal sealed partial class LiveCombatSource
         CampaignPending pending = _campaignPending[operation];
         if (pending.Action == action && EventChoiceBoundary(operation, pending) is { } choice)
             return choice;
+        if (pending.Action == action && CrystalSphereBoundary(operation, pending) is { } sphere)
+            return sphere;
         if (pending.Diagnostics != null && ++pending.CompletionChecks is 1 or 10 or 60)
             Godot.GD.Print($"[AI-ASCENSION LIVE] map completion check={pending.CompletionChecks}; "
                 + $"work={pending.Work?.Status}; work_error={pending.Work?.Exception?.GetBaseException().GetType().Name ?? "none"}; "

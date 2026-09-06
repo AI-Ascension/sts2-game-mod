@@ -15,6 +15,7 @@ internal sealed partial class LiveCombatSource
     {
         CampaignPending[] matches = _campaignPending.Values.Where(pending =>
             pending.Action.Kind == "event_choice" && pending.Before.State == RuntimeV3GameplayState.Event
+            && pending.Action.Value?.StartsWith("event:", StringComparison.Ordinal) == true
             && pending.Work is { IsCompleted: false }).ToArray();
         return matches.Length == 1 ? matches[0] : null;
     }
