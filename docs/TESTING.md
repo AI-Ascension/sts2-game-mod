@@ -353,6 +353,23 @@ platform native filenames:
 bash tools/release/test-runtime-lifecycle.sh
 ~~~
 
+The versioned Workshop operator and guarded empty-item helper are exercised with synthetic Steam
+processes and a synthetic native library:
+
+~~~text
+bash tools/workshop/lifecycle/test-workshop-lifecycle.sh
+bash tools/workshop/lifecycle/ugc-create-item/test-ugc-create-item.sh
+~~~
+
+The helper test covers package and library preflight, native `CreateItem` dispatch, callback
+settlement, failed transport, timeout, journal collision, and environment/hash refusal without
+contacting Steam. The Linux callback layout is checked separately against a clean operator-supplied
+Valve source SDK checkout at the pinned commit:
+
+~~~text
+bash tools/workshop/lifecycle/abi-proof/verify-sdk-abi.sh /path/to/source-sdk-2013
+~~~
+
 The managed validator is exercised without a host assembly by the .NET 9 probe:
 
 ~~~text

@@ -102,12 +102,13 @@ Workshop staging is a release-preparation action, not an ordinary CI action:
 6. Verify the published item, installed bytes, exact manifest policy, game discovery, load smoke,
    and cleanup separately. Record the evidence level and exact Steam/STS2 versions.
 
-The current repository has no Steamworks SDK or committed App ID/item ID. Package staging, managed
-platform validation, and fixture install/update/rollback are implemented; Steam configuration,
-upload, subscription, callback, and host-runtime evidence remain unverified. The public consumer app is Steam app `2868840` (Slay the
-Spire 2); the intended first-party published-file ID and publisher entitlement must be supplied by
-the authorized owner before any create/update or subscription test. Synthetic IDs in fixture tests
-are not publication destinations.
+The current repository has no embedded Steamworks SDK or committed App ID/item ID. Package staging,
+managed platform validation, fixture install/update/rollback, and the guarded Linux x86-64
+empty-item `ISteamUGC::CreateItem` helper are implemented; real Steam configuration, upload,
+subscription, callback settlement, and host-runtime evidence remain unverified. The public
+consumer app is Steam app `2868840` (Slay the Spire 2); the intended first-party published-file ID
+and publisher entitlement must be supplied by the authorized owner before any create/update or
+subscription test. Synthetic IDs in fixture tests are not publication destinations.
 
 ## Failure and post-release checks
 

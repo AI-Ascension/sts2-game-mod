@@ -58,10 +58,12 @@ Valve documents the `ISteamUGC` create/update flow and the separate `steamcmd.ex
 testing and staging only; credentials must be entered outside this repository. No pull-request
 workflow uploads content, and no workflow receives Steam credentials.
 
-The VDF can be passed to `steamcmd workshop_build_item` by an authorized maintainer. A future
-in-game publisher may use `ISteamUGC::CreateItem`, `StartItemUpdate`, `SetItemContent`,
-`SetItemPreview`, and `SubmitItemUpdate`, but that API binding is not fabricated by this target while
-the Steamworks SDK is absent.
+The VDF can be passed to `steamcmd workshop_build_item` by an authorized maintainer. The versioned
+Linux x86-64 `lifecycle/ugc-create-item` helper also provides a guarded `ISteamUGC::CreateItem`
+path for creating an empty item when an operator supplies the pinned public SDK ABI proof, exact
+package, native library, and account environment. Upload and update continue through the guarded
+SteamCMD VDF workflow; the helper does not embed the Steamworks SDK, credentials, proprietary STS2
+files, or generated native binaries.
 
 ## Test
 

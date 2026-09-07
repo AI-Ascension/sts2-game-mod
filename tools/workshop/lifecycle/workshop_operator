@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+set -Eeuo pipefail
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+dotnet_bin=${DOTNET_BIN:-}
+if [[ -z "$dotnet_bin" && -n "${DOTNET_ROOT:-}" && -x "$DOTNET_ROOT/dotnet" ]]; then
+    dotnet_bin="$DOTNET_ROOT/dotnet"
+fi
+if [[ -z "$dotnet_bin" ]]; then
+    dotnet_bin=$(command -v dotnet || true)
+elif [[ "$dotnet_bin" != */* ]]; then
+    dotnet_bin=$(command -v "$dotnet_bin" || true)
+fi
+if [[ -z "$dotnet_bin" || ! -x "$dotnet_bin" ]]; then
+    printf '%s\n' 'set DOTNET_BIN to the pinned .NET executable or expose dotnet on PATH' >&2
+    exit 127
+fi
+assembly="$script_dir/operator/bin/Release/net9.0/Sts2.WorkshopOperator.dll"
+if [[ ! -f "$assembly" ]]; then
+    "$dotnet_bin" build "$script_dir/operator/WorkshopOperator.csproj" \
+        --nologo --configuration Release >/dev/null
+fi
+exec "$dotnet_bin" "$assembly" "$@"

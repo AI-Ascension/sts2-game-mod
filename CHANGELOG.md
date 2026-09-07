@@ -11,6 +11,12 @@ do not establish release support.
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
   separately gated.
 
+- Added a guarded Linux x86-64 Workshop lifecycle operator and empty-item `ISteamUGC::CreateItem`
+  helper with exact package/VDF checks, private durable journals, fail-closed unknown outcomes,
+  synthetic Steam process/native-library coverage, and a pinned public callback ABI proof. The
+  helper does not embed Steam credentials or SDK files; real Steam publication, subscription,
+  download, and host-runtime evidence remain unverified.
+
 - Added deterministic source-only Windows/Linux release bundle preparation with exact Git source
   and tree identities, embedded checksum inventory, fixed archive timestamps, proprietary-file
   refusal, and reproducibility self-tests. Native addon installation and Workshop lifecycle remain
