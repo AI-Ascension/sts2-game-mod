@@ -11,11 +11,13 @@ const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
 const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
 const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
 const CALLBACK_GAMEPLAY: u32 = 6;
-const CALLBACK_COOP_OBSERVATION: u32 = 7;
-const CALLBACK_COOP_ACTION: u32 = 8;
-const CALLBACK_COOP_VOTE: u32 = 9;
-const CALLBACK_COOP_REJOIN: u32 = 10;
-const CALLBACK_COOP_RECOVER: u32 = 11;
+// Runtime-v4 owns callback IDs 7 (expert state) and 8 (expert action). Keep the co-op
+// callbacks in a disjoint range shared with the managed route table.
+const CALLBACK_COOP_OBSERVATION: u32 = 9;
+const CALLBACK_COOP_ACTION: u32 = 10;
+const CALLBACK_COOP_VOTE: u32 = 11;
+const CALLBACK_COOP_REJOIN: u32 = 12;
+const CALLBACK_COOP_RECOVER: u32 = 13;
 const MAX_RESPONSE_BYTES: usize = 128 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;

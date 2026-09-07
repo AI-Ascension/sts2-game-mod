@@ -4,11 +4,14 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
-    private const uint RuntimeRequestKindCoopObservation = 7;
-    private const uint RuntimeRequestKindCoopAction = 8;
-    private const uint RuntimeRequestKindCoopVote = 9;
-    private const uint RuntimeRequestKindCoopRejoin = 10;
-    private const uint RuntimeRequestKindCoopRecover = 11;
+    // Runtime-v4 owns callback IDs 7 (expert state) and 8 (expert action). Keep the co-op
+    // callbacks in a disjoint range so a combined managed/native addon cannot dispatch an
+    // expert request into the co-op adapter or vice versa.
+    private const uint RuntimeRequestKindCoopObservation = 9;
+    private const uint RuntimeRequestKindCoopAction = 10;
+    private const uint RuntimeRequestKindCoopVote = 11;
+    private const uint RuntimeRequestKindCoopRejoin = 12;
+    private const uint RuntimeRequestKindCoopRecover = 13;
     private static CoopNativeRuntime? _coopNativeRuntime;
 
     /// <summary>Installs the managed host port; the caller must provide a game-thread port.</summary>

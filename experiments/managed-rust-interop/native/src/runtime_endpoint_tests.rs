@@ -97,6 +97,47 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
     Ok(())
 }
 
+#[test]
+fn coop_native_routes_have_disjoint_callback_ids() -> std::io::Result<()> {
+    assert_eq!(super::CALLBACK_COOP_OBSERVATION, 9);
+    assert_eq!(super::CALLBACK_COOP_ACTION, 10);
+    assert_eq!(super::CALLBACK_COOP_VOTE, 11);
+    assert_eq!(super::CALLBACK_COOP_REJOIN, 12);
+    assert_eq!(super::CALLBACK_COOP_RECOVER, 13);
+    for (method, path, body, expected) in [
+        ("GET", "/api/v1/coop/native/observation", "", 209),
+        ("POST", "/api/v1/coop/native/action", "{}", 210),
+        ("POST", "/api/v1/coop/native/vote", "{}", 211),
+        ("POST", "/api/v1/coop/native/rejoin", "{}", 212),
+        ("POST", "/api/v1/coop/native/recover", "{}", 213),
+    ] {
+        let request = format!(
+            concat!(
+                "{method} {path} HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+                "Content-Type: application/json\r\nContent-Length: {length}\r\n",
+                "X-Sts2-Instance-Id: instance\r\nX-Sts2-Caller-Id: caller\r\n",
+                "X-Sts2-Session-Id: session\r\nX-Sts2-Lease-Id: lease\r\n",
+                "X-Sts2-Lease-Epoch: 1\r\nX-Sts2-Correlation-Id: request\r\n\r\n{body}"
+            ),
+            method = method,
+            path = path,
+            length = body.len(),
+            body = body,
+        );
+        let response = exchange(request.as_bytes(), callback_kind_status)?;
+        assert!(
+            response.starts_with(&format!("HTTP/1.1 {expected} ")),
+            "{path}: {response}"
+        );
+    }
+    assert_ne!(super::CALLBACK_COOP_OBSERVATION, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_ACTION, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_VOTE, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_REJOIN, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_RECOVER, super::CALLBACK_GAMEPLAY);
+    Ok(())
+}
+
 unsafe extern "C" fn callback_kind_status(
     request: *const super::RuntimeRequest,
     _: *mut u8,
