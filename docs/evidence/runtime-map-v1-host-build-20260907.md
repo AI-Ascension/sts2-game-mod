@@ -27,9 +27,9 @@ gateway, harness, or provider is started.
 The exact host build used the external data directory containing the two assemblies:
 
 ~~~text
-/home/timot/.dotnet/dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
   -p:STS2GameDataDir="<operator-supplied-host-data>"
-/home/timot/.dotnet/dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
   --configuration Release -p:STS2GameDataDir="<operator-supplied-host-data>" --no-restore
 ~~~
 
@@ -41,7 +41,7 @@ stable graph-ID ordering and rewiring, `Ancient` normalization, and final-genera
 fencing:
 
 ~~~text
-/home/timot/.dotnet/dotnet run \
+dotnet run \
   --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj \
   --configuration Release
 ~~~
