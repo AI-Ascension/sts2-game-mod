@@ -109,11 +109,11 @@ outside this repository, then run the bounded handoff with explicit binaries:
 ~~~text
 bash experiments/managed-rust-interop/live-combat-session.sh \
   --host-dir /path/to/disposable-sts2 \
-  --user-dir 'C:\\Temp\\sts2-map-user-20260907' \
+  --user-dir 'C:\Temp\sts2-map-user-20260907' \
   --addon-dir /path/to/disposable-sts2/mods \
   --artifacts-dir /tmp/sts2-map-artifacts \
   --gateway-binary /path/to/sts2-gateway-runtime \
-  --mcp-binary /path/to/sts2-mcp-runtime \
+  --mcp-binary /path/to/sts2-mcp-server \
   --harness-binary /path/to/sts2-harness-runtime \
   --provider-binary /path/to/sts2-astra-bridge \
   --map-renderer-binary /path/to/map-visualizer \
