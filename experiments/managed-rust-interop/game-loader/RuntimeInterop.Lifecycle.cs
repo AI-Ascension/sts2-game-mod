@@ -61,7 +61,7 @@ public static partial class ModEntry
         catch (Exception exception)
         {
             error = exception.GetType().Name;
-            GD.PrintErr($"{LogPrefix} runtime HTTP listener stop unavailable: {error}: {exception.Message}");
+            GD.PrintErr($"{LogPrefix} runtime HTTP listener stop unavailable: {error}");
             return false;
         }
     }

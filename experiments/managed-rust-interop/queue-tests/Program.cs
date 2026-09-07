@@ -41,6 +41,8 @@ Require(execution.Wait(TimeSpan.FromSeconds(10)), "execution ended");
 Require(race.Wait(pending, TimeSpan.Zero) == unknown, "late completion cannot rewrite response");
 Require(!race.ProcessOne(_ => throw new InvalidOperationException()), "exactly one execution");
 ModEntry.CheckCallback();
+ModEntry.CheckAbiBoundary();
+ModEntry.CheckListenerStartFailure();
 Console.WriteLine("Managed queue source-only regressions passed");
 
 static void Require(bool value, string name)

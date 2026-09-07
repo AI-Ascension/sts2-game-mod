@@ -17,7 +17,10 @@ namespace Godot
     }
     internal static class Engine
     {
-        internal static object GetMainLoop() => new SceneTree();
+        internal static bool FailMainLoop { get; set; }
+        internal static object GetMainLoop() => FailMainLoop
+            ? throw new InvalidOperationException("private sentinel")
+            : new SceneTree();
     }
     internal sealed class SceneTree
     {
@@ -31,7 +34,7 @@ namespace AiAscension.Sts2GameMod.Runtime
 {
     internal static class StandaloneProfileSettings
     {
-        internal static bool RuntimeEnabled => false;
+        internal static bool RuntimeEnabled { get; set; }
         internal static int RuntimePort => 15526;
         internal static string RuntimeBindAddress => "127.0.0.1";
         internal static bool IsValidRuntimeBindAddress(string value) => value == "127.0.0.1";
@@ -64,6 +67,32 @@ namespace AiAscension.Sts2GameMod.Runtime
             {
                 Marshal.FreeHGlobal(request);
                 Marshal.FreeHGlobal(output);
+            }
+        }
+
+        internal static void CheckListenerStartFailure()
+        {
+            string? previous = Environment.GetEnvironmentVariable(RuntimeTokenVariable);
+            string? previousPort = Environment.GetEnvironmentVariable(RuntimePortVariable);
+            string? previousBind = Environment.GetEnvironmentVariable(RuntimeBindAddressVariable);
+            try
+            {
+                Environment.SetEnvironmentVariable(RuntimeTokenVariable, "synthetic-only");
+                Environment.SetEnvironmentVariable(RuntimePortVariable, "15526");
+                Environment.SetEnvironmentVariable(RuntimeBindAddressVariable, "127.0.0.1");
+                StandaloneProfileSettings.RuntimeEnabled = true;
+                Godot.Engine.FailMainLoop = true;
+                StartRuntimeServer(0); // The synthetic pump throws before any native call.
+                if (_runtimeListenerStatus != "Unavailable: InvalidOperationException")
+                    throw new InvalidOperationException("listener failure status changed");
+            }
+            finally
+            {
+                Godot.Engine.FailMainLoop = false;
+                StandaloneProfileSettings.RuntimeEnabled = false;
+                Environment.SetEnvironmentVariable(RuntimeTokenVariable, previous);
+                Environment.SetEnvironmentVariable(RuntimePortVariable, previousPort);
+                Environment.SetEnvironmentVariable(RuntimeBindAddressVariable, previousBind);
             }
         }
     }

@@ -99,7 +99,7 @@ public static partial class ModEntry
                     NativeLibrary.Free(candidate);
                 }
 
-                GD.PrintErr($"{LogPrefix} initialization failed: {exception.GetType().Name}: {exception.Message}");
+                GD.PrintErr($"{LogPrefix} initialization failed: {exception.GetType().Name}");
             }
         }
     }

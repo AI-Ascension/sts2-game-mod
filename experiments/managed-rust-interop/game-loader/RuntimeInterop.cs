@@ -122,7 +122,7 @@ public static partial class ModEntry
         catch (Exception exception)
         {
             _runtimeListenerStatus = $"Unavailable: {exception.GetType().Name}";
-            GD.PrintErr($"{LogPrefix} runtime HTTP listener unavailable: {exception.GetType().Name}: {exception.Message}");
+            GD.PrintErr($"{LogPrefix} runtime HTTP listener unavailable: {exception.GetType().Name}");
         }
     }
 

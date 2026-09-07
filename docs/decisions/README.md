@@ -26,6 +26,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0016 | [Runtime-v2 host adapter candidate](0016-runtime-v2-host-adapter-candidate.md) |
 | 0018 | [Neutral Runtime-v3 host-thread bridge, source-only](0018-runtime-v3-gameplay-bridge.md) |
 | 0019 | [Repeat-seed practice replay](0019-repeat-seed-practice-replay.md) |
+| 0030 | [Managed standards and bounded diagnostics](0030-managed-standards-and-diagnostics.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
