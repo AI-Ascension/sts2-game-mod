@@ -18,6 +18,7 @@ internal static partial class Program
         PendingCoopMutationBlocksNewOperation();
         RejoinReplayDoesNotRepeatNativeMutation();
         AcceptedRejoinReconcilesWithoutRetrying();
+        AcceptedRejoinWaitsForNativeSettlement();
         UnknownRejoinStaysUnknownWithoutNativeWitness();
         RejectedRejoinIsRemembered();
         RejoinMustRetainOriginalAuthorityEpoch();

@@ -58,6 +58,24 @@ internal static partial class Program
             "accepted rejoin reconciles from a fresh convergence observation");
     }
 
+    private static void AcceptedRejoinWaitsForNativeSettlement()
+    {
+        FakePort port = new() { RejoinSetsConverged = true, NativeRejoinSettled = false };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt first = runtime.Rejoin(
+            "op:rejoin-async", "peer:host1", 8);
+        Check(first.Outcome == CoopOutcome.Accepted
+            && first.ErrorCode == "rejoin_recovery_pending"
+            && runtime.HasPendingMutation
+            && port.RejoinCount == 1,
+            "a converged pre-settlement observation cannot settle an asynchronous rejoin");
+        port.NativeRejoinSettled = true;
+        Check(runtime.Reconcile("op:rejoin-async", out CoopOperationReceipt? recovered)
+            && recovered?.Outcome == CoopOutcome.Recovered
+            && port.RejoinCount == 1,
+            "native settlement witness allows the pending rejoin to reconcile");
+    }
+
     private static void UnknownRejoinStaysUnknownWithoutNativeWitness()
     {
         FakePort port = new() { ReturnUnknownRejoin = true, RejoinSetsConverged = true };
@@ -104,6 +122,7 @@ internal static partial class Program
         internal bool ChangeEpochAfterRejoin { get; init; }
         internal bool LocalPeerDisconnected { get; init; }
         internal bool DisconnectClientBeforeEffect { get; init; }
+        internal bool NativeRejoinSettled { get; set; } = true;
         internal bool DigestKnown { get; init; } = true;
         internal bool AuthorityIdsMatch { get; init; } = true;
         internal bool EffectPublished { get; set; }
@@ -171,6 +190,8 @@ internal static partial class Program
         }
 
         public CoopEffectWitness? Reconcile(string operationId) => EffectPublished ? Effect() : null;
+
+        public bool IsRejoinSettled() => NativeRejoinSettled;
 
         private CoopEffectWitness Effect() =>
             new(_operationId, "effect:1", "turn_ended", 1, 2, Digest);

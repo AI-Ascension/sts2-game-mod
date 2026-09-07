@@ -61,6 +61,10 @@ internal static partial class NativeCoopSessionController
             state.JoinResultHandled = false;
             state.IsRejoin = true;
             state.Completed = false;
+            // A retry after the original bootstrap window gets one fresh bounded attempt. The
+            // in-progress duplicate branch above deliberately returns before this reset, so a
+            // repeated operation cannot extend the deadline of the existing attempt.
+            state.ResetForRejoinAttempt();
             RejoinStatus = "requested";
             AttachProcessFrame(tree);
             Status = "client_rejoin_requested";

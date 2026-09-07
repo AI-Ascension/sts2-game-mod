@@ -184,6 +184,28 @@ internal static partial class NativeCoopSessionController
         CompleteClientCharacterLobby(state, stack, service);
     }
 
+    private static bool HasClientCharacterLobbyEvidence(
+        NSubmenuStack stack, ControllerState state)
+    {
+        NetClientGameService service = state.ClientService!;
+        if (service.NetId == 0 || service.HostNetId == 0
+            || service.HostNetId != state.HostId
+            || service.NetId != state.ClientId
+            || service.NetId == service.HostNetId
+            || service.NetClient is not { IsConnected: true, HostNetId: not 0 })
+        {
+            return false;
+        }
+
+        if (stack.Peek() is not NCharacterSelectScreen characterScreen
+            || characterScreen.Lobby is not { } lobby)
+        {
+            return false;
+        }
+
+        return ReferenceEquals(lobby.NetService, service);
+    }
+
     private static void CompleteClientCharacterLobby(
         ControllerState state, NSubmenuStack stack, NetClientGameService service)
     {
@@ -205,77 +227,6 @@ internal static partial class NativeCoopSessionController
             screen.Lobby.SetReady(true);
             state.ClientCharacterReady = true;
             Status = "client_character_ready";
-        }
-    }
-
-    private static void TickRestore(ControllerState state)
-    {
-        Task restoreTask = state.RestoreTask!;
-        if (!restoreTask.IsCompleted)
-            return;
-        state.RestoreTask = null;
-        if (restoreTask.IsFaulted)
-        {
-            FailJoin(state, $"native running-session restore failed: {restoreTask.Exception?.GetBaseException().Message}");
-            return;
-        }
-        if (restoreTask.IsCanceled)
-        {
-            FailJoin(state, "native running-session restore was canceled");
-            return;
-        }
-        if (state.ClientService is not { IsConnected: true })
-        {
-            FailJoin(state, "native running-session restore completed after disconnect");
-            return;
-        }
-        Succeed(state, state.IsRejoin
-            ? "client_native_rejoin_recovered"
-            : "client_native_running_session_restored");
-    }
-
-    private static async Task RestoreRunningSession(
-        ControllerState state, NetClientGameService service, SerializableRun save)
-    {
-        RunManager manager = RunManager.Instance
-            ?? throw new InvalidOperationException("run manager is unavailable for native rejoin");
-        if (!ReferenceEquals(manager.NetService, service)
-            && manager.DebugOnlyGetState() is not null)
-        {
-            // A disconnected client retains its old RunState. The supported saved-multiplayer
-            // setup requires that state to be cleared before it can bind the replacement ENet
-            // service and synchronizers. This branch is reached only after JoinFlow established
-            // the replacement connection.
-            manager.CleanUp(false);
-        }
-
-        RecoveryLobbyListener listener = new(state);
-        LoadRunLobby lobby = new(service, listener, save);
-        state.LoadLobby = lobby;
-        try
-        {
-            RunState runState = RunState.FromSerializable(save);
-            await manager.SetUpSavedMultiplayer(runState, lobby);
-            if (NGame.Instance is not { } game)
-                throw new InvalidOperationException("NGame is unavailable for native rejoin");
-            await game.LoadRun(runState, save.PreFinishedRoom);
-            // RunManager now owns the replacement RunLobby and the load lobby's input
-            // synchronizer. Remove the temporary LoadRunLobby handlers while retaining that
-            // synchronizer, matching the first-party multiplayer load screen handoff.
-            lobby.CleanUp(disconnectSession: false);
-            state.LoadLobby = null;
-        }
-        catch
-        {
-            try
-            {
-                lobby.CleanUp(disconnectSession: false);
-            }
-            finally
-            {
-                state.LoadLobby = null;
-            }
-            throw;
         }
     }
 

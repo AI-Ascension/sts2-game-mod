@@ -43,28 +43,6 @@ internal static partial class NativeCoopSessionController
         return null;
     }
 
-    private static bool HasClientCharacterLobbyEvidence(
-        NSubmenuStack stack, ControllerState state)
-    {
-        NetClientGameService service = state.ClientService!;
-        if (service.NetId == 0 || service.HostNetId == 0
-            || service.HostNetId != state.HostId
-            || service.NetId != state.ClientId
-            || service.NetId == service.HostNetId
-            || service.NetClient is not { IsConnected: true, HostNetId: not 0 })
-        {
-            return false;
-        }
-
-        if (stack.Peek() is not NCharacterSelectScreen characterScreen
-            || characterScreen.Lobby is not { } lobby)
-        {
-            return false;
-        }
-
-        return ReferenceEquals(lobby.NetService, service);
-    }
-
     private static bool TryAdmitOwnedHostRun(ControllerState state)
     {
         RunManager? manager = RunManager.Instance;
@@ -182,7 +160,7 @@ internal static partial class NativeCoopSessionController
         internal ulong HostId { get; }
         internal ulong ClientId { get; }
         internal bool AutoAdmitRun { get; }
-        internal long DeadlineTimestamp { get; }
+        internal long DeadlineTimestamp { get; private set; }
         internal int Frames { get; set; }
         internal bool Completed { get; set; }
         internal NetHostGameService? HostService { get; set; }
@@ -203,6 +181,14 @@ internal static partial class NativeCoopSessionController
         private bool _disposed;
 
         internal bool IsExpired() => Stopwatch.GetTimestamp() >= DeadlineTimestamp;
+
+        internal void ResetForRejoinAttempt()
+        {
+            _disposed = false;
+            Frames = 0;
+            DeadlineTimestamp = Stopwatch.GetTimestamp()
+                + (long)(MaxStartupSeconds * Stopwatch.Frequency);
+        }
 
         public void Dispose()
         {
