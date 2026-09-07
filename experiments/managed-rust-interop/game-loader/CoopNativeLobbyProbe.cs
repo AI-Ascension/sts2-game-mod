@@ -103,11 +103,12 @@ internal static partial class CoopNativeLobbyProbe
         ProbeState? state = _state;
         if (state is null)
             return;
+        state.RecordProcessFrame();
         if (state.ShouldSample())
         {
             try
             {
-                RunSample(state);
+                RunSample(tree, state);
             }
             catch (Exception exception)
             {
@@ -124,7 +125,7 @@ internal static partial class CoopNativeLobbyProbe
             Stop(tree, state, "duration_elapsed");
     }
 
-    private static void RunSample(ProbeState state)
+    private static void RunSample(SceneTree tree, ProbeState state)
     {
         RunManager manager = RunManager.Instance
             ?? throw new InvalidOperationException("run manager is unavailable");
@@ -134,7 +135,7 @@ internal static partial class CoopNativeLobbyProbe
         NativeTransportSnapshot native = ReadNativeTransport(service);
         CoopHostObservation observation = state.Port.Observe();
 
-        state.WriteEvent("snapshot", null, observation, native);
+        state.WriteEvent("snapshot", null, observation, native, ReadRuntimeSnapshot(tree, state));
         string actualRole = observation.Role.ToString().ToLowerInvariant();
         if (actualRole == "host" && native.ConnectedPeerIds.Length > 1 && !state.HostCreatedWritten)
         {

@@ -62,6 +62,11 @@ internal sealed partial class CoopHostRuntime
     private bool CanDispatch(CoopHostObservation observation,
         ulong expectedHostGeneration, string actorPeerId, out string error)
     {
+        if (HasPendingMutation)
+        {
+            error = "operation_in_progress";
+            return false;
+        }
         if (observation.RecoveryRequired)
         {
             error = "recovery_required";

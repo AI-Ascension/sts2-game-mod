@@ -13,7 +13,14 @@ internal sealed record CoopOperationReceipt(
     ulong? AfterHostGeneration,
     CoopEffectWitness? Effect,
     CoopHostObservation Observation,
-    string? ErrorCode);
+    string? ErrorCode)
+{
+    // The authority and epoch captured when a rejoin mutation was admitted are immutable
+    // settlement fences. Observation is allowed to move forward while a receipt is pending, so
+    // reconciliation must never infer the admission lineage from that mutable snapshot.
+    internal string? AdmissionAuthorityId { get; init; }
+    internal string? AdmissionAuthorityEpoch { get; init; }
+}
 
 /// <summary>
 /// Fenced host-side owner for native co-op operations. The native port is the only component
@@ -24,12 +31,32 @@ internal sealed partial class CoopHostRuntime
 {
     private const int MaxReceipts = 4096;
     private readonly ICoopNativeHostPort _port;
+    // The caller supplies the cross-profile admission predicate. It is evaluated on the
+    // serialized game thread immediately before each native mutation so a stale read cannot
+    // open a second mutation while another runtime profile is still settling.
+    private readonly Func<bool> _canDispatch;
     private readonly ConcurrentDictionary<string, CoopOperationReceipt> _receipts = new(
         StringComparer.Ordinal);
 
-    internal CoopHostRuntime(ICoopNativeHostPort port)
+    internal CoopHostRuntime(ICoopNativeHostPort port, Func<bool>? canDispatch = null)
     {
         _port = port;
+        _canDispatch = canDispatch ?? (() => true);
+    }
+
+    internal bool HasPendingMutation
+    {
+        get
+        {
+            foreach (CoopOperationReceipt receipt in _receipts.Values)
+            {
+                if (receipt.Outcome is CoopOutcome.Accepted or CoopOutcome.Unknown)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     internal CoopHostObservation Observe()
@@ -88,6 +115,12 @@ internal sealed partial class CoopHostRuntime
             return Rejected(request.OperationId, before.HostGeneration, "receipt_capacity_exhausted");
         }
 
+        if (!TryPassExternalAdmission(out string admissionError))
+        {
+            _receipts.TryRemove(request.OperationId, out _);
+            return Rejected(request.OperationId, before.HostGeneration, admissionError);
+        }
+
         CoopNativeDispatchResult result;
         try
         {
@@ -126,6 +159,12 @@ internal sealed partial class CoopHostRuntime
             return Rejected(request.OperationId, before.HostGeneration, "receipt_capacity_exhausted");
         }
 
+        if (!TryPassExternalAdmission(out string admissionError))
+        {
+            _receipts.TryRemove(request.OperationId, out _);
+            return Rejected(request.OperationId, before.HostGeneration, admissionError);
+        }
+
         CoopNativeDispatchResult result;
         try
         {
@@ -138,52 +177,6 @@ internal sealed partial class CoopHostRuntime
         return FinalizeDispatch(request.OperationId, before, result);
     }
 
-    internal CoopOperationReceipt Rejoin(string operationId, string actorPeerId, ulong rejoinEpoch)
-    {
-        if (!RuntimeV3GameplayContract.IsIdentity(operationId)
-            || !CoopPeerIdentity.IsOpaque(actorPeerId)
-            || rejoinEpoch > RuntimeV3GameplayContract.MaxGeneration)
-        {
-            return Rejected(operationId, 0, "invalid_rejoin");
-        }
-
-        CoopHostObservation before = Observe();
-        if (!CanDispatch(before, before.HostGeneration, actorPeerId, out string error))
-        {
-            return Rejected(operationId, before.HostGeneration, error);
-        }
-        CoopNativeDispatchResult result;
-        try
-        {
-            result = _port.Rejoin(actorPeerId, rejoinEpoch);
-        }
-        catch
-        {
-            result = CoopNativeDispatchResult.Unknown("native_rejoin_outcome_unknown");
-        }
-        if (result.Outcome == CoopOutcome.Rejected)
-        {
-            return Rejected(operationId, before.HostGeneration,
-                result.ErrorCode ?? "native_rejoin_rejected");
-        }
-
-        CoopHostObservation after;
-        try
-        {
-            after = Observe();
-        }
-        catch
-        {
-            return Rejected(operationId, before.HostGeneration, "rejoin_observation_unknown");
-        }
-        CoopOutcome outcome = after.RecoveryRequired || !after.AllConnectedPeersConverged()
-            ? CoopOutcome.Unknown
-            : CoopOutcome.Recovered;
-        return new CoopOperationReceipt(operationId, $"rejoin|{actorPeerId}|{rejoinEpoch}", outcome,
-            before.HostGeneration, after.HostGeneration, null, after,
-            outcome == CoopOutcome.Recovered ? null : result.ErrorCode ?? "rejoin_recovery_required");
-    }
-
     internal bool Reconcile(string operationId, out CoopOperationReceipt? receipt)
     {
         if (!_receipts.TryGetValue(operationId, out receipt))
@@ -194,6 +187,11 @@ internal sealed partial class CoopHostRuntime
         if (receipt.Outcome is CoopOutcome.Settled or CoopOutcome.Rejected)
         {
             return true;
+        }
+
+        if (IsRejoinReceipt(receipt))
+        {
+            return ReconcileRejoin(receipt, out receipt);
         }
 
         CoopEffectWitness? effect;
@@ -238,5 +236,25 @@ internal sealed partial class CoopHostRuntime
         _receipts[operationId] = settled;
         receipt = settled;
         return true;
+    }
+
+    private bool TryPassExternalAdmission(out string error)
+    {
+        try
+        {
+            if (_canDispatch())
+            {
+                error = string.Empty;
+                return true;
+            }
+            error = "operation_in_progress";
+            return false;
+        }
+        catch
+        {
+            // A failed cross-profile probe cannot establish that the native mutation is safe.
+            error = "operation_admission_unavailable";
+            return false;
+        }
     }
 }
