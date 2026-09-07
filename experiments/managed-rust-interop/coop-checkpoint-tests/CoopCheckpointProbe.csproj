@@ -11,11 +11,18 @@
       <HintPath>$(STS2GameDataDir)/sts2.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(STS2GameDataDir)/GodotSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" Link="RuntimeV3GameplayContract.cs" />
     <Compile Include="../game-loader/CoopHostContracts.cs" Link="CoopHostContracts.cs" />
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
+    <Compile Include="../game-loader/CoopNativeLobbyAdmission.cs" Link="CoopNativeLobbyAdmission.cs" />
     <Compile Include="../game-loader/InstalledNativeCoopSynchronizers.cs" Link="InstalledNativeCoopSynchronizers.cs" />
     <Compile Include="../game-loader/NativeCoopPeerLiveness.cs" Link="NativeCoopPeerLiveness.cs" />
+    <Compile Include="../game-loader/NativeCoopAttemptWindow.cs" Link="NativeCoopAttemptWindow.cs" />
+    <Compile Include="../game-loader/NativeCoopSessionController*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../game-loader/InstalledNativeCoopHostPort*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../game-loader/CoopNativeEncoding.cs" Link="CoopNativeEncoding.cs" />
   </ItemGroup>

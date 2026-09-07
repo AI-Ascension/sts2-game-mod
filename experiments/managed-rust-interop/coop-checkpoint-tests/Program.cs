@@ -155,7 +155,12 @@ internal static class Program
 
     private static NetFullCombatState StateFor(TestAction action)
     {
-        action.OnEnqueued(static _ => { }, 19);
+        // OnEnqueued wires native queue callbacks and enters Godot's native runtime. The
+        // checkpoint probe is a managed correlation test, so set the same generated action ID
+        // directly without invoking the host queue.
+        MethodInfo setter = typeof(GameAction).GetMethod(
+            "set_Id", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        setter.Invoke(action, new object?[] { (uint?)19 });
         return new NetFullCombatState { lastExecutedActionId = action.Id };
     }
 }
