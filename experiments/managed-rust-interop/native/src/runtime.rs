@@ -13,6 +13,13 @@ const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
 const CALLBACK_GAMEPLAY: u32 = 6;
 const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
 const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
+// Runtime-v4 owns callback IDs 7 (expert state) and 8 (expert action). Keep the co-op
+// callbacks in a disjoint range shared with the managed route table.
+const CALLBACK_COOP_OBSERVATION: u32 = 9;
+const CALLBACK_COOP_ACTION: u32 = 10;
+const CALLBACK_COOP_VOTE: u32 = 11;
+const CALLBACK_COOP_REJOIN: u32 = 12;
+const CALLBACK_COOP_RECOVER: u32 = 13;
 const MAX_RESPONSE_BYTES: usize = 128 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
@@ -33,6 +40,8 @@ mod gameplay_route;
 mod gameplay_route_tests;
 #[path = "runtime_http.rs"]
 mod http;
+#[path = "runtime_input.rs"]
+mod input;
 #[path = "runtime_io.rs"]
 mod io;
 #[cfg(test)]
@@ -42,6 +51,7 @@ mod io_tests;
 mod listener;
 #[path = "runtime_routes.rs"]
 mod routes;
+use input::copy_input;
 
 pub type RuntimeRequestCallback = unsafe extern "C" fn(
     request: *const RuntimeRequest,
@@ -307,15 +317,4 @@ fn dispatch_with_body(
         return http::write_response(stream, 500, b"{\"error_code\":\"callback_failed\"}");
     }
     http::write_response(stream, status as u16, &output[..output_length])
-}
-
-unsafe fn copy_input(pointer: *const u8, length: usize, maximum: usize) -> Result<Vec<u8>, i32> {
-    if pointer.is_null() || length > maximum {
-        return Err(INVALID_ARGUMENT);
-    }
-    // SAFETY: Callers guarantee one readable allocation, unmodified for this borrow;
-    // null/length checks above bound it, including non-null for an empty slice.
-    // This thread only reads and copies; the caller retains allocation ownership.
-    let bytes = unsafe { std::slice::from_raw_parts(pointer, length) };
-    Ok(bytes.to_vec())
 }
