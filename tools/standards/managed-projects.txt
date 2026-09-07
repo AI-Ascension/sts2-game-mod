@@ -1,0 +1,13 @@
+experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj
+experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj
+experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj
+experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj
+experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj
+experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj
+experiments/managed-rust-interop/replay-tests/ReplayValidationProbe.csproj
+experiments/managed-rust-interop/session-launcher/bridge-tests/SessionWindowsBridgeTests.csproj
+experiments/managed-rust-interop/session-launcher/windows-bridge/SessionWindowsBridge.csproj
+experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj
+experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj
+tools/workshop/lifecycle/operator/WorkshopOperator.csproj
+tools/workshop/lifecycle/ugc-create-item/UgcCreateItemHelper.csproj

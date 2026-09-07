@@ -1,0 +1,43 @@
+name: Managed standards
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  managed-settings:
+    name: Evaluated managed standards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 9.0.317
+      - name: Evaluate all projects and verify C# whitespace
+        run: bash tools/standards/check-managed.sh format
+      - name: Reject weakened evaluated settings and invalid formatting
+        run: bash tools/standards/test-managed-settings.sh
+      - name: Reject changed source-linked ABI layout and calling convention
+        run: bash tools/standards/test-managed-abi.sh
+      - name: Prepare pinned PowerShell parser
+        run: |
+          mkdir -p "$RUNNER_TEMP/standards-pwsh"
+          curl --fail --location --max-time 90 --output "$RUNNER_TEMP/pwsh.tar.gz" \
+            https://github.com/PowerShell/PowerShell/releases/download/v7.4.13/powershell-7.4.13-linux-x64.tar.gz
+          echo "59e5df675dacbfe45374c32c1bf2480168a33243423c9b19252d0476fd1b748c  $RUNNER_TEMP/pwsh.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/pwsh.tar.gz" -C "$RUNNER_TEMP/standards-pwsh"
+          chmod +x "$RUNNER_TEMP/standards-pwsh/pwsh"
+          echo "$RUNNER_TEMP/standards-pwsh" >> "$GITHUB_PATH"
+      - name: Parse PowerShell and test selected-process guards with fakes
+        shell: pwsh
+        run: |
+          ./tools/standards/check-powershell.ps1
+          ./tools/standards/check-powershell.ps1 -SelfTest
+          ./experiments/managed-rust-interop/dev-cycle-process-tests.ps1
