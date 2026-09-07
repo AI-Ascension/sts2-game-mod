@@ -15,9 +15,11 @@ if [[ -z "$dotnet_bin" || ! -x "$dotnet_bin" ]]; then
     printf '%s\n' 'set DOTNET_BIN to the pinned .NET executable or expose dotnet on PATH' >&2
     exit 127
 fi
-assembly="$script_dir/operator/bin/Release/net9.0/Sts2.WorkshopOperator.dll"
-if [[ ! -f "$assembly" ]]; then
-    "$dotnet_bin" build "$script_dir/operator/WorkshopOperator.csproj" \
-        --nologo --configuration Release >/dev/null
-fi
-exec "$dotnet_bin" "$assembly" "$@"
+build_dir=$(mktemp -d -t sts2-workshop-operator-build-XXXXXXXX)
+obj_dir=$(mktemp -d -t sts2-workshop-operator-obj-XXXXXXXX)
+trap 'rm -rf -- "$build_dir" "$obj_dir"' EXIT
+"$dotnet_bin" build "$script_dir/operator/WorkshopOperator.csproj" \
+    --nologo --configuration Release \
+    --property:BaseIntermediateOutputPath="$obj_dir/" \
+    --property:OutputPath="$build_dir/" >/dev/null
+"$dotnet_bin" "$build_dir/Sts2.WorkshopOperator.dll" "$@"

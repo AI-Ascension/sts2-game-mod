@@ -28,6 +28,10 @@ actual_commit=$(git -C "$source_root" rev-parse HEAD 2>/dev/null) || {
     printf 'SDK root must be a Git checkout so its source identity is reviewable\n' >&2
     exit 2
 }
+[[ -z "$(git -C "$source_root" status --porcelain=v1 --untracked-files=all)" ]] || {
+    printf 'SDK root must be a clean checkout; review or remove local changes first\n' >&2
+    exit 2
+}
 [[ "$actual_commit" == "$expected_commit" ]] || {
     printf 'SDK commit mismatch: expected %s, got %s\n' "$expected_commit" "$actual_commit" >&2
     exit 2

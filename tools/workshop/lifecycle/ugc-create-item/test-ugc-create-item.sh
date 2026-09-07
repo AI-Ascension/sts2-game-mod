@@ -171,7 +171,13 @@ SteamAppId=2868840 SteamGameId=2868840 "$dotnet_bin" "$helper" \
     --journal "$journal" --timeout-seconds 5 >/dev/null
 python3 - "$result" "$journal" <<'PY'
 import json
+import os
+import stat
 import sys
+
+def assert_private(path):
+    if sys.platform.startswith("linux"):
+        assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
 
 result = json.load(open(sys.argv[1], encoding="utf-8"))
 journal = json.load(open(sys.argv[2], encoding="utf-8"))
@@ -189,6 +195,8 @@ assert result["published_file_id"] == 1002003
 assert journal["outcome"] == "succeeded"
 assert journal["phase"] == "succeeded"
 assert journal["published_file_id"] == 1002003
+assert_private(sys.argv[1])
+assert_private(sys.argv[2])
 PY
 
 transport_result="$temp_dir/transport-result.json"
@@ -203,7 +211,13 @@ if FAKE_STEAM_API_MODE=transport SteamAppId=2868840 SteamGameId=2868840 \
 fi
 python3 - "$transport_result" "$transport_journal" <<'PY'
 import json
+import os
+import stat
 import sys
+
+def assert_private(path):
+    if sys.platform.startswith("linux"):
+        assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
 
 result = json.load(open(sys.argv[1], encoding="utf-8"))
 journal = json.load(open(sys.argv[2], encoding="utf-8"))
@@ -213,6 +227,8 @@ assert result["api_call_failed"] is True
 assert result["error_type"] == "ApiCallFailed"
 assert journal["outcome"] == "unknown"
 assert journal["phase"] == "unknown_api_call_failed"
+assert_private(sys.argv[1])
+assert_private(sys.argv[2])
 PY
 
 timeout_result="$temp_dir/timeout-result.json"
@@ -227,7 +243,13 @@ if FAKE_STEAM_API_MODE=timeout SteamAppId=2868840 SteamGameId=2868840 \
 fi
 python3 - "$timeout_result" "$timeout_journal" <<'PY'
 import json
+import os
+import stat
 import sys
+
+def assert_private(path):
+    if sys.platform.startswith("linux"):
+        assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
 
 result = json.load(open(sys.argv[1], encoding="utf-8"))
 journal = json.load(open(sys.argv[2], encoding="utf-8"))
@@ -236,13 +258,15 @@ assert result["api_call_completed"] is False
 assert result["error_type"] == "CreateItemTimedOut"
 assert journal["outcome"] == "unknown"
 assert journal["phase"] == "unknown_timeout"
+assert_private(sys.argv[1])
+assert_private(sys.argv[2])
 PY
 
 if SteamAppId=2868840 SteamGameId=2868840 "$dotnet_bin" "$helper" \
     --library "$temp_dir/libfake-steam-api.so" --expected-sha256 "$library_sha" \
-    --package-dir "$package" --platform linux-x86_64 --output "$result" \
-    --journal "$journal" --timeout-seconds 5 >/dev/null 2>&1; then
-    printf '%s\n' 'existing result and journal unexpectedly permitted a retry' >&2
+    --package-dir "$package" --platform linux-x86_64 --output "$timeout_result" \
+    --journal "$timeout_journal" --timeout-seconds 5 >/dev/null 2>&1; then
+    printf '%s\n' 'existing unknown result and journal unexpectedly permitted a retry' >&2
     exit 1
 fi
 

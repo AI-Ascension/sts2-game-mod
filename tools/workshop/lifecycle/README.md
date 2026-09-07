@@ -39,7 +39,8 @@ or item-ID mismatches. It does not contact Steam.
 ## Create one item
 
 `ugc-create-item/UgcCreateItemHelper.csproj` builds a separate native helper.
-The Linux x86-64 helper only creates an empty Community item. It checks the exact package
+The Linux x86-64 helper runs only on a Linux x86-64 process and creates an empty Community item.
+It checks the exact package
 with `published_file_id: 0`, hashes the selected `libsteam_api.so`,
 requires `SteamAppId` and `SteamGameId` to be inherited at process start,
 checks the loaded module identity and account/interface preconditions, and
@@ -48,7 +49,8 @@ persists a pre-call journal before `CreateItem`.
 The helper uses the proven Linux Valve callback declaration: callback
 `k_iSteamUGCCallbacks + 3` (`3403`), size 16, `EResult` at offset 0,
 `PublishedFileId_t` at offset 4, and the one-byte legal agreement field at
-offset 12. A callback result is persisted before the helper exits. A failed
+offset 12. The ABI proof also asserts the numeric callback ID `3403`. A callback result is persisted
+with mode 0600 before the helper exits. A failed
 transport, result retrieval, timeout, or exception is `unknown`, including
 when a nonzero API call handle was already issued.
 

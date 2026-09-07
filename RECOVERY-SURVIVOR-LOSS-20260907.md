@@ -81,8 +81,8 @@ checks in this worktree:
   workspace tests, and strict `repo-policy`, all passed using a separate Cargo target
   directory.
 
-The source-bundle test used the committed `HEAD` before the reconstructed lifecycle files were
-added; it must be rerun at the final commit so the archive includes the reviewed files.
+The source-bundle test is a final-commit gate: rerun it whenever the reconstructed lifecycle files
+or their surrounding release source changes so the archive includes the reviewed files.
 
 ## Current release blockers
 

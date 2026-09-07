@@ -10,6 +10,7 @@
 static_assert(sizeof(EResult) == sizeof(std::int32_t));
 static_assert(sizeof(PublishedFileId_t) == sizeof(std::uint64_t));
 static_assert(CreateItemResult_t::k_iCallback == k_iSteamUGCCallbacks + 3);
+static_assert(CreateItemResult_t::k_iCallback == 3403);
 static_assert(offsetof(CreateItemResult_t, m_eResult) == 0);
 static_assert(offsetof(CreateItemResult_t, m_nPublishedFileId) == 4);
 static_assert(offsetof(CreateItemResult_t, m_bUserNeedsToAcceptWorkshopLegalAgreement) == 12);

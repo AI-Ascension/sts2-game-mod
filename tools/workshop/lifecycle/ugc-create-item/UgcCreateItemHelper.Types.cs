@@ -70,6 +70,8 @@ internal static partial class Program
                 throw new UsageException("--library, --expected-sha256, --package-dir, --platform, --output, and --journal are required");
             }
             if (platform != "linux-x86_64") throw new UsageException("unsupported platform; the verified CreateItem ABI is Linux x86-64 only");
+            if (!OperatingSystem.IsLinux() || RuntimeInformation.ProcessArchitecture != Architecture.X64)
+                throw new UsageException("the verified CreateItem helper requires Linux x86-64");
             if (!IsSha256(expectedSha)) throw new UsageException("--expected-sha256 must be 64 hexadecimal characters");
             if (appId == 0 || timeout is < 1 or > MaximumTimeoutSeconds) throw new UsageException("app ID or timeout is outside its bound");
             string libraryPath = Path.GetFullPath(library);

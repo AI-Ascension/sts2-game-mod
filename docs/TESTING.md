@@ -362,8 +362,9 @@ bash tools/workshop/lifecycle/ugc-create-item/test-ugc-create-item.sh
 ~~~
 
 The helper test covers package and library preflight, native `CreateItem` dispatch, callback
-settlement, failed transport, timeout, journal collision, and environment/hash refusal without
-contacting Steam. The Linux callback layout is checked separately against a clean operator-supplied
+settlement, failed transport, timeout, journal collision, private result/journal permissions, and
+environment/hash refusal without contacting Steam. The Linux callback layout is checked separately
+against a clean operator-supplied
 Valve source SDK checkout at the pinned commit:
 
 ~~~text

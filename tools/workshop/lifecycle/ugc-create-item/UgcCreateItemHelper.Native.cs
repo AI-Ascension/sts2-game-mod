@@ -51,9 +51,12 @@ internal static partial class Program
         string directory = Path.GetDirectoryName(path) ?? ".";
         Directory.CreateDirectory(directory);
         byte[] data = JsonSerializer.SerializeToUtf8Bytes(journal, JsonOptions);
-        using FileStream stream = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough);
-        stream.Write(data);
-        stream.Flush(flushToDisk: true);
+        using (FileStream stream = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+        {
+            SetPrivateMode(path);
+            stream.Write(data);
+            stream.Flush(flushToDisk: true);
+        }
     }
 
     private static void PersistJournal(Journal journal, string path)
@@ -66,6 +69,7 @@ internal static partial class Program
         {
             using (FileStream stream = new(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             {
+                SetPrivateMode(temporary);
                 stream.Write(data);
                 stream.Flush(flushToDisk: true);
             }
@@ -86,6 +90,14 @@ internal static partial class Program
         try { PersistJournal(journal, path); } catch { /* The original journal remains a retry barrier. */ }
     }
 
+    private static void SetPrivateMode(string path)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
     private static void WriteJson(string path, Result value)
     {
         string directory = Path.GetDirectoryName(path) ?? ".";
@@ -96,6 +108,7 @@ internal static partial class Program
         {
             using (FileStream stream = new(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             {
+                SetPrivateMode(temporary);
                 stream.Write(data);
                 stream.Flush(flushToDisk: true);
             }
