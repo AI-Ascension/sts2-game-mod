@@ -87,6 +87,13 @@ internal sealed partial class LiveCombatSource
     private LegalActionReference[] CampaignActions(RuntimeV3GameplayObservation observation)
     {
         if (!observation.InputEnabled) return Array.Empty<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && (observation.State == RuntimeV3GameplayState.Setup && _campaignStartDispatched
+                || observation.State == RuntimeV3GameplayState.Map
+                    && _campaignMapSelectionDispatched))
+        {
+            return Array.Empty<LegalActionReference>();
+        }
         if (observation.State == RuntimeV3GameplayState.Shop && CurrentShop() is { } shop)
             return ShopActions(observation, shop);
         if (observation.State == RuntimeV3GameplayState.Rest) return RestActions(observation);

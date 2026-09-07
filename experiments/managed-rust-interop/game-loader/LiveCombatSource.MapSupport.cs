@@ -14,10 +14,8 @@ internal sealed partial class LiveCombatSource
 {
     // These tokens are intentionally opaque. They are assigned once for a host MapPoint
     // reference and are never derived from PointType, child shape, or coordinate overlap
-    // ordering. A map lifetime reset clears the registry in EnsureMapInstanceId.
-    private readonly Dictionary<MapPoint, string> _mapPointDisambiguators =
-        new(ReferenceEqualityComparer.Instance);
-    private uint _nextMapPointDisambiguator;
+    // ordering. MapIdentityRegistry keeps exhaustion sticky until a new map lifetime is seen.
+    private readonly MapIdentityRegistry _mapIdentityRegistry = new();
 
     private static bool TryCollectMapPoints(ActMap map, out List<MapPoint> points,
         out string reason)
@@ -114,37 +112,18 @@ internal sealed partial class LiveCombatSource
     }
 
     private string EnsureMapInstanceId(RunState run, ActMap map)
-    {
-        if (!ReferenceEquals(run, _mapRunIdentity) || !ReferenceEquals(map, _mapObjectIdentity))
-        {
-            _mapRunIdentity = run;
-            _mapObjectIdentity = map;
-            _mapInstanceId = $"map-instance:{Guid.NewGuid():N}";
-            _mapPointDisambiguators.Clear();
-            _nextMapPointDisambiguator = 0;
-        }
-        return _mapInstanceId!;
-    }
+        => _mapIdentityRegistry.EnsureMap(run, map);
 
     private bool TryStableMapNodeIds(string mapInstanceId, int act, List<MapPoint> points,
         out Dictionary<MapPoint, string> ids, out string reason)
     {
         ids = new Dictionary<MapPoint, string>(points.Count, ReferenceEqualityComparer.Instance);
-        foreach (MapPoint point in points)
+        if (!_mapIdentityRegistry.TryGetNodeIds(mapInstanceId, act, points,
+                out Dictionary<object, string> objectIds, out reason))
         {
-            if (!_mapPointDisambiguators.TryGetValue(point, out string? token))
-            {
-                if (_mapPointDisambiguators.Count
-                    >= RuntimeMapV1Contract.MaxMapIdentityRegistryEntries)
-                {
-                    reason = "map_identity_registry_bound_exceeded";
-                    return false;
-                }
-                token = $"p{++_nextMapPointDisambiguator}";
-                _mapPointDisambiguators.Add(point, token);
-            }
-            ids.Add(point, $"map-node:{mapInstanceId}:act:{act}:ref:{token}");
+            return false;
         }
+        foreach (MapPoint point in points) ids.Add(point, objectIds[point]);
         reason = string.Empty;
         return true;
     }

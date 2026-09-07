@@ -11,6 +11,10 @@
     <Compile Include="../game-loader/RuntimeMapV1Model.cs" Link="RuntimeMapV1Model.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Codec.cs" Link="RuntimeMapV1Codec.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Support.cs" Link="RuntimeMapV1Support.cs" />
+    <Compile Include="../game-loader/MapIdentityRegistry.cs" Link="MapIdentityRegistry.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Category.cs" Link="RuntimeMapV1Category.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1GraphFingerprint.cs" Link="RuntimeMapV1GraphFingerprint.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1ObservationFence.cs" Link="RuntimeMapV1ObservationFence.cs" />
     <Compile Include="../game-loader/PrivilegedFieldGuard.cs" Link="PrivilegedFieldGuard.cs" />
   </ItemGroup>
 </Project>

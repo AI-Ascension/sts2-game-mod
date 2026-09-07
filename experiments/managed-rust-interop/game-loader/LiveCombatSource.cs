@@ -22,6 +22,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     private string? _fingerprint;
     private ulong _generation;
     private int _nextCardId;
+    private bool _campaignStartDispatched;
+    private bool _campaignMapSelectionDispatched;
 
     public void Enqueue(Action work)
     {
@@ -113,6 +115,12 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     {
         RequireThread();
         var actions = new List<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && observation.State is not RuntimeV3GameplayState.Setup
+                and not RuntimeV3GameplayState.Map)
+        {
+            return actions;
+        }
         Player? player = CurrentPlayer();
         if (LiveCombatDemo.Campaign && observation.State != RuntimeV3GameplayState.Combat)
             return CampaignActions(observation);

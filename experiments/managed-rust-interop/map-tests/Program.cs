@@ -8,9 +8,13 @@ using System.Text.Json;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-internal static class Program
+internal static partial class Program
 {
     private static readonly string[] PositionKindFields = { "kind" };
+    private static readonly string[] FingerprintStartChildren = { "node:b", "node:c" };
+    private static readonly string[] FingerprintTerminalChildren = Array.Empty<string>();
+    private static readonly string[] FingerprintSingleChild = { "node:d" };
+    private static readonly string[] FingerprintRewiredChild = { "node:c" };
     private static readonly TestContext Context = new(
         "corr-42", "instance-1", "session-1", "lease-1", "7");
 
@@ -21,46 +25,12 @@ internal static class Program
         CheckRequestAndSupportBoundary();
         CheckAdversarialGraphRejection();
         CheckFairPlayPairedFixtures();
+        CheckIdentityRegistryLifetimeBound();
+        CheckGraphFingerprintIdentityAndOrdering();
+        CheckAncientCategoryNormalization();
+        CheckObservationGenerationFence();
         Console.WriteLine("RuntimeMapV1Probe: PASS");
         return 0;
-    }
-
-    private static void CheckSnapshotValidation()
-    {
-        Check(Snapshot().Validate(out _), "complete synthetic map validates");
-        Check(Unavailable().Validate(out _), "unavailable projection validates");
-    }
-
-    private static void CheckCodecAndCanonicalShape()
-    {
-        Check(RuntimeMapV1Codec.TrySerializeResponse(
-            Context.CorrelationId, Context.InstanceId, Context.SessionId, Context.LeaseId,
-            ulong.Parse(Context.LeaseEpoch, CultureInfo.InvariantCulture), Snapshot(),
-            out string response, out string error),
-            $"response serializes: {error}");
-        using JsonDocument document = JsonDocument.Parse(response);
-        JsonElement root = document.RootElement;
-        Check(root.GetProperty("schema_digest").GetString() == RuntimeMapV1Contract.SchemaDigest,
-            "response carries the current schema digest");
-        Check(root.GetProperty("snapshot").GetProperty("schema_version").GetString()
-            == RuntimeMapV1Contract.SnapshotSchemaVersion,
-            "response carries the independent visible-map schema version");
-        string[] fields = root.EnumerateObject().Select(property => property.Name).ToArray();
-        Check(fields.SequenceEqual(fields.OrderBy(field => field, StringComparer.Ordinal)),
-            "response object keys are canonical sorted JSON");
-        RuntimeMapV1Snapshot reordered = Snapshot() with
-        {
-            Nodes = Snapshot().Nodes.Reverse().ToArray(),
-            Edges = Snapshot().Edges.Reverse().ToArray(),
-            TerminalNodeIds = Snapshot().TerminalNodeIds.Reverse().ToArray(),
-            Bindings = Snapshot().Bindings.Reverse().ToArray()
-        };
-        Check(Serialize(Snapshot()) == Serialize(reordered),
-            "response collection ordering is canonical");
-        using JsonDocument unavailable = JsonDocument.Parse(Serialize(Unavailable()));
-        Check(unavailable.RootElement.GetProperty("snapshot").GetProperty("position")
-            .EnumerateObject().Select(property => property.Name).SequenceEqual(PositionKindFields),
-            "position variants omit node_id when no current node exists");
     }
 
     private static void CheckRequestAndSupportBoundary()
@@ -100,66 +70,6 @@ internal static class Program
             "native GET map route may request the current snapshot without a body");
     }
 
-    private static void CheckAdversarialGraphRejection()
-    {
-        RuntimeMapV1Snapshot duplicateNode = Snapshot() with
-        {
-            Nodes = Snapshot().Nodes.Append(Snapshot().Nodes[0]).ToArray()
-        };
-        Check(!duplicateNode.Validate(out _), "duplicate node IDs are rejected");
-
-        RuntimeMapV1Snapshot duplicateCoordinate = Snapshot() with
-        {
-            Nodes = Snapshot().Nodes.Append(new RuntimeMapV1Node(
-                "map:1:0:9", 0, 0, "monster", false)).ToArray()
-        };
-        Check(duplicateCoordinate.Validate(out string duplicateError),
-            $"duplicate coordinates are preserved: {duplicateError}");
-
-        RuntimeMapV1Snapshot distinctActionPayload = Snapshot() with
-        {
-            Bindings = new[] { new RuntimeMapV1ActionBinding(
-                "map:1:1:0", "select_map_node:42:legacy-map-option", "legacy-map-option") }
-        };
-        Check(distinctActionPayload.Validate(out _),
-            "host action payload may remain distinct from the stable graph node ID");
-
-        RuntimeMapV1Snapshot cycle = Snapshot() with
-        {
-            Edges = Snapshot().Edges.Append(new RuntimeMapV1Edge(
-                "map:1:2:0", "map:1:0:0")).ToArray()
-        };
-        Check(!cycle.Validate(out _), "cyclic topology is rejected");
-
-        RuntimeMapV1Snapshot staleBinding = Snapshot() with
-        {
-            Bindings = new[] { new RuntimeMapV1ActionBinding(
-                "map:1:1:0", "select_map_node:41:map:1:1:0", "map:1:1:0") }
-        };
-        Check(staleBinding.Validate(out _),
-            "binding generation remains an opaque host action identity at snapshot validation");
-        RuntimeMapV1Snapshot duplicateOption = Snapshot() with
-        {
-            Bindings = new[]
-            {
-                new RuntimeMapV1ActionBinding(
-                    "map:1:1:0", "select_map_node:41:left", "map-option:shared"),
-                new RuntimeMapV1ActionBinding(
-                    "map:1:1:1", "select_map_node:41:right", "map-option:shared")
-            }
-        };
-        Check(!duplicateOption.Validate(out _),
-            "serialized action option IDs are unique within a snapshot");
-        RuntimeMapV1Snapshot currentBinding = Snapshot() with
-        {
-            Position = new RuntimeMapV1Position("current", "map:1:1:0")
-        };
-        Check(!currentBinding.Validate(out _),
-            "the current node cannot also be exposed as a travel binding");
-        Check(!RuntimeMapV1Contract.IsHostActionId("bad action"),
-            "unsafe host action identity is rejected");
-    }
-
     private static void CheckFairPlayPairedFixtures()
     {
         var permitted = new HiddenFixture("secret-a");
@@ -170,6 +80,114 @@ internal static class Program
             "hidden fixture state is absent from the serialized projection");
     }
 
+    private static void CheckIdentityRegistryLifetimeBound()
+    {
+        var registry = new MapIdentityRegistry();
+        var run = new object();
+        var map = new object();
+        string mapId = registry.EnsureMap(run, map);
+        var points = new List<RegistryPoint>();
+        Dictionary<object, string> ids = new();
+        string reason = string.Empty;
+        string firstId = string.Empty;
+        bool chunksPass = true;
+        for (int offset = 0; offset < RuntimeMapV1Contract.MaxMapIdentityRegistryEntries;
+             offset += 128)
+        {
+            RegistryPoint[] batch = Enumerable.Range(offset, Math.Min(128,
+                    RuntimeMapV1Contract.MaxMapIdentityRegistryEntries - offset))
+                .Select(_ => new RegistryPoint()).ToArray();
+            points.AddRange(batch);
+            chunksPass &= registry.TryGetNodeIds(mapId, 1, batch, out ids, out reason)
+                && reason.Length == 0;
+            if (offset == 0) firstId = ids[batch[0]];
+        }
+        Check(points.Count == RuntimeMapV1Contract.MaxMapIdentityRegistryEntries
+            && chunksPass
+            && registry.TryGetNodeIds(mapId, 1, new[] { points[0] }, out ids, out reason)
+            && ids[points[0]] == firstId,
+            "identity registry preserves IDs through bounded churn reads");
+        Check(!registry.TryGetNodeIds(mapId, 1, new[] { points[0], new RegistryPoint() },
+                out _, out reason) && reason == "map_identity_registry_bound_exceeded",
+            "identity registry fails closed when a map lifetime is exhausted");
+        Check(!registry.TryGetNodeIds(mapId, 1, new[] { points[0] }, out _, out reason)
+            && reason == "map_identity_registry_bound_exceeded",
+            "identity exhaustion remains unavailable until a new map is observed");
+
+        string resetMapId = registry.EnsureMap(run, new object());
+        Check(resetMapId != mapId && registry.TryGetNodeIds(resetMapId, 1,
+                new[] { new RegistryPoint() }, out _, out reason) && reason.Length == 0,
+            "new map identity resets the bounded registry");
+        string resetRunId = registry.EnsureMap(new object(), new object());
+        Check(resetRunId != resetMapId && registry.TryGetNodeIds(resetRunId, 1,
+                new[] { new RegistryPoint() }, out _, out reason) && reason.Length == 0,
+            "new run identity resets the bounded registry");
+        var reordered = points.Take(3).Reverse().ToArray();
+        Check(registry.TryGetNodeIds(resetRunId, 1, points.Take(3).ToArray(),
+                out Dictionary<object, string> firstIds, out _)
+            && registry.TryGetNodeIds(resetRunId, 1, reordered,
+                out Dictionary<object, string> reorderedIds, out _)
+            && points.Take(3).All(point => firstIds[point] == reorderedIds[point]),
+            "reference identities survive reordered map enumeration");
+    }
+
+    private static void CheckGraphFingerprintIdentityAndOrdering()
+    {
+        var nodes = new[]
+        {
+            new RuntimeMapV1FingerprintNode("node:a", 0, 0, "start", "none",
+                FingerprintStartChildren),
+            new RuntimeMapV1FingerprintNode("node:b", 1, 0, "other", "none",
+                FingerprintSingleChild),
+            new RuntimeMapV1FingerprintNode("node:c", 1, 0, "other", "none",
+                FingerprintSingleChild),
+            new RuntimeMapV1FingerprintNode("node:d", 2, 0, "boss", "boss",
+                FingerprintTerminalChildren)
+        };
+        Check(RuntimeMapV1GraphFingerprint.TryCreate(nodes, out string fingerprint,
+                out string reason) && reason.Length == 0,
+            "stable graph IDs produce a fingerprint with duplicate coordinates");
+        var reordered = new[]
+        {
+            nodes[2] with { ChildIds = nodes[2].ChildIds.Reverse().ToArray() },
+            nodes[0] with { ChildIds = nodes[0].ChildIds.Reverse().ToArray() },
+            nodes[3], nodes[1]
+        };
+        Check(RuntimeMapV1GraphFingerprint.TryCreate(reordered, out string reorderedFingerprint,
+                out _)
+            && fingerprint == reorderedFingerprint,
+            "reordered nodes and child sets retain canonical fingerprint bytes");
+        var rewired = nodes.Select(node => node.Id == "node:b"
+            ? node with { ChildIds = FingerprintRewiredChild } : node).ToArray();
+        Check(RuntimeMapV1GraphFingerprint.TryCreate(rewired, out string rewiredFingerprint,
+                out _)
+            && fingerprint != rewiredFingerprint,
+            "rewiring duplicate-coordinate references changes the fingerprint");
+    }
+
+    private static void CheckAncientCategoryNormalization()
+    {
+        Check(RuntimeMapV1Category.Normalize("Ancient", false, false) == "other",
+            "non-start Ancient points deliberately normalize to other");
+        Check(RuntimeMapV1Category.Normalize("Ancient", true, false) == "start",
+            "a declared Ancient starting point retains the start category");
+    }
+
+    private static void CheckObservationGenerationFence()
+    {
+        Check(RuntimeMapV1ObservationFence.IsStable(17, 17),
+            "unchanged graph and legal-catalog generation remains eligible");
+        RuntimeMapV1Snapshot rejected = RuntimeMapV1ObservationFence.RejectChangedSurface(
+            Snapshot(), 18);
+        Check(!RuntimeMapV1ObservationFence.IsStable(17, 18)
+            && rejected.Generation == 18
+            && rejected.Availability == "unavailable"
+            && rejected.Completeness == "unknown"
+            && rejected.Reason == RuntimeMapV1ObservationFence.ChangedSurfaceReason
+            && rejected.Validate(out _),
+            "a topology, visibility, or legal-catalog mutation requires an unavailable retry");
+    }
+
     private static string Serialize(RuntimeMapV1Snapshot snapshot)
     {
         Check(RuntimeMapV1Codec.TrySerializeResponse(
@@ -178,62 +196,6 @@ internal static class Program
             out string json, out string error), error);
         return json;
     }
-
-    private static RuntimeMapV1Snapshot Snapshot() => new(
-        StateId: "map-state-42",
-        Generation: 42,
-        SchemaVersion: RuntimeMapV1Contract.SnapshotSchemaVersion,
-        ProjectionVersion: RuntimeMapV1Contract.ProjectionVersion,
-        GameBuild: "0.107.1",
-        ModVersion: "map-mod-1",
-        MapInstanceId: "map-instance-1",
-        ActId: 1,
-        ScopeId: "campaign-1",
-        Availability: "available",
-        Completeness: "complete",
-        Freshness: "current",
-        Reason: null,
-        Nodes: new[]
-        {
-            new RuntimeMapV1Node("map:1:0:0", 0, 0, "start", true),
-            new RuntimeMapV1Node("map:1:1:0", 1, 0, "monster", true),
-            new RuntimeMapV1Node("map:1:1:1", 1, 1, "event", false),
-            new RuntimeMapV1Node("map:1:2:0", 2, 0, "boss", false)
-        },
-        Edges: new[]
-        {
-            new RuntimeMapV1Edge("map:1:0:0", "map:1:1:0"),
-            new RuntimeMapV1Edge("map:1:0:0", "map:1:1:1"),
-            new RuntimeMapV1Edge("map:1:1:0", "map:1:2:0"),
-            new RuntimeMapV1Edge("map:1:1:1", "map:1:2:0")
-        },
-        Position: new RuntimeMapV1Position("current", "map:1:0:0"),
-        History: new List<string> { "map:1:0:0" },
-        TerminalNodeIds: new List<string> { "map:1:2:0" },
-        Bindings: new[]
-        {
-            new RuntimeMapV1ActionBinding("map:1:1:0",
-                "select_map_node:42:map:1:1:0", "map:1:1:0"),
-            new RuntimeMapV1ActionBinding("map:1:1:1",
-                "select_map_node:42:map:1:1:1", "map:1:1:1")
-        });
-
-    private static RuntimeMapV1Snapshot Unavailable() => Snapshot() with
-    {
-        StateId = "map-unavailable-42",
-        MapInstanceId = null,
-        ActId = null,
-        ScopeId = null,
-        Availability = "unavailable",
-        Completeness = "unknown",
-        Reason = "map_not_open",
-        Nodes = Array.Empty<RuntimeMapV1Node>(),
-        Edges = Array.Empty<RuntimeMapV1Edge>(),
-        Position = new RuntimeMapV1Position("unavailable", null),
-        History = Array.Empty<string>(),
-        TerminalNodeIds = Array.Empty<string>(),
-        Bindings = Array.Empty<RuntimeMapV1ActionBinding>()
-    };
 
     private static void Check(bool condition, string message)
     {
@@ -252,6 +214,10 @@ internal static class Program
         string SessionId,
         string LeaseId,
         string LeaseEpoch);
+
+    private sealed class RegistryPoint
+    {
+    }
 
     private sealed class HiddenFixture(string hiddenValue)
     {

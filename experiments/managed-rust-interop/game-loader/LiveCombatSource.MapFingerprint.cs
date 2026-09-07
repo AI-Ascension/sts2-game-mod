@@ -32,6 +32,11 @@ internal sealed partial class LiveCombatSource
             string mapInstanceId = EnsureMapInstanceId(run, run.Map);
             if (!TryCollectMapPoints(run.Map, out List<MapPoint> points, out string reason))
                 return $"map:open:{run.CurrentActIndex}:unavailable:{reason}";
+            if (!TryStableMapNodeIds(mapInstanceId, run.CurrentActIndex, points,
+                    out Dictionary<MapPoint, string> nodeIds, out reason))
+            {
+                return $"map:open:{run.CurrentActIndex}:unavailable:{reason}";
+            }
             if (!TryCollectVisitedCoordinates(run, out HashSet<(int Row, int Column)> visited,
                     out _, out reason))
             {
@@ -40,7 +45,7 @@ internal sealed partial class LiveCombatSource
 
             var builder = new StringBuilder("map:open:");
             builder.Append(run.CurrentActIndex).Append("|instance=").Append(mapInstanceId);
-            if (!TryAppendMapModelFingerprint(builder, run.Map, points, out reason))
+            if (!TryAppendMapModelFingerprint(builder, run.Map, points, nodeIds, out reason))
                 return $"map:open:{run.CurrentActIndex}:unavailable:{reason}";
             builder.Append("|current=");
             if (run.CurrentMapCoord is { } current)
@@ -65,56 +70,43 @@ internal sealed partial class LiveCombatSource
     }
 
     private static bool TryAppendMapModelFingerprint(StringBuilder builder, ActMap map,
-        List<MapPoint> points, out string reason)
+        List<MapPoint> points, Dictionary<MapPoint, string> nodeIds, out string reason)
     {
-        // This is the normalized public projection. Raw PointType/child-type enum integers are
-        // deliberately absent so host states that collapse to the same visible category hash
-        // identically.
-        int work = 0;
-        int edges = 0;
+        // Stable graph IDs are the identity-bearing part of this fingerprint. Coordinates and
+        // normalized labels remain public attributes, but they are never used as a tie-breaker:
+        // two references may share a coordinate/category and rewiring their edges must still
+        // produce a different generation. Child IDs are sorted by the canonical helper so a
+        // HashSet enumeration order cannot perturb an unchanged graph.
         try
         {
-            foreach (MapPoint point in points.OrderBy(point => point.coord.row)
-                .ThenBy(point => point.coord.col)
-                .ThenBy(point => MapCategory(map, point), StringComparer.Ordinal)
-                .ThenBy(point => MapTerminalKind(map, point), StringComparer.Ordinal))
+            var graphNodes = new List<RuntimeMapV1FingerprintNode>(points.Count);
+            foreach (MapPoint point in points)
             {
-                if (++work > RuntimeMapV1Contract.MaxMapTraversalWork)
+                if (!nodeIds.TryGetValue(point, out string? nodeId))
                 {
-                    reason = "map_traversal_work_bound_exceeded";
+                    reason = "map_graph_identity_invalid";
                     return false;
                 }
-                var children = new List<MapPoint>(Math.Min(RuntimeMapV1Contract.MaxEdges,
-                    point.Children.Count));
+
+                var childIds = new List<string>();
                 foreach (MapPoint child in point.Children)
                 {
-                    if (++work > RuntimeMapV1Contract.MaxMapTraversalWork)
+                    if (!nodeIds.TryGetValue(child, out string? childId))
                     {
-                        reason = "map_traversal_work_bound_exceeded";
+                        reason = "map_graph_edge_invalid";
                         return false;
                     }
-                    if (++edges > RuntimeMapV1Contract.MaxEdges)
-                    {
-                        reason = "map_edge_bound_exceeded";
-                        return false;
-                    }
-                    children.Add(child);
+                    childIds.Add(childId);
                 }
 
-                builder.Append(point.coord.row).Append(',').Append(point.coord.col)
-                    .Append(':').Append(MapCategory(map, point))
-                    .Append(':').Append(MapTerminalKind(map, point)).Append('>');
-                foreach (MapPoint child in children.OrderBy(child => child.coord.row)
-                    .ThenBy(child => child.coord.col)
-                    .ThenBy(child => MapCategory(map, child), StringComparer.Ordinal)
-                    .ThenBy(child => MapTerminalKind(map, child), StringComparer.Ordinal))
-                {
-                    builder.Append(child.coord.row).Append(',').Append(child.coord.col)
-                        .Append(':').Append(MapCategory(map, child))
-                        .Append(':').Append(MapTerminalKind(map, child)).Append(',');
-                }
-                builder.Append(';');
+                graphNodes.Add(new RuntimeMapV1FingerprintNode(
+                    nodeId, point.coord.row, point.coord.col, MapCategory(map, point),
+                    MapTerminalKind(map, point), childIds));
             }
+
+            if (!RuntimeMapV1GraphFingerprint.TryCreate(graphNodes, out string graphFingerprint,
+                    out reason)) return false;
+            builder.Append("|graph=").Append(graphFingerprint);
         }
         catch
         {

@@ -99,19 +99,12 @@ internal sealed partial class LiveCombatSource
 
     private static string MapCategory(ActMap map, MapPoint point)
     {
-        if (ReferenceEquals(point, map.StartingMapPoint)) return "start";
-        if (ReferenceEquals(point, map.BossMapPoint) || map.SecondBossMapPoint != null
-            && ReferenceEquals(point, map.SecondBossMapPoint)) return "boss";
-        return point.PointType switch
-        {
-            MapPointType.Monster => "monster",
-            MapPointType.Elite => "elite",
-            MapPointType.Shop => "shop",
-            MapPointType.RestSite => "rest",
-            MapPointType.Treasure => "treasure",
-            MapPointType.Unknown => "unknown",
-            MapPointType.Unassigned => "unknown",
-            _ => "other"
-        };
+        bool isStart = ReferenceEquals(point, map.StartingMapPoint);
+        bool isTerminal = ReferenceEquals(point, map.BossMapPoint)
+            || map.SecondBossMapPoint != null && ReferenceEquals(point, map.SecondBossMapPoint);
+        // The host's v0.107.1 enum has Ancient but no Event member. Runtime-map-v1 therefore
+        // deliberately normalizes a non-start Ancient point to "other"; only the declared
+        // starting point receives the public "start" category.
+        return RuntimeMapV1Category.Normalize(point.PointType.ToString(), isStart, isTerminal);
     }
 }

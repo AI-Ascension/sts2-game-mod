@@ -190,7 +190,11 @@ dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Prob
 
 The probe covers canonical ordering, UTF-8 request bounds, unavailable/pre-start positions,
 duplicate coordinates, cyclic and duplicate identities, independent graph/host/action-option
-identities, current-node binding rejection, and paired hidden-state projections. The exact-host
+identities, current-node binding rejection, paired hidden-state projections, bounded identity
+registry churn and reset on a new map lifetime, stable-ID graph reordering and rewiring, the
+deliberate non-start `Ancient` to `other` normalization, and the final-generation observation
+fence. The host map read returns an explicit unavailable result with `map_surface_changed` when
+the generation changes between graph/catalog capture and the final reobserve. The exact-host
 loader build remains separate evidence; neither build proves loader discovery, a live map
 snapshot, off-screen UI behavior, or settled gameplay navigation.
 

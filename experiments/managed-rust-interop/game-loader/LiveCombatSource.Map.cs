@@ -15,10 +15,6 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// <summary>Host-thread map projection backed by the installed run's public map model.</summary>
 internal sealed partial class LiveCombatSource
 {
-    private object? _mapRunIdentity;
-    private object? _mapObjectIdentity;
-    private string? _mapInstanceId;
-
     public RuntimeMapV1Snapshot ObserveMap()
     {
         RequireThread();
@@ -49,7 +45,21 @@ internal sealed partial class LiveCombatSource
                     run.CurrentActIndex, "not_observable");
             }
 
-            return BuildMapSnapshot(run, mapInstanceId, observation);
+            RuntimeMapV1Snapshot snapshot = BuildMapSnapshot(run, mapInstanceId, observation);
+
+            // BuildMapSnapshot rereads the host map and legal catalog after Observe() captured
+            // the gameplay generation. Reobserve after that copy so a host animation, callback,
+            // visibility change, or catalog mutation cannot pair two different surfaces under
+            // one generation. The latest generation is returned with an explicit unavailable
+            // result, allowing the caller to retry through the normal stale-read boundary.
+            RuntimeV3GameplayObservation finalObservation = Observe();
+            if (!RuntimeMapV1ObservationFence.IsStable(observation.Generation,
+                    finalObservation.Generation))
+            {
+                return RuntimeMapV1ObservationFence.RejectChangedSurface(snapshot,
+                    finalObservation.Generation);
+            }
+            return snapshot;
         }
         catch
         {

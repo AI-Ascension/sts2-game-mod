@@ -20,6 +20,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 internal static class LiveCombatDemo
 {
     internal static bool Campaign => Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN") == "1";
+    internal static bool CampaignMapBound => Campaign
+        && Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN_MAP_BOUND") == "1";
     internal static bool Ready { get; private set; }
     internal static RuntimeV3GameplayRunOptions RunOptions => RuntimeV3GameplayRunOptions.Parse(
         Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN_MODE"),

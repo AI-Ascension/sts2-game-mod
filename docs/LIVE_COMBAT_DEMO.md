@@ -77,6 +77,55 @@ The selected semantic action must exist in the fresh catalog and visible game co
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).
 
+For a bounded standard campaign/map handoff, add `--campaign-map` together with a pinned
+`--map-renderer-binary` and its lowercase `--map-renderer-sha256`. This mode requires the OpenAI
+Astra provider, starts a host-generated standard run, requests the complete current map graph and
+verified PNG, and admits exactly one `start_run` followed by exactly one current legal
+`select_map_node`. The managed host guard withholds every later gameplay mutation, and the
+launcher accepts the expected harness bound exit only after the retained trace contains one
+settled setup action, one settled map action, and no other action kind. The runner allows two
+model decision steps, one read-only recovery attempt, and a 90-second provider deadline. The
+option does not resume a save, accepts no seed or replay trajectory, and is preparation for an
+authorized live run; it does not claim campaign completion or a played combat.
+
+Campaign/map mode also verifies the disposable host before starting anything. Its
+`data_sts2_windows_x86_64/sts2.dll` must be the supported v0.107.1 release `59260271` with
+SHA-256 `a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`; the matching
+`GodotSharp.dll` hash is `0e4897ecdfb31456a97c7d8028dfb8d7dbdc632e2f73fc9b438d7b266a139289`.
+The accepted addon directory defaults to `<host-dir>/mods` and must contain regular files named
+`AIAscensionSTS2GameMod.dll`, `AIAscensionSTS2GameModNative.dll`, and
+`AIAscensionSTS2GameMod.json`; pass `--addon-dir` when the staged addon is kept elsewhere.
+The launcher records the host, executable, override, and addon hashes under the external run
+artifact directory as `baseline.sha256` and `addon.sha256`, and verifies that baseline after the
+owned host stops. The user directory must be an explicit absolute Windows path outside the host,
+repository, addon, and artifact directories; a pre-existing directory is allowed only when it is
+already a disposable copy whose baseline is retained by the operator.
+
+Prepare the run by copying the supported installation to a disposable host directory, hashing the
+original host and addon files, retaining the copy's baseline, and placing a separate disposable
+Godot user directory at the path passed to `--user-dir`. Stage and hash the three addon files
+outside this repository, then run the bounded handoff with explicit binaries:
+
+~~~text
+bash experiments/managed-rust-interop/live-combat-session.sh \
+  --host-dir /path/to/disposable-sts2 \
+  --user-dir 'C:\\Temp\\sts2-map-user-20260907' \
+  --addon-dir /path/to/disposable-sts2/mods \
+  --artifacts-dir /tmp/sts2-map-artifacts \
+  --gateway-binary /path/to/sts2-gateway-runtime \
+  --mcp-binary /path/to/sts2-mcp-runtime \
+  --harness-binary /path/to/sts2-harness-runtime \
+  --provider-binary /path/to/sts2-astra-bridge \
+  --map-renderer-binary /path/to/map-visualizer \
+  --map-renderer-sha256 LOWERCASE_SHA256 \
+  --powershell-binary /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
+  --campaign-map
+~~~
+
+Do not use `dev-cycle.sh` or the active Steam installation for this handoff. The campaign/map
+launcher does not install an addon, copy a save, or select a game screen; it only accepts an
+already prepared disposable host and records the hashes needed for post-run restoration.
+
 Select the harness's `sts2-astra-bridge` as `--provider-binary` to play with OpenAI
 `gpt-6-astra` using an existing Codex login. The launcher reads `--describe` before launch,
 records the provider/model identity, and explicitly inherits only HOME/PATH for this provider.

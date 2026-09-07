@@ -5,6 +5,9 @@ param(
     [Parameter(Mandatory=$true)][string]$LogPath,
     [Parameter(Mandatory=$true)][string]$StopFile,
     [string]$Seed = 'AIASCENSIONREPLAY1',
+    [switch]$Campaign,
+    [ValidateSet('standard','practice')][string]$CampaignMode = 'standard',
+    [switch]$CampaignMapBound,
     [ValidateRange(1,65535)][int]$Port = 15626,
     [ValidateRange(-1,31)][int]$Display = -1,
     [ValidateRange(640,16384)][int]$Width = 1280,
@@ -17,6 +20,9 @@ Add-Type -AssemblyName System.Windows.Forms
 if ($Display -ge [System.Windows.Forms.Screen]::AllScreens.Count) { throw 'Selected display is unavailable' }
 if (-not (Test-Path "$HostDirectory\override.cfg")) { throw 'Isolated override is required' }
 if (Get-Process SlayTheSpire2 -ErrorAction SilentlyContinue) { throw 'Another game is running' }
+if ($CampaignMapBound -and (-not $Campaign -or $CampaignMode -ne 'standard')) {
+    throw 'Campaign map bound requires standard campaign mode'
+}
 $token = [Console]::ReadLine()
 if ($token -notmatch '^[A-Za-z0-9_-]{43,256}$') { throw 'Invalid session credential' }
 $env:STS2_RUNTIME_TOKEN = $token
@@ -25,7 +31,22 @@ $env:STS2_RUNTIME_PORT = "$Port"
 $env:STS2_RUNTIME_SESSION = '1'
 $env:STS2_LIVE_COMBAT = '1'
 $env:STS2_LIVE_USER_DIR = $UserDirectory
-$env:STS2_LIVE_SEED = $Seed
+if ($Campaign) {
+    $env:STS2_LIVE_CAMPAIGN = '1'
+    $env:STS2_LIVE_CAMPAIGN_MODE = $CampaignMode
+    if ($CampaignMode -eq 'standard') {
+        Remove-Item Env:STS2_LIVE_SEED -ErrorAction SilentlyContinue
+    } else {
+        $env:STS2_LIVE_SEED = $Seed
+    }
+} else {
+    Remove-Item Env:STS2_LIVE_CAMPAIGN -ErrorAction SilentlyContinue
+    Remove-Item Env:STS2_LIVE_CAMPAIGN_MODE -ErrorAction SilentlyContinue
+    Remove-Item Env:STS2_LIVE_CAMPAIGN_MAP_BOUND -ErrorAction SilentlyContinue
+    $env:STS2_LIVE_SEED = $Seed
+}
+if ($CampaignMapBound) { $env:STS2_LIVE_CAMPAIGN_MAP_BOUND = '1' }
+else { Remove-Item Env:STS2_LIVE_CAMPAIGN_MAP_BOUND -ErrorAction SilentlyContinue }
 foreach ($entry in @(@('Display','DISPLAY'), @('Width','WIDTH'), @('Height','HEIGHT'), @('WindowMode','WINDOW_MODE'))) {
     $name = 'STS2_LIVE_' + $entry[1]
     if ($PSBoundParameters.ContainsKey($entry[0])) {
