@@ -45,6 +45,16 @@ license, and user documentation while keeping host assemblies outside the packag
 The host-loader smoke test must use an operator-supplied exact host installation and disposable
 data. CI must not download or redistribute proprietary host files.
 
+### Reproducible Windows native builds
+
+The `x86_64-pc-windows-gnu` target configuration disables PE linker timestamps.
+Without `--no-insert-timestamp`, identical native source produces different DLL checksums
+at different build times. Preserve this target flag when building a release; environment
+`RUSTFLAGS` or `CARGO_ENCODED_RUSTFLAGS` overrides must not remove it. Use the pinned
+toolchain and locked dependencies, build the same commit into two independent Cargo target
+directories, and compare the resulting DLL bytes. Record this separately from package
+checksum validation and native loading evidence.
+
 ## Workshop publication
 
 Workshop staging is a release-preparation action, not an ordinary CI action:
