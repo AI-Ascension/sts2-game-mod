@@ -29,7 +29,11 @@ internal sealed partial class CoopHostRuntime
             return Rejected(operationId, before.HostGeneration, error);
         }
         var accepted = new CoopOperationReceipt(operationId, fingerprint, CoopOutcome.Accepted,
-            before.HostGeneration, null, null, before, null);
+            before.HostGeneration, null, null, before, null)
+        {
+            AdmissionAuthorityId = before.AuthorityId,
+            AdmissionAuthorityEpoch = before.AuthorityEpoch
+        };
         if (_receipts.Count >= MaxReceipts || !_receipts.TryAdd(operationId, accepted))
         {
             return Rejected(operationId, before.HostGeneration, "receipt_capacity_exhausted");
@@ -116,10 +120,14 @@ internal sealed partial class CoopHostRuntime
         {
             return true;
         }
+        string admissionAuthorityId = receipt.AdmissionAuthorityId
+            ?? receipt.Observation.AuthorityId;
+        string admissionAuthorityEpoch = receipt.AdmissionAuthorityEpoch
+            ?? receipt.Observation.AuthorityEpoch;
         if (after.RecoveryRequired || !after.AllConnectedPeersConverged()
-            || !string.Equals(after.AuthorityId, receipt.Observation.AuthorityId,
+            || !string.Equals(after.AuthorityId, admissionAuthorityId,
                 StringComparison.Ordinal)
-            || !string.Equals(after.AuthorityEpoch, receipt.Observation.AuthorityEpoch,
+            || !string.Equals(after.AuthorityEpoch, admissionAuthorityEpoch,
                 StringComparison.Ordinal))
         {
             return true;

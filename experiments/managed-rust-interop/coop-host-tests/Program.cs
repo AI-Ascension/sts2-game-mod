@@ -20,6 +20,7 @@ internal static partial class Program
         AcceptedRejoinReconcilesWithoutRetrying();
         UnknownRejoinStaysUnknownWithoutNativeWitness();
         RejectedRejoinIsRemembered();
+        RejoinMustRetainOriginalAuthorityEpoch();
         UnboundOpaqueIdentityIsRejected();
         DisconnectedPeerBlocksSettlement();
         MismatchedAuthorityIdentityBlocksSettlement();

@@ -32,7 +32,7 @@
     <DefineConstants>$(DefineConstants);STS2_NATIVE_COOP_PROBE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="CoopNativeLobbyController.cs;CoopNativeLobbyController.Client.cs;CoopNativeLobbyController.Configuration.cs;CoopNativeLobbyController.Support.cs;CoopNativeLobbyProbe.cs;CoopNativeLobbyProbe.Support.cs" />
+    <Compile Remove="CoopNativeLobbyController.cs;CoopNativeLobbyController.Client.cs;CoopNativeLobbyController.Configuration.cs;CoopNativeLobbyController.Support.cs;CoopNativeLobbyProbe.cs;CoopNativeLobbyProbe.Support.cs;CoopNativeLobbyProbe.Diagnostics.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(EnableNativeCoopProbe)' == 'true'">
     <Compile Include="CoopNativeLobbyController.cs" />
@@ -41,6 +41,7 @@
     <Compile Include="CoopNativeLobbyController.Support.cs" />
     <Compile Include="CoopNativeLobbyProbe.cs" />
     <Compile Include="CoopNativeLobbyProbe.Support.cs" />
+    <Compile Include="CoopNativeLobbyProbe.Diagnostics.cs" />
   </ItemGroup>
 
   <ItemGroup>

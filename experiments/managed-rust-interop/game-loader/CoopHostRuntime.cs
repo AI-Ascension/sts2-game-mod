@@ -13,7 +13,14 @@ internal sealed record CoopOperationReceipt(
     ulong? AfterHostGeneration,
     CoopEffectWitness? Effect,
     CoopHostObservation Observation,
-    string? ErrorCode);
+    string? ErrorCode)
+{
+    // The authority and epoch captured when a rejoin mutation was admitted are immutable
+    // settlement fences. Observation is allowed to move forward while a receipt is pending, so
+    // reconciliation must never infer the admission lineage from that mutable snapshot.
+    internal string? AdmissionAuthorityId { get; init; }
+    internal string? AdmissionAuthorityEpoch { get; init; }
+}
 
 /// <summary>
 /// Fenced host-side owner for native co-op operations. The native port is the only component

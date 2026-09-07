@@ -8,6 +8,18 @@ namespace AiAscension.Sts2GameMod.CoopHostTests;
 
 internal static partial class Program
 {
+    private static void RejoinMustRetainOriginalAuthorityEpoch()
+    {
+        FakePort port = new() { RejoinSetsConverged = true, ChangeEpochAfterRejoin = true };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt first = runtime.Rejoin("op:epoch-change", "peer:host1", 6);
+        Check(first.Outcome == CoopOutcome.Accepted,
+            "a changed authority epoch cannot immediately prove recovery");
+        runtime.Reconcile("op:epoch-change", out CoopOperationReceipt? later);
+        Check(later?.Outcome != CoopOutcome.Recovered,
+            "reconciliation must not adopt a different authority epoch as the original admission");
+    }
+
     private static void RejoinReplayDoesNotRepeatNativeMutation()
     {
         FakePort port = new() { RejoinSetsConverged = true };
@@ -77,6 +89,7 @@ internal static partial class Program
         internal bool ReturnRejectedRejoin { get; init; }
         internal bool RejoinSetsConverged { get; init; }
         internal bool RejoinStartsDivergent { get; init; }
+        internal bool ChangeEpochAfterRejoin { get; init; }
         internal bool DisconnectClientBeforeEffect { get; init; }
         internal bool DigestKnown { get; init; } = true;
         internal bool AuthorityIdsMatch { get; init; } = true;
@@ -103,6 +116,7 @@ internal static partial class Program
                 false, null)
             {
                 AuthorityId = "authority:test",
+                AuthorityEpoch = ChangeEpochAfterRejoin && RejoinCount > 0 ? "epoch:other" : "epoch:test",
                 HostDigestKnown = DigestKnown
             };
         }
