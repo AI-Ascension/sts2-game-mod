@@ -40,6 +40,24 @@ public static partial class ModEntry
         CheckPendingV2BlocksSemantic();
         CheckPendingSemanticBlocksV2();
         CheckQueuedSemanticAdmission();
+        CheckPendingExpertBlocksOtherProfiles();
+    }
+
+    private static void CheckPendingExpertBlocksOtherProfiles()
+    {
+        Reset();
+        _runtimeV4Pending = true;
+        var source = new FakeHost();
+        ConfigureRuntimeV3Gameplay(source, new TestQueue());
+        Check(Status(Semantic("dispatch_action_request")) == "rejected" && source.Dispatches == 0,
+            "pending expert mutation fences semantic dispatch");
+        Check(Status(ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()))) == "rejected"
+            && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
+            "pending expert mutation fences v2 dispatch");
+        _runtimeV4Pending = false;
+        Check(Status(Semantic("dispatch_action_request", "after-expert")) == "unknown"
+            && source.Dispatches == 1,
+            "released expert mutation gate admits the next semantic dispatch");
     }
 
     private static void CheckSharedIdentity()

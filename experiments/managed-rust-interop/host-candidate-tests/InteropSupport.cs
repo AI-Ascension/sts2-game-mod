@@ -15,6 +15,7 @@ public static partial class ModEntry
     private const uint RuntimeRequestKindGameplay = 6;
     private const uint RuntimeRequestKindExpertState = 7;
     private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
+    private static bool _runtimeV4Pending;
 
     // This probe supplies only the shared v3 route. Production host wiring, including the
     // expert bridge, is compiled by GameLoaderProbe.csproj against the actual game host.
@@ -24,7 +25,9 @@ public static partial class ModEntry
     private static void ConfigureRuntimeV3Gameplay(
         IRuntimeV3HostSource source, IRuntimeV3HostThread thread) =>
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
-            () => _runtimeV2Pending is null);
+            () => _runtimeV2Pending is null && !HasPendingRuntimeV4ExpertMutation());
+
+    private static bool HasPendingRuntimeV4ExpertMutation() => _runtimeV4Pending;
 
     private static (int Status, string Response) ProcessRuntimeV3GameplayWork(
         RuntimeContext context, string body)

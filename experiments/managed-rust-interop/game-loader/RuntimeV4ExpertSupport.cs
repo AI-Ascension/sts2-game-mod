@@ -43,6 +43,18 @@ internal sealed partial class RuntimeV4ExpertSupport
     internal static RuntimeV4ExpertSupport WithHost(
         LiveCombatSource source, IRuntimeV3HostThread thread) => new(source, thread);
 
+    internal bool HasPendingMutation
+    {
+        get
+        {
+            foreach (RuntimeV4ExpertReceipt receipt in _receipts.Values)
+            {
+                if (receipt.Status is "accepted" or "unknown") return true;
+            }
+            return false;
+        }
+    }
+
     internal (int Status, string Response) HandleState(
         RuntimeV4ExpertContext context, out int status)
     {
@@ -112,6 +124,14 @@ internal sealed partial class RuntimeV4ExpertSupport
             return (Rejected, Response(context, request.StateId, request.Generation,
                 operation.OperationId, request.Action, "rejected", null, false,
                 "sts2.runtime/operation_capacity", null));
+        if (HasPendingMutation || ModEntry.HasPendingNonExpertMutation())
+        {
+            RuntimeV4ExpertReceipt rejected = new(operation, request.Action,
+                request.StateId, request.Generation, "rejected", null,
+                "sts2.runtime/operation_in_progress");
+            _receipts.Add(operation, rejected);
+            return RenderReceipt(context, rejected, out status);
+        }
 
         RuntimeV4ExpertGameplayObservation? before = null;
         bool dispatched = false;
