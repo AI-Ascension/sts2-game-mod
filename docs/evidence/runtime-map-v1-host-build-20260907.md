@@ -56,7 +56,7 @@ and outside the repository:
 | --- | --- |
 | `AIAscensionSTS2GameMod.dll` | `5cf1500990199288ea46ca47bc8069fa74b6d95a54a8036c1b938dcd322d8bed` |
 | `AIAscensionSTS2GameModNative.dll` | `5082cb71025bba2a2ad07949fd1f83630924f0a76580ff4b9b11382e367519cb` |
-| `AIAscensionSTS2GameMod.json` | `559e177f0b6e5d82fc44f6b086b1e728353b2f6e437f5e8fae989083d85659984` |
+| `AIAscensionSTS2GameMod.json` | `559e177f0b6e5d82fc44f6b086b1e728353b2f6e437f5e8fae98983d85659984` |
 
 ## Local gates
 
