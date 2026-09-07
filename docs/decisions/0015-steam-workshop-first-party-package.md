@@ -26,7 +26,13 @@ allowlisted files:
 
 - AIAscensionSTS2GameMod.dll;
 - AIAscensionSTS2GameMod.json; and
-- AIAscensionSTS2GameModNative.dll.
+- AIAscensionSTS2GameModNative.dll for `windows-x86_64`, or
+  libAIAscensionSTS2GameModNative.so for `linux-x86_64`.
+
+The operator's expected platform selects exactly one native library allowlist. Unknown platforms,
+the other platform's library, and a manifest whose platform differs from that policy are rejected.
+This platform validation is component-tested with synthetic packages; native Linux Workshop
+discovery, loading, update, and rollback require separate runtime evidence.
 
 The item also contains sts2-workshop-manifest.json and SHA256SUMS. These metadata files are
 required package material but are not executable payload. The manifest is

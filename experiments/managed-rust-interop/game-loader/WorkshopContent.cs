@@ -24,21 +24,22 @@ public static partial class WorkshopPackageValidator
     private const int MaximumManifestBytes = 64 * 1024;
     private const long MaximumPayloadBytes = 256 * 1024 * 1024;
 
-    private static readonly (string Path, string Role)[] ExpectedPayload =
-    [
-        ("AIAscensionSTS2GameMod.dll", "managed_assembly"),
-        ("AIAscensionSTS2GameMod.json", "loader_manifest"),
-        ("AIAscensionSTS2GameModNative.dll", "native_library")
-    ];
-
-    private static readonly string[] ExpectedEntries =
-    [
-        ExpectedPayload[0].Path,
-        ExpectedPayload[1].Path,
-        ExpectedPayload[2].Path,
-        ManifestFileName,
-        ChecksumFileName
-    ];
+    private static (string Path, string Role)[] ExpectedPayload(string platform)
+    {
+        string nativeLibrary = platform switch
+        {
+            "windows-x86_64" => "AIAscensionSTS2GameModNative.dll",
+            "linux-x86_64" => "libAIAscensionSTS2GameModNative.so",
+            _ => throw new WorkshopPackageValidationException(
+                "compatibility", "Workshop platform is not supported.")
+        };
+        return
+        [
+            ("AIAscensionSTS2GameMod.dll", "managed_assembly"),
+            ("AIAscensionSTS2GameMod.json", "loader_manifest"),
+            (nativeLibrary, "native_library")
+        ];
+    }
 
     internal static JsonSerializerOptions JsonOptions { get; } = new()
     {
@@ -59,6 +60,7 @@ public static partial class WorkshopPackageValidator
             Reject("invalid_trust_policy", "Workshop App ID and published file ID must be positive.");
         }
 
+        (string Path, string Role)[] expectedPayload = ExpectedPayload(expectedPlatform);
         string root = GetFullPath(installDirectory);
         if (!Directory.Exists(root))
         {
@@ -66,7 +68,7 @@ public static partial class WorkshopPackageValidator
         }
 
         RejectReparsePath(root);
-        RejectUnexpectedEntries(root);
+        RejectUnexpectedEntries(root, expectedPayload);
         string manifestPath = Path.Combine(root, ManifestFileName);
         byte[] manifestBytes = ReadBoundedManifest(manifestPath);
 
@@ -83,7 +85,7 @@ public static partial class WorkshopPackageValidator
             throw new InvalidOperationException("unreachable");
         }
 
-        ValidateManifest(root, manifest, expectedConsumerAppId, expectedPublishedFileId, expectedGameVersion, expectedPlatform);
+        ValidateManifest(root, manifest, expectedConsumerAppId, expectedPublishedFileId, expectedGameVersion, expectedPlatform, expectedPayload);
         return new WorkshopPackageValidationResult
         {
             InstallDirectory = root,
@@ -120,8 +122,10 @@ public static partial class WorkshopPackageValidator
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString()))).ToLowerInvariant();
     }
 
-    private static void RejectUnexpectedEntries(string root)
+    private static void RejectUnexpectedEntries(string root, (string Path, string Role)[] expectedPayload)
     {
+        string[] expectedEntries = expectedPayload.Select(file => file.Path)
+            .Concat([ManifestFileName, ChecksumFileName]).ToArray();
         foreach (string entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.TopDirectoryOnly))
         {
             FileAttributes attributes = File.GetAttributes(entry);
@@ -131,13 +135,13 @@ public static partial class WorkshopPackageValidator
             }
 
             string name = Path.GetFileName(entry);
-            if (!ExpectedEntries.Contains(name, StringComparer.Ordinal) || !File.Exists(entry))
+            if (!expectedEntries.Contains(name, StringComparer.Ordinal) || !File.Exists(entry))
             {
                 Reject("unexpected_file", $"Workshop package contains an unsupported entry: {name}");
             }
         }
 
-        foreach (string expected in ExpectedEntries)
+        foreach (string expected in expectedEntries)
         {
             string path = Path.Combine(root, expected);
             if (!File.Exists(path))
@@ -153,7 +157,8 @@ public static partial class WorkshopPackageValidator
         uint expectedConsumerAppId,
         ulong expectedPublishedFileId,
         string expectedGameVersion,
-        string expectedPlatform)
+        string expectedPlatform,
+        (string Path, string Role)[] expectedPayload)
     {
         if (manifest.SchemaVersion != SchemaVersion
             || manifest.PackageId != PackageId
@@ -181,15 +186,15 @@ public static partial class WorkshopPackageValidator
         {
             Reject("provenance", "Workshop manifest provenance or digest is invalid.");
         }
-        if (manifest.Files is null || manifest.Files.Length != ExpectedPayload.Length)
+        if (manifest.Files is null || manifest.Files.Length != expectedPayload.Length)
         {
             Reject("file_allowlist", "Workshop manifest file inventory does not match the first-party allowlist.");
         }
 
-        for (int index = 0; index < ExpectedPayload.Length; index++)
+        for (int index = 0; index < expectedPayload.Length; index++)
         {
             WorkshopFile? file = manifest.Files[index];
-            (string expectedPath, string expectedRole) = ExpectedPayload[index];
+            (string expectedPath, string expectedRole) = expectedPayload[index];
             if (file is null || file.Path != expectedPath || file.Role != expectedRole
                 || file.Sha256 is null || !IsSha256(file.Sha256))
             {
