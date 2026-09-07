@@ -6,7 +6,7 @@ using RuntimeEnvironment = System.Environment;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-internal static partial class CoopNativeLobbyController
+internal static partial class NativeCoopSessionController
 {
 
     private static bool TryReadHostId(out ulong hostId)

@@ -163,6 +163,66 @@ internal sealed partial class CoopHostRuntime
         return true;
     }
 
+    private bool CanDispatchRejoin(CoopHostObservation observation,
+        ulong expectedHostGeneration, string actorPeerId, out string error)
+    {
+        // Rejoin is the recovery operation for a disconnected local client. It deliberately
+        // shares the generation and identity fences with ordinary mutations while allowing the
+        // local peer's Connected bit and the observation's RecoveryRequired bit to be false.
+        if (observation.Role == CoopHostRole.Singleplayer)
+        {
+            error = "multiplayer_not_connected";
+            return false;
+        }
+        if (observation.HostGeneration != expectedHostGeneration)
+        {
+            error = "stale_host_generation";
+            return false;
+        }
+        if (!string.Equals(actorPeerId, observation.LocalPeerId, StringComparison.Ordinal))
+        {
+            error = "actor_is_not_local_peer";
+            return false;
+        }
+
+        CoopPeerSnapshot? local = null;
+        foreach (CoopPeerSnapshot peer in observation.Peers)
+        {
+            if (string.Equals(peer.PeerId, actorPeerId, StringComparison.Ordinal))
+            {
+                local = peer;
+                break;
+            }
+        }
+        if (local is null)
+        {
+            error = "unknown_or_stale_peer_identity";
+            return false;
+        }
+        CoopNativePeerBinding binding;
+        try
+        {
+            if (!_port.TryResolvePeer(actorPeerId, out binding))
+            {
+                error = "unknown_or_stale_peer_identity";
+                return false;
+            }
+        }
+        catch
+        {
+            error = "peer_identity_lookup_failed";
+            return false;
+        }
+        if (!binding.Validate(out _)
+            || !string.Equals(binding.OpaquePeerId, actorPeerId, StringComparison.Ordinal))
+        {
+            error = "unknown_or_stale_peer_identity";
+            return false;
+        }
+        error = string.Empty;
+        return true;
+    }
+
     private static bool IsSettled(CoopOperationReceipt receipt,
         CoopHostObservation after, CoopEffectWitness effect) =>
         string.Equals(effect.OperationId, receipt.OperationId, StringComparison.Ordinal)

@@ -7,8 +7,35 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class InstalledNativeCoopHostPort
 {
-    public CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch) =>
-        CoopNativeDispatchResult.Rejected("native_rejoin_requires_run_lobby");
+    public CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch)
+    {
+        if (!_bindings.TryGetValue(opaquePeerId, out CoopNativePeerBinding? binding)
+            || !binding.Validate(out _))
+        {
+            return CoopNativeDispatchResult.Rejected("unknown_or_stale_peer_identity");
+        }
+
+        RunManager? manager = RunManager.Instance;
+        INetGameService? service = CurrentService(manager);
+        if (service is not INetClientGameService client
+            || client.NetId == 0
+            || client.NetId != binding.NativePeerId)
+        {
+            return CoopNativeDispatchResult.Rejected("native_rejoin_requires_local_client");
+        }
+
+        // Keep the original authority epoch across this explicitly admitted reconnect. A fresh
+        // authority epoch is reserved for a different lobby/host lineage; a controlled rejoin
+        // must settle against the same receipt fence after the replacement client connects.
+        _rejoinAuthorityEpoch = _authorityEpoch;
+        CoopNativeDispatchResult result = NativeCoopSessionController.RequestRejoin(
+            opaquePeerId, binding.NativePeerId, rejoinEpoch);
+        if (result.Outcome == CoopOutcome.Rejected)
+            _rejoinAuthorityEpoch = null;
+        return result;
+    }
+
+    public bool IsRejoinSettled() => NativeCoopSessionController.IsRejoinRecovered;
 
     public CoopEffectWitness? Reconcile(string operationId)
     {

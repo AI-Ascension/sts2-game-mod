@@ -24,7 +24,7 @@ internal sealed partial class CoopHostRuntime
         }
 
         CoopHostObservation before = Observe();
-        if (!CanDispatch(before, before.HostGeneration, actorPeerId, out string error))
+        if (!CanDispatchRejoin(before, before.HostGeneration, actorPeerId, out string error))
         {
             return Rejected(operationId, before.HostGeneration, error);
         }
@@ -107,6 +107,16 @@ internal sealed partial class CoopHostRuntime
         // An unknown native call has no rejoin effect witness. Convergence alone cannot turn
         // that outcome into recovery, because the call may never have reached the transport.
         if (receipt.Outcome != CoopOutcome.Accepted)
+        {
+            return true;
+        }
+
+        try
+        {
+            if (!_port.IsRejoinSettled())
+                return true;
+        }
+        catch
         {
             return true;
         }

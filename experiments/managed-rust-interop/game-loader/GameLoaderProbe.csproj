@@ -26,19 +26,15 @@
     <Compile Include="../terminal-host-probe/TerminalProbe.cs" Link="TerminalProbe.cs" />
   </ItemGroup>
 
-  <!-- Native lobby bootstrap/observation is an operator diagnostic fixture. Keep it out of
-       the release assembly unless the caller opts in explicitly. -->
+  <!-- The production native session controller is part of the addon. Observation output remains
+       an operator diagnostic fixture and is included only when explicitly requested. -->
   <PropertyGroup Condition="'$(EnableNativeCoopProbe)' == 'true'">
     <DefineConstants>$(DefineConstants);STS2_NATIVE_COOP_PROBE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="CoopNativeLobbyController.cs;CoopNativeLobbyController.Client.cs;CoopNativeLobbyController.Configuration.cs;CoopNativeLobbyController.Support.cs;CoopNativeLobbyProbe.cs;CoopNativeLobbyProbe.Support.cs;CoopNativeLobbyProbe.Diagnostics.cs" />
+    <Compile Remove="CoopNativeLobbyProbe.cs;CoopNativeLobbyProbe.Support.cs;CoopNativeLobbyProbe.Diagnostics.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(EnableNativeCoopProbe)' == 'true'">
-    <Compile Include="CoopNativeLobbyController.cs" />
-    <Compile Include="CoopNativeLobbyController.Client.cs" />
-    <Compile Include="CoopNativeLobbyController.Configuration.cs" />
-    <Compile Include="CoopNativeLobbyController.Support.cs" />
     <Compile Include="CoopNativeLobbyProbe.cs" />
     <Compile Include="CoopNativeLobbyProbe.Support.cs" />
     <Compile Include="CoopNativeLobbyProbe.Diagnostics.cs" />

@@ -20,6 +20,18 @@ internal static partial class Program
             "reconciliation must not adopt a different authority epoch as the original admission");
     }
 
+    private static void RejoinRecoveryGateAllowsDisconnectedLocalPeer()
+    {
+        FakePort port = new() { LocalPeerDisconnected = true };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt receipt = runtime.Rejoin(
+            "op:rejoin-disconnected", "peer:host1", 7);
+        Check(receipt.Outcome == CoopOutcome.Accepted
+            && receipt.ErrorCode == "rejoin_recovery_required"
+            && port.RejoinCount == 1,
+            "rejoin may be admitted for the bound local peer while transport recovery is required");
+    }
+
     private static void RejoinReplayDoesNotRepeatNativeMutation()
     {
         FakePort port = new() { RejoinSetsConverged = true };
@@ -90,6 +102,7 @@ internal static partial class Program
         internal bool RejoinSetsConverged { get; init; }
         internal bool RejoinStartsDivergent { get; init; }
         internal bool ChangeEpochAfterRejoin { get; init; }
+        internal bool LocalPeerDisconnected { get; init; }
         internal bool DisconnectClientBeforeEffect { get; init; }
         internal bool DigestKnown { get; init; } = true;
         internal bool AuthorityIdsMatch { get; init; } = true;
@@ -105,7 +118,8 @@ internal static partial class Program
                 EffectPublished ? 2UL : 1UL, Digest,
                 new[]
                 {
-                    new CoopPeerSnapshot("peer:host1", true, true, EffectPublished ? 2UL : 1UL, Digest),
+                    new CoopPeerSnapshot("peer:host1", true, !LocalPeerDisconnected,
+                        EffectPublished ? 2UL : 1UL, Digest),
                     new CoopPeerSnapshot("peer:client1", false, clientConnected,
                         EffectPublished ? 1UL : 0UL,
                         RejoinStartsDivergent && !EffectPublished ? DivergentDigest : Digest)
@@ -113,7 +127,7 @@ internal static partial class Program
                         AuthorityId = AuthorityIdsMatch ? "authority:test" : "authority:other"
                     }
                 },
-                false, null)
+                LocalPeerDisconnected, null)
             {
                 AuthorityId = "authority:test",
                 AuthorityEpoch = ChangeEpochAfterRejoin && RejoinCount > 0 ? "epoch:other" : "epoch:test",

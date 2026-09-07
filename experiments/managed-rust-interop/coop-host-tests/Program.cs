@@ -21,6 +21,7 @@ internal static partial class Program
         UnknownRejoinStaysUnknownWithoutNativeWitness();
         RejectedRejoinIsRemembered();
         RejoinMustRetainOriginalAuthorityEpoch();
+        RejoinRecoveryGateAllowsDisconnectedLocalPeer();
         UnboundOpaqueIdentityIsRejected();
         DisconnectedPeerBlocksSettlement();
         MismatchedAuthorityIdentityBlocksSettlement();

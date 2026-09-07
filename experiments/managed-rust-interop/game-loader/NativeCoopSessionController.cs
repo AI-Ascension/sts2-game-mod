@@ -21,12 +21,12 @@ using RuntimeEnvironment = System.Environment;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>
-/// Bounded ordinary native ENet lobby bootstrap. This is deliberately separate from the
-/// observation and protocol runtimes: it owns one host-thread attempt to start or join a lobby,
-/// then leaves character selection and run admission to the game's first-party screens. Run
-/// admission is disabled unless <c>STS2_NATIVE_COOP_AUTO_ADMIT_RUN</c> is explicitly enabled.
+/// Production native ENet session bootstrap. This owns one game-thread attempt to start or join
+/// a lobby and the supported running-session recovery path. Character selection and ordinary run
+/// admission remain first-party operations; automatic admission is disabled unless explicitly
+/// enabled by <c>STS2_NATIVE_COOP_AUTO_ADMIT_RUN</c>.
 /// </summary>
-internal static partial class CoopNativeLobbyController
+internal static partial class NativeCoopSessionController
 {
     private const string RoleVariable = "STS2_NATIVE_COOP_AUTOSTART_ROLE";
     private const string PortVariable = "STS2_NATIVE_COOP_ENET_PORT";
