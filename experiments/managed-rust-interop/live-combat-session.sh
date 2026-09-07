@@ -274,12 +274,15 @@ else
 fi
 if [[ "$campaign_map" == true ]]; then
     unset STS2_COMBAT_DEMO
+    mkdir -p -- "$run/map-artifacts"
+    export STS2_MAP_ARTIFACT_ROOT="$run/map-artifacts"
     export STS2_LIVE_EPISODE=true STS2_MAP_MODE=graph-image STS2_MAP_RENDERER_BINARY="$map_renderer"
     export STS2_MAP_RENDERER_SHA256="$map_renderer_sha256" STS2_MAX_STEPS=2
     export STS2_RECOVERY_MAX_ATTEMPTS=1 STS2_EXO_TIMEOUT_MILLIS=90000
     export STS2_OBJECTIVE='Start one standard campaign run, inspect the complete current map image, then select one currently legal map node.'
     export STS2_HARD_CONSTRAINTS_JSON='["Use exactly one host-legal start_run action.","After setup, use exactly one current host-legal select_map_node action.","Stop after the first settled map selection and never enter combat actions, rewards, shops, or events."]'
 else
+    unset STS2_MAP_ARTIFACT_ROOT
     export STS2_COMBAT_DEMO=true STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
 fi
 export STS2_REPLAY_TRAJECTORY="$replay"
@@ -308,7 +311,7 @@ jq -n --arg seed "$(if [[ "$campaign_map" == true ]]; then printf ''; else print
     campaign_map_bound:$campaign_map,
     campaign_action_contract:(if $campaign_map then {start_run:1,select_map_node:1} else null end),
     provider_call_policy:(if $campaign_map then {max_model_decisions:2,max_steps:2,recovery_attempts:1,timeout_millis:90000} else null end),
-    map_rendering:(if $campaign_map then {mode:"graph-image",binary:$map_renderer,sha256:$map_renderer_sha256,image_required:true} else null end),
+    map_rendering:(if $campaign_map then {mode:"graph-image",binary:$map_renderer,sha256:$map_renderer_sha256,image_required:true,artifact_root_relative:"map-artifacts"} else null end),
     video_values:"requested overrides; null uses saved preference or default; actual values are in game.log",
     replay:$replay}' >"$run/manifest.json"
 sha256sum "$gateway" "$mcp" "$harness" "$provider" >"$run/binaries.sha256"

@@ -30,8 +30,11 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const int RuntimeRequestKindAction = 2;
         private const int RuntimeRequestKindRuntimeV2State = 3;
         private const int RuntimeRequestKindRuntimeV2Operation = 5;
+        private const int RuntimeRequestKindMap = 7;
         private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
             throw new InvalidOperationException("v1 test crossed into v2");
+        private static (int, string) ProcessRuntimeMapV1Work(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into map");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>
