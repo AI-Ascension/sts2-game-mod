@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static partial class Program
 {
+    private static readonly int[] WorkBoundChild = { 1 };
+
     private static void CheckAdversarialGraphRejection()
     {
         RuntimeMapV1Snapshot duplicateNode = Snapshot() with
@@ -64,5 +67,39 @@ internal static partial class Program
             "the current node cannot also be exposed as a travel binding");
         Check(!RuntimeMapV1Contract.IsHostActionId("bad action"),
             "unsafe host action identity is rejected");
+
+        CheckFingerprintCollectionBounds();
+    }
+
+    private static void CheckFingerprintCollectionBounds()
+    {
+        int work = 0;
+        int edgeCount = 0;
+        int selected = 0;
+        bool collected = RuntimeMapV1GraphFingerprint.TryCollectBoundedChildIds(
+            InfiniteChildren(), _ =>
+            {
+                selected++;
+                return "node:d";
+            }, ref work, ref edgeCount, out List<string> childIds, out string reason);
+        Check(!collected && reason == "map_edge_bound_exceeded"
+            && childIds.Count == RuntimeMapV1Contract.MaxEdges
+            && edgeCount == RuntimeMapV1Contract.MaxEdges
+            && selected == RuntimeMapV1Contract.MaxEdges,
+            "fingerprint child collection stops before appending beyond the total edge bound");
+
+        work = RuntimeMapV1Contract.MaxMapTraversalWork;
+        edgeCount = 0;
+        collected = RuntimeMapV1GraphFingerprint.TryCollectBoundedChildIds(
+            WorkBoundChild, _ => "node:d", ref work, ref edgeCount,
+            out childIds, out reason);
+        Check(!collected && reason == "map_graph_work_bound_exceeded"
+            && childIds.Count == 0 && edgeCount == 0,
+            "fingerprint child collection fails before appending beyond the work bound");
+    }
+
+    private static IEnumerable<int> InfiniteChildren()
+    {
+        for (int index = 0; ; index++) yield return index;
     }
 }

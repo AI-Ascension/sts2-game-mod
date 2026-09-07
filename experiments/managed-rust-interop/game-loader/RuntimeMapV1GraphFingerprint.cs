@@ -18,6 +18,38 @@ internal sealed record RuntimeMapV1FingerprintNode(
 /// <summary>Creates a canonical public graph fingerprint from stable graph IDs.</summary>
 internal static class RuntimeMapV1GraphFingerprint
 {
+    internal static bool TryCollectBoundedChildIds<T>(IEnumerable<T> children,
+        Func<T, string?> idSelector, ref int work, ref int edgeCount,
+        out List<string> childIds, out string reason)
+    {
+        childIds = new List<string>();
+        foreach (T child in children)
+        {
+            if (++work > RuntimeMapV1Contract.MaxMapTraversalWork)
+            {
+                reason = "map_graph_work_bound_exceeded";
+                return false;
+            }
+            if (edgeCount >= RuntimeMapV1Contract.MaxEdges)
+            {
+                reason = "map_edge_bound_exceeded";
+                return false;
+            }
+
+            string? childId = idSelector(child);
+            if (childId is null)
+            {
+                reason = "map_graph_edge_invalid";
+                return false;
+            }
+            edgeCount++;
+            childIds.Add(childId);
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
     internal static bool TryCreate(IReadOnlyList<RuntimeMapV1FingerprintNode> nodes,
         out string fingerprint, out string reason)
     {

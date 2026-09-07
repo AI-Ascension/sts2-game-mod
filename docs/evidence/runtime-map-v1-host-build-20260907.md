@@ -37,8 +37,9 @@ Result: exit `0`, zero warnings, zero errors. The same project was compiled with
 `10.0.204` against the same assembly tuple with exit `0`, zero warnings, and zero errors.
 
 The focused managed probe passed all checks, including bounded identity-registry exhaustion/reset,
-stable graph-ID ordering and rewiring, `Ancient` normalization, and final-generation observation
-fencing:
+stable graph-ID ordering and rewiring, `Ancient` normalization, final-generation observation
+fencing, and incremental fingerprint child collection that rejects edge/work exhaustion before
+selecting or appending another child:
 
 ~~~text
 dotnet run \
@@ -49,23 +50,23 @@ dotnet run \
 Result: exit `0`; `RuntimeMapV1Probe: PASS`. The source-only managed interop build and workshop
 probe also passed with zero warnings/errors.
 
-An external package build produced these three expected files. The staging directory is disposable
-and outside the repository:
+The final external package build produced these three expected files under the disposable staging
+directory `/tmp/sts2-map-addon-hd01-final-20260907`, outside the repository:
 
 | File | SHA-256 |
 | --- | --- |
-| `AIAscensionSTS2GameMod.dll` | `5cf1500990199288ea46ca47bc8069fa74b6d95a54a8036c1b938dcd322d8bed` |
-| `AIAscensionSTS2GameModNative.dll` | `5082cb71025bba2a2ad07949fd1f83630924f0a76580ff4b9b11382e367519cb` |
+| `AIAscensionSTS2GameMod.dll` | `6bbb4f162c53d759e4ebdf969d605bb225dfefdb3e3a24622aa9dc1f6042dc4f` |
+| `AIAscensionSTS2GameModNative.dll` | `99c08192f12ae24cc368c38813d4b3e75882a4eac3da757113343798f508ff01` |
 | `AIAscensionSTS2GameMod.json` | `559e177f0b6e5d82fc44f6b086b1e728353b2f6e437f5e8fae98983d85659984` |
 
 ## Local gates
 
-All commands used a worktree-specific `CARGO_TARGET_DIR=/tmp/sts2-map-visibility-20260907-rust-target`:
+All commands used a worktree-specific `CARGO_TARGET_DIR=/tmp/sts2-map-visibility-20260907-hd01-rust-target`:
 
 | Command | Result |
 | --- | --- |
 | `cargo fmt --all --check` | exit `0` |
-| `cargo run --locked --offline --package repo-policy -- --strict` | exit `0`; 304 files, 0 warnings, 0 errors |
+| `cargo run --locked --offline --package repo-policy -- --strict` | exit `0`; 322 files, 0 warnings, 0 errors |
 | `cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings` | exit `0` |
 | `cargo test --locked --offline --workspace --all-targets --all-features` | exit `0`; all workspace tests passed, including 16 native tests |
 | `cargo build --locked --offline --workspace --all-targets --all-features` | exit `0` |

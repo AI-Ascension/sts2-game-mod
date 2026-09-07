@@ -80,24 +80,27 @@ internal sealed partial class LiveCombatSource
         try
         {
             var graphNodes = new List<RuntimeMapV1FingerprintNode>(points.Count);
+            int work = 0;
+            int edgeCount = 0;
             foreach (MapPoint point in points)
             {
+                if (++work > RuntimeMapV1Contract.MaxMapTraversalWork)
+                {
+                    reason = "map_graph_work_bound_exceeded";
+                    return false;
+                }
                 if (!nodeIds.TryGetValue(point, out string? nodeId))
                 {
                     reason = "map_graph_identity_invalid";
                     return false;
                 }
 
-                var childIds = new List<string>();
-                foreach (MapPoint child in point.Children)
-                {
-                    if (!nodeIds.TryGetValue(child, out string? childId))
-                    {
-                        reason = "map_graph_edge_invalid";
-                        return false;
-                    }
-                    childIds.Add(childId);
-                }
+                if (!RuntimeMapV1GraphFingerprint.TryCollectBoundedChildIds(
+                        point.Children,
+                        child => nodeIds.TryGetValue(child, out string? childId)
+                            ? childId : null,
+                        ref work, ref edgeCount, out List<string> childIds, out reason))
+                    return false;
 
                 graphNodes.Add(new RuntimeMapV1FingerprintNode(
                     nodeId, point.coord.row, point.coord.col, MapCategory(map, point),
