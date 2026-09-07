@@ -14,6 +14,8 @@ public static partial class ModEntry
 {
     private const uint RuntimeRequestKindGameplay = 6;
     private const uint RuntimeRequestKindExpertState = 7;
+    private const uint RuntimeRequestKindCoopObservation = 9;
+    private const uint RuntimeRequestKindCoopRecover = 13;
     private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
     private static bool _runtimeV4Pending;
 
@@ -48,6 +50,11 @@ public static partial class ModEntry
     private static (int Status, string Response) ProcessRuntimeV4ExpertActionWork(
         RuntimeContext context, string body) =>
         (RuntimeUnavailable, "{\"error_code\":\"runtime_v4_expert_host_unavailable\"}");
+
+    // This source-only probe does not implement native co-op; accidental routing must fail.
+    private static (int Status, string Response) ProcessCoopNativeWork(
+        uint kind, RuntimeContext context, string body) =>
+        throw new InvalidOperationException("Host gameplay probe crossed into native co-op");
 
     private const uint ExpectedAbiVersion = 1;
     private const int ExpectedCheckedAddResult = 42;
