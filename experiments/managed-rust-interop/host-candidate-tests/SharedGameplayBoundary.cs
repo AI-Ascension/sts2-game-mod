@@ -52,16 +52,12 @@ public static partial class ModEntry
         ConfigureRuntimeV3Gameplay(source, new TestQueue());
 
         Check(HasPendingNonExpertMutation(),
-            "pending co-op mutation is part of the non-expert admission predicate");
+            "actual v3 interop helper includes a pending co-op mutation");
         Check(Status(Semantic("dispatch_action_request")) == "rejected" && source.Dispatches == 0,
-            "pending co-op mutation fences semantic dispatch");
+            "actual v3 interop callback fences semantic dispatch on pending co-op");
         Check(Status(ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()))) == "rejected"
             && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
             "pending co-op mutation fences v2 dispatch");
-        var expert = ProcessRuntimeWork(new(RuntimeRequestKindExpertAction, Context(), "{}"));
-        Check(expert.Status == 409
-            && expert.Response.Contains("operation_in_progress", StringComparison.Ordinal),
-            "pending co-op mutation fences expert dispatch");
         Check(Semantic("state_request").Status == 200,
             "pending co-op mutation still permits semantic observation");
 
@@ -91,7 +87,7 @@ public static partial class ModEntry
     private static void CheckPendingExpertBlocksOtherProfiles()
     {
         Reset();
-        _runtimeV4Pending = true;
+        RuntimeV4ExpertSupport.PendingForTest = true;
         var source = new FakeHost();
         ConfigureRuntimeV3Gameplay(source, new TestQueue());
         Check(Status(Semantic("dispatch_action_request")) == "rejected" && source.Dispatches == 0,
@@ -99,7 +95,7 @@ public static partial class ModEntry
         Check(Status(ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()))) == "rejected"
             && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
             "pending expert mutation fences v2 dispatch");
-        _runtimeV4Pending = false;
+        RuntimeV4ExpertSupport.PendingForTest = false;
         Check(Status(Semantic("dispatch_action_request", "after-expert")) == "unknown"
             && source.Dispatches == 1,
             "released expert mutation gate admits the next semantic dispatch");

@@ -12,57 +12,14 @@ internal static class StandaloneProfileSettings
 
 public static partial class ModEntry
 {
-    private const uint RuntimeRequestKindGameplay = 6;
-    private const uint RuntimeRequestKindExpertState = 7;
     private const uint RuntimeRequestKindCoopObservation = 9;
     private const uint RuntimeRequestKindCoopRecover = 13;
-    private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
-    private static bool _runtimeV4Pending;
     private static bool _runtimeCoopPending;
 
-    // This probe supplies only the shared v3 route. Production host wiring, including the
-    // expert bridge, is compiled by GameLoaderProbe.csproj against the actual game host.
-    private static void InitializeRuntimeV3Gameplay() =>
-        _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
-
-    private static void ConfigureRuntimeV3Gameplay(
-        IRuntimeV3HostSource source, IRuntimeV3HostThread thread) =>
-        _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
-            () => _runtimeV2Pending is null && !HasPendingRuntimeV4ExpertMutation()
-                && !HasPendingCoopMutation);
-
-    private static bool HasPendingRuntimeV4ExpertMutation() => _runtimeV4Pending;
-
-    // This source-only composition supplies the production co-op pending predicate without
-    // loading the native adapter. RuntimeV2Contract and the v3 gate must still be exercised
-    // against it so a source-only probe cannot silently drift from the integrated boundary.
+    // The actual RuntimeV3GameplayInterop.cs supplies the v3 callback and helper under test.
+    // This is only the co-op pending source needed by that production partial class; native
+    // co-op itself is intentionally outside this source-only host-candidate probe.
     private static bool HasPendingCoopMutation => _runtimeCoopPending;
-
-    private static bool HasPendingNonExpertMutation() =>
-        _runtimeV2Pending is not null || (_runtimeV3Gameplay?.HasPendingMutation ?? false)
-            || HasPendingCoopMutation;
-
-    private static (int Status, string Response) ProcessRuntimeV3GameplayWork(
-        RuntimeContext context, string body)
-    {
-        if (!TryAuthorizeRuntimeV2Context(context, out string error))
-            return (RuntimeRejected, RuntimeV2PlainError(error));
-        RuntimeV3GameplaySupport support = _runtimeV3Gameplay
-            ?? RuntimeV3GameplaySupport.Unconfigured();
-        string response = support.Handle(context.InstanceId, context.SessionId,
-            context.LeaseId, context.CorrelationId, context.LeaseEpoch, body, out int status);
-        return (status, response);
-    }
-
-    private static (int Status, string Response) ProcessRuntimeV4ExpertWork(
-        RuntimeContext context) =>
-        (RuntimeUnavailable, "{\"error_code\":\"runtime_v4_expert_host_unavailable\"}");
-
-    private static (int Status, string Response) ProcessRuntimeV4ExpertActionWork(
-        RuntimeContext context, string body) =>
-        HasPendingNonExpertMutation()
-            ? (RuntimeRejected, RuntimeV2PlainError("sts2.runtime/operation_in_progress"))
-            : (RuntimeUnavailable, "{\"error_code\":\"runtime_v4_expert_host_unavailable\"}");
 
     // This source-only probe does not implement native co-op; accidental routing must fail.
     private static (int Status, string Response) ProcessCoopNativeWork(
