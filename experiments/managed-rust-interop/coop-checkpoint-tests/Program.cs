@@ -25,24 +25,25 @@ internal static class Program
     {
         TestAction action = new();
         NativePendingOperation pending = NativePendingOperation.ForAction(
-            "op:checkpoint", "end_turn", 3, 7, action, null!);
+            "op:checkpoint", "end_turn", 3, 7, action, null!, "epoch:test",
+            new ulong[] { 101, 202 });
         NetChecksumData local = new() { id = 19, checksum = 0x1234u };
         Check(pending.TryRecordPassiveChecksum(
             8, "finished action execution test-action", local),
             "the exact native action callback binds the local checkpoint");
         pending.RecordRemoteChecksum(202, local);
-        Check(pending.HasMatchingRemoteChecksums(new ulong[] { 101, 202, 303 }, 101) == false,
-            "a missing connected peer cannot be hidden by one matching peer");
-        pending.RecordRemoteChecksum(101, local);
+        Check(pending.HasMatchingRemoteChecksums(new ulong[] { 101 }, 101) == false,
+            "the original participant set is retained when a peer is missing");
         Check(pending.HasMatchingRemoteChecksums(new ulong[] { 101, 202 }, 101),
-            "all connected remote peers must match the local ID and checksum");
+            "all admitted remote peers must match the local ID and checksum");
     }
 
     private static void MismatchedRemoteCheckpointCannotSettle()
     {
         TestAction action = new();
         NativePendingOperation pending = NativePendingOperation.ForAction(
-            "op:mismatch", "end_turn", 3, 7, action, null!);
+            "op:mismatch", "end_turn", 3, 7, action, null!, "epoch:test",
+            new ulong[] { 101, 202 });
         NetChecksumData local = new() { id = 19, checksum = 0x1234u };
         pending.TryRecordPassiveChecksum(8, "finished action execution test-action", local);
         pending.RecordRemoteChecksum(202, new NetChecksumData { id = 19, checksum = 0x9999u });
@@ -54,7 +55,8 @@ internal static class Program
     {
         TestAction action = new();
         NativePendingOperation pending = NativePendingOperation.ForAction(
-            "op:missing", "end_turn", 3, 7, action, null!);
+            "op:missing", "end_turn", 3, 7, action, null!, "epoch:test",
+            new ulong[] { 101, 202 });
         pending.TryRecordPassiveChecksum(8, "finished action execution test-action",
             new NetChecksumData { id = 19, checksum = 0x1234u });
         Check(!pending.HasMatchingRemoteChecksums(new ulong[] { 202 }, 101),

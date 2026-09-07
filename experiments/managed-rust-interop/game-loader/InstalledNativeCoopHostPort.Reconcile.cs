@@ -48,10 +48,18 @@ internal sealed partial class InstalledNativeCoopHostPort
             return null;
         }
 
+        if (!string.Equals(pending.AuthorityEpoch, after.AuthorityEpoch,
+                System.StringComparison.Ordinal))
+        {
+            return null;
+        }
+
         // ChecksumDataMessage is client-to-host in the installed service. Require the exact
-        // native ID/value emitted for this action from every connected remote peer before
-        // exporting a settled effect. The client route cannot satisfy this predicate because
-        // the first-party message is not broadcast back to clients.
+        // native ID/value emitted for this action from every participant admitted with it before
+        // exporting a settled effect. The participant set is retained across a disconnect, so a
+        // missing original peer cannot be hidden by a smaller current connection set. The client
+        // route cannot satisfy this predicate because the first-party message is not broadcast
+        // back to clients.
         RunManager? currentManager = RunManager.Instance;
         INetGameService? currentService = CurrentService(currentManager);
         if (currentService is null

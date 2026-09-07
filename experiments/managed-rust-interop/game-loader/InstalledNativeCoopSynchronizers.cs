@@ -15,7 +15,8 @@ internal sealed class NativePendingOperation
 {
     private NativePendingOperation(string operationId, string effectKind,
         ulong beforeHostGeneration, ulong checksumOrdinalBefore, Func<bool> isComplete,
-        bool canProduceEffect, GameAction? action)
+        bool canProduceEffect, GameAction? action, string authorityEpoch,
+        IReadOnlyCollection<ulong> participantNativeIds)
     {
         OperationId = operationId;
         EffectKind = effectKind;
@@ -24,6 +25,11 @@ internal sealed class NativePendingOperation
         IsComplete = isComplete;
         CanProduceEffect = canProduceEffect;
         Action = action;
+        AuthorityEpoch = authorityEpoch;
+        ParticipantNativeIds = participantNativeIds
+            .Distinct()
+            .OrderBy(id => id)
+            .ToArray();
     }
 
     internal string OperationId { get; }
@@ -33,6 +39,8 @@ internal sealed class NativePendingOperation
     internal Func<bool> IsComplete { get; }
     internal bool CanProduceEffect { get; }
     internal GameAction? Action { get; }
+    internal string AuthorityEpoch { get; }
+    internal IReadOnlyList<ulong> ParticipantNativeIds { get; }
     internal bool Completed { get; set; }
 
     /// <summary>
@@ -76,8 +84,10 @@ internal sealed class NativePendingOperation
     }
 
     /// <summary>
-    /// Requires an exact ID/value match from every currently connected remote native peer. A
-    /// local checksum, a matching ID with a different value, or a message from an old sender is
+    /// Requires an exact ID/value match from every remote native peer that participated when the
+    /// operation was admitted. The current connection set must still contain every admitted
+    /// participant, so a disconnect cannot silently reduce the convergence quorum. A local
+    /// checksum, a matching ID with a different value, or a message from an old sender is
     /// insufficient to settle the operation.
     /// </summary>
     internal bool HasMatchingRemoteChecksums(
@@ -87,9 +97,12 @@ internal sealed class NativePendingOperation
             return false;
 
         NetChecksumData local = LocalChecksum.Value;
+        HashSet<ulong> connected = connectedNativePeerIds.ToHashSet();
         bool foundRemote = false;
-        foreach (ulong peerId in connectedNativePeerIds.Distinct())
+        foreach (ulong peerId in ParticipantNativeIds)
         {
+            if (!connected.Contains(peerId))
+                return false;
             if (peerId == localNativePeerId)
                 continue;
             foundRemote = true;
@@ -106,7 +119,8 @@ internal sealed class NativePendingOperation
 
     internal static NativePendingOperation ForAction(
         string operationId, string actionKind, ulong beforeHostGeneration,
-        ulong checksumOrdinalBefore, GameAction action, Player _)
+        ulong checksumOrdinalBefore, GameAction action, Player _, string authorityEpoch,
+        IReadOnlyCollection<ulong> participantNativeIds)
     {
         return new NativePendingOperation(
             operationId,
@@ -117,12 +131,15 @@ internal sealed class NativePendingOperation
                 && action.CompletionTask.IsCompletedSuccessfully
                 && action.Exception is null,
             canProduceEffect: true,
-            action);
+            action,
+            authorityEpoch,
+            participantNativeIds);
     }
 
     internal static NativePendingOperation ForEvent(
         string operationId, CoopVoteDomain domain, ulong beforeHostGeneration,
-        ulong checksumOrdinalBefore, Player player, int index, EventSynchronizer synchronizer)
+        ulong checksumOrdinalBefore, Player player, int index, EventSynchronizer synchronizer,
+        string authorityEpoch, IReadOnlyCollection<ulong> participantNativeIds)
     {
         return new NativePendingOperation(
             operationId,
@@ -133,12 +150,15 @@ internal sealed class NativePendingOperation
             // This only proves that the local vote was recorded. The host's shared result is
             // selected later by ChooseSharedEventOption and has no public completion witness.
             canProduceEffect: false,
-            action: null);
+            action: null,
+            authorityEpoch,
+            participantNativeIds);
     }
 
     internal static NativePendingOperation ForRelic(
         string operationId, CoopVoteDomain domain, ulong beforeHostGeneration,
-        ulong checksumOrdinalBefore, Player _, Func<ulong> checksumOrdinal)
+        ulong checksumOrdinalBefore, Player _, Func<ulong> checksumOrdinal,
+        string authorityEpoch, IReadOnlyCollection<ulong> participantNativeIds)
     {
         // The installed relic synchronizer exposes no public vote identity. A fresh native
         // checksum is therefore the only honest completion hook available to this adapter.
@@ -150,6 +170,8 @@ internal sealed class NativePendingOperation
             () => checksumOrdinal() > checksumOrdinalBefore,
             // A checksum advance alone cannot identify this relic vote or its awarded result.
             canProduceEffect: false,
-            action: null);
+            action: null,
+            authorityEpoch,
+            participantNativeIds);
     }
 }

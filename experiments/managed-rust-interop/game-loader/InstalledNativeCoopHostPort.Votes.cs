@@ -14,7 +14,7 @@ internal sealed partial class InstalledNativeCoopHostPort
     public CoopNativeDispatchResult SubmitSharedVote(CoopSharedVoteRequest request)
     {
         if (!TryGetLocalPlayer(request.VoterPeerId, out RunManager manager,
-                out _, out Player player, out string error))
+                out INetGameService service, out Player player, out string error))
         {
             return CoopNativeDispatchResult.Rejected(error);
         }
@@ -23,6 +23,13 @@ internal sealed partial class InstalledNativeCoopHostPort
         {
             return CoopNativeDispatchResult.Rejected(error);
         }
+
+        if (_authorityEpoch is null)
+            return CoopNativeDispatchResult.Rejected("native_authority_epoch_unavailable");
+
+        ulong[] participantNativeIds = ConnectedNativePeerIds(service, service.NetId);
+        if (participantNativeIds.Length < 2)
+            return CoopNativeDispatchResult.Rejected("native_peer_roster_unavailable");
 
         try
         {
@@ -48,7 +55,8 @@ internal sealed partial class InstalledNativeCoopHostPort
                     if (!CanRetainPending(request.OperationId)) return CoopNativeDispatchResult.Rejected("native_pending_capacity_exhausted");
                     _pending[request.OperationId] = NativePendingOperation.ForEvent(
                         request.OperationId, request.Domain, _hostSequence, _nativeChecksumOrdinal,
-                        player, vote.Index, manager.EventSynchronizer);
+                        player, vote.Index, manager.EventSynchronizer, _authorityEpoch,
+                        participantNativeIds);
                     // ChooseLocalOption sends the native option message; the EventSynchronizer
                     // consumer records it in GetPlayerVote on this game thread.
                     try
@@ -73,7 +81,8 @@ internal sealed partial class InstalledNativeCoopHostPort
                     if (!CanRetainPending(request.OperationId)) return CoopNativeDispatchResult.Rejected("native_pending_capacity_exhausted");
                     _pending[request.OperationId] = NativePendingOperation.ForRelic(
                         request.OperationId, request.Domain, _hostSequence, _nativeChecksumOrdinal,
-                        player, () => _nativeChecksumOrdinal);
+                        player, () => _nativeChecksumOrdinal, _authorityEpoch,
+                        participantNativeIds);
                     if (vote.SkipRelic)
                     {
                         try

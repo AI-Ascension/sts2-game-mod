@@ -20,7 +20,7 @@ internal sealed partial class InstalledNativeCoopHostPort
     public CoopNativeDispatchResult DispatchLocalAction(CoopLocalActionRequest request)
     {
         if (!TryGetLocalPlayer(request.ActorPeerId, out RunManager manager,
-                out _, out Player player, out string error))
+                out INetGameService service, out Player player, out string error))
         {
             return CoopNativeDispatchResult.Rejected(error);
         }
@@ -35,6 +35,13 @@ internal sealed partial class InstalledNativeCoopHostPort
         {
             return CoopNativeDispatchResult.Rejected("native_action_queue_unavailable");
         }
+
+        if (_authorityEpoch is null)
+            return CoopNativeDispatchResult.Rejected("native_authority_epoch_unavailable");
+
+        ulong[] participantNativeIds = ConnectedNativePeerIds(service, service.NetId);
+        if (participantNativeIds.Length < 2)
+            return CoopNativeDispatchResult.Rejected("native_peer_roster_unavailable");
 
         GameAction action;
         if (request.ActionKind == "end_turn")
@@ -96,7 +103,7 @@ internal sealed partial class InstalledNativeCoopHostPort
         if (!CanRetainPending(request.OperationId)) return CoopNativeDispatchResult.Rejected("native_pending_capacity_exhausted");
         _pending[request.OperationId] = NativePendingOperation.ForAction(
             request.OperationId, request.ActionKind, _hostSequence, _nativeChecksumOrdinal, action,
-            player);
+            player, _authorityEpoch, participantNativeIds);
         try
         {
             // RequestEnqueue is the first-party producer. It serializes the concrete native

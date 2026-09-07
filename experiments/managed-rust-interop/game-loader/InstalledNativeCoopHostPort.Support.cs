@@ -108,6 +108,9 @@ internal sealed partial class InstalledNativeCoopHostPort
             _pending.Clear();
             _remoteChecksums.Clear();
             _nativeChecksumData = null;
+            _nativeChecksumDigest = null;
+            _nativeChecksumOrdinal = 0;
+            _nativeStateDiverged = false;
         }
         _lastAuthorityConnected = connected;
         return _authorityEpoch;
