@@ -25,7 +25,7 @@ dotnet_real="$temp_dir/dotnet.exe"
 printf '#!/bin/sh\nexit 0\n' > "$dotnet_real"
 chmod 0755 "$dotnet_real"
 ln -s -- "$dotnet_real" "$temp_dir/dotnet-link"
-PYTHONPATH="$script_dir" python3 - "$dotnet_real" "$temp_dir/dotnet-link" <<'PY'
+PYTHONPATH="$script_dir" python3 -B - "$dotnet_real" "$temp_dir/dotnet-link" <<'PY'
 import sys
 
 from runtime_receipt_build import resolve_dotnet
