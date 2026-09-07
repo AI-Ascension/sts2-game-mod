@@ -1,0 +1,238 @@
+schema_version = 1
+profile_id = "rust-managed"
+repository = "AI-Ascension/sts2-game-mod"
+owner = "MOD"
+source_bundle = "AI-Ascension/.github"
+source_commit = "ce4ca6dc4a202a276cf5387ae5c43011e3bbe88f"
+source_digest = "sha256:af5c0138aff3356cb1bb520c90e61bfc68efc1f8d4fa6f436570e7e3b231190a"
+distribution = "local"
+scopes = [
+    "rust",
+    "csharp",
+    "shell",
+    "powershell",
+    "json",
+    "contracts",
+]
+
+[checks]
+fast = [
+    "git-diff-check",
+    "standards-validate",
+    "cargo-fmt",
+]
+required = [
+    "repo-policy-strict",
+    "cargo-clippy-production",
+    "cargo-clippy",
+    "cargo-test",
+    "cargo-doc-tests",
+    "artifact-poc-v1",
+    "artifact-runtime-v1",
+    "artifact-runtime-v2",
+    "artifact-runtime-v3",
+    "managed-format",
+    "managed-settings",
+    "managed-abi",
+    "managed-build",
+    "managed-workshop",
+    "managed-settings-probe",
+    "managed-queue",
+    "managed-runtime-contract",
+    "managed-replay",
+    "powershell-syntax",
+    "powershell-syntax-negative",
+    "managed-process-bridge",
+    "managed-windows-bridge-build",
+    "managed-windows-bridge-tests",
+    "managed-host-candidate",
+    "managed-runtime-v3",
+]
+extended = [
+    "managed-session-launcher",
+    "managed-session-restore",
+    "managed-session-bridge",
+    "managed-provider-build",
+    "managed-session-install",
+    "managed-live-authorization",
+    "managed-runtime-addon",
+    "managed-dev-cycle",
+    "managed-session-self-test",
+    "managed-workshop-package",
+    "managed-runtime-lifecycle",
+    "managed-gpu-provision",
+    "managed-gpu-boot",
+]
+
+[checks.commands.artifact-poc-v1]
+command = "sha256sum --check SHA256SUMS"
+target = "protocol-artifact/poc-v1"
+
+[checks.commands.artifact-runtime-v1]
+command = "sha256sum --check SHA256SUMS"
+target = "protocol-artifact/runtime-v1"
+
+[checks.commands.artifact-runtime-v2]
+command = "sha256sum --check SHA256SUMS"
+target = "protocol-artifact/runtime-v2"
+
+[checks.commands.artifact-runtime-v3]
+command = "sha256sum --check SHA256SUMS"
+target = "protocol-artifact/runtime-v3-gameplay"
+
+[checks.commands.cargo-clippy]
+command = "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
+target = "."
+
+[checks.commands.cargo-clippy-production]
+command = "cargo clippy --workspace --lib --bins --all-features --locked -- -D warnings -F clippy::unwrap_used -F clippy::expect_used -F clippy::panic -F clippy::todo -F clippy::unimplemented"
+target = "."
+
+[checks.commands.cargo-doc-tests]
+command = "cargo test --workspace --all-features --doc --locked"
+target = "."
+
+[checks.commands.cargo-fmt]
+command = "cargo fmt --all --check"
+target = "."
+
+[checks.commands.cargo-test]
+command = "cargo test --workspace --all-targets --all-features --locked"
+target = "."
+
+[checks.commands.git-diff-check]
+command = "git diff --check"
+target = "."
+
+[checks.commands.managed-abi]
+command = "bash tools/standards/test-managed-abi.sh"
+target = "."
+
+[checks.commands.managed-build]
+command = "dotnet build experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-dev-cycle]
+command = "bash experiments/managed-rust-interop/dev-cycle.test.sh"
+target = "."
+
+[checks.commands.managed-format]
+command = "bash tools/standards/check-managed.sh format"
+target = "."
+
+[checks.commands.managed-gpu-boot]
+command = "bash experiments/train-gpu-lifecycle/test-boot.sh"
+target = "."
+
+[checks.commands.managed-gpu-provision]
+command = "bash experiments/train-gpu-lifecycle/test-provision.sh"
+target = "."
+
+[checks.commands.managed-host-candidate]
+command = "dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostCandidateProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-live-authorization]
+command = "bash experiments/managed-rust-interop/live-authorization.test.sh"
+target = "."
+
+[checks.commands.managed-process-bridge]
+command = "pwsh -NoProfile -NonInteractive -File experiments/managed-rust-interop/dev-cycle-process-tests.ps1"
+target = "."
+
+[checks.commands.managed-provider-build]
+command = "bash experiments/managed-rust-interop/provider-build.test.sh"
+target = "."
+
+[checks.commands.managed-queue]
+command = "dotnet run --project experiments/managed-rust-interop/queue-tests/RuntimeQueueProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-replay]
+command = "dotnet run --project experiments/managed-rust-interop/replay-tests/ReplayValidationProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-runtime-addon]
+command = "bash experiments/managed-rust-interop/package-runtime-addon.test.sh"
+target = "."
+
+[checks.commands.managed-runtime-contract]
+command = "dotnet run --project experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-runtime-lifecycle]
+command = "bash tools/release/test-runtime-lifecycle.sh"
+target = "."
+
+[checks.commands.managed-runtime-v3]
+command = "dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-session-bridge]
+command = "bash experiments/managed-rust-interop/session-bridge.test.sh"
+target = "."
+
+[checks.commands.managed-session-install]
+command = "bash experiments/managed-rust-interop/session-install.test.sh"
+target = "."
+
+[checks.commands.managed-session-launcher]
+command = "bash experiments/managed-rust-interop/session-launcher.test.sh"
+target = "."
+
+[checks.commands.managed-session-restore]
+command = "bash experiments/managed-rust-interop/session-restore.test.sh"
+target = "."
+
+[checks.commands.managed-session-self-test]
+command = "bash experiments/managed-rust-interop/session-launcher.sh --self-test"
+target = "."
+
+[checks.commands.managed-settings]
+command = "bash tools/standards/test-managed-settings.sh"
+target = "."
+
+[checks.commands.managed-settings-probe]
+command = "dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-windows-bridge-build]
+command = "dotnet build experiments/managed-rust-interop/session-launcher/windows-bridge/SessionWindowsBridge.csproj --configuration Release -warnaserror"
+target = "."
+
+[checks.commands.managed-windows-bridge-tests]
+command = "dotnet run --project experiments/managed-rust-interop/session-launcher/bridge-tests/SessionWindowsBridgeTests.csproj --configuration Release -warnaserror"
+target = "."
+
+[checks.commands.managed-workshop]
+command = "dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release"
+target = "."
+
+[checks.commands.managed-workshop-package]
+command = "bash tools/workshop/test-package-item.sh"
+target = "."
+
+[checks.commands.powershell-syntax]
+command = "pwsh -NoProfile -NonInteractive -File tools/standards/check-powershell.ps1"
+target = "."
+
+[checks.commands.powershell-syntax-negative]
+command = "pwsh -NoProfile -NonInteractive -File tools/standards/check-powershell.ps1 -SelfTest"
+target = "."
+
+[checks.commands.repo-policy-strict]
+command = "cargo run --locked --package repo-policy -- --strict"
+target = "."
+
+[checks.commands.standards-validate]
+command = "cargo +1.97.1 run --locked --manifest-path standards/tools/standards-sync/Cargo.toml -- validate --root ."
+target = "."
+
+[evidence]
+runtime = "unverified"
+deployment = "unverified"
+provider = "unverified"
+
+[exceptions]
+file = ""
+status = "none"
