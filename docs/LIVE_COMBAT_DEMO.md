@@ -4,6 +4,13 @@ This opt-in host adapter runs one real single-player Ironclad combat against the
 alphabetically ordered weak encounter. It uses a fixed visible seed and runtime-v3 gameplay.
 It is a combat demonstration, not full-run navigation or a release compatibility claim.
 
+As of 2026-09-07, build `GameLoaderProbe.csproj` with
+`-p:EnableCombatDemoProbe=true` for this room-entry demonstration. The diagnostic
+`LiveCombatFixture` type is excluded from the default production assembly. Production
+live launches require `STS2_LIVE_CAMPAIGN=1` and retain normal model-selected character
+and map progression; the existing video, hand-choice, and terminal probe build options
+remain separate explicit diagnostics. Do not publish an addon built with any probe option.
+
 The operator must supply a disposable Windows host directory with its own `override.cfg`
 and Godot user directory. Keep proprietary files, logs, saves, and generated addons outside
 this repository. The original Steam installation is not the demo install target.
@@ -42,7 +49,7 @@ For an authorized disposable-host menu check, build `GameLoaderProbe.csproj` wit
 native menu instead of starting combat, checks each display's resolution choices, emits the
 actual controls' selection/apply signals, checks persisted and observed window settings, and
 saves `user://video-menu-probe.png`. Normal builds exclude this probe. Rebuild without the
-property before the combat/relaunch check; retain external logs and compare the actual window
+property and enable `EnableCombatDemoProbe` before the combat/relaunch check; retain external logs and compare the actual window
 report with the preferences saved by the menu. Source-only preference tests do not prove
 native menu behavior or monitor compatibility.
 Set `STS2_VIDEO_PROBE_VERIFY_SAVED=1` for a subsequent probe launch to verify the previously

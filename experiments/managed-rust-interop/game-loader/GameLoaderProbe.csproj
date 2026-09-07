@@ -7,6 +7,16 @@
     <AssemblyName>AIAscensionSTS2GameMod</AssemblyName>
     <RootNamespace>AiAscension.Sts2GameMod.Runtime</RootNamespace>
   </PropertyGroup>
+  <!-- The legacy room-entry combat fixture must never ship in a production addon. -->
+  <PropertyGroup Condition="'$(EnableCombatDemoProbe)' == 'true'">
+    <DefineConstants>$(DefineConstants);STS2_COMBAT_DEMO_PROBE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="LiveCombatFixture.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableCombatDemoProbe)' == 'true'">
+    <Compile Include="LiveCombatFixture.cs" />
+  </ItemGroup>
   <PropertyGroup Condition="'$(EnableVideoMenuProbe)' == 'true'">
     <DefineConstants>$(DefineConstants);STS2_VIDEO_MENU_PROBE</DefineConstants>
   </PropertyGroup>
