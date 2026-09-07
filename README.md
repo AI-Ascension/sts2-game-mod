@@ -3,7 +3,12 @@
   <img alt="AI-Ascension — Inspect how AI requests to a game get fenced, one Rust contract at a time. Runtime: unverified. Deterministic tests: confirmed." src="https://raw.githubusercontent.com/AI-Ascension/.github/main/profile/assets/banner-light.svg" width="100%">
 </picture>
 
-# sts2-game-mod
+# Slay the Spire 2 Mod
+
+Part of [Ascension](https://github.com/AI-Ascension/sts2-harness), the AI
+Ascension flagship toolkit. The repository slug remains `sts2-game-mod`
+until an approved rename; **The Climb — by AI Ascension** presents only the
+host evidence that is actually available.
 
 > **AI-Ascension · tier 1: game-process adapter** — Game-process adapter: a bounded main-thread work queue, versioned ABI check, and HTTP request admission limits.
 >
