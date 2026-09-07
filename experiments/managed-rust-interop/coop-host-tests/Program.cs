@@ -20,6 +20,7 @@ internal static partial class Program
         AcceptedRejoinReconcilesWithoutRetrying();
         AcceptedRejoinWaitsForNativeSettlement();
         RejoinAttemptWindowResetsAfterLateReconnectWithoutExtension();
+        NativeHeartbeatLivenessIsBoundedAndUnknownSafe();
         UnknownRejoinStaysUnknownWithoutNativeWitness();
         RejectedRejoinIsRemembered();
         RejoinMustRetainOriginalAuthorityEpoch();
