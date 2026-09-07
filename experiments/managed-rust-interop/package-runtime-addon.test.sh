@@ -46,6 +46,8 @@ setup_case() {
     loader="$PACKAGE_TEST_ROOT/experiments/managed-rust-interop/game-loader"
     mkdir -p "$loader" "$PACKAGE_TEST_DATA" "$PACKAGE_TEST_ROOT/tools"
     cp "$source_dir/package-runtime-addon.sh" "$loader/../package-runtime-addon.sh"
+    cp "$source_dir/build-native-release.sh" "$loader/../build-native-release.sh"
+    chmod +x "$loader/../build-native-release.sh"
     printf '{}' > "$loader/mod_manifest.json"
     printf 'synthetic reference' > "$PACKAGE_TEST_DATA/sts2.dll"
     printf 'synthetic reference' > "$PACKAGE_TEST_DATA/GodotSharp.dll"
