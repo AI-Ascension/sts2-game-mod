@@ -1,5 +1,5 @@
 [package]
-name = "sts2-mod-http-adapter"
+name = "sts2-game-mod-http-adapter"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

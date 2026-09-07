@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use sts2_mod_http_adapter::{
+use sts2_game_mod_http_adapter::{
     HttpAdapter, HttpMethod, HttpPort, HttpRequest, HttpResponse, PAYLOAD_TOO_LARGE,
 };
 

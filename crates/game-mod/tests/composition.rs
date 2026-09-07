@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use sts2_game_mod::ModRuntime;
-use sts2_mod_host::{
+use sts2_game_mod_host::{
     AbiDescriptor, AbiPort, HostError, HostPort, HostReceipt, HostRequest, HostSnapshot,
 };
-use sts2_mod_http_adapter::{HttpMethod, HttpRequest, PAYLOAD_TOO_LARGE};
+use sts2_game_mod_http_adapter::{HttpMethod, HttpRequest, PAYLOAD_TOO_LARGE};
 
 #[derive(Debug, Default)]
 struct FakeHost {
@@ -16,7 +16,7 @@ impl HostPort for FakeHost {
     fn snapshot(&self) -> Result<HostSnapshot, HostError> {
         Ok(HostSnapshot {
             generation: self.generation,
-            ready: true,
+            is_ready: true,
         })
     }
 
@@ -56,7 +56,7 @@ fn http_admission_reaches_fake_host_only_after_main_thread_pump() {
         runtime.snapshot(),
         Ok(HostSnapshot {
             generation: 1,
-            ready: true,
+            is_ready: true,
         })
     );
 }

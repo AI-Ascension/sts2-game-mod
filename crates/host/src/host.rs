@@ -26,7 +26,7 @@ pub struct HostSnapshot {
     /// Host generation associated with the projection.
     pub generation: u64,
     /// Whether the host currently accepts work.
-    pub ready: bool,
+    pub is_ready: bool,
 }
 
 /// Result of host-side acceptance or completion.

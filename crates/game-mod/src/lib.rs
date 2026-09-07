@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use sts2_mod_host::{
+use sts2_game_mod_host::{
     AbiError, AbiPort, HostDispatcher, HostError, HostPort, HostReceipt, HostRequest, QueueError,
     validate_abi,
 };
-use sts2_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
+use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
 /// Target-owned composition of host admission, HTTP bounds, and ABI validation.
 #[derive(Debug)]
@@ -44,7 +44,7 @@ impl<H> ModRuntime<H> {
     }
 
     /// Returns a host-owned state projection.
-    pub fn snapshot(&self) -> Result<sts2_mod_host::HostSnapshot, HostError>
+    pub fn snapshot(&self) -> Result<sts2_game_mod_host::HostSnapshot, HostError>
     where
         H: HostPort,
     {

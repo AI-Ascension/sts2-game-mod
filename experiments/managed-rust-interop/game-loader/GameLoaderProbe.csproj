@@ -4,7 +4,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AssemblyName>Sts2Harness.GameLoaderProbe</AssemblyName>
+    <AssemblyName>Sts2.GameMod.ManagedInterop.GameLoaderProbe</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,4 +21,3 @@
            Text="STS2GameDataDir does not contain sts2.dll: $(STS2GameDataDir)" />
   </Target>
 </Project>
-
