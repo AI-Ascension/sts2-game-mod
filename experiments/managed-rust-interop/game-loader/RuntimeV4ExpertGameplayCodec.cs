@@ -15,7 +15,7 @@ internal static class RuntimeV4ExpertGameplayCodec
     internal const string SchemaSource = "schemas/runtime-v4-expert.schema.json";
     internal const string Generator = "hand-authored";
     internal const string Profile = "expert-state";
-    internal const string SchemaDigest = "f0786b039396043a441323447ac44f7cc4c218071bc477722f3ec992ab295a8a";
+    internal const string SchemaDigest = "0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42";
 
     internal static bool TrySerialize(
         RuntimeV4ExpertGameplayObservation observation,

@@ -25,7 +25,10 @@ internal static class NegativeCases
         try
         {
             try { Directory.CreateSymbolicLink(link, root); }
-            catch (Exception exception) when (exception is UnauthorizedAccessException or PlatformNotSupportedException)
+            catch (Exception exception) when (
+                exception is UnauthorizedAccessException
+                || exception is PlatformNotSupportedException
+                || exception is IOException && exception.HResult == unchecked((int)0x80070522))
             {
                 Console.WriteLine("UNVERIFIED: symlink test unavailable: " + exception.GetType().Name);
                 return;

@@ -15,9 +15,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
-    // The additive v4 transport currently exposes observations only. Keep its mutation owner
-    // generation fenced and host-thread bound so a future v4 action route cannot bypass the
-    // existing v3 dispatch/reconciliation rules or reinterpret a stale potion identity.
+    // Keep the additive v4 potion mutation owner generation fenced and host-thread bound so
+    // the action route cannot bypass host legality or reinterpret a stale potion identity.
     private readonly Dictionary<RuntimeV3OperationKey, ExpertPotionPending> _expertPotionPending = new();
 
     private sealed record ExpertPotionPending(
