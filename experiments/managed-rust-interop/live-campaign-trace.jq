@@ -69,4 +69,10 @@ to_entries as $rows
   and all([$post[0].value, $capture[0].value][];
     .provider_calls == 0 and .game_actions == 0 and .delivered_to_provider == false)
   and $finish[0].value.verified_settlements == 2
+  and $finish[0].key == ($rows | length) - 1
+  and all($rows[] | select(.value.event == "action_receipt");
+    (.value.action_id == $d[0].value.action_id and .value.operation_id == $o1[0])
+    or (.value.action_id == $d[1].value.action_id and .value.operation_id == $o2[0]))
+  and all($rows[] | select(.value.event == "operation_wait_completed");
+    .value.operation_id == $o1[0] or .value.operation_id == $o2[0])
   and all($rows[]; .value.event != "campaign_map_post_capture_failed")
