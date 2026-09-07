@@ -10,8 +10,9 @@ fi
 game_data_input=$1
 output_dir=$2
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+cd -- "$repo_root"
 managed_project="$repo_root/experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj"
-native_manifest="$repo_root/experiments/managed-rust-interop/native/Cargo.toml"
+native_build_helper="$repo_root/experiments/managed-rust-interop/build-native-release.sh"
 managed_build_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2GameMod.dll"
 manifest="$repo_root/experiments/managed-rust-interop/game-loader/mod_manifest.json"
 
@@ -50,12 +51,11 @@ case "$dotnet_resolved" in
         ;;
 esac
 
-# Ask Cargo for its effective output root: environment and Cargo configuration
-# may redirect it away from this checkout's target directory.
-native_target_dir=$(cargo metadata --locked --offline --no-deps --format-version 1 \
-    --manifest-path "$native_manifest" | jq -er '.target_directory | select(type == "string" and startswith("/"))')
-native_build_artifact="$native_target_dir/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll"
-cargo build --locked --release --target x86_64-pc-windows-gnu --manifest-path "$native_manifest"
+if [[ ! -x "$native_build_helper" ]]; then
+    printf 'native release build helper is unavailable: %s\n' "$native_build_helper" >&2
+    exit 1
+fi
+native_build_artifact=$("$native_build_helper" windows-x86_64)
 "$dotnet_command" restore "$managed_project_msbuild" -p:STS2GameDataDir="$game_data_msbuild"
 "$dotnet_command" build "$managed_project_msbuild" --configuration Release \
     -p:STS2GameDataDir="$game_data_msbuild" --no-restore
