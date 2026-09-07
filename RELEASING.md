@@ -63,7 +63,7 @@ path explicitly carries `-C link-arg=-Wl,--no-insert-timestamp` because encoded 
 flags replace target-table flags. The helper rejects non-empty ambient `RUSTFLAGS` and
 `CARGO_ENCODED_RUSTFLAGS` rather than silently dropping an unreviewed override, and fails if
 either producer path remains in the native artifact. `package-runtime-addon.sh` invokes the
-helper for its Windows package after changing to the pinned checkout root.
+helper for its Windows package; the helper changes to the pinned checkout root internally.
 
 Canonical native checks are:
 

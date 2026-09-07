@@ -10,7 +10,6 @@ fi
 game_data_input=$1
 output_dir=$2
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-cd -- "$repo_root"
 managed_project="$repo_root/experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj"
 native_build_helper="$repo_root/experiments/managed-rust-interop/build-native-release.sh"
 managed_build_artifact="$repo_root/experiments/managed-rust-interop/game-loader/bin/Release/net9.0/AIAscensionSTS2GameMod.dll"

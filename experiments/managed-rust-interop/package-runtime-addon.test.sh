@@ -16,10 +16,16 @@ case ${0##*/} in
         target=${CARGO_TARGET_DIR:-${PACKAGE_TEST_CONFIG_TARGET:-"$PACKAGE_TEST_ROOT/target"}}
         [[ $target == /* ]] || target="$PWD/$target"
         if [[ $1 == metadata ]]; then
+            if [[ ${PACKAGE_TEST_RECORD_CARGO_HOME:-false} == true ]]; then
+                printf '%s\n' "${CARGO_HOME-}" >> "$PACKAGE_TEST_ROOT/cargo-home-values"
+            fi
             jq -n --arg target "$target" '{target_directory: $target}'
             exit 0
         fi
         [[ $1 == build ]]
+        if [[ ${PACKAGE_TEST_RECORD_CARGO_HOME:-false} == true ]]; then
+            printf '%s\n' "${CARGO_HOME-}" >> "$PACKAGE_TEST_ROOT/cargo-home-values"
+        fi
         native="$target/x86_64-pc-windows-gnu/release"
         mkdir -p "$native"
         printf 'synthetic native' > "$native/ai_ascension_sts2_game_mod_native.dll"
@@ -60,7 +66,7 @@ setup_case() {
         ln -s "$test_script" "$PACKAGE_TEST_ROOT/tools/$tool"
     done
     export PATH="$PACKAGE_TEST_ROOT/tools:$original_path"
-    unset DOTNET_COMMAND CARGO_TARGET_DIR PACKAGE_TEST_CONFIG_TARGET
+    unset DOTNET_COMMAND CARGO_TARGET_DIR PACKAGE_TEST_CONFIG_TARGET CARGO_HOME PACKAGE_TEST_RECORD_CARGO_HOME
 }
 
 check_case() {
@@ -87,6 +93,41 @@ check_case() {
         [[ -s "$PACKAGE_TEST_ROOT/output/$artifact" ]]
     done
     [[ $(< "$PACKAGE_TEST_ROOT/output/AIAscensionSTS2GameModNative.dll") == 'synthetic native' ]]
+}
+
+check_relative_caller_case() {
+    local phase found
+    mkdir -p "$PACKAGE_TEST_ROOT/caller"
+    export DOTNET_COMMAND='../tools/dotnet'
+    (cd "$PACKAGE_TEST_ROOT/caller" && bash "$loader/../package-runtime-addon.sh" \
+        '../fake host data' '../output') > "$PACKAGE_TEST_ROOT/result"
+    for phase in restore build; do
+        mapfile -d '' -t args < "$PACKAGE_TEST_ROOT/$phase.args"
+        [[ ${args[0]} == "$phase" ]]
+        [[ ${args[1]} == "$loader/GameLoaderProbe.csproj" ]]
+        found=false
+        for arg in "${args[@]}"; do
+            if [[ $arg == "-p:STS2GameDataDir=$PACKAGE_TEST_DATA" ]]; then found=true; fi
+        done
+        [[ $found == true ]]
+    done
+    [[ $(find "$PACKAGE_TEST_ROOT/output" -type f | wc -l) == 3 ]]
+    [[ $(< "$PACKAGE_TEST_ROOT/output/AIAscensionSTS2GameModNative.dll") == 'synthetic native' ]]
+}
+
+check_relative_helper_cache_case() {
+    local expected
+    mkdir -p "$PACKAGE_TEST_ROOT/helper-caller/relative cargo home"
+    export CARGO_HOME='relative cargo home'
+    export PACKAGE_TEST_RECORD_CARGO_HOME=true
+    (cd "$PACKAGE_TEST_ROOT/helper-caller" && bash "$loader/../build-native-release.sh" \
+        windows-x86_64) > "$PACKAGE_TEST_ROOT/helper-result"
+    expected="$PACKAGE_TEST_ROOT/helper-caller/relative cargo home"
+    mapfile -t seen < "$PACKAGE_TEST_ROOT/cargo-home-values"
+    [[ ${#seen[@]} == 2 ]]
+    [[ ${seen[0]} == "$expected" && ${seen[1]} == "$expected" ]]
+    [[ $(< "$PACKAGE_TEST_ROOT/helper-result") == \
+        "$PACKAGE_TEST_ROOT/target/x86_64-pc-windows-gnu/release/ai_ascension_sts2_game_mod_native.dll" ]]
 }
 
 stale_default_artifact() {
@@ -123,6 +164,10 @@ setup_case cargo-config-target
 export PACKAGE_TEST_CONFIG_TARGET="$test_root/configured cargo output"
 stale_default_artifact
 check_case "$PACKAGE_TEST_DATA" '' 0
+setup_case relative-caller
+check_relative_caller_case
+setup_case relative-helper-cache
+check_relative_helper_cache_case
 setup_case missing-sdk
 export DOTNET_COMMAND="$PACKAGE_TEST_ROOT/tools/missing-dotnet"
 if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TEST_ROOT/output" \
@@ -132,4 +177,4 @@ if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TES
 fi
 [[ $(< "$PACKAGE_TEST_ROOT/error") == *'dotnet command is unavailable'* ]]
 [[ ! -e "$PACKAGE_TEST_ROOT/restore.args" && ! -e "$PACKAGE_TEST_ROOT/output" ]]
-printf 'package-runtime-addon: 10 synthetic path-selection tests passed\n'
+printf 'package-runtime-addon: 12 synthetic path-selection and regression tests passed\n'

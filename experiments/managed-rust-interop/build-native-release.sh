@@ -53,6 +53,7 @@ else
     cargo_home=$(cd -- "$invocation_root/$cargo_home_input" && pwd -P) \
         || fail "relative CARGO_HOME does not name a directory: $cargo_home_input"
 fi
+export CARGO_HOME="$cargo_home"
 
 # Run from the checkout root so rustup selects the pinned rust-toolchain.toml even
 # when this helper is called through an absolute path from another working directory.
