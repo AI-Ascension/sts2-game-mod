@@ -24,10 +24,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Verify semantic boundary remains fail-closed
+        env:
+          BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
         run: |
           git diff --check
+          if [[ "$BASE_REVISION" =~ ^[0-9a-f]{40}$ && "$BASE_REVISION" != 0000000000000000000000000000000000000000 ]]; then
+            git diff --check "$BASE_REVISION" HEAD
+          else
+            git show --format= --check HEAD
+          fi
           if grep -REn '\b(unwrap|expect|todo!|unimplemented!)\b|panic!' crates/game-mod/src; then exit 1; fi
           if grep -En 'raw_memory|random_state|future_rng|host_object|process_command|screen_coordinate|input_event' experiments/managed-rust-interop/game-loader/RuntimeV3GameplayObservation.cs; then exit 1; fi
 
