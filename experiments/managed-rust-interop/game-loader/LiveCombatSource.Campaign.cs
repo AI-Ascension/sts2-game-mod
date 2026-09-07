@@ -59,7 +59,7 @@ internal sealed partial class LiveCombatSource
     };
 
     private static string? CurrentNodeId(RunState run) => run.CurrentMapCoord is { } coord
-        ? $"map:{run.CurrentActIndex}:{coord.row}:{coord.col}" : null;
+        ? MapNodeId(run.CurrentActIndex, coord) : null;
 
     private static IEnumerable<Node> Descendants(Node node)
     {
@@ -75,7 +75,7 @@ internal sealed partial class LiveCombatSource
             && point.State == MapPointState.Travelable).ToArray() : Array.Empty<NMapPoint>();
 
     private static string MapId(NMapPoint point, RunState run) =>
-        $"map:{run.CurrentActIndex}:{point.Point.coord.row}:{point.Point.coord.col}:{point.Point.PointType}";
+        MapNodeId(run.CurrentActIndex, point.Point.coord);
 
     private static NEventOptionButton[] EventButtons() => NEventRoom.Instance?.Layout is { } layout
         ? layout.OptionButtons.Where(button => button.IsVisibleInTree() && button.IsEnabled
@@ -102,7 +102,9 @@ internal sealed partial class LiveCombatSource
             _ => null
         };
         return kind == null ? Array.Empty<LegalActionReference>() : observation.StateValues.Select(value =>
-            new LegalActionReference($"{kind}:{observation.Generation}:{value}", kind, value, null,
-                observation.Generation)).ToArray();
+            new LegalActionReference(kind == "select_map_node"
+                    ? MapHostActionId(observation.Generation, value)
+                    : $"{kind}:{observation.Generation}:{value}",
+                kind, value, null, observation.Generation)).ToArray();
     }
 }

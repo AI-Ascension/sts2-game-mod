@@ -177,6 +177,15 @@ synthetic completion events and do not promote the licensed-host compatibility r
 The co-op helpers are not connected to the managed gameplay request path; their
 source-only validation does not establish multiplayer mutation fencing.
 
+The additive `runtime-map-v1` profile is pinned to schema digest
+`6340f3cbe6c1b5728144fe89fdfdf8645acf2f59a77c0e0c30ebfeafc77515d8` and is served by
+`GET /api/map/v1/snapshot`. The managed host projection compiles against the recorded STS2
+v0.107.1 Windows x86-64 assemblies (`sts2.dll` SHA-256
+`a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`) and has source-level
+synthetic coverage for bounded graph projection and fair-play pairing. This is build and test
+evidence only; map visibility outside the open UI, loader discovery, live snapshots, and settled
+navigation remain unverified.
+
 ## Workshop package profile
 
 The first-party Workshop package has its own compatibility dimensions: consumer App ID, published

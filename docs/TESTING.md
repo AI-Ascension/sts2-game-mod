@@ -173,6 +173,27 @@ produce no in-game overlay. The observed marker, overlay state, and all host inp
 recorded in a separate evidence report; this is not part of ordinary CI. The completed report is
 [`docs/evidence/runtime-v1-host-live-20260902.md`](evidence/runtime-v1-host-live-20260902.md).
 
+## Runtime-map-v1 host projection
+
+The additive map profile remains separate from the closed Runtime-v3 gameplay root. Its native
+route is `GET /api/map/v1/snapshot`; the host maps the full public `ActMap` graph into bounded
+owned values, preserves overlapping coordinates and disconnected components, and binds only the
+same-generation legal map catalog. A closed or unsupported map returns an explicit unavailable
+snapshot. No map read opens, scrolls, selects, or navigates the host UI.
+
+Run the host-independent managed probe with the Windows .NET SDK:
+
+~~~text
+dotnet build experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+~~~
+
+The probe covers canonical ordering, UTF-8 request bounds, unavailable/pre-start positions,
+duplicate coordinates, cyclic and duplicate identities, independent graph/host/action-option
+identities, current-node binding rejection, and paired hidden-state projections. The exact-host
+loader build remains separate evidence; neither build proves loader discovery, a live map
+snapshot, off-screen UI behavior, or settled gameplay navigation.
+
 ## Settings-specific verification
 
 The AI-Ascension addon owns its settings tab and does not require a ModConfig or other settings
@@ -425,8 +446,8 @@ provenance, stale digests and cross-field contradictions. Rust recovery tests al
 exercise operation-bound completion, refreshed correlation, uncertain dispatch and
 JSON-safe generation exhaustion without fake mutation.
 
-Native loopback tests exercise all six Runtime-v3 method/route mappings against all six request
-kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
+Native loopback tests exercise all six Runtime-v3 method/route mappings plus the additive map
+snapshot route against all six request kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
 counter establishes that rejected combinations never cross the ABI and accepted combinations
 retain gameplay callback kind 6 alongside v2 kinds 3–5. These are HTTP admission tests, not full message conformance
 or managed/live-host mutation evidence; the existing auth and absolute-deadline tests still run.

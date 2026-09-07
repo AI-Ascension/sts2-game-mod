@@ -14,7 +14,8 @@ using MegaCrit.Sts2.Core.Runs;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
-internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
+internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread,
+    IRuntimeMapV1HostSource
 {
     private readonly int _threadId = Environment.CurrentManagedThreadId;
     private readonly Dictionary<CardModel, string> _cardIds = new();
@@ -75,7 +76,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         result = ProjectVictory(result);
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
-        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));
+        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result))
+            + "|" + MapSurfaceFingerprint();
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }

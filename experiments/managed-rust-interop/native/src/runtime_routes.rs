@@ -6,6 +6,8 @@ use super::{
     dispatch_with_body, http,
 };
 
+const CALLBACK_RUNTIME_MAP: u32 = 7;
+
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
     request: &http::Request,
@@ -40,6 +42,9 @@ pub(super) fn dispatch(
                 operation_id,
                 stream,
             )
+        }
+        ("GET", "/api/map/v1/snapshot") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_MAP, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

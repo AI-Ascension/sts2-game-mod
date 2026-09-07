@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/RuntimeMapV1Contract.cs" Link="RuntimeMapV1Contract.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Model.cs" Link="RuntimeMapV1Model.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Codec.cs" Link="RuntimeMapV1Codec.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Support.cs" Link="RuntimeMapV1Support.cs" />
+    <Compile Include="../game-loader/PrivilegedFieldGuard.cs" Link="PrivilegedFieldGuard.cs" />
+  </ItemGroup>
+</Project>
