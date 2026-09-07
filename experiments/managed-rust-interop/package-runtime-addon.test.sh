@@ -13,6 +13,7 @@ case ${0##*/} in
         fi
         exit 0 ;;
     cargo)
+        printf '%s\n' "${SOURCE_DATE_EPOCH:-}" > "$PACKAGE_TEST_ROOT/source-date-epoch"
         target=${CARGO_TARGET_DIR:-${PACKAGE_TEST_CONFIG_TARGET:-"$PACKAGE_TEST_ROOT/target"}}
         [[ $target == /* ]] || target="$PWD/$target"
         if [[ $1 == metadata ]]; then
@@ -20,14 +21,35 @@ case ${0##*/} in
             exit 0
         fi
         [[ $1 == build ]]
-        native="$target/x86_64-pc-windows-gnu/release"
+        native_target=x86_64-pc-windows-gnu
+        for ((index = 1; index < $#; index++)); do
+            if [[ ${!index} == --target ]]; then
+                next=$((index + 1))
+                native_target=${!next}
+            fi
+        done
+        native="$target/$native_target/release"
         mkdir -p "$native"
-        printf 'synthetic native' > "$native/ai_ascension_sts2_game_mod_native.dll"
+        if [[ $native_target == x86_64-unknown-linux-gnu ]]; then
+            printf 'synthetic native' > "$native/libai_ascension_sts2_game_mod_native.so"
+        else
+            printf 'synthetic native' > "$native/ai_ascension_sts2_game_mod_native.dll"
+        fi
         exit 0 ;;
     dotnet|dotnet.exe)
         printf '%s\0' "$@" > "$PACKAGE_TEST_ROOT/$1.args"
         if [[ $1 == build ]]; then
-            managed="$PACKAGE_TEST_ROOT/experiments/managed-rust-interop/game-loader/bin/Release/net9.0"
+            managed=''
+            for argument in "$@"; do
+                if [[ $argument == -p:BaseOutputPath=* ]]; then
+                    managed=${argument#-p:BaseOutputPath=}
+                fi
+            done
+            if [[ $managed == WINDOWS::* ]]; then
+                managed="$PACKAGE_TEST_ROOT/target/managed/windows-x86_64"
+            fi
+            [[ -n "$managed" ]]
+            managed=${managed%/}/Release/net9.0
             mkdir -p "$managed"
             printf 'synthetic managed' > "$managed/AIAscensionSTS2GameMod.dll"
         fi
@@ -62,9 +84,18 @@ setup_case() {
 }
 
 check_case() {
-    local input=$1 prefix=$2 expected_conversions=$3 phase found
-    (cd "$PACKAGE_TEST_ROOT" && bash "$loader/../package-runtime-addon.sh" \
-        "$input" "$PACKAGE_TEST_ROOT/output") > "$PACKAGE_TEST_ROOT/result"
+    local input=$1 prefix=$2 expected_conversions=$3 platform=${4:-windows-x86_64} phase found native_name
+    local -a package_args
+    native_name=AIAscensionSTS2GameModNative.dll
+    [[ $platform == linux-x86_64 ]] && native_name=libAIAscensionSTS2GameModNative.so
+    if [[ $platform == windows-x86_64 ]]; then
+        package_args=("$input" "$PACKAGE_TEST_ROOT/output")
+    else
+        package_args=(--platform "$platform" "$input" "$PACKAGE_TEST_ROOT/output")
+    fi
+    (cd "$PACKAGE_TEST_ROOT" && bash "$loader/../package-runtime-addon.sh" "${package_args[@]}") \
+        > "$PACKAGE_TEST_ROOT/result"
+    [[ $(< "$PACKAGE_TEST_ROOT/source-date-epoch") == 0 ]]
     for phase in restore build; do
         mapfile -d '' -t args < "$PACKAGE_TEST_ROOT/$phase.args"
         [[ ${args[0]} == "$phase" ]]
@@ -81,10 +112,10 @@ check_case() {
         [[ $(wc -l < "$PACKAGE_TEST_ROOT/conversions") == "$expected_conversions" ]]
     fi
     [[ $(find "$PACKAGE_TEST_ROOT/output" -type f | wc -l) == 3 ]]
-    for artifact in AIAscensionSTS2GameMod.dll AIAscensionSTS2GameMod.json AIAscensionSTS2GameModNative.dll; do
+    for artifact in AIAscensionSTS2GameMod.dll AIAscensionSTS2GameMod.json "$native_name"; do
         [[ -s "$PACKAGE_TEST_ROOT/output/$artifact" ]]
     done
-    [[ $(< "$PACKAGE_TEST_ROOT/output/AIAscensionSTS2GameModNative.dll") == 'synthetic native' ]]
+    [[ $(< "$PACKAGE_TEST_ROOT/output/$native_name") == 'synthetic native' ]]
 }
 
 stale_default_artifact() {
@@ -104,11 +135,11 @@ setup_case native-unc-input
 check_case '\\server\Fake Host' '' 1
 setup_case windows-sdk
 export DOTNET_COMMAND="$PACKAGE_TEST_ROOT/tools/dotnet.exe"
-check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 2
+check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 3
 setup_case windows-symlink
 rm -- "$PACKAGE_TEST_ROOT/tools/dotnet"
 ln -s dotnet.exe "$PACKAGE_TEST_ROOT/tools/dotnet"
-check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 2
+check_case "$PACKAGE_TEST_DATA" 'WINDOWS::' 3
 setup_case redirected-absolute-target
 export CARGO_TARGET_DIR="$test_root/alternate cargo output"
 stale_default_artifact
@@ -121,6 +152,8 @@ setup_case cargo-config-target
 export PACKAGE_TEST_CONFIG_TARGET="$test_root/configured cargo output"
 stale_default_artifact
 check_case "$PACKAGE_TEST_DATA" '' 0
+setup_case linux-target
+check_case "$PACKAGE_TEST_DATA" '' 0 linux-x86_64
 setup_case missing-sdk
 export DOTNET_COMMAND="$PACKAGE_TEST_ROOT/tools/missing-dotnet"
 if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TEST_ROOT/output" \
@@ -130,4 +163,4 @@ if bash "$loader/../package-runtime-addon.sh" "$PACKAGE_TEST_DATA" "$PACKAGE_TES
 fi
 [[ $(< "$PACKAGE_TEST_ROOT/error") == *'dotnet command is unavailable'* ]]
 [[ ! -e "$PACKAGE_TEST_ROOT/restore.args" && ! -e "$PACKAGE_TEST_ROOT/output" ]]
-printf 'package-runtime-addon: 10 synthetic path-selection tests passed\n'
+printf 'package-runtime-addon: 11 synthetic path-selection tests passed\n'

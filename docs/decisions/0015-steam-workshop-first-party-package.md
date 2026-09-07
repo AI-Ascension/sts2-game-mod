@@ -2,16 +2,16 @@
 
 ## Status
 
-Accepted for the first-party package and validation slice. Steam publication, subscription,
-download callbacks, and host discovery remain unverified until an authorized Steam/STS2 runtime
-test is performed.
+Accepted for the first-party package, guarded create helper, and validation slice. Steam
+publication, subscription, download callbacks, and host discovery remain unverified until an
+authorized Steam/STS2 runtime test is performed.
 
 ## Context
 
 The managed runtime addon is now a real game-facing package with a paired managed assembly and
 native companion. Steam Workshop represents an item as a folder of files and downloads subscribed
-items through the Steam client. The target has no Steamworks SDK, App ID, published file ID, or
-safe reason to load arbitrary third-party executable content.
+items through the Steam client. The target does not retain an embedded Steamworks SDK, App ID, or
+published file ID, and has no safe reason to load arbitrary third-party executable content.
 
 The official implementation flow is documented at:
 <https://partner.steamgames.com/doc/features/workshop/implementation>.
@@ -22,11 +22,12 @@ sts2-game-mod owns the Workshop package contract, package staging, and runtime c
 The first-party item is an executable package because it distributes the existing managed/native
 mod. Runtime acceptance is restricted to an explicitly configured first-party App ID and published
 file ID, an exact package identity, the exact supported game/platform/loader contract, and the
-allowlisted files:
+platform-specific allowlisted files:
 
 - AIAscensionSTS2GameMod.dll;
 - AIAscensionSTS2GameMod.json; and
-- AIAscensionSTS2GameModNative.dll.
+- AIAscensionSTS2GameModNative.dll on Windows x86-64; or
+- libAIAscensionSTS2GameModNative.so on Linux x86-64.
 
 The item also contains sts2-workshop-manifest.json and SHA256SUMS. These metadata files are
 required package material but are not executable payload. The manifest is
@@ -34,9 +35,14 @@ sts2-workshop-manifest-v1; it records package and compatibility identities, sort
 sizes, SHA-256 digests, a deterministic content digest, and source revision.
 
 The Rust sts2-game-mod Workshop module owns pure manifest shape validation and Steam install-state
-decisions. The managed loader owns actual directory inspection, reparse-point rejection, file
-hashing, content-digest verification, and the final handoff gate. Steam callback translation remains
-a future adapter seam; no Steam ABI is fabricated while the SDK is absent.
+decisions. The managed loader owns actual directory inspection, reparse-point rejection, file and
+SHA256SUMS inventory hashing, content-digest verification, and the final handoff gate. The versioned
+Linux x86-64 `tools/workshop/lifecycle/ugc-create-item` helper owns a guarded empty-item
+`ISteamUGC::CreateItem` operation using an operator-supplied native Steam API library. It verifies
+the library digest, account/environment preconditions, and the pinned Linux callback ABI before
+calling the flat API exports, and records unknown outcomes when transport or callback settlement is
+uncertain. The helper does not embed the Steamworks SDK or credentials; upload and update remain
+guarded SteamCMD VDF operations.
 
 The target-local tools/workshop/package-item.sh accepts an already-built payload, creates the
 deterministic manifest/checksum inventory, and emits a Steam Workshop VDF beside the content

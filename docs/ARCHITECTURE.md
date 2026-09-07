@@ -351,16 +351,18 @@ states to wait/ready/reject decisions, and compares an item against an exact pac
 The managed loader's WorkshopContent.cs is the filesystem and loader gate. When a
 sts2-workshop-manifest.json is present beside the managed assembly, the loader requires the
 operator-configured App ID, published file ID, game version, and platform, rejects unexpected
-entries and reparse points, verifies payload sizes and SHA-256 values, and checks the deterministic
-content digest before loading the native companion. A package without this marker remains
+entries and reparse points, verifies payload sizes, payload and SHA256SUMS SHA-256 values, and checks
+the deterministic content digest before loading the native companion. A package without this marker remains
 compatible with the existing local/load-smoke path; a marked package fails closed when its policy
 is absent or mismatched.
 
 tools/workshop/package-item.sh stages only the exact managed assembly, loader manifest, and native
 companion, emits the manifest/checksum inventory, and writes the operator-only Steam Workshop VDF
-outside the content directory. The Steam API callback/initialization adapter is intentionally not
-implemented without the Steamworks SDK. Steam publication, subscription/download behavior, and
-Workshop-driven game discovery are therefore still unverified.
+outside the content directory. The versioned `tools/workshop/lifecycle/ugc-create-item` helper
+provides a guarded empty-item `ISteamUGC::CreateItem` path from an operator-supplied native Steam
+API library, with exact library hashing, account/environment preconditions, and a pinned Linux
+callback ABI check. It carries no Steamworks SDK or credentials. Steam publication, subscription
+and download behavior, and Workshop-driven game discovery remain unverified.
 
 ## Review correction (2026-09-04)
 

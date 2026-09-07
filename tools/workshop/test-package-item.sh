@@ -64,6 +64,41 @@ fi
 
 printf '%s\n' 'Workshop package tool test passed.'
 
+linux_payload="$temp_dir/linux-payload"
+linux_output="$temp_dir/linux-workshop-item"
+mkdir -p "$linux_payload"
+printf 'synthetic managed payload\n' > "$linux_payload/AIAscensionSTS2GameMod.dll"
+printf '{"id":"synthetic-loader"}\n' > "$linux_payload/AIAscensionSTS2GameMod.json"
+printf 'synthetic linux native payload\n' > "$linux_payload/libAIAscensionSTS2GameModNative.so"
+bash "$script_dir/package-platform-item.sh" \
+    linux-x86_64 "$linux_payload" "$linux_output" 480 123456790 0.107.1 0.1.0 commit-123 "$preview_file"
+
+[[ -f "$linux_output/libAIAscensionSTS2GameModNative.so" ]]
+[[ ! -e "$linux_output/AIAscensionSTS2GameModNative.dll" ]]
+linux_file_count=$(find "$linux_output" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d '[:space:]')
+[[ "$linux_file_count" == 5 ]]
+sha256sum --check --strict <(sed "s#  #  $linux_output/#" "$linux_output/SHA256SUMS") >/dev/null
+python3 - "$linux_output/sts2-workshop-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text())
+assert manifest["platform"] == "linux-x86_64"
+assert [item["path"] for item in manifest["files"]] == [
+    "AIAscensionSTS2GameMod.dll",
+    "AIAscensionSTS2GameMod.json",
+    "libAIAscensionSTS2GameModNative.so",
+]
+PY
+
+if bash "$script_dir/package-platform-item.sh" \
+    macos-x86_64 "$linux_payload" "$temp_dir/unsupported" 480 123456790 0.107.1 0.1.0 commit-123 "$preview_file"; then
+    printf '%s\n' 'expected unsupported platform to be rejected' >&2
+    exit 1
+fi
+printf '%s\n' 'Windows and Linux Workshop package tests passed.'
+
 expect_rejected() {
     local output=$1
     shift

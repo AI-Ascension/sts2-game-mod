@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>Sts2.UgcCreateItemHelper</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="UgcCreateItemHelper.cs" />
+    <Compile Include="UgcCreateItemHelper.Run.cs" />
+    <Compile Include="UgcCreateItemHelper.NativeRun.cs" />
+    <Compile Include="UgcCreateItemHelper.Preflight.cs" />
+    <Compile Include="UgcCreateItemHelper.Native.cs" />
+    <Compile Include="UgcCreateItemHelper.Types.cs" />
+  </ItemGroup>
+</Project>

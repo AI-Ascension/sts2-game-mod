@@ -22,22 +22,21 @@ public static partial class WorkshopPackageValidator
     private const string ContentKind = "first_party_executable";
     private const string Entrypoint = "AIAscensionSTS2GameMod.json";
     private const int MaximumManifestBytes = 64 * 1024;
+    private const int MaximumChecksumBytes = 64 * 1024;
     private const long MaximumPayloadBytes = 256 * 1024 * 1024;
 
-    private static readonly (string Path, string Role)[] ExpectedPayload =
+    private static readonly (string Path, string Role)[] WindowsExpectedPayload =
     [
         ("AIAscensionSTS2GameMod.dll", "managed_assembly"),
         ("AIAscensionSTS2GameMod.json", "loader_manifest"),
         ("AIAscensionSTS2GameModNative.dll", "native_library")
     ];
 
-    private static readonly string[] ExpectedEntries =
+    private static readonly (string Path, string Role)[] LinuxExpectedPayload =
     [
-        ExpectedPayload[0].Path,
-        ExpectedPayload[1].Path,
-        ExpectedPayload[2].Path,
-        ManifestFileName,
-        ChecksumFileName
+        ("AIAscensionSTS2GameMod.dll", "managed_assembly"),
+        ("AIAscensionSTS2GameMod.json", "loader_manifest"),
+        ("libAIAscensionSTS2GameModNative.so", "native_library")
     ];
 
     internal static JsonSerializerOptions JsonOptions { get; } = new()
@@ -59,6 +58,8 @@ public static partial class WorkshopPackageValidator
             Reject("invalid_trust_policy", "Workshop App ID and published file ID must be positive.");
         }
 
+        (string Path, string Role)[] expectedPayload = ExpectedPayloadForPlatform(expectedPlatform);
+
         string root = GetFullPath(installDirectory);
         if (!Directory.Exists(root))
         {
@@ -66,7 +67,7 @@ public static partial class WorkshopPackageValidator
         }
 
         RejectReparsePath(root);
-        RejectUnexpectedEntries(root);
+        RejectUnexpectedEntries(root, expectedPayload);
         string manifestPath = Path.Combine(root, ManifestFileName);
         byte[] manifestBytes = ReadBoundedManifest(manifestPath);
 
@@ -83,7 +84,8 @@ public static partial class WorkshopPackageValidator
             throw new InvalidOperationException("unreachable");
         }
 
-        ValidateManifest(root, manifest, expectedConsumerAppId, expectedPublishedFileId, expectedGameVersion, expectedPlatform);
+        ValidateManifest(root, manifest, expectedConsumerAppId, expectedPublishedFileId, expectedGameVersion, expectedPlatform, expectedPayload);
+        ValidateChecksumInventory(root, expectedPayload);
         return new WorkshopPackageValidationResult
         {
             InstallDirectory = root,
@@ -120,8 +122,31 @@ public static partial class WorkshopPackageValidator
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString()))).ToLowerInvariant();
     }
 
-    private static void RejectUnexpectedEntries(string root)
+    private static (string Path, string Role)[] ExpectedPayloadForPlatform(string expectedPlatform)
     {
+        return expectedPlatform switch
+        {
+            "windows-x86_64" => WindowsExpectedPayload,
+            "linux-x86_64" => LinuxExpectedPayload,
+            _ => RejectUnsupportedPlatform(expectedPlatform)
+        };
+    }
+
+    private static (string Path, string Role)[] RejectUnsupportedPlatform(string expectedPlatform)
+    {
+        Reject("unsupported_platform", $"Workshop platform is not supported: {expectedPlatform}");
+        throw new InvalidOperationException("unreachable");
+    }
+
+    private static void RejectUnexpectedEntries(
+        string root,
+        (string Path, string Role)[] expectedPayload)
+    {
+        HashSet<string> expectedEntries = new(expectedPayload.Select(file => file.Path), StringComparer.Ordinal)
+        {
+            ManifestFileName,
+            ChecksumFileName
+        };
         foreach (string entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.TopDirectoryOnly))
         {
             FileAttributes attributes = File.GetAttributes(entry);
@@ -131,13 +156,13 @@ public static partial class WorkshopPackageValidator
             }
 
             string name = Path.GetFileName(entry);
-            if (!ExpectedEntries.Contains(name, StringComparer.Ordinal) || !File.Exists(entry))
+            if (!expectedEntries.Contains(name) || !File.Exists(entry))
             {
                 Reject("unexpected_file", $"Workshop package contains an unsupported entry: {name}");
             }
         }
 
-        foreach (string expected in ExpectedEntries)
+        foreach (string expected in expectedEntries)
         {
             string path = Path.Combine(root, expected);
             if (!File.Exists(path))
@@ -153,7 +178,8 @@ public static partial class WorkshopPackageValidator
         uint expectedConsumerAppId,
         ulong expectedPublishedFileId,
         string expectedGameVersion,
-        string expectedPlatform)
+        string expectedPlatform,
+        (string Path, string Role)[] expectedPayload)
     {
         if (manifest.SchemaVersion != SchemaVersion
             || manifest.PackageId != PackageId
@@ -181,15 +207,15 @@ public static partial class WorkshopPackageValidator
         {
             Reject("provenance", "Workshop manifest provenance or digest is invalid.");
         }
-        if (manifest.Files is null || manifest.Files.Length != ExpectedPayload.Length)
+        if (manifest.Files is null || manifest.Files.Length != expectedPayload.Length)
         {
             Reject("file_allowlist", "Workshop manifest file inventory does not match the first-party allowlist.");
         }
 
-        for (int index = 0; index < ExpectedPayload.Length; index++)
+        for (int index = 0; index < expectedPayload.Length; index++)
         {
             WorkshopFile? file = manifest.Files[index];
-            (string expectedPath, string expectedRole) = ExpectedPayload[index];
+            (string expectedPath, string expectedRole) = expectedPayload[index];
             if (file is null || file.Path != expectedPath || file.Role != expectedRole
                 || file.Sha256 is null || !IsSha256(file.Sha256))
             {
