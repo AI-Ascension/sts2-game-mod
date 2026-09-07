@@ -12,6 +12,7 @@
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.cs" Link="CoopHostRuntime.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Helpers.cs" Link="CoopHostRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="CoopHostRuntime.Rejoin.cs" />
     <Compile Include="../game-loader/CoopNativeEncoding.cs" Link="CoopNativeEncoding.cs" />
   </ItemGroup>
 </Project>

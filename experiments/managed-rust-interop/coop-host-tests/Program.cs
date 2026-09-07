@@ -6,7 +6,7 @@ using AiAscension.Sts2GameMod.Runtime;
 
 namespace AiAscension.Sts2GameMod.CoopHostTests;
 
-internal static class Program
+internal static partial class Program
 {
     private const string Digest = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -15,6 +15,11 @@ internal static class Program
         PeerGenerationsMayDifferWhenDigestsConverge();
         StaleHostGenerationIsRejectedBeforeNativeDispatch();
         UnknownOutcomeReconcilesWithoutRetryingMutation();
+        PendingCoopMutationBlocksNewOperation();
+        RejoinReplayDoesNotRepeatNativeMutation();
+        AcceptedRejoinReconcilesWithoutRetrying();
+        UnknownRejoinStaysUnknownWithoutNativeWitness();
+        RejectedRejoinIsRemembered();
         UnboundOpaqueIdentityIsRejected();
         DisconnectedPeerBlocksSettlement();
         MismatchedAuthorityIdentityBlocksSettlement();
@@ -62,6 +67,26 @@ internal static class Program
             && recovered?.Outcome == CoopOutcome.Settled
             && port.DispatchCount == 1, "reconcile settles without a blind retry");
         Check(!runtime.HasPendingMutation, "settled native outcome clears the pending predicate");
+    }
+
+    private static void PendingCoopMutationBlocksNewOperation()
+    {
+        FakePort port = new() { ReturnUnknown = true, KeepUnknownPending = true };
+        CoopHostRuntime runtime = new(port);
+        CoopLocalActionRequest request = new(
+            "op:pending", 1, "peer:host1", "end_turn", null, null);
+        CoopOperationReceipt first = runtime.DispatchLocalAction(request);
+        Check(first.Outcome == CoopOutcome.Unknown && port.DispatchCount == 1,
+            "an unknown co-op action remains the sole pending native mutation");
+        CoopOperationReceipt blocked = runtime.DispatchLocalAction(new(
+            "op:pending-new", 1, "peer:host1", "end_turn", null, null));
+        Check(blocked.Outcome == CoopOutcome.Rejected
+            && blocked.ErrorCode == "operation_in_progress"
+            && port.DispatchCount == 1,
+            "a new co-op operation cannot pass its own pending mutation fence");
+        CoopOperationReceipt replay = runtime.DispatchLocalAction(request);
+        Check(replay.Outcome == CoopOutcome.Unknown && port.DispatchCount == 1,
+            "the pending operation's exact duplicate still replays without dispatch");
     }
 
     private static void UnboundOpaqueIdentityIsRejected()
@@ -192,72 +217,4 @@ internal static class Program
         if (!condition) throw new InvalidOperationException(message);
     }
 
-    private sealed class FakePort : ICoopNativeHostPort
-    {
-        private readonly Dictionary<string, CoopNativePeerBinding> _bindings = new(StringComparer.Ordinal)
-        {
-            ["peer:host1"] = new("peer:host1", 101, true),
-            ["peer:client1"] = new("peer:client1", 202, true)
-        };
-
-        internal int DispatchCount { get; private set; }
-        internal bool ReturnUnknown { get; init; }
-        internal bool DisconnectClientBeforeEffect { get; init; }
-        internal bool DigestKnown { get; init; } = true;
-        internal bool AuthorityIdsMatch { get; init; } = true;
-        internal bool EffectPublished { get; private set; }
-        private string _operationId = "op:none";
-
-        public CoopHostObservation Observe()
-        {
-            bool clientConnected = !DisconnectClientBeforeEffect || !EffectPublished;
-            return new CoopHostObservation(
-                "session:one", "peer:host1", CoopHostRole.Host, "lan", "lobby:one",
-                EffectPublished ? 2UL : 1UL, Digest,
-                new[]
-                {
-                    new CoopPeerSnapshot("peer:host1", true, true, EffectPublished ? 2UL : 1UL, Digest),
-                    new CoopPeerSnapshot("peer:client1", false, clientConnected,
-                        EffectPublished ? 1UL : 0UL, Digest)
-                    {
-                        AuthorityId = AuthorityIdsMatch ? "authority:test" : "authority:other"
-                    }
-                },
-                false, null)
-            {
-                AuthorityId = "authority:test",
-                HostDigestKnown = DigestKnown
-            };
-        }
-
-        public bool TryResolvePeer(string opaquePeerId, out CoopNativePeerBinding binding) =>
-            _bindings.TryGetValue(opaquePeerId, out binding!);
-
-        public CoopNativeDispatchResult DispatchLocalAction(CoopLocalActionRequest request)
-        {
-            DispatchCount++;
-            _operationId = request.OperationId;
-            if (ReturnUnknown)
-            {
-                EffectPublished = true;
-                return CoopNativeDispatchResult.Unknown("native_dispatch_outcome_unknown");
-            }
-            EffectPublished = true;
-            return new(CoopOutcome.Accepted, Effect(), null);
-        }
-
-        public CoopNativeDispatchResult SubmitSharedVote(CoopSharedVoteRequest request) =>
-            DispatchLocalAction(new(request.OperationId, request.ExpectedHostGeneration,
-                request.VoterPeerId, "shared_vote", request.Choice, null));
-
-        public CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch) =>
-            _bindings.ContainsKey(opaquePeerId)
-                ? new(CoopOutcome.Accepted, null, null)
-                : CoopNativeDispatchResult.Rejected("unknown_peer");
-
-        public CoopEffectWitness? Reconcile(string operationId) => EffectPublished ? Effect() : null;
-
-        private CoopEffectWitness Effect() =>
-            new(_operationId, "effect:1", "turn_ended", 1, 2, Digest);
-    }
 }

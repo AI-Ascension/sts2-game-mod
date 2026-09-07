@@ -66,7 +66,7 @@ internal static partial class CoopNativeLobbyProbe
     private static string BoundedError(string message) =>
         message.Length <= 256 ? message : message[..256];
 
-    private sealed class ProbeState : IDisposable
+    private sealed partial class ProbeState : IDisposable
     {
         private readonly StreamWriter _publicWriter;
         private readonly StreamWriter _privateWriter;
@@ -148,7 +148,8 @@ internal static partial class CoopNativeLobbyProbe
             string eventName,
             Dictionary<string, object?>? extra,
             CoopHostObservation? observation,
-            NativeTransportSnapshot? native)
+            NativeTransportSnapshot? native,
+            SceneRuntimeSnapshot? runtime = null)
         {
             if (_rows >= MaxRows)
                 return;
@@ -188,6 +189,8 @@ internal static partial class CoopNativeLobbyProbe
                     ["lobby_id_hash"] = HashValue(native.LobbyIdentifier)
                 };
             }
+            if (runtime is not null)
+                AddRuntimeSnapshot(common, runtime);
             string serialized = JsonSerializer.Serialize(common, JsonOptions);
             _publicWriter.WriteLine(serialized);
 

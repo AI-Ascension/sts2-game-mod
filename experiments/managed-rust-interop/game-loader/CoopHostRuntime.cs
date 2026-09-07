@@ -170,56 +170,6 @@ internal sealed partial class CoopHostRuntime
         return FinalizeDispatch(request.OperationId, before, result);
     }
 
-    internal CoopOperationReceipt Rejoin(string operationId, string actorPeerId, ulong rejoinEpoch)
-    {
-        if (!RuntimeV3GameplayContract.IsIdentity(operationId)
-            || !CoopPeerIdentity.IsOpaque(actorPeerId)
-            || rejoinEpoch > RuntimeV3GameplayContract.MaxGeneration)
-        {
-            return Rejected(operationId, 0, "invalid_rejoin");
-        }
-
-        CoopHostObservation before = Observe();
-        if (!CanDispatch(before, before.HostGeneration, actorPeerId, out string error))
-        {
-            return Rejected(operationId, before.HostGeneration, error);
-        }
-        if (!TryPassExternalAdmission(out error))
-        {
-            return Rejected(operationId, before.HostGeneration, error);
-        }
-        CoopNativeDispatchResult result;
-        try
-        {
-            result = _port.Rejoin(actorPeerId, rejoinEpoch);
-        }
-        catch
-        {
-            result = CoopNativeDispatchResult.Unknown("native_rejoin_outcome_unknown");
-        }
-        if (result.Outcome == CoopOutcome.Rejected)
-        {
-            return Rejected(operationId, before.HostGeneration,
-                result.ErrorCode ?? "native_rejoin_rejected");
-        }
-
-        CoopHostObservation after;
-        try
-        {
-            after = Observe();
-        }
-        catch
-        {
-            return Rejected(operationId, before.HostGeneration, "rejoin_observation_unknown");
-        }
-        CoopOutcome outcome = after.RecoveryRequired || !after.AllConnectedPeersConverged()
-            ? CoopOutcome.Unknown
-            : CoopOutcome.Recovered;
-        return new CoopOperationReceipt(operationId, $"rejoin|{actorPeerId}|{rejoinEpoch}", outcome,
-            before.HostGeneration, after.HostGeneration, null, after,
-            outcome == CoopOutcome.Recovered ? null : result.ErrorCode ?? "rejoin_recovery_required");
-    }
-
     internal bool Reconcile(string operationId, out CoopOperationReceipt? receipt)
     {
         if (!_receipts.TryGetValue(operationId, out receipt))
@@ -230,6 +180,11 @@ internal sealed partial class CoopHostRuntime
         if (receipt.Outcome is CoopOutcome.Settled or CoopOutcome.Rejected)
         {
             return true;
+        }
+
+        if (IsRejoinReceipt(receipt))
+        {
+            return ReconcileRejoin(receipt, out receipt);
         }
 
         CoopEffectWitness? effect;
