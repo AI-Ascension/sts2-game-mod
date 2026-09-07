@@ -7,9 +7,13 @@ repo_root=$(CDPATH= cd -- "$script_dir/../.." && pwd -P)
 source_commit=$(git -C "$repo_root" rev-parse HEAD)
 temp_dir=$(mktemp -d -t sts2-runtime-receipt-XXXXXXXX)
 clean_worktree=''
+cross_device_output=''
 cleanup() {
     if [[ -n "$clean_worktree" && -d "$clean_worktree" ]]; then
         git -C "$repo_root" worktree remove --force "$clean_worktree" >/dev/null 2>&1 || true
+    fi
+    if [[ -n "$cross_device_output" && -e "$cross_device_output" ]]; then
+        rm -rf -- "$cross_device_output"
     fi
     rm -rf -- "$temp_dir"
 }
@@ -44,6 +48,24 @@ if bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload
     exit 1
 fi
 [[ ! -e "$repo_root/tools/release/receipt-inside-source" ]]
+
+cross_device_output="/dev/shm/sts2-runtime-receipt-$$-${RANDOM}"
+if [[ "$(stat -c '%d' "$temp_dir")" == "$(stat -c '%d' /dev/shm)" ]]; then
+    printf '%s\n' 'cross-device receipt test requires /dev/shm on a different filesystem' >&2
+    exit 1
+fi
+if bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload-dir "$fixture" \
+    --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
+    --package-version 0.4.0 --output-dir "$cross_device_output" \
+    --evidence-dir "$temp_dir/cross-device-evidence" >/dev/null 2>&1; then
+    printf '%s\n' 'cross-device publication unexpectedly succeeded' >&2
+    exit 1
+fi
+[[ ! -e "$cross_device_output" && ! -e "$cross_device_output.claim" ]]
+[[ $(find "$temp_dir/cross-device-evidence" -mindepth 1 -maxdepth 1 -type d -name 'scratch-*' | wc -l | tr -d '[:space:]') == 1 ]]
+cross_device_scratch=$(find "$temp_dir/cross-device-evidence" -mindepth 1 -maxdepth 1 -type d -name 'scratch-*')
+[[ -d "$cross_device_scratch/receipt-root/payload" ]]
+cross_device_output=''
 
 clean_worktree="$temp_dir/clean-worktree"
 git -C "$repo_root" worktree add --detach "$clean_worktree" "$source_commit" >/dev/null

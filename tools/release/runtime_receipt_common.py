@@ -278,6 +278,9 @@ def directory_identity(path: pathlib.Path, label: str) -> tuple[int, int]:
 
 def move_no_replace(stage: pathlib.Path, output: pathlib.Path) -> None:
     staged_identity = directory_identity(stage, "staged receipt root")
+    output_parent_identity = directory_identity(output.parent, "output parent")
+    if staged_identity[0] != output_parent_identity[0]:
+        fail("staged receipt and output parent must be on the same filesystem")
     try:
         result = subprocess.run(
             ["mv", "-nT", os.fspath(stage), os.fspath(output)],
