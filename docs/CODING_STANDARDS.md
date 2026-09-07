@@ -37,9 +37,14 @@ Unsafe Rust is denied by default and confined to the native/host boundary. Every
 documents pointer validity, ownership, aliasing, thread, allocator, and unload assumptions.
 Fixed-width ABI types and explicit status values are required.
 
-Managed code is the narrow exception. It may contain loader metadata, host callbacks, native
-library lifetime, and ABI conversion. It must not grow domain, HTTP, MCP, persistence, or
-orchestration behavior.
+Managed code is the narrow owner-local exception. It contains loader metadata, host callbacks,
+native-library lifetime and ABI conversion. Later accepted ADRs also cover the existing bounded
+host-thread bridge (0010, 0018), addon settings persistence (0012), and repeat-seed controller
+(0019). Preserve those capabilities; ADR 0003's initialization wording is read with these later
+decisions. This does not authorize general domain rules, another HTTP/MCP stack, provider
+execution, arbitrary persistence or cross-owner orchestration. Further expansion requires its
+owner decision. [Managed standards checks](standards/MANAGED.md) distinguish evaluated project
+settings, source-linked probes and exact-host acceptance.
 
 ## Boundaries and modules
 

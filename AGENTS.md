@@ -6,17 +6,19 @@ sts2-game-mod owns the game-facing boundary of the STS2 system: the managed load
 host integration, main-thread dispatch, authoritative local HTTP adapter, and the narrow Rust/native
 seam. The mod captain owns this target tree only.
 
-Wave 1 established the repository foundation. Wave 2 initializes only the target-owned host,
-HTTP-adapter, and composition seams with deterministic fakes; it does not add game behavior,
-public routes, or a real loader. The existing managed-rust-interop experiment is preserved as
-source-only evidence and is not product behavior. Do not add further crates or placeholders merely
-to satisfy a directory plan.
+Wave 1 and Wave 2 describe historical foundation work. Later accepted owner decisions govern
+the existing loader, runtime bridge, settings and gameplay adapters; see docs/ARCHITECTURE.md
+and docs/decisions. Preserve those accepted capabilities and their dated evidence. The
+managed-rust-interop directory name does not make every current component source-only, and
+historical host evidence does not prove compatibility with a new host. Do not add further crates
+or placeholders merely to satisfy a directory plan.
 
 ## Boundary rules
 
 - The game host remains authoritative for state, legal mutations, and thread affinity.
-- Managed code is limited to loader metadata, host callbacks, native-library lifetime, and ABI
-  translation.
+- Managed code owns loader metadata, host callbacks, native-library lifetime and ABI translation,
+  plus the specific host-thread adapters, settings and replay boundaries accepted in owner ADRs.
+  This does not authorize new domain rules, provider execution or cross-owner orchestration.
 - Host objects must become owned values before they cross a thread or process boundary.
 - The HTTP adapter owns request decoding, bounded responses, route mapping, and sanitized errors.
 - The Rust/native seam uses fixed-width types, explicit ownership, versioned ABI data, and reviewed

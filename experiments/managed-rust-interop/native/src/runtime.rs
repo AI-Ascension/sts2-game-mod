@@ -319,3 +319,70 @@ unsafe fn copy_input(pointer: *const u8, length: usize, maximum: usize) -> Resul
     let bytes = unsafe { std::slice::from_raw_parts(pointer, length) };
     Ok(bytes.to_vec())
 }
+
+#[cfg(test)]
+mod abi_layout_tests {
+    use std::mem::{align_of, offset_of, size_of};
+
+    use super::{RuntimeCallbacks, RuntimeRequest, RuntimeRequestCallback};
+
+    #[test]
+    fn runtime_request_layout_matches_managed_sequential_contract() {
+        let pointer_width = size_of::<usize>();
+        assert_eq!(size_of::<RuntimeRequest>(), 15 * pointer_width);
+        assert_eq!(align_of::<RuntimeRequest>(), align_of::<usize>());
+        assert_eq!(offset_of!(RuntimeRequest, kind), 0);
+        assert_eq!(offset_of!(RuntimeRequest, instance_id), pointer_width);
+        assert_eq!(
+            offset_of!(RuntimeRequest, instance_id_len),
+            2 * pointer_width
+        );
+        assert_eq!(offset_of!(RuntimeRequest, caller_id), 3 * pointer_width);
+        assert_eq!(offset_of!(RuntimeRequest, caller_id_len), 4 * pointer_width);
+        assert_eq!(offset_of!(RuntimeRequest, session_id), 5 * pointer_width);
+        assert_eq!(
+            offset_of!(RuntimeRequest, session_id_len),
+            6 * pointer_width
+        );
+        assert_eq!(offset_of!(RuntimeRequest, lease_id), 7 * pointer_width);
+        assert_eq!(offset_of!(RuntimeRequest, lease_id_len), 8 * pointer_width);
+        assert_eq!(offset_of!(RuntimeRequest, lease_epoch), 9 * pointer_width);
+        assert_eq!(
+            offset_of!(RuntimeRequest, lease_epoch_len),
+            10 * pointer_width
+        );
+        assert_eq!(
+            offset_of!(RuntimeRequest, correlation_id),
+            11 * pointer_width
+        );
+        assert_eq!(
+            offset_of!(RuntimeRequest, correlation_id_len),
+            12 * pointer_width
+        );
+        assert_eq!(offset_of!(RuntimeRequest, body), 13 * pointer_width);
+        assert_eq!(offset_of!(RuntimeRequest, body_len), 14 * pointer_width);
+    }
+
+    #[test]
+    fn callback_table_is_one_c_abi_function_pointer() {
+        unsafe extern "C" fn callback(
+            _: *const RuntimeRequest,
+            _: *mut u8,
+            _: usize,
+            _: *mut usize,
+        ) -> i32 {
+            0
+        }
+
+        let callback: RuntimeRequestCallback = callback;
+        let callbacks = RuntimeCallbacks {
+            request: Some(callback),
+        };
+        assert_eq!(offset_of!(RuntimeCallbacks, request), 0);
+        assert_eq!(
+            size_of::<RuntimeCallbacks>(),
+            size_of::<RuntimeRequestCallback>()
+        );
+        assert!(callbacks.request.is_some());
+    }
+}

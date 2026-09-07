@@ -2,9 +2,16 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path};
 
-const SUPPORTED_POLICY_VERSION: usize = 1;
+const LEGACY_POLICY_VERSION: usize = 1;
+const CURRENT_POLICY_VERSION: usize = 2;
+const MANAGED_STANDARDS_PATH: &str = "standards/tools/standards-sync";
+const KNOWN_RULES: &[&str] = &[
+    "BOUND001", "CFG001", "DOC001", "DOC002", "DOC003", "EXC001", "LANG001", "LIC001", "LIC002",
+    "LIC003", "RUST001", "RUST002", "RUST003", "RUST004", "RUST005", "SIZE001", "WF001", "WF002",
+    "WF003", "WF004", "WF005",
+];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum SizeCategory {
@@ -37,6 +44,8 @@ pub(crate) struct Budget {
 
 #[derive(Debug)]
 pub(crate) struct Policy {
+    pub(crate) policy_version: usize,
+    pub(crate) advisory_rules: BTreeSet<String>,
     pub(crate) required_files: Vec<String>,
     pub(crate) ignored_directories: BTreeSet<String>,
     pub(crate) ignored_path_prefixes: BTreeSet<String>,
@@ -61,11 +70,13 @@ impl Policy {
     fn parse(text: &str) -> Result<Self, String> {
         let mut section = String::new();
         let mut required_files = Vec::new();
-        let mut ignored_directories = BTreeSet::new();
+        let mut ignored_directories = Vec::new();
         let mut ignored_path_prefixes = BTreeSet::new();
         let mut exemptions = BTreeMap::new();
         let mut limits = BTreeMap::new();
         let mut version = None;
+        let mut mandatory_rules = None;
+        let mut advisory_rules = None;
 
         for raw_line in text.lines() {
             let line = raw_line
@@ -93,7 +104,7 @@ impl Policy {
                     required_files = parse_array(value, key)?;
                 }
                 "project" if key == "ignored_directories" => {
-                    ignored_directories = parse_array(value, key)?.into_iter().collect();
+                    ignored_directories = parse_array(value, key)?;
                 }
                 "project" if key == "ignored_path_prefixes" => {
                     ignored_path_prefixes = parse_array(value, key)?.into_iter().collect();
@@ -117,6 +128,12 @@ impl Policy {
                             .maximum = parse_number(value, key)?;
                     }
                 }
+                "severity" if key == "mandatory" => {
+                    mandatory_rules = Some(parse_array(value, "severity.mandatory")?);
+                }
+                "severity" if key == "advisory" => {
+                    advisory_rules = Some(parse_array(value, "severity.advisory")?);
+                }
                 "exemptions" => {
                     exemptions.insert(parse_string(key)?, parse_string(value)?);
                 }
@@ -124,11 +141,49 @@ impl Policy {
             }
         }
 
-        if version != Some(SUPPORTED_POLICY_VERSION) {
+        let policy_version =
+            version.ok_or_else(|| "policy_version must be an integer".to_owned())?;
+        if !matches!(
+            policy_version,
+            LEGACY_POLICY_VERSION | CURRENT_POLICY_VERSION
+        ) {
             return Err(format!(
-                "policy_version must be {SUPPORTED_POLICY_VERSION}, found {version:?}"
+                "policy_version must be {LEGACY_POLICY_VERSION} or {CURRENT_POLICY_VERSION}, found {policy_version}"
             ));
         }
+        let ignored_path_prefixes = validate_ignored_path_prefixes(&ignored_path_prefixes)?;
+        validate_exact_paths(&required_files, "required_files")?;
+        let ignored_directories = validate_ignored_directories(&ignored_directories)?;
+        for path in exemptions.keys() {
+            validate_exact_path(path, "exemptions")?;
+        }
+        let advisory_rules = if policy_version == LEGACY_POLICY_VERSION {
+            BTreeSet::new()
+        } else {
+            let mandatory =
+                mandatory_rules.ok_or_else(|| "severity.mandatory is missing".to_owned())?;
+            validate_rule_list(&mandatory, "severity.mandatory", true)?;
+            if !mandatory.iter().any(|rule| rule == "*") {
+                return Err(
+                    "severity.mandatory must include \"*\" as the default classification"
+                        .to_owned(),
+                );
+            }
+            let advisory_values =
+                advisory_rules.ok_or_else(|| "severity.advisory is missing".to_owned())?;
+            validate_rule_list(&advisory_values, "severity.advisory", false)?;
+            let advisory: BTreeSet<String> = advisory_values.into_iter().collect();
+            if advisory.is_empty() {
+                return Err("severity.advisory must name at least one rule".to_owned());
+            }
+            if advisory
+                .iter()
+                .any(|rule| mandatory.iter().any(|item| item == rule))
+            {
+                return Err("severity rules cannot be both mandatory and advisory".to_owned());
+            }
+            advisory
+        };
         for category in [
             SizeCategory::RustProduction,
             SizeCategory::RustTest,
@@ -146,6 +201,8 @@ impl Policy {
             }
         }
         Ok(Self {
+            policy_version,
+            advisory_rules,
             required_files,
             ignored_directories,
             ignored_path_prefixes,
@@ -165,6 +222,118 @@ fn parse_array(value: &str, key: &str) -> Result<Vec<String>, String> {
         .filter(|item| !item.trim().is_empty())
         .map(|item| parse_string(item.trim()))
         .collect()
+}
+
+fn validate_rule_list(values: &[String], key: &str, allow_default: bool) -> Result<(), String> {
+    let mut seen = BTreeSet::new();
+    for rule in values {
+        if !seen.insert(rule.as_str()) {
+            return Err(format!("{key} contains duplicate rule {rule}"));
+        }
+        if rule == "*" {
+            if !allow_default {
+                return Err(format!("{key} cannot contain the default wildcard"));
+            }
+        } else if !KNOWN_RULES.contains(&rule.as_str()) {
+            return Err(format!("{key} contains unknown rule {rule}"));
+        } else if !allow_default && rule != "SIZE001" {
+            return Err(format!("{key} cannot demote mandatory rule {rule}"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_exact_paths(values: &[String], key: &str) -> Result<(), String> {
+    let mut seen = BTreeSet::new();
+    for value in values {
+        validate_exact_path(value, key)?;
+        if !seen.insert(value) {
+            return Err(format!("{key} contains duplicate path {value}"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_ignored_directories(values: &[String]) -> Result<BTreeSet<String>, String> {
+    let mut directories = BTreeSet::new();
+    for directory in values {
+        let path = Path::new(directory);
+        let safe = !directory.is_empty()
+            && !directory.contains('\\')
+            && !directory.contains('/')
+            && !directory.contains('*')
+            && !directory.contains('?')
+            && path.components().count() == 1
+            && path
+                .components()
+                .all(|component| matches!(component, Component::Normal(_)))
+            && !directory.eq_ignore_ascii_case("standards");
+        if !safe {
+            return Err(format!(
+                "ignored_directories must contain one safe directory name and cannot hide standards: {directory}"
+            ));
+        }
+        if !directories.insert(directory.clone()) {
+            return Err(format!(
+                "ignored_directories contains duplicate directory {directory}"
+            ));
+        }
+    }
+    Ok(directories)
+}
+
+fn validate_exact_path(value: &str, key: &str) -> Result<(), String> {
+    let path = Path::new(value);
+    if value.is_empty()
+        || value.contains('\\')
+        || value.starts_with('/')
+        || value.ends_with('/')
+        || value.contains('*')
+        || value.contains('?')
+        || !path
+            .components()
+            .all(|component| matches!(component, Component::Normal(_)))
+    {
+        return Err(format!(
+            "{key} must contain exact repository-relative paths: {value}"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_ignored_path_prefixes(values: &BTreeSet<String>) -> Result<BTreeSet<String>, String> {
+    let mut prefixes = BTreeSet::new();
+    for prefix in values {
+        let path = Path::new(prefix);
+        let safe = !prefix.is_empty()
+            && !prefix.contains('\\')
+            && !prefix.starts_with('/')
+            && !prefix.ends_with('/')
+            && !prefix.contains('*')
+            && !prefix.contains('?')
+            && path
+                .components()
+                .all(|component| matches!(component, Component::Normal(_)));
+        if !safe {
+            return Err(format!(
+                "ignored_path_prefixes must contain exact repository-relative paths: {prefix}"
+            ));
+        }
+        if prefix == "standards"
+            || prefix == "standards/tools"
+            || MANAGED_STANDARDS_PATH.starts_with(&format!("{prefix}/"))
+        {
+            return Err(format!(
+                "ignored_path_prefixes cannot hide the standards root; use the exact managed path {MANAGED_STANDARDS_PATH}"
+            ));
+        }
+        if !prefixes.insert(prefix.clone()) {
+            return Err(format!(
+                "ignored_path_prefixes contains duplicate path {prefix}"
+            ));
+        }
+    }
+    Ok(prefixes)
 }
 
 fn parse_string(value: &str) -> Result<String, String> {
@@ -187,36 +356,5 @@ fn parse_number(value: &str, key: &str) -> Result<usize, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{Policy, SizeCategory};
-
-    #[test]
-    fn parses_required_paths_and_limits() -> Result<(), String> {
-        let text = r#"
-policy_version = 1
-[project]
-required_files = ["README.md"]
-ignored_directories = ["target"]
-ignored_path_prefixes = []
-[limits]
-rust_production_preferred = 10
-rust_production_max = 20
-rust_test_preferred = 10
-rust_test_max = 20
-csharp_production_preferred = 10
-csharp_production_max = 20
-csharp_test_preferred = 10
-csharp_test_max = 20
-workflow_preferred = 10
-workflow_max = 20
-markdown_preferred = 10
-markdown_max = 20
-[exemptions]
-"docs/generated.md" = "A deliberately retained generated fixture."
-"#;
-        let policy = Policy::parse(text)?;
-        assert_eq!(policy.required_files, ["README.md"]);
-        assert_eq!(policy.budget(SizeCategory::Markdown).maximum, 20);
-        Ok(())
-    }
-}
+#[path = "config_tests.rs"]
+mod tests;

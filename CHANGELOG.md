@@ -6,6 +6,10 @@ do not establish release support.
 
 ## Unreleased
 
+- Omit raw exception messages from native listener and loader failure logs while
+  retaining their event/type diagnostics and existing failure status. Add source-linked
+  ABI and synthetic log-redaction regressions; no host or wire contract changes.
+
 - Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
   managed native-library validation, and a checksum-gated install/update/rollback tool with
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain

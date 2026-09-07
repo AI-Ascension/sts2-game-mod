@@ -2,6 +2,17 @@
 
 //! Offline preparation of the intended addon's native mod-loading settings.
 //! The launch owner must keep the selected game stopped throughout an apply operation.
+//!
+//! Preparation is deterministic and reports the digest-fenced candidate without writing files:
+//!
+//! ```
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let plan = sts2_game_mod_loading::prepare(br#"{}"#).map_err(|_| "example plan rejected")?;
+//! assert!(plan.changed);
+//! assert_eq!(plan.before_sha256.len(), 64);
+//! # Ok(())
+//! # }
+//! ```
 
 use serde_json::{Value, json};
 

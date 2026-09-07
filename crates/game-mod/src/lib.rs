@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+//! Target-owned composition of host admission, HTTP bounds, and ABI validation.
+//!
+//! The copied Runtime-v2 artifact can be checked before a runtime is admitted:
+//!
+//! ```
+//! assert!(sts2_game_mod::verify_runtime_v2_artifact().is_ok());
+//! ```
+
 use sts2_game_mod_host::{
     AbiError, AbiPort, HostDispatcher, HostError, HostPort, HostReceipt, HostRequest, QueueError,
     validate_abi,

@@ -1,4 +1,5 @@
 /target/
+standards/tools/standards-sync/target/
 **/target/
 /bin/
 **/bin/

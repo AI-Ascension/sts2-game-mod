@@ -33,9 +33,12 @@ initialized source seams have deterministic fake tests, but real host evidence r
 
 ## Configuration and changes
 
-policy.toml lists required paths, ignored generated directories, size budgets, and exact
-exemptions. An exemption must name a real generated, vendored, or reviewed static file and explain
-its durable provenance. Copied implementation source is never eligible.
+policy.toml lists required paths, ignored generated directories, size budgets, severity
+classification, and exact exemptions. Version 2 treats the default rule class as mandatory and
+`SIZE001` preferred-size guidance as advisory under strict mode. Version 1 remains a compatibility
+mode in which strict promotes every warning; callers must opt into version 2 explicitly. An exemption
+must name a real generated, vendored, or reviewed static file and explain its durable provenance.
+Copied implementation source is never eligible.
 
 Changing policy is a process change. Explain the rule, enforcement effect, migration, reason for
 any exemption, and exact local results. Refactor oversized handwritten files before weakening a
@@ -54,3 +57,13 @@ Rust gates and the native interop probe. The managed runtime-addon build remains
 CI because it needs operator-supplied proprietary `sts2.dll` and `GodotSharp.dll` references.
 Workflows use immutable action commits, explicit timeouts, bounded commands, no secrets, and no
 privileged pull-request event.
+
+## Production lint scope
+
+The production Clippy lane selects workspace libraries and binaries and forbids
+unwrap, expect, panic, todo and unimplemented on the compiler command line.
+A source-level allowance cannot override that lane. The existing all-target lane
+still checks tests with their scoped allowances. `production_lints` runs real
+compiler fixtures for forbidden constructs, an attempted blanket allowance,
+and valid comments/test-only code. Missing Clippy or an unrelated compiler
+failure cannot satisfy a negative case: its diagnostic must identify the rule.

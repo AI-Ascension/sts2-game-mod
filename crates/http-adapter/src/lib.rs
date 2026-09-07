@@ -1,5 +1,25 @@
 // SPDX-License-Identifier: MIT
 
+//! A bounded, transport-independent HTTP request adapter.
+//!
+//! A caller supplies the route dispatch while this adapter enforces the body limit:
+//!
+//! ```
+//! use sts2_game_mod_http_adapter::{HttpAdapter, HttpMethod, HttpPort, HttpRequest, HttpResponse};
+//!
+//! struct Echo;
+//! impl HttpPort for Echo {
+//!     fn dispatch(&mut self, request: HttpRequest<'_>) -> HttpResponse {
+//!         HttpResponse::new(200, request.body().to_vec())
+//!     }
+//! }
+//!
+//! let mut adapter = HttpAdapter::new(Echo, 8);
+//! let response = adapter.handle(HttpRequest::new(HttpMethod::Post, "/echo", b"ok"));
+//! assert_eq!(response.status(), 200);
+//! assert_eq!(response.body(), b"ok");
+//! ```
+
 /// HTTP method understood by the target-local adapter seam.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HttpMethod {
