@@ -15,6 +15,8 @@
     <Compile Include="../game-loader/CoopHostContracts.cs" Link="CoopHostContracts.cs" />
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
     <Compile Include="../game-loader/InstalledNativeCoopSynchronizers.cs" Link="InstalledNativeCoopSynchronizers.cs" />
+    <Compile Include="../game-loader/InstalledNativeCoopHostPort*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../game-loader/CoopNativeEncoding.cs" Link="CoopNativeEncoding.cs" />
   </ItemGroup>
   <Target Name="ValidateHostAssemblyPath" BeforeTargets="ResolveReferences">
     <Error Condition="'$(STS2GameDataDir)' == ''" Text="Set STS2GameDataDir to the directory containing sts2.dll." />
