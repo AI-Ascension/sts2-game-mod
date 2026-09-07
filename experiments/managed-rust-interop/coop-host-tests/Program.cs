@@ -19,6 +19,7 @@ internal static class Program
         DisconnectedPeerBlocksSettlement();
         MismatchedAuthorityIdentityBlocksSettlement();
         UnknownDigestBlocksDispatch();
+        ExternalAdmissionSerializesMutations();
         NativeArgumentEncodingFailsClosed();
         NativeCardEncodingFailsClosed();
         Console.WriteLine("Native co-op host fencing and per-peer generation checks passed.");
@@ -56,9 +57,11 @@ internal static class Program
             "op:unknown", 1, "peer:host1", "end_turn", null, null));
         Check(first.Outcome == CoopOutcome.Unknown && port.DispatchCount == 1,
             "native exception remains unknown after admission");
+        Check(runtime.HasPendingMutation, "unknown native outcome remains a pending mutation");
         Check(runtime.Reconcile("op:unknown", out CoopOperationReceipt? recovered)
             && recovered?.Outcome == CoopOutcome.Settled
             && port.DispatchCount == 1, "reconcile settles without a blind retry");
+        Check(!runtime.HasPendingMutation, "settled native outcome clears the pending predicate");
     }
 
     private static void UnboundOpaqueIdentityIsRejected()
@@ -92,6 +95,42 @@ internal static class Program
             && receipt.ErrorCode == "native_state_not_settled"
             && port.DispatchCount == 0,
             "a partial native digest cannot admit mutation");
+    }
+
+    private static void ExternalAdmissionSerializesMutations()
+    {
+        FakePort port = new();
+        bool otherProfileIdle = true;
+        CoopHostRuntime runtime = new(port, () => otherProfileIdle);
+        CoopLocalActionRequest request = new(
+            "op:gate", 1, "peer:host1", "end_turn", null, null);
+
+        CoopOperationReceipt first = runtime.DispatchLocalAction(request);
+        Check(first.Outcome == CoopOutcome.Settled && port.DispatchCount == 1,
+            "an idle external profile admits the first co-op mutation");
+
+        // Duplicate replay is intentionally checked before the cross-profile gate. A caller
+        // polling a settled co-op receipt must be able to observe it while another profile is
+        // active, without dispatching the native mutation a second time.
+        otherProfileIdle = false;
+        CoopOperationReceipt replay = runtime.DispatchLocalAction(request);
+        Check(replay.Outcome == CoopOutcome.Settled && port.DispatchCount == 1,
+            "co-op duplicate replay bypasses a gate for a new mutation");
+
+        CoopOperationReceipt blocked = runtime.DispatchLocalAction(new(
+            "op:gate-new", 2, "peer:host1", "end_turn", null, null));
+        Check(blocked.Outcome == CoopOutcome.Rejected
+            && blocked.ErrorCode == "operation_in_progress"
+            && port.DispatchCount == 1
+            && !runtime.HasPendingMutation,
+            "a cross-profile pending mutation blocks native co-op dispatch");
+
+        otherProfileIdle = true;
+        CoopOperationReceipt admitted = runtime.DispatchLocalAction(new(
+            "op:gate-new", 2, "peer:host1", "end_turn", null, null));
+        Check(admitted.Outcome is CoopOutcome.Accepted or CoopOutcome.Unknown
+            && port.DispatchCount == 2,
+            "co-op dispatch resumes after the external profile settles");
     }
 
     private static void MismatchedAuthorityIdentityBlocksSettlement()

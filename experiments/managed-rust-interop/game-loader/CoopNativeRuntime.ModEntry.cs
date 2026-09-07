@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+using System;
+
 namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
@@ -14,10 +16,23 @@ public static partial class ModEntry
     private const uint RuntimeRequestKindCoopRecover = 13;
     private static CoopNativeRuntime? _coopNativeRuntime;
 
-    /// <summary>Installs the managed host port; the caller must provide a game-thread port.</summary>
-    internal static void ConfigureCoopNative(ICoopNativeHostPort port)
+    /// <summary>
+    /// True while a co-op action or vote has been accepted by the host adapter but its native
+    /// effect is not yet settled. The gameplay profiles use this predicate to serialize their
+    /// own mutations against the co-op profile.
+    /// </summary>
+    internal static bool HasPendingCoopMutation => _coopNativeRuntime?.HasPendingMutation ?? false;
+
+    /// <summary>
+    /// Installs the managed host port; the caller must provide a game-thread port. The optional
+    /// predicate must return true only when the other mutation profiles are idle. It is checked
+    /// immediately before each native co-op mutation, after a fresh co-op observation.
+    /// </summary>
+    internal static void ConfigureCoopNative(ICoopNativeHostPort port, Func<bool>? canDispatch = null)
     {
-        _coopNativeRuntime = new CoopNativeRuntime(port);
+        _coopNativeRuntime = new CoopNativeRuntime(port,
+            canDispatch ?? (() => _runtimeV2Pending is null
+                && !(_runtimeV3Gameplay?.HasPendingMutation ?? false)));
 #if STS2_NATIVE_COOP_PROBE
         CoopNativeLobbyController.StartIfConfigured();
         CoopNativeLobbyProbe.StartIfEnabled(port);

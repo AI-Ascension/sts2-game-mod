@@ -32,10 +32,12 @@ internal sealed partial class CoopNativeRuntime
 
     private readonly CoopHostRuntime _host;
 
-    internal CoopNativeRuntime(ICoopNativeHostPort port)
+    internal CoopNativeRuntime(ICoopNativeHostPort port, Func<bool>? canDispatch = null)
     {
-        _host = new CoopHostRuntime(port);
+        _host = new CoopHostRuntime(port, canDispatch);
     }
+
+    internal bool HasPendingMutation => _host.HasPendingMutation;
 
     internal (int Status, string Response) Handle(
         string instanceId,
