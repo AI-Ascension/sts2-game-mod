@@ -32,7 +32,8 @@ public static partial class ModEntry
     {
         _coopNativeRuntime = new CoopNativeRuntime(port,
             canDispatch ?? (() => _runtimeV2Pending is null
-                && !(_runtimeV3Gameplay?.HasPendingMutation ?? false)));
+                && !(_runtimeV3Gameplay?.HasPendingMutation ?? false)
+                && !HasPendingRuntimeV4ExpertMutation()));
 #if STS2_NATIVE_COOP_PROBE
         CoopNativeLobbyController.StartIfConfigured();
         CoopNativeLobbyProbe.StartIfEnabled(port);
