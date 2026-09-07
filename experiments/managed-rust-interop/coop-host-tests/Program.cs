@@ -19,6 +19,7 @@ internal static partial class Program
         RejoinReplayDoesNotRepeatNativeMutation();
         AcceptedRejoinReconcilesWithoutRetrying();
         AcceptedRejoinWaitsForNativeSettlement();
+        RejoinAttemptWindowResetsAfterLateReconnectWithoutExtension();
         UnknownRejoinStaysUnknownWithoutNativeWitness();
         RejectedRejoinIsRemembered();
         RejoinMustRetainOriginalAuthorityEpoch();

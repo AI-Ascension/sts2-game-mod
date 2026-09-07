@@ -149,8 +149,8 @@ internal static partial class NativeCoopSessionController
             HostId = hostId;
             ClientId = clientId;
             AutoAdmitRun = autoAdmitRun;
-            DeadlineTimestamp = Stopwatch.GetTimestamp()
-                + (long)(MaxStartupSeconds * Stopwatch.Frequency);
+            AttemptWindow = new NativeCoopAttemptWindow(
+                Stopwatch.GetTimestamp(), Stopwatch.Frequency, MaxStartupSeconds);
         }
 
         internal string Role { get; }
@@ -160,7 +160,8 @@ internal static partial class NativeCoopSessionController
         internal ulong HostId { get; }
         internal ulong ClientId { get; }
         internal bool AutoAdmitRun { get; }
-        internal long DeadlineTimestamp { get; private set; }
+        private NativeCoopAttemptWindow AttemptWindow { get; }
+        internal long DeadlineTimestamp => AttemptWindow.DeadlineTimestamp;
         internal int Frames { get; set; }
         internal bool Completed { get; set; }
         internal NetHostGameService? HostService { get; set; }
@@ -180,14 +181,15 @@ internal static partial class NativeCoopSessionController
         internal bool IsRejoin { get; set; }
         private bool _disposed;
 
-        internal bool IsExpired() => Stopwatch.GetTimestamp() >= DeadlineTimestamp;
+        internal bool IsExpired() => AttemptWindow.IsExpired(Stopwatch.GetTimestamp());
 
-        internal void ResetForRejoinAttempt()
+        internal bool TryResetForRejoinAttempt()
         {
+            if (!AttemptWindow.TryReset(IsRejoin && !Completed, Stopwatch.GetTimestamp()))
+                return false;
             _disposed = false;
             Frames = 0;
-            DeadlineTimestamp = Stopwatch.GetTimestamp()
-                + (long)(MaxStartupSeconds * Stopwatch.Frequency);
+            return true;
         }
 
         public void Dispose()
