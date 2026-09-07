@@ -82,8 +82,8 @@ For a bounded standard campaign/map handoff, add `--campaign-map` together with 
 Astra provider, starts a host-generated standard run, requests the complete current map graph and
 verified PNG, and admits exactly one `start_run` followed by exactly one current legal
 `select_map_node`. The managed host guard withholds every later gameplay mutation, and the
-launcher accepts the expected harness bound exit only after the retained trace contains one
-settled setup action, one settled map action, and no other action kind. The runner allows two
+launcher requires a zero harness exit and an ordered trace containing one settled setup action,
+one settled map action, and no other action kind. The runner allows two
 model decision steps, one read-only recovery attempt, and a 90-second provider deadline. The
 option does not resume a save, accepts no seed or replay trajectory, and is preparation for an
 authorized live run; it does not claim campaign completion or a played combat.
@@ -95,7 +95,9 @@ outside the current map-decision stage is explicitly unavailable in that final c
 earlier image remains historical. The durable `trajectory.jsonl` contains bounded decisions,
 rationales, receipts, and bundle links, while `map-artifacts/` holds immutable bundles and the feed.
 Run `bash experiments/managed-rust-interop/live-campaign-trace.test.sh` to exercise trace rejection
-and both synchronous and waited settlement records without a host or provider.
+and both synchronous and waited settlement records without a host or provider. Trace checks bind
+the image, bundle, action receipt, and fresh observation to their execution and generation, and
+reject reused operation IDs or records placed before their prerequisites.
 
 Campaign/map mode also verifies the disposable host before starting anything. Its
 `data_sts2_windows_x86_64/sts2.dll` must be the supported v0.107.1 release `59260271` with

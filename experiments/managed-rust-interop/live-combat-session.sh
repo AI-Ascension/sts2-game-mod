@@ -318,11 +318,6 @@ if wait "$harness_pid"; then
     sleep "$hold"
 else
     harness_pid=''
-    if [[ "$campaign_map" == true ]] && verify_campaign_map_trace "$run/trajectory.jsonl"; then
-        printf 'Bounded campaign/map guard reached; keeping the game visible for %s seconds.\n' "$hold"
-        sleep "$hold"
-    else
-        printf 'Combat failed; inspect the external harness error file.\n' >&2
-        exit 2
-    fi
+    printf 'Harness failed; inspect the external harness error file.\n' >&2
+    exit 2
 fi
