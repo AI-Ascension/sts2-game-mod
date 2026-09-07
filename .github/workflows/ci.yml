@@ -96,6 +96,9 @@ jobs:
       - name: Validate Workshop package staging
         run: bash tools/workshop/test-package-item.sh
 
+      - name: Validate runtime addon install lifecycle
+        run: bash tools/release/test-runtime-lifecycle.sh
+
       - name: Validate GPU fixture refusal and rollback boundaries
         run: |
           bash experiments/train-gpu-lifecycle/test-provision.sh

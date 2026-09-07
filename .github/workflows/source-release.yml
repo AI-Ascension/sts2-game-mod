@@ -1,0 +1,77 @@
+name: Source release bundles
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version to embed in the source bundles
+        required: true
+        type: string
+  push:
+    tags:
+      - sts2-game-mod-v*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-bundle:
+    name: ${{ matrix.platform }} source bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - windows-x86_64
+          - linux-x86_64
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ -n "$INPUT_VERSION" ]]; then
+            version="$INPUT_VERSION"
+          else
+            version="${REF_NAME#sts2-game-mod-v}"
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]]
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify reproducibility self-test
+        shell: bash
+        run: SOURCE_DATE_EPOCH=0 bash tools/release/test-source-bundle.sh
+
+      - name: Build source bundle
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          mkdir -p "dist/$PLATFORM"
+          SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh \
+            "$VERSION" "$PLATFORM" "dist/$PLATFORM" "$GITHUB_SHA"
+          (cd "dist/$PLATFORM" && sha256sum --check --strict ./*.sha256)
+
+      - name: Upload source bundle and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sts2-game-mod-${{ steps.version.outputs.version }}-${{ matrix.platform }}-source
+          path: |
+            dist/${{ matrix.platform }}/*.tar.gz
+            dist/${{ matrix.platform }}/*.sha256
+          if-no-files-found: error
+          retention-days: 14
