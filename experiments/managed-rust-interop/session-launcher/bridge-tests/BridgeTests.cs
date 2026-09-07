@@ -99,7 +99,8 @@ internal static class BridgeTests
         string executable = Environment.ProcessPath ?? throw new InvalidOperationException("missing executable");
         var options = new ProcessStartInfo(executable)
         {
-            UseShellExecute = false, WorkingDirectory = Environment.CurrentDirectory,
+            UseShellExecute = false,
+            WorkingDirectory = Environment.CurrentDirectory,
         };
         if (Path.GetFileNameWithoutExtension(executable).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
             options.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);

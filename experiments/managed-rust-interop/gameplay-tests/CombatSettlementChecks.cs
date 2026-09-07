@@ -34,7 +34,7 @@ internal static class CombatSettlementChecks
             throw new InvalidOperationException("continuing combat requires the next turn");
         foreach (var state in new[] { RuntimeV3GameplayState.Victory, RuntimeV3GameplayState.Defeat })
             if (!RuntimeV3GameplayCombatSettlement.Ready(before with
-                { State = state, IsActionable = false, InputEnabled = false, ModalBlocking = true }, false))
+            { State = state, IsActionable = false, InputEnabled = false, ModalBlocking = true }, false))
                 throw new InvalidOperationException("terminal outcomes require no next action");
     }
 }

@@ -23,7 +23,8 @@ internal sealed partial class LiveCombatSource
         RunState? run = RunManager.Instance.DebugOnlyGetState();
         if (!RunManager.Instance.IsInProgress && !RunManager.Instance.IsGameOver)
             return Surface(observation, RuntimeV3GameplayState.Setup, CampaignCharacters, LiveCombatDemo.Ready)
-                with { VisibleSeed = LiveCombatDemo.RunOptions.Seed };
+                with
+            { VisibleSeed = LiveCombatDemo.RunOptions.Seed };
         if (run == null || CurrentPlayer() == null) return observation;
         observation = observation with { NodeId = CurrentNodeId(run) };
         if (observation.State == RuntimeV3GameplayState.Defeat) return observation;
@@ -53,10 +54,13 @@ internal sealed partial class LiveCombatSource
 
     private static RuntimeV3GameplayObservation Surface(RuntimeV3GameplayObservation observation,
         RuntimeV3GameplayState state, IReadOnlyList<string> values, bool enabled) => observation with
-    {
-        State = state, StateValues = values, IsActionable = enabled,
-        InputEnabled = enabled, ModalBlocking = !enabled
-    };
+        {
+            State = state,
+            StateValues = values,
+            IsActionable = enabled,
+            InputEnabled = enabled,
+            ModalBlocking = !enabled
+        };
 
     private static string? CurrentNodeId(RunState run) => run.CurrentMapCoord is { } coord
         ? $"map:{run.CurrentActIndex}:{coord.row}:{coord.col}" : null;

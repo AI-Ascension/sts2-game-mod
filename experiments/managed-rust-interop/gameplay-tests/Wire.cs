@@ -19,21 +19,35 @@ internal static class Wire
         {
             ["protocol_version"] = RuntimeV3GameplayContract.ProtocolVersion,
             ["schema_digest"] = RuntimeV3GameplayContract.SchemaDigest,
-            ["provenance"] = new { artifact = RuntimeV3GameplayContract.Artifact,
-                source = RuntimeV3GameplayContract.SchemaSource, generator = RuntimeV3GameplayContract.Generator },
-            ["correlation_id"] = "request-1", ["instance_id"] = "instance-1",
-            ["session_id"] = session, ["lease_id"] = "lease-1", ["lease_epoch"] = epoch,
-            ["generation"] = generation, ["kind"] = kind,
+            ["provenance"] = new
+            {
+                artifact = RuntimeV3GameplayContract.Artifact,
+                source = RuntimeV3GameplayContract.SchemaSource,
+                generator = RuntimeV3GameplayContract.Generator
+            },
+            ["correlation_id"] = "request-1",
+            ["instance_id"] = "instance-1",
+            ["session_id"] = session,
+            ["lease_id"] = "lease-1",
+            ["lease_epoch"] = epoch,
+            ["generation"] = generation,
+            ["kind"] = kind,
             ["state_id"] = kind is "dispatch_action_request" or "legal_actions_request" ? stateId : null,
             ["operation_id"] = kind is "dispatch_action_request" or "wait_request" ? "operation-1" : null,
-            ["observation"] = null, ["legal_actions"] = null,
+            ["observation"] = null,
+            ["legal_actions"] = null,
             ["action"] = kind == "dispatch_action_request"
                 ? new { action_id = "combat.end-turn", action = new { kind = actionKind } } : null,
-            ["status"] = null, ["transition"] = null, ["error_code"] = null,
+            ["status"] = null,
+            ["transition"] = null,
+            ["error_code"] = null,
             ["wait_for_millis"] = kind == "wait_request" ? (int?)1 : null,
             ["wait_outcome"] = null,
-            ["recovery"] = kind == "recover_request" ? new { kind = recoveryKind,
-                operation_id = recoveryKind == "reconcile" ? "operation-1" : null } : null
+            ["recovery"] = kind == "recover_request" ? new
+            {
+                kind = recoveryKind,
+                operation_id = recoveryKind == "reconcile" ? "operation-1" : null
+            } : null
         };
         string json = JsonSerializer.Serialize(body);
         return JsonDocument.Parse(support.Handle("instance-1", session, "lease-1", "request-1",

@@ -24,7 +24,8 @@ internal static class ProcessGuardian
             catch (Exception) { Environment.Exit(1); }
             // EOF or any cancellation byte closes every owned descendant, even before receipt.
             Environment.Exit(0);
-        }) { IsBackground = true };
+        })
+        { IsBackground = true };
         cancellation.Start();
         using Process process = DetachedWindowsProcess.Start(options, job);
         long startTicks = process.StartTime.ToUniversalTime().Ticks;

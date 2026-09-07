@@ -46,8 +46,11 @@ internal sealed partial class LiveCombatSource
         if (!HasVictorySurface()) return observation;
         return observation with
         {
-            State = RuntimeV3GameplayState.Victory, StateValues = Array.Empty<string>(),
-            IsActionable = false, InputEnabled = false, ModalBlocking = false
+            State = RuntimeV3GameplayState.Victory,
+            StateValues = Array.Empty<string>(),
+            IsActionable = false,
+            InputEnabled = false,
+            ModalBlocking = false
         };
     }
 

@@ -118,10 +118,15 @@ internal static partial class StandaloneProfileSettings
                 Callable.From<NButton>(_ => tabManager.Call("SwitchTabTo", profileTab)));
 
             CacheGameFont(firstPanel);
-            var scroll = new ScrollContainer { Name = "AiAscensionSettingsScroll",
-                CustomMinimumSize = new Vector2(0, 700), SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, FollowFocus = true,
-                HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+            var scroll = new ScrollContainer
+            {
+                Name = "AiAscensionSettingsScroll",
+                CustomMinimumSize = new Vector2(0, 700),
+                SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                FollowFocus = true,
+                HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+            };
             var sections = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
             contentContainer.AddChild(scroll);
             scroll.AddChild(sections);

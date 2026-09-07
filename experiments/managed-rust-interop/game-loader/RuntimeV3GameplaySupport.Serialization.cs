@@ -132,8 +132,12 @@ internal sealed partial class RuntimeV3GameplaySupport
     private static string CatalogError(string correlationId, string errorCode, int httpStatus, out int status)
     {
         status = httpStatus;
-        return JsonSerializer.Serialize(new { correlation_id = correlationId,
-            error_code = errorCode, recovery = "reobserve" });
+        return JsonSerializer.Serialize(new
+        {
+            correlation_id = correlationId,
+            error_code = errorCode,
+            recovery = "reobserve"
+        });
     }
 
 }

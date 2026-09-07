@@ -19,7 +19,8 @@ internal static class DetachedWindowsProcess
         }
         var security = new SecurityAttributes
         {
-            Length = Marshal.SizeOf<SecurityAttributes>(), InheritHandle = true,
+            Length = Marshal.SizeOf<SecurityAttributes>(),
+            InheritHandle = true,
         };
         using SafeFileHandle nul = CreateFileW("NUL", 0xc0000000, 3, ref security, 3, 0, IntPtr.Zero);
         if (nul.IsInvalid) throw new Win32Exception();
@@ -50,7 +51,8 @@ internal static class DetachedWindowsProcess
             {
                 Startup = new StartupInfo
                 {
-                    Size = Marshal.SizeOf<StartupInfoEx>(), Flags = 0x100,
+                    Size = Marshal.SizeOf<StartupInfoEx>(),
+                    Flags = 0x100,
                     StandardInput = nul.DangerousGetHandle(),
                     StandardOutput = nul.DangerousGetHandle(),
                     StandardError = nul.DangerousGetHandle(),
@@ -110,8 +112,11 @@ internal static class DetachedWindowsProcess
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct SecurityAttributes { internal int Length; internal IntPtr Descriptor;
-        [MarshalAs(UnmanagedType.Bool)] internal bool InheritHandle; }
+    private struct SecurityAttributes
+    {
+        internal int Length; internal IntPtr Descriptor;
+        [MarshalAs(UnmanagedType.Bool)] internal bool InheritHandle;
+    }
     [StructLayout(LayoutKind.Sequential)]
     private struct StartupInfo
     {

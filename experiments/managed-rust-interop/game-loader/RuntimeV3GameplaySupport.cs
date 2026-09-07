@@ -89,20 +89,20 @@ internal sealed partial class RuntimeV3GameplaySupport
     private string HandleValidated(JsonElement root, string kind, string instanceId,
         string sessionId, string leaseId, string correlationId, ulong leaseEpoch,
         ulong requestGeneration, out int status) => kind switch
-    {
-        "state_request" => ReadState(instanceId, sessionId, leaseId, correlationId,
-            leaseEpoch, requestGeneration, "state_response", out status),
-        "reobserve_request" => ReadState(instanceId, sessionId, leaseId, correlationId,
-            leaseEpoch, requestGeneration, "reobserve_response", out status),
-        "legal_actions_request" => ReadLegalActions(root, instanceId, sessionId, leaseId,
-            correlationId, leaseEpoch, requestGeneration, out status),
-        "dispatch_action_request" => Dispatch(root, instanceId, sessionId, leaseId,
-            correlationId, leaseEpoch, requestGeneration, out status),
-        "wait_request" => Wait(root, instanceId, sessionId, leaseId, correlationId,
-            leaseEpoch, requestGeneration, out status),
-        "recover_request" => Recover(root, instanceId, sessionId, leaseId, correlationId,
-            leaseEpoch, requestGeneration, out status),
-        _ => ErrorEnvelope(correlationId, instanceId, sessionId, leaseId, leaseEpoch,
-            requestGeneration, "state_response", "unsupported_runtime_v3_operation", out status)
-    };
+        {
+            "state_request" => ReadState(instanceId, sessionId, leaseId, correlationId,
+                leaseEpoch, requestGeneration, "state_response", out status),
+            "reobserve_request" => ReadState(instanceId, sessionId, leaseId, correlationId,
+                leaseEpoch, requestGeneration, "reobserve_response", out status),
+            "legal_actions_request" => ReadLegalActions(root, instanceId, sessionId, leaseId,
+                correlationId, leaseEpoch, requestGeneration, out status),
+            "dispatch_action_request" => Dispatch(root, instanceId, sessionId, leaseId,
+                correlationId, leaseEpoch, requestGeneration, out status),
+            "wait_request" => Wait(root, instanceId, sessionId, leaseId, correlationId,
+                leaseEpoch, requestGeneration, out status),
+            "recover_request" => Recover(root, instanceId, sessionId, leaseId, correlationId,
+                leaseEpoch, requestGeneration, out status),
+            _ => ErrorEnvelope(correlationId, instanceId, sessionId, leaseId, leaseEpoch,
+                requestGeneration, "state_response", "unsupported_runtime_v3_operation", out status)
+        };
 }

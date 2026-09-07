@@ -16,7 +16,8 @@ internal static class ContinuationChecks
             Require(RuntimeV3GameplayContract.IsIdentity(identity), "card choice obeys the wire identity bound");
             var observation = RuntimeV3GameplayFixtures.CombatObservation(1) with
             {
-                State = RuntimeV3GameplayState.Selection, StateValues = new[] { identity }
+                State = RuntimeV3GameplayState.Selection,
+                StateValues = new[] { identity }
             };
             Require(observation.Validate(out _), "selection choices validate through the real observation boundary");
             var action = new LegalActionReference($"select_card:{RuntimeV3GameplayContract.MaxGeneration}:{identity}",

@@ -127,8 +127,12 @@ internal sealed class RuntimeV3GameplayHost
         }
         if (receipt.Action != action || receipt.Before.StateId != stateId)
         {
-            receipt = receipt with { Status = RuntimeV3DispatchStatus.Rejected,
-                Witness = null, ErrorCode = "idempotency_conflict" };
+            receipt = receipt with
+            {
+                Status = RuntimeV3DispatchStatus.Rejected,
+                Witness = null,
+                ErrorCode = "idempotency_conflict"
+            };
         }
         return true;
     }
@@ -152,8 +156,11 @@ internal sealed class RuntimeV3GameplayHost
             }
             if (_receipts.Count >= MaxReceipts)
             {
-                return accepted with { Status = RuntimeV3DispatchStatus.Unknown,
-                    ErrorCode = "receipt_capacity_exhausted" };
+                return accepted with
+                {
+                    Status = RuntimeV3DispatchStatus.Unknown,
+                    ErrorCode = "receipt_capacity_exhausted"
+                };
             }
             _receipts[operation] = accepted;
         }
@@ -162,8 +169,11 @@ internal sealed class RuntimeV3GameplayHost
         try { _thread.Enqueue(() => Settle(operation)); }
         catch (Exception)
         {
-            _receipts[operation] = _receipts[operation] with {
-                Status = RuntimeV3DispatchStatus.Unknown, ErrorCode = "dispatch_queue_unavailable" };
+            _receipts[operation] = _receipts[operation] with
+            {
+                Status = RuntimeV3DispatchStatus.Unknown,
+                ErrorCode = "dispatch_queue_unavailable"
+            };
         }
         return _receipts[operation];
     }
@@ -189,18 +199,32 @@ internal sealed class RuntimeV3GameplayHost
                     ? "action_not_current" : null;
             if (rejection is not null)
             {
-                _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Rejected,
-                    Observation = current, LegalActions = actions, ErrorCode = rejection };
+                _receipts[operation] = receipt with
+                {
+                    Status = RuntimeV3DispatchStatus.Rejected,
+                    Observation = current,
+                    LegalActions = actions,
+                    ErrorCode = rejection
+                };
                 return;
             }
             // Mark uncertainty before invoking a callback that may mutate then throw.
-            receipt = receipt with { Status = RuntimeV3DispatchStatus.Unknown,
-                WasDispatched = true, ErrorCode = "dispatch_outcome_unknown" };
+            receipt = receipt with
+            {
+                Status = RuntimeV3DispatchStatus.Unknown,
+                WasDispatched = true,
+                ErrorCode = "dispatch_outcome_unknown"
+            };
             _receipts[operation] = receipt;
             if (!_source.Dispatch(operation, receipt.Action))
             {
-                _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Rejected,
-                    Observation = current, LegalActions = actions, ErrorCode = "action_rejected" };
+                _receipts[operation] = receipt with
+                {
+                    Status = RuntimeV3DispatchStatus.Rejected,
+                    Observation = current,
+                    LegalActions = actions,
+                    ErrorCode = "action_rejected"
+                };
                 return;
             }
             _receipts[operation] = receipt with { ErrorCode = "settlement_unproven" };
@@ -208,8 +232,11 @@ internal sealed class RuntimeV3GameplayHost
         }
         catch (Exception)
         {
-            _receipts[operation] = _receipts[operation] with {
-                Status = RuntimeV3DispatchStatus.Unknown, ErrorCode = "settlement_unproven" };
+            _receipts[operation] = _receipts[operation] with
+            {
+                Status = RuntimeV3DispatchStatus.Unknown,
+                ErrorCode = "settlement_unproven"
+            };
         }
     }
 
@@ -230,9 +257,14 @@ internal sealed class RuntimeV3GameplayHost
             }
             IReadOnlyList<LegalActionReference> actions = SnapshotActions(
                 completion.Observation, completion.LegalActions);
-            _receipts[operation] = receipt with { Status = RuntimeV3DispatchStatus.Settled,
-                Observation = SnapshotObservation(completion.Observation), Witness = completion.Witness,
-                LegalActions = actions, ErrorCode = null };
+            _receipts[operation] = receipt with
+            {
+                Status = RuntimeV3DispatchStatus.Settled,
+                Observation = SnapshotObservation(completion.Observation),
+                Witness = completion.Witness,
+                LegalActions = actions,
+                ErrorCode = null
+            };
         }
         catch (Exception)
         {

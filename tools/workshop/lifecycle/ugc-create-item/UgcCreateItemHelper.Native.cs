@@ -218,14 +218,16 @@ internal static partial class Program
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate byte GetResultDelegate(nint utils, ulong call, nint callback, int size, int callbackId, out byte failed);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void RunCallbacksDelegate();
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)] private struct CreateItemResult
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    private struct CreateItemResult
     {
         public int ResultCode;
         public ulong PublishedFileId;
         public byte UserNeedsLegalAgreement;
     }
 
-    [StructLayout(LayoutKind.Sequential)] private struct DlInfo
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DlInfo
     {
         public nint FileName;
         public nint BaseAddress;

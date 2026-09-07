@@ -69,7 +69,9 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         var result = new RuntimeV3GameplayObservation("live", 0, seed, projection, state, values, enemies)
         {
             TurnIndex = (ushort)Math.Clamp(combat?.TurnNumber ?? 0, 0, 1024),
-            IsActionable = enabled, InputEnabled = enabled, ModalBlocking = !enabled
+            IsActionable = enabled,
+            InputEnabled = enabled,
+            ModalBlocking = !enabled
         };
         if (LiveCombatDemo.Campaign) result = ProjectCampaign(result);
         result = ProjectVictory(result);

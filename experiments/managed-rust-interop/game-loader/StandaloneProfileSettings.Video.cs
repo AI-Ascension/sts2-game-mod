@@ -46,8 +46,13 @@ internal static partial class StandaloneProfileSettings
         resolution.Disabled = current.Mode is "fullscreen" or "maximized";
         mode.ItemSelected += index => resolution.Disabled = modes[(int)index] is "fullscreen" or "maximized";
         content.AddChild(CreateDescriptionLabel("Fullscreen and maximized use the display size. Resolution applies to windowed modes."));
-        var apply = new Button { Name = "VideoApply", Text = "Apply video settings",
-            CustomMinimumSize = new Vector2(220, 36), FocusMode = Control.FocusModeEnum.All };
+        var apply = new Button
+        {
+            Name = "VideoApply",
+            Text = "Apply video settings",
+            CustomMinimumSize = new Vector2(220, 36),
+            FocusMode = Control.FocusModeEnum.All
+        };
         var status = CreateDescriptionLabel("Changes apply immediately and are saved for future launches.");
         status.Name = "VideoStatus";
         apply.Pressed += async () =>
@@ -78,8 +83,12 @@ internal static partial class StandaloneProfileSettings
     {
         var row = new HBoxContainer { CustomMinimumSize = new Vector2(0, 45) };
         row.AddChild(CreateRowLabel(label));
-        var dropdown = new OptionButton { Name = name, CustomMinimumSize = new Vector2(340, 36),
-            FocusMode = Control.FocusModeEnum.All };
+        var dropdown = new OptionButton
+        {
+            Name = name,
+            CustomMinimumSize = new Vector2(340, 36),
+            FocusMode = Control.FocusModeEnum.All
+        };
         row.AddChild(dropdown);
         content.AddChild(row);
         return dropdown;

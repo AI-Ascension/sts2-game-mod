@@ -14,17 +14,28 @@ public static partial class ModEntry
         {
             ["protocol_version"] = RuntimeV3GameplayContract.ProtocolVersion,
             ["schema_digest"] = RuntimeV3GameplayContract.SchemaDigest,
-            ["provenance"] = new { artifact = RuntimeV3GameplayContract.Artifact,
-                source = RuntimeV3GameplayContract.SchemaSource, generator = RuntimeV3GameplayContract.Generator },
-            ["correlation_id"] = "corr", ["instance_id"] = "instance",
-            ["session_id"] = "session", ["lease_id"] = "lease", ["lease_epoch"] = 1,
-            ["generation"] = generation, ["kind"] = kind,
+            ["provenance"] = new
+            {
+                artifact = RuntimeV3GameplayContract.Artifact,
+                source = RuntimeV3GameplayContract.SchemaSource,
+                generator = RuntimeV3GameplayContract.Generator
+            },
+            ["correlation_id"] = "corr",
+            ["instance_id"] = "instance",
+            ["session_id"] = "session",
+            ["lease_id"] = "lease",
+            ["lease_epoch"] = 1,
+            ["generation"] = generation,
+            ["kind"] = kind,
             ["state_id"] = kind == "dispatch_action_request" ? "combat-1" : null,
             ["operation_id"] = kind is "dispatch_action_request" or "wait_request" ? operation : null,
-            ["observation"] = null, ["legal_actions"] = null,
+            ["observation"] = null,
+            ["legal_actions"] = null,
             ["action"] = kind == "dispatch_action_request"
                 ? new { action_id = "combat.end-turn", action = new { kind = "end_turn" } } : null,
-            ["status"] = null, ["transition"] = null, ["error_code"] = null,
+            ["status"] = null,
+            ["transition"] = null,
+            ["error_code"] = null,
             ["wait_for_millis"] = kind == "wait_request" ? (int?)1 : null,
             ["wait_outcome"] = null,
             ["recovery"] = kind == "recover_request" ? new { kind = "reconcile", operation_id = operation } : null
