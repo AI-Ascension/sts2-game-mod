@@ -52,6 +52,9 @@ internal sealed partial class InstalledNativeCoopHostPort
             return null;
         }
 
+        // Completed is marked by ConfirmSettlement only after CoopHostRuntime accepts the
+        // witness's fresh outer observation. Keep this operation retryable when that observation
+        // still reports a disconnected or divergent peer.
         if (!complete || pending.Completed || !pending.CanProduceEffect)
             return null;
 
@@ -114,7 +117,12 @@ internal sealed partial class InstalledNativeCoopHostPort
         };
         if (!witness.Validate(out _))
             return null;
-        pending.Completed = true;
         return witness;
+    }
+
+    public void ConfirmSettlement(string operationId)
+    {
+        if (_pending.TryGetValue(operationId, out NativePendingOperation? pending))
+            pending.Completed = true;
     }
 }

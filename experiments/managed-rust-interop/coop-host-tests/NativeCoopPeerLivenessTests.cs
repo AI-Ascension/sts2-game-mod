@@ -16,5 +16,17 @@ internal static partial class Program
             "sustained heartbeat loss fences a peer");
         Check(!NativeCoopPeerLiveness.IsUnresponsive(0.5f),
             "ordinary packet loss does not fence a peer");
+        Check(!NativeCoopPeerLiveness.IsUnresponsive(
+                1f, null, NativeCoopPeerLiveness.LastReceivedFenceMsec + 1),
+            "a peer without a heartbeat receipt remains unknown");
+        Check(!NativeCoopPeerLiveness.IsUnresponsive(
+                1f, 1_000, 1_000 + NativeCoopPeerLiveness.LastReceivedFenceMsec - 1),
+            "a fresh heartbeat keeps even a high loss sample out of the stale fence");
+        Check(NativeCoopPeerLiveness.IsUnresponsive(
+                1f, 1_000, 1_000 + NativeCoopPeerLiveness.LastReceivedFenceMsec),
+            "sustained loss after a stale heartbeat enters recovery");
+        Check(!NativeCoopPeerLiveness.IsUnresponsive(
+                0.5f, 1_000, 1_000 + NativeCoopPeerLiveness.LastReceivedFenceMsec),
+            "freshness and loss remain separate quality dimensions");
     }
 }

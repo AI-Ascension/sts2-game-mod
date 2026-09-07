@@ -42,6 +42,7 @@ internal sealed partial class CoopHostRuntime
                     ErrorCode = null
                 };
                 _receipts[operationId] = settled;
+                ConfirmNativeSettlement(operationId);
                 return settled;
             }
         }

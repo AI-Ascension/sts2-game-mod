@@ -12,7 +12,23 @@ internal static class NativeCoopPeerLiveness
     // NetQualityTracker sends heartbeats every 200 ms. The installed ConnectionStats applies a
     // weighted loss estimate, so 0.99 represents sustained loss rather than one dropped packet.
     internal const float PacketLossFence = 0.99f;
+    // A loss value without a recent heartbeat receipt is not enough to identify a stale peer.
+    // This fence spans several first-party heartbeat intervals and uses the same millisecond
+    // clock as NetQualityTracker.LastReceivedTime.
+    internal const ulong LastReceivedFenceMsec = 2_000;
 
     internal static bool IsUnresponsive(float packetLoss) =>
         !float.IsNaN(packetLoss) && packetLoss >= PacketLossFence;
+
+    internal static bool IsUnresponsive(
+        float packetLoss, ulong? lastReceivedMsec, ulong nowMsec)
+    {
+        if (!lastReceivedMsec.HasValue || nowMsec < lastReceivedMsec.Value
+            || nowMsec - lastReceivedMsec.Value < LastReceivedFenceMsec)
+        {
+            return false;
+        }
+
+        return IsUnresponsive(packetLoss);
+    }
 }

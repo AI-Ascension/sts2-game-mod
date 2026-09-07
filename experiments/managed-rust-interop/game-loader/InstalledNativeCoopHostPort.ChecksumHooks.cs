@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
@@ -108,6 +109,9 @@ internal sealed partial class InstalledNativeCoopHostPort
         // so HostStateDigest is an actual state witness rather than a context-derived string.
         var writer = new PacketWriter();
         fullState.Serialize(writer);
+        // GenerateChecksum clears the unused tail bits before hashing the packet. Match that
+        // first-party canonicalization so the adapter's digest covers exactly the same bytes.
+        writer.ZeroByteRemainder();
         _nativeChecksumDigest = Sha256Hex(writer.Buffer.AsSpan(0, writer.BytePosition));
         _nativeStateDiverged = RemoteChecksumsDiverge(checksum);
     }
@@ -147,32 +151,40 @@ internal sealed partial class InstalledNativeCoopHostPort
         _nativeStateDiverged = true;
     }
 
+    // ConnectedPeerIds is the first-party transport roster. Quality metrics are kept in a
+    // separate recovery diagnostic so a loss estimate never invents a disconnected peer.
     private static ulong[] ConnectedNativePeerIds(
         INetGameService service, ulong localNativeId)
     {
-        return NativePeerIds(service, localNativeId, filterUnresponsive: true);
+        return NativePeerIds(service, localNativeId);
     }
 
-    private static ulong[] RawConnectedNativePeerIds(
-        INetGameService service, ulong localNativeId)
-    {
-        return NativePeerIds(service, localNativeId, filterUnresponsive: false);
-    }
-
-    private static ulong[] NativePeerIds(
-        INetGameService service, ulong localNativeId, bool filterUnresponsive)
+    private static ulong[] UnresponsiveNativePeerIds(INetGameService service)
     {
         var ids = new HashSet<ulong>();
-        if (service is INetHostGameService host)
+        if (service is INetHostGameService host
+            && service.IsConnected
+            && host.NetHost is { IsConnected: true } nativeHost)
         {
-            NetHost? nativeHost = host.NetHost;
-            if (service.IsConnected && nativeHost is not null && nativeHost.IsConnected)
+            ulong nowMsec = Time.GetTicksMsec();
+            foreach (ulong peerId in nativeHost.ConnectedPeerIds)
+            {
+                if (IsNativePeerUnresponsive(host, peerId, nowMsec))
+                    ids.Add(peerId);
+            }
+        }
+        return ids.OrderBy(id => id).ToArray();
+    }
+
+    private static ulong[] NativePeerIds(INetGameService service, ulong localNativeId)
+    {
+        var ids = new HashSet<ulong>();
+        if (service is INetHostGameService { NetHost: { } nativeHost } host)
+        {
+            if (service.IsConnected && nativeHost.IsConnected)
             {
                 foreach (ulong peerId in nativeHost.ConnectedPeerIds)
-                {
-                    if (!filterUnresponsive || IsNativePeerResponsive(host, peerId))
-                        ids.Add(peerId);
-                }
+                    ids.Add(peerId);
             }
         }
         else if (service is INetClientGameService client
@@ -186,20 +198,21 @@ internal sealed partial class InstalledNativeCoopHostPort
         return ids.OrderBy(id => id).ToArray();
     }
 
-    private static bool IsNativePeerResponsive(INetHostGameService host, ulong peerId)
+    private static bool IsNativePeerUnresponsive(
+        INetHostGameService host, ulong peerId, ulong nowMsec)
     {
         try
         {
             ConnectionStats? stats = host.GetStatsForPeer(peerId);
-            return stats is null
-                || !NativeCoopPeerLiveness.IsUnresponsive(stats.PacketLoss);
+            return stats is not null && NativeCoopPeerLiveness.IsUnresponsive(
+                stats.PacketLoss, stats.LastReceivedTime, nowMsec);
         }
         catch
         {
-            // A quality-tracker read is diagnostic. Keep the native roster when it is not
-            // readable; the first-party disconnect event or a later successful read can then
-            // provide the authoritative transition without inventing one here.
-            return true;
+            // A quality-tracker read is diagnostic. Keep the first-party ConnectedPeerIds
+            // roster when it is not readable; only a successful, fresh quality sample can add a
+            // recovery diagnostic.
+            return false;
         }
     }
 

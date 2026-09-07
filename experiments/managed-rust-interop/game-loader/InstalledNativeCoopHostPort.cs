@@ -67,11 +67,10 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
         string? lobby = service.GetRawLobbyIdentifier();
         ulong hostNativeId = NativeHostId(service, localNativeId);
         RunState? run = manager.IsInProgress ? manager.DebugOnlyGetState() : null;
-        IReadOnlyList<ulong> rawConnectedNativeIds = RawConnectedNativePeerIds(
-            service, localNativeId);
         IReadOnlyList<ulong> connectedNativeIds = ConnectedNativePeerIds(service, localNativeId);
+        ulong[] unresponsiveNativeIds = UnresponsiveNativePeerIds(service);
         IReadOnlyList<ulong> rosterNativeIds = RunRosterNativePeerIds(
-            run, rawConnectedNativeIds, localNativeId);
+            run, connectedNativeIds, localNativeId);
         string authorityId = CreateAuthorityId(lobby, hostNativeId);
         bool authorityConnected = service.IsConnected
             && role is CoopHostRole.Host or CoopHostRole.Client;
@@ -86,7 +85,8 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
         string hostDigest = _nativeChecksumDigest
             ?? CreateSharedStateDigest(run, rosterNativeIds, service.IsConnected);
         string hostFingerprint = $"{runId}|{hostDigest}|{string.Join(',', rosterNativeIds)}|"
-            + $"{string.Join(',', connectedNativeIds)}|{service.IsGameLoading}";
+            + $"{string.Join(',', connectedNativeIds)}|{string.Join(',', unresponsiveNativeIds)}|"
+            + $"{service.IsGameLoading}";
         if (!string.Equals(_lastHostFingerprint, hostFingerprint, StringComparison.Ordinal))
         {
             if (_lastHostFingerprint is not null)
@@ -180,8 +180,9 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
             Peers: peers,
             RecoveryRequired: !service.IsConnected || manager.IsCleaningUp
                 || role == CoopHostRole.Host
-                && rosterNativeIds.Any(id => id != localNativeId
-                    && !connectedNativeIds.Contains(id)),
+                && (unresponsiveNativeIds.Length > 0
+                    || rosterNativeIds.Any(id => id != localNativeId
+                        && !connectedNativeIds.Contains(id))),
             PendingProposal: null)
         {
             AuthorityId = authorityId,

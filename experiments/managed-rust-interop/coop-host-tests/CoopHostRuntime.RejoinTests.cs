@@ -121,11 +121,12 @@ internal static partial class Program
         internal bool RejoinStartsDivergent { get; init; }
         internal bool ChangeEpochAfterRejoin { get; init; }
         internal bool LocalPeerDisconnected { get; init; }
-        internal bool DisconnectClientBeforeEffect { get; init; }
+        internal bool DisconnectClientBeforeEffect { get; set; }
         internal bool NativeRejoinSettled { get; set; } = true;
         internal bool DigestKnown { get; init; } = true;
         internal bool AuthorityIdsMatch { get; init; } = true;
         internal bool EffectPublished { get; set; }
+        internal int ConfirmedOperationCount { get; private set; }
         internal int RejoinCount { get; private set; }
         private string _operationId = "op:none";
 
@@ -174,6 +175,8 @@ internal static partial class Program
         public CoopNativeDispatchResult SubmitSharedVote(CoopSharedVoteRequest request) =>
             DispatchLocalAction(new(request.OperationId, request.ExpectedHostGeneration,
                 request.VoterPeerId, "shared_vote", request.Choice, null));
+
+        public void ConfirmSettlement(string operationId) => ConfirmedOperationCount++;
 
         public CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch)
         {

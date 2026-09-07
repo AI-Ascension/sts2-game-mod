@@ -15,6 +15,7 @@ internal static partial class Program
         PeerGenerationsMayDifferWhenDigestsConverge();
         StaleHostGenerationIsRejectedBeforeNativeDispatch();
         UnknownOutcomeReconcilesWithoutRetryingMutation();
+        NativeCompletionDefersUntilOuterSettlement();
         PendingCoopMutationBlocksNewOperation();
         RejoinReplayDoesNotRepeatNativeMutation();
         AcceptedRejoinReconcilesWithoutRetrying();
@@ -72,6 +73,24 @@ internal static partial class Program
             && recovered?.Outcome == CoopOutcome.Settled
             && port.DispatchCount == 1, "reconcile settles without a blind retry");
         Check(!runtime.HasPendingMutation, "settled native outcome clears the pending predicate");
+    }
+
+    private static void NativeCompletionDefersUntilOuterSettlement()
+    {
+        FakePort port = new() { DisconnectClientBeforeEffect = true };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt first = runtime.DispatchLocalAction(new(
+            "op:deferred-completion", 1, "peer:host1", "end_turn", null, null));
+        Check(first.Outcome == CoopOutcome.Unknown
+            && port.ConfirmedOperationCount == 0,
+            "native completion is not confirmed while the outer peer convergence fence fails");
+
+        port.DisconnectClientBeforeEffect = false;
+        Check(runtime.Reconcile("op:deferred-completion", out CoopOperationReceipt? settled)
+            && settled?.Outcome == CoopOutcome.Settled
+            && port.DispatchCount == 1
+            && port.ConfirmedOperationCount == 1,
+            "the same native operation can settle after a later fresh convergence observation");
     }
 
     private static void PendingCoopMutationBlocksNewOperation()
