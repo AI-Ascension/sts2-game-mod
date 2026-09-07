@@ -187,26 +187,13 @@ if [[ "$campaign_map" == true ]]; then
     campaign_args=(-Campaign -CampaignMode standard -CampaignMapBound)
 fi
 verify_campaign_map_trace() {
-    local trace=$1 total starts maps other settled
+    local trace=$1
     [[ -s "$trace" ]] || { printf '%s\n' 'Bounded trace is empty' >&2; return 1; }
-    total=$(jq -s '[.[] | select(.event == "model_decision")] | length' "$trace")
-    starts=$(jq -s '[.[] | select(.event == "model_decision")
-        | select((.action_id // "") | startswith("start_run:"))] | length' "$trace")
-    maps=$(jq -s '[.[] | select(.event == "model_decision")
-        | select((.action_id // "") | startswith("select_map_node:"))] | length' "$trace")
-    other=$(jq -s '[.[] | select(.event == "model_decision")
-        | select((.action_id // "") | (startswith("start_run:") or startswith("select_map_node:")) | not)]
-        | length' "$trace")
-    settled=$(jq -s '[.[] | select(.event == "operation_wait_completed")
-        | select((.operation_id // "") | startswith("episode-action-"))] | length' "$trace")
-    [[ "$total" == "$((starts + maps))" && "$starts" == 1 && "$maps" == 1 \
-        && "$other" == 0 && "$settled" == "$((starts + maps))" ]] || {
-        printf 'Bounded trace rejected: total=%s start_run=%s select_map_node=%s other=%s settled=%s\n' \
-            "$total" "$starts" "$maps" "$other" "$settled" >&2
+    jq -e -s -f "$script_dir/live-campaign-trace.jq" "$trace" >/dev/null || {
+        printf '%s\n' 'Bounded trace lacks the required sequence, witnesses, image, artifact, or fresh capture.' >&2
         return 1
     }
-    printf 'Bounded campaign/map trace accepted: start_run=%s select_map_node=%s settled=%s\n' \
-        "$starts" "$maps" "$settled"
+    printf '%s\n' 'Bounded campaign/map trace accepted: two verified actions and a fresh read-only capture.'
 }
 verify_baseline() {
     if sha256sum --check --quiet "$run/baseline.sha256"; then
@@ -276,6 +263,7 @@ if [[ "$campaign_map" == true ]]; then
     unset STS2_COMBAT_DEMO
     mkdir -p -- "$run/map-artifacts"
     export STS2_MAP_ARTIFACT_ROOT="$run/map-artifacts"
+    export STS2_CAMPAIGN_MAP_BOUND=true
     export STS2_LIVE_EPISODE=true STS2_MAP_MODE=graph-image STS2_MAP_RENDERER_BINARY="$map_renderer"
     export STS2_MAP_RENDERER_SHA256="$map_renderer_sha256" STS2_MAX_STEPS=2
     export STS2_RECOVERY_MAX_ATTEMPTS=1 STS2_EXO_TIMEOUT_MILLIS=90000
@@ -283,6 +271,7 @@ if [[ "$campaign_map" == true ]]; then
     export STS2_HARD_CONSTRAINTS_JSON='["Use exactly one host-legal start_run action.","After setup, use exactly one current host-legal select_map_node action.","Stop after the first settled map selection and never enter combat actions, rewards, shops, or events."]'
 else
     unset STS2_MAP_ARTIFACT_ROOT
+    unset STS2_CAMPAIGN_MAP_BOUND
     export STS2_COMBAT_DEMO=true STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
 fi
 export STS2_REPLAY_TRAJECTORY="$replay"
@@ -310,7 +299,8 @@ jq -n --arg seed "$(if [[ "$campaign_map" == true ]]; then printf ''; else print
     window_mode:($mode | if . == "" then null else . end),
     campaign_map_bound:$campaign_map,
     campaign_action_contract:(if $campaign_map then {start_run:1,select_map_node:1} else null end),
-    provider_call_policy:(if $campaign_map then {max_model_decisions:2,max_steps:2,recovery_attempts:1,timeout_millis:90000} else null end),
+    provider_call_policy:(if $campaign_map then {max_model_decisions:2,max_steps:2,recovery_attempts:1,timeout_millis:90000,sequence_guard:true,post_settlement_capture:"read-only"} else null end),
+    decision_and_receipt_artifact:"trajectory.jsonl",
     map_rendering:(if $campaign_map then {mode:"graph-image",binary:$map_renderer,sha256:$map_renderer_sha256,image_required:true,artifact_root_relative:"map-artifacts"} else null end),
     video_values:"requested overrides; null uses saved preference or default; actual values are in game.log",
     replay:$replay}' >"$run/manifest.json"

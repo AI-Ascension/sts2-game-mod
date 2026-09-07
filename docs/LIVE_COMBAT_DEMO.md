@@ -88,6 +88,15 @@ model decision steps, one read-only recovery attempt, and a 90-second provider d
 option does not resume a save, accepts no seed or replay trajectory, and is preparation for an
 authorized live run; it does not claim campaign completion or a played combat.
 
+The launcher also enables `STS2_CAMPAIGN_MAP_BOUND=true` in the harness. That policy rejects a
+different action kind before dispatch and advances only after runner-verified settlement. Before
+lease cleanup it records a fresh read-only observation without a third model decision. A map
+outside the current map-decision stage is explicitly unavailable in that final capture; the
+earlier image remains historical. The durable `trajectory.jsonl` contains bounded decisions,
+rationales, receipts, and bundle links, while `map-artifacts/` holds immutable bundles and the feed.
+Run `bash experiments/managed-rust-interop/live-campaign-trace.test.sh` to exercise trace rejection
+and both synchronous and waited settlement records without a host or provider.
+
 Campaign/map mode also verifies the disposable host before starting anything. Its
 `data_sts2_windows_x86_64/sts2.dll` must be the supported v0.107.1 release `59260271` with
 SHA-256 `a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`; the matching
