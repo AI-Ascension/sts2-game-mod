@@ -25,6 +25,7 @@ internal static class RuntimeMapV1Contract
     internal const ulong MaxGeneration = 9_007_199_254_740_991;
     internal const int MaxNodes = 256;
     internal const int MaxEdges = 1_024;
+    internal const int MaxMapIdentityRegistryEntries = 4_096;
     // Traversal work is bounded independently of the output collections. This keeps a
     // malformed host graph from forcing an ever-growing queue/set before the projection can
     // report that it is unavailable.

@@ -126,25 +126,27 @@ internal sealed partial class LiveCombatSource
         return _mapInstanceId!;
     }
 
-    private string StableMapNodeId(string mapInstanceId, int act, MapPoint point)
+    private bool TryStableMapNodeIds(string mapInstanceId, int act, List<MapPoint> points,
+        out Dictionary<MapPoint, string> ids, out string reason)
     {
-        if (!_mapPointDisambiguators.TryGetValue(point, out string? token))
-        {
-            if (_nextMapPointDisambiguator == uint.MaxValue)
-                throw new InvalidOperationException("map point disambiguator bound exceeded");
-            token = $"p{++_nextMapPointDisambiguator}";
-            _mapPointDisambiguators.Add(point, token);
-        }
-        return $"map-node:{mapInstanceId}:act:{act}:ref:{token}";
-    }
-
-    private Dictionary<MapPoint, string> StableMapNodeIds(string mapInstanceId, int act,
-        List<MapPoint> points)
-    {
-        var ids = new Dictionary<MapPoint, string>(points.Count, ReferenceEqualityComparer.Instance);
+        ids = new Dictionary<MapPoint, string>(points.Count, ReferenceEqualityComparer.Instance);
         foreach (MapPoint point in points)
-            ids.Add(point, StableMapNodeId(mapInstanceId, act, point));
-        return ids;
+        {
+            if (!_mapPointDisambiguators.TryGetValue(point, out string? token))
+            {
+                if (_mapPointDisambiguators.Count
+                    >= RuntimeMapV1Contract.MaxMapIdentityRegistryEntries)
+                {
+                    reason = "map_identity_registry_bound_exceeded";
+                    return false;
+                }
+                token = $"p{++_nextMapPointDisambiguator}";
+                _mapPointDisambiguators.Add(point, token);
+            }
+            ids.Add(point, $"map-node:{mapInstanceId}:act:{act}:ref:{token}");
+        }
+        reason = string.Empty;
+        return true;
     }
 
     private static string MapNodeId(int act, MapCoord coordinate) =>

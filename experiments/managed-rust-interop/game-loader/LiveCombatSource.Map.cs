@@ -67,8 +67,12 @@ internal sealed partial class LiveCombatSource
             return UnavailableMap(generation, traversalReason, mapInstanceId,
                 run.CurrentActIndex);
 
-        Dictionary<MapPoint, string> nodeIds = StableMapNodeIds(mapInstanceId,
-            run.CurrentActIndex, points);
+        if (!TryStableMapNodeIds(mapInstanceId, run.CurrentActIndex, points,
+                out Dictionary<MapPoint, string> nodeIds, out string identityReason))
+        {
+            return UnavailableMap(generation, identityReason, mapInstanceId,
+                run.CurrentActIndex);
+        }
         points = points.OrderBy(point => nodeIds[point], StringComparer.Ordinal).ToList();
 
         if (!TryCollectVisitedCoordinates(run, out HashSet<(int Row, int Column)> visited,
