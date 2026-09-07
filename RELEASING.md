@@ -55,6 +55,12 @@ toolchain and locked dependencies, build the same commit into two independent Ca
 directories, and compare the resulting DLL bytes. Record this separately from package
 checksum validation and native loading evidence.
 
+Release managed addons map their source directory to a stable logical path and do not
+embed a portable-PDB location. This keeps the operator checkout path out of the DLL and
+allows a second build in a different checkout to reproduce it. Debug builds retain the
+normal debugging settings. Compare managed DLLs using the same SDK and exact host reference
+assemblies; the Windows and Linux host references are distinct compatibility inputs.
+
 ## Workshop publication
 
 Workshop staging is a release-preparation action, not an ordinary CI action:

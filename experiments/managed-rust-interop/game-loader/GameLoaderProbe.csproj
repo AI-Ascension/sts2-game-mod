@@ -7,6 +7,11 @@
     <AssemblyName>AIAscensionSTS2GameMod</AssemblyName>
     <RootNamespace>AiAscension.Sts2GameMod.Runtime</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PathMap>$(MSBuildProjectDirectory)=/_/sts2-game-mod/game-loader</PathMap>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
   <!-- The legacy room-entry combat fixture must never ship in a production addon. -->
   <PropertyGroup Condition="'$(EnableCombatDemoProbe)' == 'true'">
     <DefineConstants>$(DefineConstants);STS2_COMBAT_DEMO_PROBE</DefineConstants>
