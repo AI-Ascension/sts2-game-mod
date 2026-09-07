@@ -3,4 +3,4 @@
 set -Eeuo pipefail
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-exec python3 "$script_dir/build-runtime-receipt.py" "$@"
+exec python3 -B "$script_dir/build-runtime-receipt.py" "$@"

@@ -6,7 +6,11 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 repo_root=$(CDPATH= cd -- "$script_dir/../.." && pwd -P)
 source_commit=$(git -C "$repo_root" rev-parse HEAD)
 temp_dir=$(mktemp -d -t sts2-runtime-receipt-XXXXXXXX)
+clean_worktree=''
 cleanup() {
+    if [[ -n "$clean_worktree" && -d "$clean_worktree" ]]; then
+        git -C "$repo_root" worktree remove --force "$clean_worktree" >/dev/null 2>&1 || true
+    fi
     rm -rf -- "$temp_dir"
 }
 trap cleanup EXIT
@@ -40,6 +44,25 @@ if bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload
     exit 1
 fi
 [[ ! -e "$repo_root/tools/release/receipt-inside-source" ]]
+
+clean_worktree="$temp_dir/clean-worktree"
+git -C "$repo_root" worktree add --detach "$clean_worktree" "$source_commit" >/dev/null
+clean_host="$temp_dir/clean-host"
+mkdir -p -- "$clean_host"
+printf 'host assembly fixture\n' > "$clean_host/sts2.dll"
+printf 'host support fixture\n' > "$clean_host/GodotSharp.dll"
+if env -u PYTHONDONTWRITEBYTECODE bash "$clean_worktree/tools/release/build-runtime-receipt.sh" \
+    --scope production --host-data-dir "$clean_host" --dotnet "$temp_dir/missing-dotnet" \
+    --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
+    --package-version 0.4.0 --output-dir "$temp_dir/clean-production" \
+    --evidence-dir "$temp_dir/clean-production-evidence" >/dev/null 2>&1; then
+    printf '%s\n' 'missing production dotnet unexpectedly succeeded' >&2
+    exit 1
+fi
+[[ -z "$(git -C "$clean_worktree" status --porcelain=v1 --untracked-files=all)" ]]
+[[ ! -d "$clean_worktree/tools/release/__pycache__" ]]
+git -C "$repo_root" worktree remove --force "$clean_worktree" >/dev/null
+clean_worktree=''
 
 output="$temp_dir/receipt"
 STS2_RELEASE_TEST_FIXTURE=1 bash "$script_dir/build-runtime-receipt.sh" \
