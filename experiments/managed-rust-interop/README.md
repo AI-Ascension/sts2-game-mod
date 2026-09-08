@@ -267,6 +267,18 @@ receipt store is full. A request that reaches the five-second boundary is cancel
 been claimed by the main-thread pump; a request already claimed is reported as timeout/uncertain
 and must be reconciled rather than retried.
 
+The additive Runtime-v4 expert profile exposes the authenticated routes
+`/api/v4/runtime/expert-state`, `/api/v4/runtime/expert-action`, and
+`/api/v4/runtime/expert-actions/{operation_id}`. The state route projects only ordinary
+player-visible run, map, combat, reward, event, rest, selection, shop, victory, defeat, and
+recovery data, together with the host-generated legal-action catalog. The action route currently
+admits only a host-generated `use_potion` action. It binds the request to the session lease,
+generation, state, correlation, and operation identities; a queued mutation remains `unknown`
+until the exact host action finishes, the addressed potion instance is gone, and a fresh expert
+observation proves the generation transition. Lost responses are reconciled with the same
+operation identity. These routes are source/build evidence; live expert-state gameplay and
+gateway/MCP/harness integration remain unverified.
+
 The exact STS2 v0.107.1 Windows x86-64 host probe is recorded in the target evidence report. The
 Runtime-v2 host-adapter candidate builds are recorded separately; their live
 gameplay execution, settlement, restart behavior, and gateway/MCP/harness integration remain

@@ -30,8 +30,17 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const int RuntimeRequestKindAction = 2;
         private const int RuntimeRequestKindRuntimeV2State = 3;
         private const int RuntimeRequestKindRuntimeV2Operation = 5;
+        private const uint RuntimeRequestKindGameplay = 6;
+        private const uint RuntimeRequestKindExpertState = 7;
+        private const uint RuntimeRequestKindExpertAction = 8;
         private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
             throw new InvalidOperationException("v1 test crossed into v2");
+        private static (int, string) ProcessRuntimeV3GameplayWork(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into gameplay");
+        private static (int, string) ProcessRuntimeV4ExpertWork(RuntimeContext context) =>
+            throw new InvalidOperationException("v1 test crossed into expert gameplay");
+        private static (int, string) ProcessRuntimeV4ExpertActionWork(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into expert gameplay");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>

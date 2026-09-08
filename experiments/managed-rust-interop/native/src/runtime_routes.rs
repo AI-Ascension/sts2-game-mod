@@ -2,8 +2,8 @@
 
 use super::{
     CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
-    dispatch_with_body, http,
+    CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT, CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
 };
 
 pub(super) fn dispatch(
@@ -36,6 +36,24 @@ pub(super) fn dispatch(
             dispatch_operation(
                 callback,
                 CALLBACK_RUNTIME_V2_OPERATION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
+        ("GET", "/api/v4/runtime/expert-state") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT, request, stream)
+        }
+        ("POST", "/api/v4/runtime/expert-action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT_ACTION, request, stream)
+        }
+        ("GET", path)
+            if request.body.is_empty() && path.starts_with("/api/v4/runtime/expert-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_ACTION,
                 request,
                 operation_id,
                 stream,

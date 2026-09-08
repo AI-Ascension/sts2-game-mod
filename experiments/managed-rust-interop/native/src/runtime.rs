@@ -11,6 +11,8 @@ const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
 const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
 const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
 const CALLBACK_GAMEPLAY: u32 = 6;
+const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
+const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
 const MAX_RESPONSE_BYTES: usize = 128 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
@@ -290,11 +292,9 @@ fn dispatch_with_body(
     };
     let mut output = vec![0_u8; MAX_RESPONSE_BYTES];
     let mut output_length = 0_usize;
-    // SAFETY: Request fields borrow live, read-only buffers for this synchronous call.
-    // Output and length are distinct, exclusively borrowed Rust-owned storage; the
-    // callback must obey capacity, retain/free no pointers, and never unwind.
-    // The start caller guarantees callback validity on this listener thread until
-    // stop joins it, before delegate release or native-library unload.
+    // SAFETY: Request fields borrow live read-only buffers; output and length are distinct,
+    // exclusively borrowed storage. The callback obeys capacity, does not unwind or retain pointers.
+    // The start caller guarantees callback validity on this listener thread until stop joins it.
     let status = unsafe {
         callback(
             &native_request,

@@ -16,7 +16,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
 internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
 {
-    private readonly int _threadId = Environment.CurrentManagedThreadId;
+    private readonly int _threadId = System.Environment.CurrentManagedThreadId;
     private readonly Dictionary<CardModel, string> _cardIds = new();
     private string? _fingerprint;
     private ulong _generation;
@@ -30,7 +30,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private void RequireThread()
     {
-        if (Environment.CurrentManagedThreadId != _threadId)
+        if (System.Environment.CurrentManagedThreadId != _threadId)
             throw new InvalidOperationException("live combat requires the host thread");
     }
 
@@ -53,7 +53,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         CombatState? hostCombat = manager.DebugOnlyGetState();
         bool active = combat != null && hostCombat != null && manager.IsInProgress;
         RuntimeV3GameplayPlayer projection = ProjectPlayer(player, combat);
-        var enemies = active && hostCombat != null ? hostCombat.Enemies.Select(ProjectEnemy).ToArray()
+        var enemies = active && hostCombat != null ? ProjectEnemiesSafely((CombatState)hostCombat)
             : Array.Empty<RuntimeV3GameplayEnemy>();
         bool modal = MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal != null;
         bool enabled = active && combat?.Phase == PlayerTurnPhase.Play && !modal
@@ -69,7 +69,9 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         var result = new RuntimeV3GameplayObservation("live", 0, seed, projection, state, values, enemies)
         {
             TurnIndex = (ushort)Math.Clamp(combat?.TurnNumber ?? 0, 0, 1024),
-            IsActionable = enabled, InputEnabled = enabled, ModalBlocking = !enabled
+            IsActionable = enabled,
+            InputEnabled = enabled,
+            ModalBlocking = !enabled
         };
         if (LiveCombatDemo.Campaign) result = ProjectCampaign(result);
         result = ProjectVictory(result);
@@ -103,9 +105,6 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private static ushort U16(int value) => (ushort)Math.Clamp(value, 0, ushort.MaxValue);
     private static string EnemyId(Creature enemy) => $"enemy:{enemy.CombatId}";
-    private static RuntimeV3GameplayEnemy ProjectEnemy(Creature enemy) => new(
-        EnemyId(enemy), enemy.Name, U16(enemy.CurrentHp), U16(enemy.MaxHp),
-        RuntimeV3GameplayIntent.Unknown, 0, 0);
 
     public IReadOnlyList<LegalActionReference> LegalActions(RuntimeV3GameplayObservation observation)
     {
@@ -136,7 +135,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private void AddPlay(List<LegalActionReference> actions, CardModel card, Creature? target, ulong generation)
     {
-        string? targetId = target?.IsEnemy == true ? EnemyId(target) : null;
+        string? targetId = target?.IsEnemy == true ? EnemyId((Creature)target) : null;
         string cardId = CardId(card);
         actions.Add(new($"play:{generation}:{cardId}:{targetId ?? "none"}",
             "play_card", cardId, targetId, generation));

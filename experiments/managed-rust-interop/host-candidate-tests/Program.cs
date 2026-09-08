@@ -38,6 +38,7 @@ public static partial class ModEntry
         _runtimeV2Pending = null;
         _runtimeV2HostBaseline = false;
         _runtimeGeneration = 0;
+        _runtimeV4Pending = false;
         InitializeRuntimeV3Gameplay();
 
     }
