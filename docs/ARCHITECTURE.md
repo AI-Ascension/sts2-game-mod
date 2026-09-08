@@ -2,6 +2,11 @@
 
 ## Responsibility
 
+The additive map-read profile copies permitted topology and current legal bindings on the host
+thread, then verifies the observation generation again before returning owned values. Protocol
+owns the neutral contract; graph analysis and presentation remain downstream. See
+[ADR 0032](decisions/0032-runtime-map-projection.md) for scope, bounds, and rejection behavior.
+
 The opt-in live combat composition is documented in [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md).
 Only the host loader references its exact-host source; source-only protocol probes remain
 independent of proprietary host assemblies. The source queues real host actions and observes

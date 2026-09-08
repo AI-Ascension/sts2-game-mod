@@ -27,6 +27,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0018 | [Neutral Runtime-v3 host-thread bridge, source-only](0018-runtime-v3-gameplay-bridge.md) |
 | 0019 | [Repeat-seed practice replay](0019-repeat-seed-practice-replay.md) |
 | 0031 | [Rust release provenance tooling boundary](0031-rust-release-provenance-tooling.md) |
+| 0032 | [Additive permitted map projection](0032-runtime-map-projection.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

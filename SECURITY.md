@@ -2,6 +2,12 @@
 
 ## Scope
 
+`runtime-map-v1` is an authenticated read profile. It cannot open, scroll, or select the map,
+and its snapshot is never a gameplay settlement witness. Closed, unsupported, ambiguous, or
+changed map surfaces fail explicitly. Gateway/MCP retain caller, instance, session, and lease
+fencing; the visualizer has no direct host credentials. See
+[the map projection decision](docs/decisions/0032-runtime-map-projection.md).
+
 The optional live-combat session uses separate ephemeral gateway and game credentials.
 Its host receives the game credential through stdin. Logs and trajectories belong in external
 operator storage. A disposable game copy alone does not isolate Steam cache writes before

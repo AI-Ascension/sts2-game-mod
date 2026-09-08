@@ -14,13 +14,16 @@ using MegaCrit.Sts2.Core.Runs;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
-internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
+internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread,
+    IRuntimeMapV1HostSource
 {
     private readonly int _threadId = System.Environment.CurrentManagedThreadId;
     private readonly Dictionary<CardModel, string> _cardIds = new();
     private string? _fingerprint;
     private ulong _generation;
     private int _nextCardId;
+    private bool _campaignStartDispatched;
+    private bool _campaignMapSelectionDispatched;
 
     public void Enqueue(Action work)
     {
@@ -78,7 +81,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         result = ProjectVictory(result);
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
-        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));
+        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result))
+            + "|" + MapSurfaceFingerprint();
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
@@ -111,6 +115,12 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     {
         RequireThread();
         var actions = new List<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && observation.State is not RuntimeV3GameplayState.Setup
+                and not RuntimeV3GameplayState.Map)
+        {
+            return actions;
+        }
         Player? player = CurrentPlayer();
         if (LiveCombatDemo.Campaign && observation.State != RuntimeV3GameplayState.Combat)
             return CampaignActions(observation);

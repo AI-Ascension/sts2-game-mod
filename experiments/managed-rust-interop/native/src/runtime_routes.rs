@@ -8,6 +8,8 @@ use super::{
     dispatch_with_body, http,
 };
 
+const CALLBACK_RUNTIME_MAP: u32 = 14;
+
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
     request: &http::Request,
@@ -75,6 +77,9 @@ pub(super) fn dispatch(
         }
         ("POST", "/api/v1/coop/native/recover") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_COOP_RECOVER, request, stream)
+        }
+        ("GET", "/api/map/v1/snapshot") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_MAP, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

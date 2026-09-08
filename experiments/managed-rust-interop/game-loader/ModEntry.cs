@@ -78,10 +78,12 @@ public static partial class ModEntry
                 LiveCombatDemo.Initialize();
                 InitializeRuntimeV3Gameplay();
                 ConfigureCoopNative(new InstalledNativeCoopHostPort());
+                InitializeRuntimeMapV1();
                 if (System.Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") == "1")
                 {
                     var source = new LiveCombatSource();
                     ConfigureRuntimeV3Gameplay(source, source);
+                    ConfigureRuntimeMapV1(source);
                 }
                 StandaloneProfileSettings.Initialize();
                 SeedReplayController.Initialize();

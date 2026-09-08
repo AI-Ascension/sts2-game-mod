@@ -46,6 +46,9 @@ namespace AiAscension.Sts2GameMod.Runtime
         // Co-op behavior belongs to the co-op probes; crossing that route here is a test failure.
         private static (int, string) ProcessCoopNativeWork(uint kind, RuntimeContext context, string body) =>
             throw new InvalidOperationException("v1 test crossed into native co-op");
+        private const int RuntimeRequestKindMap = 14;
+        private static (int, string) ProcessRuntimeMapV1Work(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into map");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>
