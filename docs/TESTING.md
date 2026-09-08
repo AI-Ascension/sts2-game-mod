@@ -44,6 +44,7 @@ cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
 (cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-v4-expert-rest-action && sha256sum -c SHA256SUMS)
 cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
@@ -52,8 +53,8 @@ cargo test --locked --offline --workspace --all-targets --all-features
 ~~~
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
-`poc-v1` and Runtime-map-v1 mapping seams. The commands prove source-level structure,
-queue/ABI/adapter composition, copied artifact identity, Runtime-v1 compatibility, and the
+`poc-v1`, Runtime-map-v1, and Runtime-v4 expert rest-action mapping seams. The commands prove
+source-level structure, queue/ABI/adapter composition, copied artifact identity, Runtime-v1 compatibility, and the
 Runtime-v2 deterministic fake lifecycle. The managed host-adapter build is a separate
 compiler/package oracle; these ordinary commands still do not launch the game or prove gameplay,
 map extraction, or Runtime-v2 host settlement.
@@ -459,9 +460,27 @@ These checks do not load a host, touch a profile/save, or contact a provider.
 
 Three further probe cases cover the Runtime-v4 expert gate: a pending expert mutation rejects
 semantic and v2 dispatch without a host call, and releasing it admits the next semantic dispatch.
-The native `runtime_endpoint_tests` also assert that the three v4 routes reach callback kinds 7 and
-8 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement code
-compiles only against the host assembly and has no source-only probe; its behavior is `unverified`.
+The native `runtime_endpoint_tests` also assert that the v4 routes reach callback kinds 7, 8, and
+15 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement
+code compiles only against the host assembly and has no source-only probe; its behavior is
+`unverified`.
+
+The source-only rest-action probe exercises the production serializer, strict response validator,
+host-thread support, and synthetic host source:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj --configuration Release
+~~~
+
+It checks the exact candidate schema digest and golden round trips, immediate rest-option witness
+shapes, Smith's two-card selector sequence, Mend's player target and cancellation, stale and early
+confirmation rejection, idempotent accepted receipts, same-operation unknown reconciliation, and
+cross-profile pending fences. The receipt tests retain the submitted action through accepted and
+unknown responses. Selector recovery checks bind completion to the admitted native selector
+identity, choice catalog, count, selected IDs, and cancellation action, so fabricated selector
+catalogs or completion statuses remain `unknown`. This is source/component evidence against a
+synthetic host; it does not establish licensed-host API compatibility, live rest effects, gateway,
+MCP, harness, or release support.
 
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 

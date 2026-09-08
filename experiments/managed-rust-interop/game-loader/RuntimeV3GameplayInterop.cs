@@ -12,11 +12,14 @@ public static partial class ModEntry
     private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
     private static LiveCombatSource? _liveCombatSource;
     private static RuntimeV4ExpertSupport _runtimeV4Expert = RuntimeV4ExpertSupport.Unconfigured();
+    private static RuntimeV4ExpertRestActionSupport _runtimeV4ExpertRest =
+        RuntimeV4ExpertRestActionSupport.Unconfigured();
 
     private static void InitializeRuntimeV3Gameplay()
     {
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
         _runtimeV4Expert = RuntimeV4ExpertSupport.Unconfigured();
+        _runtimeV4ExpertRest = RuntimeV4ExpertRestActionSupport.Unconfigured();
     }
 
     private static void ConfigureRuntimeV3Gameplay(IRuntimeV3HostSource source, IRuntimeV3HostThread thread)
@@ -24,18 +27,28 @@ public static partial class ModEntry
         _liveCombatSource = source as LiveCombatSource;
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
             () => _runtimeV2Pending is null && !HasPendingRuntimeV4ExpertMutation()
-                && !HasPendingCoopMutation);
+                && !HasPendingCoopMutation && !HasPendingRuntimeV4ExpertRestMutation());
         _runtimeV4Expert = _liveCombatSource is null
             ? RuntimeV4ExpertSupport.Unconfigured()
             : RuntimeV4ExpertSupport.WithHost(_liveCombatSource, thread);
+        _runtimeV4ExpertRest = _liveCombatSource is null
+            ? RuntimeV4ExpertRestActionSupport.Unconfigured()
+            : RuntimeV4ExpertRestActionSupport.WithHost(
+                _liveCombatSource,
+                thread.Enqueue,
+                () => !HasPendingNonExpertMutation()
+                    && !HasPendingRuntimeV4ExpertMutation());
     }
 
     internal static bool HasPendingNonExpertMutation() =>
         _runtimeV2Pending is not null || (_runtimeV3Gameplay?.HasPendingMutation ?? false)
-            || HasPendingCoopMutation;
+            || HasPendingCoopMutation || HasPendingRuntimeV4ExpertRestMutation();
 
     private static bool HasPendingRuntimeV4ExpertMutation() =>
         _runtimeV4Expert.HasPendingMutation;
+
+    private static bool HasPendingRuntimeV4ExpertRestMutation() =>
+        _runtimeV4ExpertRest.HasPendingMutation;
 
     private static (int Status, string Response) ProcessRuntimeV3GameplayWork(
         RuntimeContext context,
@@ -78,6 +91,18 @@ public static partial class ModEntry
         }
         return _runtimeV4Expert.Handle(
             new RuntimeV4ExpertContext(context.InstanceId, context.SessionId, context.LeaseId,
+                ParseEpoch(context.LeaseEpoch), context.CorrelationId), body, out int status);
+    }
+
+    private static (int Status, string Response) ProcessRuntimeV4ExpertRestActionWork(
+        RuntimeContext context, string body)
+    {
+        if (!TryAuthorizeRuntimeV2Context(context, out string error))
+        {
+            return (RuntimeRejected, RuntimeV2PlainError(error));
+        }
+        return _runtimeV4ExpertRest.Handle(
+            new RuntimeV4ExpertRestContext(context.InstanceId, context.SessionId, context.LeaseId,
                 ParseEpoch(context.LeaseEpoch), context.CorrelationId), body, out int status);
     }
 }

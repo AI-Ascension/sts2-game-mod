@@ -20,6 +20,10 @@ internal static partial class Program
             _phase = initialPhase;
         }
 
+        internal bool TamperProgression { get; set; }
+        internal bool TamperCatalog { get; set; }
+        internal bool TamperCancellation { get; set; }
+
         public RuntimeV4ExpertRestHostProjection ObserveRest()
         {
             ulong generation = (ulong)(9 + _phase);
@@ -61,11 +65,33 @@ internal static partial class Program
             if (_phase == 1 && action.Action.Kind == "select_card"
                 && action.Action.CardId == "card:1")
             {
+                if (TamperCancellation)
+                    return new("cancelled", null, null, null, "sts2.game-mod/selection_cancelled");
                 _phase = 2;
                 RuntimeV4ExpertRestSelector selector = Selector(11, 2);
+                if (TamperProgression)
+                    selector = selector with { SelectedChoiceIds = new[] { "card:2" } };
+                RuntimeV4ExpertGameplayObservation observation = Observation(11, "selection");
+                if (TamperCatalog)
+                {
+                    selector = selector with
+                    {
+                        LegalActions = selector.LegalActions.Append(CardAction(
+                            11, "selection:script:smith", "card:3")).ToArray()
+                    };
+                    observation = observation with
+                    {
+                        State = observation.State with
+                        {
+                            Choices = observation.State.Choices.Append(
+                                new RuntimeV4ExpertGameplayChoice(
+                                    "card:3", "Defend", "selection", null)).ToArray()
+                        }
+                    };
+                }
                 var transition = new RuntimeV4ExpertRestSelectionProgressedTransition(
                     "smith", 10, 11, selector);
-                return new("settled", Observation(11, "selection"), transition, null, null);
+                return new("settled", observation, transition, null, null);
             }
             if (_phase == 2 && action.Action.Kind == "select_card"
                 && action.Action.CardId == "card:2")
@@ -101,7 +127,10 @@ internal static partial class Program
             string selectionId = "selection:script:smith";
             var actions = new List<RuntimeV4ExpertRestActionReference>();
             if (phase == 1)
+            {
                 actions.Add(CardAction(generation, selectionId, "card:1"));
+                actions.Add(CardAction(generation, selectionId, "card:2"));
+            }
             if (phase == 2)
                 actions.Add(CardAction(generation, selectionId, "card:2"));
             if (phase == 3)

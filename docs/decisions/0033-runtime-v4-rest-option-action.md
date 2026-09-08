@@ -1,7 +1,8 @@
 # ADR 0033: additive Runtime-v4 rest-option action transport
 
-Status: proposed; requires agreement from the protocol, mod, gateway/MCP and harness owners
-before any consumer or artifact update.
+Status: proposed for cross-owner adoption; it requires agreement from the protocol, mod,
+gateway/MCP and harness owners before those consumers adopt the profile. The mod may keep a
+source-only implementation and exact candidate-artifact copy while that review remains open.
 
 ## Problem
 
@@ -90,7 +91,7 @@ rest-specific player action and count-aware selector follow-up.
 
 ## Native admission and settlement
 
-The intended producer is the rest-action companion to
+The source-only producer candidate is the rest-action companion to
 `experiments/managed-rust-interop/game-loader/RuntimeV4ExpertSupport.cs`. On the host thread it
 reobserves `LiveCombatSource.ObserveExpert()`, finds exactly one visible enabled
 `NRestSiteButton` whose public `Option.OptionId` matches the requested ID, and retains the exact

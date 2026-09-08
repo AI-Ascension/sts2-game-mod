@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-/// <summary>Constants and transport-neutral values for the inactive rest-action profile.</summary>
+/// <summary>Constants and transport-neutral values for the source-only rest-action candidate.</summary>
 internal static class RuntimeV4ExpertRestActionContract
 {
     internal const string ProtocolVersion = "runtime-v4-expert-rest-action-v1";
@@ -19,9 +19,8 @@ internal static class RuntimeV4ExpertRestActionContract
     internal const int MaxChoices = 256;
     internal const int MaxIdentityLength = 512;
 
-    // This value is updated only when the proposal schema is changed. The source-only codec test
-    // compares it with the exact proposal bytes; it is deliberately not copied to the shared
-    // protocol artifact while this profile remains a proposal.
+    // This value is updated only when the candidate schema is changed. The source-only codec test
+    // compares it with the exact proposal bytes and the copied protocol candidate artifact.
     internal const string SchemaDigest =
         "bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd";
 

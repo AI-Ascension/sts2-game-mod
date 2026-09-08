@@ -1,12 +1,14 @@
 # Intended producer and consumer path
 
-This note makes the proposal reviewable without claiming that the path has been implemented.
-The profile remains inactive until the protocol owner accepts the schema and each owner supplies
-the evidence listed below.
+This note makes the proposal reviewable without claiming cross-owner adoption. The protocol
+profile remains a candidate until the protocol owner accepts the schema and each owner supplies
+the evidence listed below. The mod now has a source-only producer candidate wired to its local
+native route; that implementation does not admit the protocol artifact for gateway, MCP, or
+harness use.
 
 ## Producer
 
-The game-mod producer is the future rest-action companion to
+The game-mod producer is the source-only rest-action companion to
 `experiments/managed-rust-interop/game-loader/RuntimeV4ExpertSupport.cs`. It owns the
 `/v4/instances/{instance_id}/expert-rest-action` request boundary, envelope identity checks,
 operation receipts, host-thread dispatch, and serialization of this profile. It must not route
@@ -72,5 +74,6 @@ consumer boundary. The Smith fixtures in
 catalog entry from the preceding response and require the action reference to be echoed without
 an opaque ID rewrite.
 
-Until those gates pass, the profile is a bounded design proposal and no consumer or live
-gameplay capability is advertised.
+Until those gates pass, the profile remains a bounded protocol design proposal for cross-owner
+consumers. The local mod source candidate does not advertise gateway, MCP, harness, or live
+gameplay capability.

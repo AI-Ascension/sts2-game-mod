@@ -131,7 +131,7 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
                 status = Rejected;
                 return Render(context, new RuntimeV4ExpertRestReceipt(
                     operation, parsed.Action, parsed.StateId, parsed.Generation,
-                    "rejected", null, null, null, "sts2.runtime/idempotency_conflict"),
+                    "rejected", null, null, null, "sts2.runtime/idempotency_conflict", null),
                     out status);
             }
             return Render(context, existing, out status);
@@ -148,7 +148,7 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
         {
             RuntimeV4ExpertRestReceipt rejected = new(
                 operation, parsed.Action, parsed.StateId, parsed.Generation,
-                "rejected", null, null, null, "sts2.runtime/operation_in_progress");
+                "rejected", null, null, null, "sts2.runtime/operation_in_progress", null);
             _receipts.Add(operation, rejected);
             return Render(context, rejected, out status);
         }
@@ -167,12 +167,12 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
             });
             if (!ran)
                 return RetainUnknown(context, parsed, "sts2.game-mod/dispatch_queue_unavailable",
-                    out status);
+                    out status, current?.Selector);
         }
         catch (Exception)
         {
             return RetainUnknown(context, parsed, "sts2.game-mod/dispatch_outcome_unknown",
-                out status);
+                out status, current?.Selector);
         }
 
         if (!dispatched)
@@ -182,7 +182,8 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
                 "rejected", null, null, null,
                 current is null
                     ? "sts2.game-mod/observation_unavailable"
-                    : "sts2.game-mod/rest_option_not_legal");
+                    : "sts2.game-mod/rest_option_not_legal",
+                SnapshotSelector(current?.Selector));
             if (_receipts.Count < RuntimeV4ExpertRestActionContract.MaxReceipts)
                 _receipts.Add(operation, rejected);
             return Render(context, rejected, out status);
@@ -190,7 +191,7 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
 
         RuntimeV4ExpertRestReceipt accepted = new(
             operation, parsed.Action, parsed.StateId, parsed.Generation,
-            "accepted", null, null, null, null);
+            "accepted", null, null, null, null, SnapshotSelector(current?.Selector));
         _receipts.Add(operation, accepted);
         return Render(context, accepted, out status);
     }

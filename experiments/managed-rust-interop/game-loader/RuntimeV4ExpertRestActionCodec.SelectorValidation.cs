@@ -104,6 +104,7 @@ internal static partial class RuntimeV4ExpertRestActionCodec
     private static bool ValidateSelector(
         RuntimeV4ExpertRestSelector selector,
         string optionId,
+        RuntimeV4ExpertGameplayObservation observation,
         out string error)
     {
         error = string.Empty;
@@ -128,6 +129,13 @@ internal static partial class RuntimeV4ExpertRestActionCodec
             error = "rest selector kind does not match its option";
             return false;
         }
+        if (observation.State.Kind != "selection" || observation.State.Choices is not { Count: > 0 })
+        {
+            error = "rest selector has no visible choice surface";
+            return false;
+        }
+        var visibleChoiceIds = new HashSet<string>(
+            observation.State.Choices.Select(choice => choice.ChoiceId), StringComparer.Ordinal);
         var actionIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (RuntimeV4ExpertRestActionReference action in selector.LegalActions)
         {
@@ -146,6 +154,18 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                 && action.Action.Kind is not ("select_player" or "confirm_selection" or "cancel_selection"))
             {
                 error = "player selector catalog contains an unrelated action";
+                return false;
+            }
+            if (action.Action.Kind == "select_card"
+                && !visibleChoiceIds.Contains(action.Action.CardId!))
+            {
+                error = "rest card selector action is not visible";
+                return false;
+            }
+            if (action.Action.Kind == "select_player"
+                && !visibleChoiceIds.Contains(action.Action.PlayerId!))
+            {
+                error = "rest player selector action is not visible";
                 return false;
             }
         }

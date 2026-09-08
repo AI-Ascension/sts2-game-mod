@@ -117,6 +117,86 @@ internal static partial class Program
             "missing native evidence retried dispatch instead of reconciling the same operation");
     }
 
+    private static void SelectorAdmissionBindingChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:selector-binding");
+        var host = new SmithHost { TamperProgression = true };
+        RuntimeV4ExpertRestActionSupport support =
+            RuntimeV4ExpertRestActionSupport.WithHost(host, work => work());
+
+        RuntimeV4ExpertRestHostProjection initial = host.ObserveRest();
+        RuntimeV4ExpertRestRequest parent = RequestFromProjection(context, initial,
+            "rest-op:selector-binding:parent", initial.LegalActions.Single());
+        ExpectAccepted(support, context, parent);
+        _ = Reconcile(support, context, parent.Operation.OperationId);
+
+        RuntimeV4ExpertRestHostProjection selector = host.ObserveRest();
+        RuntimeV4ExpertRestActionReference firstAction = selector.LegalActions.Single(action =>
+            action.Action.Kind == "select_card" && action.Action.CardId == "card:1");
+        RuntimeV4ExpertRestRequest first = RequestFromProjection(context, selector,
+            "rest-op:selector-binding:first", firstAction);
+        ExpectAccepted(support, context, first);
+        string unknown = Reconcile(support, context, first.Operation.OperationId);
+        using JsonDocument document = JsonDocument.Parse(unknown);
+        Check(document.RootElement.GetProperty("status").GetString() == "unknown",
+            "selector completion with a fabricated choice did not remain unknown");
+        JsonElement returnedAction = document.RootElement.GetProperty("action");
+        Check(returnedAction.GetProperty("action_id").GetString() == firstAction.ActionId
+                && returnedAction.GetProperty("action").GetProperty("kind").GetString()
+                    == firstAction.Action.Kind
+                && returnedAction.GetProperty("action").GetProperty("rest_option_id").GetString()
+                    == firstAction.Action.RestOptionId
+                && returnedAction.GetProperty("action").GetProperty("selection_id").GetString()
+                    == firstAction.Action.SelectionId
+                && returnedAction.GetProperty("action").GetProperty("card_id").GetString()
+                    == firstAction.Action.CardId,
+            "unknown selector receipt did not retain the admitted action reference");
+
+        var catalogHost = new SmithHost { TamperCatalog = true };
+        RuntimeV4ExpertRestActionSupport catalogSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(catalogHost, work => work());
+        RuntimeV4ExpertRestHostProjection catalogInitial = catalogHost.ObserveRest();
+        RuntimeV4ExpertRestRequest catalogParent = RequestFromProjection(context, catalogInitial,
+            "rest-op:selector-binding:catalog-parent", catalogInitial.LegalActions.Single());
+        ExpectAccepted(catalogSupport, context, catalogParent);
+        _ = Reconcile(catalogSupport, context, catalogParent.Operation.OperationId);
+        RuntimeV4ExpertRestHostProjection catalogSelector = catalogHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference catalogFirstAction = catalogSelector.LegalActions
+            .Single(action => action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:1");
+        RuntimeV4ExpertRestRequest catalogFirst = RequestFromProjection(context, catalogSelector,
+            "rest-op:selector-binding:catalog-first", catalogFirstAction);
+        ExpectAccepted(catalogSupport, context, catalogFirst);
+        string catalogUnknown = Reconcile(catalogSupport, context,
+            catalogFirst.Operation.OperationId);
+        using JsonDocument catalogDocument = JsonDocument.Parse(catalogUnknown);
+        Check(catalogDocument.RootElement.GetProperty("status").GetString() == "unknown",
+            "selector completion with a fabricated follow-up catalog did not remain unknown");
+
+        var cancellationHost = new SmithHost { TamperCancellation = true };
+        RuntimeV4ExpertRestActionSupport cancellationSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(cancellationHost, work => work());
+        RuntimeV4ExpertRestHostProjection cancellationInitial = cancellationHost.ObserveRest();
+        RuntimeV4ExpertRestRequest cancellationParent = RequestFromProjection(context,
+            cancellationInitial, "rest-op:selector-binding:cancel-parent",
+            cancellationInitial.LegalActions.Single());
+        ExpectAccepted(cancellationSupport, context, cancellationParent);
+        _ = Reconcile(cancellationSupport, context, cancellationParent.Operation.OperationId);
+        RuntimeV4ExpertRestHostProjection cancellationSelector = cancellationHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference cancellationAction = cancellationSelector.LegalActions
+            .Single(action => action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:1");
+        RuntimeV4ExpertRestRequest cancellation = RequestFromProjection(context,
+            cancellationSelector, "rest-op:selector-binding:cancel-first", cancellationAction);
+        ExpectAccepted(cancellationSupport, context, cancellation);
+        string cancellationUnknown = Reconcile(cancellationSupport, context,
+            cancellation.Operation.OperationId);
+        using JsonDocument cancellationDocument = JsonDocument.Parse(cancellationUnknown);
+        Check(cancellationDocument.RootElement.GetProperty("status").GetString() == "unknown",
+            "non-cancel selector action reported cancelled status");
+    }
+
     private static RuntimeV4ExpertRestRequest RequestFromProjection(
         RuntimeV4ExpertRestContext context,
         RuntimeV4ExpertRestHostProjection projection,

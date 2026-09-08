@@ -48,11 +48,13 @@ internal static partial class Program
             EarlyConfirmationCheck(fixtures);
             SerializedResponseChecks();
             NativeWitnessChecks();
+            SemanticValidationChecks();
             ProducerConsumerSupportChecks();
             SmithProducerConsumerChecks();
             MendProducerConsumerChecks();
             StaleAndEarlyConfirmationChecks();
             UnknownReconciliationChecks();
+            SelectorAdmissionBindingChecks();
         }
         finally
         {

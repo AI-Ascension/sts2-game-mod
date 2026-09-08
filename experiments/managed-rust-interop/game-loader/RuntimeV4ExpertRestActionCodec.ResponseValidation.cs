@@ -108,7 +108,8 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                 error = "selection request cannot carry an effect witness";
                 return false;
             }
-            return ValidateSelector(requested.Selector, requested.RestOptionId, out error);
+            return ValidateSelector(requested.Selector, requested.RestOptionId,
+                response.Observation, out error);
         }
         if (response.Transition is RuntimeV4ExpertRestSelectionProgressedTransition progressed)
         {
@@ -118,7 +119,8 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                 error = "selection progress cannot carry an effect witness";
                 return false;
             }
-            return ValidateSelector(progressed.Selector, progressed.RestOptionId, out error);
+            return ValidateSelector(progressed.Selector, progressed.RestOptionId,
+                response.Observation, out error);
         }
         if (response.Transition is RuntimeV4ExpertRestSelectionCompletedTransition completed)
         {

@@ -13,8 +13,8 @@ const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
 const CALLBACK_GAMEPLAY: u32 = 6;
 const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
 const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
-// Runtime-v4 owns callback IDs 7 (expert state) and 8 (expert action). Keep the co-op
-// callbacks in a disjoint range shared with the managed route table.
+const CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION: u32 = 15;
+// Runtime-v4 owns callback IDs 7 (expert state), 8 (expert potion action), and 15 (expert rest action).
 const CALLBACK_COOP_OBSERVATION: u32 = 9;
 const CALLBACK_COOP_ACTION: u32 = 10;
 const CALLBACK_COOP_VOTE: u32 = 11;

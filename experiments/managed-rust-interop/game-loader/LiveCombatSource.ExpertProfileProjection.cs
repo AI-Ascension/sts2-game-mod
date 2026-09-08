@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.RestSite;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
@@ -47,10 +48,34 @@ internal sealed partial class LiveCombatSource
     private static RuntimeV4ExpertGameplayAction ProjectAction(LegalActionReference action) =>
         new(action.ActionId, action.Kind, action.Value, action.TargetId, null);
 
+    private static IEnumerable<RuntimeV4ExpertGameplayAction> ExpertRestOptionActions(
+        RuntimeV3GameplayObservation observation)
+    {
+        if (observation.State != RuntimeV3GameplayState.Rest || !observation.InputEnabled
+            || CurrentRestSite() is not { } room)
+            yield break;
+
+        NRestSiteButton[] buttons = RestButtons(room);
+        foreach (NRestSiteButton button in buttons)
+        {
+            string? optionId = WireRestOptionId(button.Option.OptionId);
+            if (optionId is null || !RuntimeV4ExpertRestActionContract.IsOptionKind(optionId)
+                || buttons.Count(candidate => WireRestOptionId(candidate.Option.OptionId)
+                    == optionId) != 1)
+                continue;
+            RuntimeV4ExpertRestActionReference reference = RestOptionAction(
+                observation.Generation, optionId);
+            yield return new RuntimeV4ExpertGameplayAction(
+                reference.ActionId, reference.Action.Kind, reference.Action.RestOptionId,
+                null, null);
+        }
+    }
+
     private List<RuntimeV4ExpertGameplayAction> ExpertActions(
         RuntimeV3GameplayObservation observation, Player? player, PlayerCombatState? combat)
     {
         var actions = LegalActions(observation).Select(ProjectAction).ToList();
+        actions.AddRange(ExpertRestOptionActions(observation));
         if (observation.State != RuntimeV3GameplayState.Combat || !observation.InputEnabled
             || player is null || combat is null) return actions;
         Creature[] enemies = CombatManager.Instance.DebugOnlyGetState()?.Enemies.ToArray()

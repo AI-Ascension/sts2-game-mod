@@ -6,6 +6,19 @@ do not establish release support.
 
 ## Unreleased
 
+- Activate the mod's source-only `runtime-v4-expert-rest-action-v1` candidate. Native callback kind
+  15 serves `POST /api/v4/runtime/expert-rest-action` and
+  `GET /api/v4/runtime/expert-rest-actions/{operation_id}`. The existing expert-state projection
+  exposes unique visible enabled rest options, while Smith and Mend retain typed native selector
+  catalogs for generation-fenced follow-up actions. Immediate options require option-specific
+  witnesses, Kindle and Lift retain their native completion callback evidence, and accepted or
+  uncertain receipts preserve the original action. Selector reconciliation binds the retained
+  selector identity, catalog, counts, selected IDs, and cancellation action. The copied candidate
+  artifact is pinned to schema digest
+  `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd`.
+  Source/component and synthetic route/probe evidence pass; protocol consumers, live rest settlement,
+  exact-host/package builds, and broader compatibility remain unverified.
+
 - Add the independent `runtime-map-v1` read profile with bounded player-visible topology,
   stable map-scoped node identities, exact current legal bindings, and generation fencing.
   Add a disposable campaign/image validation handoff bounded to two decisions. Exact-host

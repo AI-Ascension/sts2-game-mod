@@ -4,8 +4,8 @@ use super::{
     CALLBACK_ACTION, CALLBACK_COOP_ACTION, CALLBACK_COOP_OBSERVATION, CALLBACK_COOP_RECOVER,
     CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE, CALLBACK_RUNTIME_V2_ACTION,
     CALLBACK_RUNTIME_V2_OPERATION, CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT,
-    CALLBACK_RUNTIME_V4_EXPERT_ACTION, RuntimeRequestCallback, dispatch as dispatch_callback,
-    dispatch_with_body, http,
+    CALLBACK_RUNTIME_V4_EXPERT_ACTION, CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
 };
 
 const CALLBACK_RUNTIME_MAP: u32 = 14;
@@ -58,6 +58,27 @@ pub(super) fn dispatch(
             dispatch_operation(
                 callback,
                 CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
+        ("POST", "/api/v4/runtime/expert-rest-action") if request.content_type_is_json() => {
+            dispatch_callback(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+                request,
+                stream,
+            )
+        }
+        ("GET", path)
+            if request.body.is_empty()
+                && path.starts_with("/api/v4/runtime/expert-rest-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-rest-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
                 request,
                 operation_id,
                 stream,

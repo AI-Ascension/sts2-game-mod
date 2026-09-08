@@ -41,7 +41,9 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
         {
             bool ran = InvokeHost(() =>
                 completion = _source.CompleteRest(operation, receipt.Action));
-            if (ran && completion is { Status: "settled" or "cancelled" })
+            if (ran && completion is { Status: "settled" or "cancelled" }
+                && (receipt.AdmissionSelector is null
+                    || CompletionMatchesAdmission(receipt, completion)))
             {
                 RuntimeV4ExpertRestReceipt completed = receipt with
                 {
@@ -82,11 +84,12 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
         RuntimeV4ExpertRestContext context,
         RuntimeV4ExpertRestRequest request,
         string errorCode,
-        out int status)
+        out int status,
+        RuntimeV4ExpertRestSelector? admissionSelector = null)
     {
         RuntimeV4ExpertRestReceipt receipt = new(
             request.Operation, request.Action, request.StateId, request.Generation,
-            "unknown", null, null, null, errorCode);
+            "unknown", null, null, null, errorCode, SnapshotSelector(admissionSelector));
         if (!_receipts.ContainsKey(request.Operation)
             && _receipts.Count < RuntimeV4ExpertRestActionContract.MaxReceipts)
             _receipts.Add(request.Operation, receipt);
@@ -156,7 +159,8 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
         RuntimeV4ExpertGameplayObservation? Observation,
         RuntimeV4ExpertRestTransition? Transition,
         RuntimeV4ExpertRestEffectWitness? EffectWitness,
-        string? ErrorCode);
+        string? ErrorCode,
+        RuntimeV4ExpertRestSelector? AdmissionSelector);
 
     private static string Error(string code) => JsonSerializer.Serialize(new { error_code = code });
 }

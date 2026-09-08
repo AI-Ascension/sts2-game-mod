@@ -330,16 +330,36 @@ identity, and settles only after the exact queued host action finished, the addr
 left the belt, and a fresh observation advanced the generation. A queue or host exception leaves the
 receipt `unknown` for same-identity reconciliation and blocks further mutations. The expert
 projection reads public host properties by name and the rendered `NIntent` presentation fields named
-in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`. This is source and
-build evidence; live expert gameplay and settlement remain unverified.
+in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`.
 
-At current mod main `0a46af363896f6cdd645e73dd774023693d450a9`, the source/component boundary is
-checked against the copied expert artifacts from merged protocol main
-`b3d3034f32e68d70c9e681f906ee37d74db153c4`. This identity and checksum evidence does not establish
-licensed-host extraction, live expert action settlement, package compatibility, or release support.
+The local `runtime-v4-expert-rest-action-v1` source candidate adds callback kind 15 and the
+authenticated `POST /api/v4/runtime/expert-rest-action` plus
+`GET /api/v4/runtime/expert-rest-actions/{operation_id}` routes. Its managed support shares the
+host identity, queue, receipt, and cross-profile pending-mutation fences, while retaining the
+original action reference in every accepted or uncertain receipt. `LiveCombatSource` exposes only
+unique visible enabled native rest buttons as typed `rest_option` actions in the existing expert
+state projection. Selector options retain the native selector and its typed catalog; Smith card
+progression and Mend player selection use separate generation-fenced operations. Settlements require
+fresh observations and option-specific witnesses, including the native callback plus authoritative
+Kindle/Lift changes. Selector reconciliation binds each follow-up to the admitted selector identity,
+choice catalog, counts, and cancellation action; a fabricated catalog, choice, witness, or
+non-cancellation cancelled result stays `unknown`.
 
-`InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
-configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
+The rest profile is a source/component candidate against the copied protocol candidate artifact.
+Its protocol manifest still reports `candidate` and `none_admitted`; gateway, MCP, harness, live
+host settlement, and release compatibility remain unverified.
+
+At the mod source revision containing this candidate, the source/component boundary is checked
+against the copied expert artifacts from merged protocol main
+`b3d3034f32e68d70c9e681f906ee37d74db153c4` and the copied rest-action candidate artifact at schema
+digest `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd`, sourced from protocol
+candidate commit `0889cf9773ba9b29eb9bd34ebe4e954b57ddeb52`. These identities and checksum results do
+not establish licensed-host extraction, live expert or rest settlement, package compatibility, or
+release support.
+
+`InitializeRuntimeV3Gameplay` still installs unconfigured host sources until the live source and
+host-thread port are configured. The source-only configuration seam and synthetic probes do not
+supply a concrete STS2 adapter or host evidence.
 
 Receipt lookup is scoped to instance/session/lease/epoch/operation and precedes new
 action admission. Replays use saved observation/catalog snapshots. Observation reads

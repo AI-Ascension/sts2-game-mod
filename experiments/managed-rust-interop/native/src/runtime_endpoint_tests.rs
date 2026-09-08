@@ -79,6 +79,13 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
         ("GET", "/api/v4/runtime/expert-state", "", 207),
         ("POST", "/api/v4/runtime/expert-action", "{}", 208),
         ("GET", "/api/v4/runtime/expert-actions/potion-op-1", "", 208),
+        ("POST", "/api/v4/runtime/expert-rest-action", "{}", 215),
+        (
+            "GET",
+            "/api/v4/runtime/expert-rest-actions/rest-op-1",
+            "",
+            215,
+        ),
         ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
     ] {
         let request = format!(
@@ -141,6 +148,18 @@ fn coop_native_routes_have_disjoint_callback_ids() -> std::io::Result<()> {
     assert_ne!(super::CALLBACK_COOP_VOTE, super::CALLBACK_GAMEPLAY);
     assert_ne!(super::CALLBACK_COOP_REJOIN, super::CALLBACK_GAMEPLAY);
     assert_ne!(super::CALLBACK_COOP_RECOVER, super::CALLBACK_GAMEPLAY);
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_RUNTIME_V4_EXPERT
+    );
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_RUNTIME_V4_EXPERT_ACTION
+    );
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_GAMEPLAY
+    );
     Ok(())
 }
 

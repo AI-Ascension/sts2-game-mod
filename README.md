@@ -21,11 +21,15 @@ have also been exercised in authorized disposable profiles. Current native evide
 STS2 v0.107.1 on the tested Windows and Linux guests; it records model-controlled setup-to-Defeat
 campaigns and fresh replays, plus separate forced terminal-observation fixtures.
 
-The additive Runtime-v4 expert state/action bridge is present at source/component level at mod main
-`0a46af363896f6cdd645e73dd774023693d450a9`. Its copied protocol artifacts are checksum-verified
-against merged protocol main `b3d3034f32e68d70c9e681f906ee37d74db153c4`; Rust/managed source and
-synthetic route/admission checks cover the bounded expert surface. Live expert gameplay, potion
-settlement, exact-host/package builds, and broader compatibility remain `unverified`.
+The additive Runtime-v4 expert state/action bridge is present at source/component level. Its copied
+protocol artifacts are checksum-verified against merged protocol main
+`b3d3034f32e68d70c9e681f906ee37d74db153c4`; Rust/managed source and synthetic route/admission
+checks cover the bounded expert surface. The local `runtime-v4-expert-rest-action-v1` candidate
+adds callback kind 15, typed rest-option actions, Smith/Mend selector follow-ups, native completion
+witness checks, and same-operation recovery. Its copied candidate artifact is pinned to schema
+digest `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd` and remains
+`none_admitted` in its protocol manifest. Live expert/rest gameplay, settlement, exact-host/package
+builds, and broader compatibility remain `unverified`.
 
 ## Responsibility and consumers
 
@@ -61,6 +65,10 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   inert copied artifacts for the additive expert state/action bridge. Their schema digests are
   `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
   `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`.
+- [protocol-artifact/runtime-v4-expert-rest-action/](protocol-artifact/runtime-v4-expert-rest-action/)
+  is the exact copied candidate artifact for the local rest-action transport. Its schema digest is
+  `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd`; the manifest remains
+  `candidate` with no admitted consumers.
 - `crates/game-mod/src/poc/` maps state reads and one typed `use_budget` action through a narrow
   `PocCorePort`, records correlation/instance/generation metadata, and emits one settled-effect
   witness for an accepted action.

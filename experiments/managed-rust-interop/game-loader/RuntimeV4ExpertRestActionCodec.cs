@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>
-/// Closed JSON projection for the inactive rest profile. Strict request and response checks are
+/// Closed JSON projection for the source-only rest profile candidate. Strict request and response checks are
 /// split into companion files so each responsibility remains independently reviewable.
 /// </summary>
 internal static partial class RuntimeV4ExpertRestActionCodec
