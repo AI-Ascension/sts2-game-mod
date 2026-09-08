@@ -33,6 +33,8 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const uint RuntimeRequestKindGameplay = 6;
         private const uint RuntimeRequestKindExpertState = 7;
         private const uint RuntimeRequestKindExpertAction = 8;
+        private const uint RuntimeRequestKindCoopObservation = 9;
+        private const uint RuntimeRequestKindCoopRecover = 13;
         private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
             throw new InvalidOperationException("v1 test crossed into v2");
         private static (int, string) ProcessRuntimeV3GameplayWork(RuntimeContext context, string body) =>
@@ -41,6 +43,12 @@ namespace AiAscension.Sts2GameMod.Runtime
             throw new InvalidOperationException("v1 test crossed into expert gameplay");
         private static (int, string) ProcessRuntimeV4ExpertActionWork(RuntimeContext context, string body) =>
             throw new InvalidOperationException("v1 test crossed into expert gameplay");
+        // Co-op behavior belongs to the co-op probes; crossing that route here is a test failure.
+        private static (int, string) ProcessCoopNativeWork(uint kind, RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into native co-op");
+        private const int RuntimeRequestKindMap = 14;
+        private static (int, string) ProcessRuntimeMapV1Work(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into map");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>

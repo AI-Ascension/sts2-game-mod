@@ -156,6 +156,7 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "serde_json",
+ "sha2",
  "sts2-game-mod-host",
  "sts2-game-mod-http-adapter",
 ]
@@ -178,6 +179,15 @@ dependencies = [
 
 [[package]]
 name = "sts2-game-mod-loading"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "sts2-release-tool"
 version = "0.0.0"
 dependencies = [
  "serde",

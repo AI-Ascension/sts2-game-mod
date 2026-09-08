@@ -257,7 +257,11 @@ saved-off UI toggle cannot silently prevent the session readiness check.
 `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. The
 listener exposes the v1 probe routes and the frozen Runtime-v2 routes
 `/api/v2/runtime/state`, `/api/v2/runtime/action`, and
-`/api/v2/runtime/operations/{operation_id}` with bearer authentication. Requests are copied into a
+`/api/v2/runtime/operations/{operation_id}` plus the additive read-only map snapshot route
+`/api/map/v1/snapshot` with bearer authentication. Map snapshots use the frozen
+`sts2-protocol/runtime-map-v1` schema digest and are served from the host thread only while the
+campaign map is observable; closed or unsupported map surfaces return an explicit unavailable
+snapshot. Requests are copied into a
 bounded managed queue and processed on the Godot main thread. Runtime-v1 retains the
 `show_runtime_probe` integration action. Runtime-v2 admits only argument-free `end_turn` and reports `unknown` after dispatch until an
 independent host completion binding is implemented. `STS2_RUNTIME_QUEUE_CAPACITY` may set a bounded mod-side queue from `1`

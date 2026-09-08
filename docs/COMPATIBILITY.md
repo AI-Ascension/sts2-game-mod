@@ -1,5 +1,13 @@
 # Compatibility policy and matrix
 
+The 2026-09-08 reward-skip candidate exposes the existing `skip_reward` action only for a
+unique visible, enabled plain `Skip` alternative on the native card-reward selection screen.
+It retains the screen's selection task and exact alternate index, rechecks the binding before
+the native click, and requires that selected result, a closed selection surface, an unchanged
+deck and the ordinary fresh-generation settlement checks. Reroll, event cancellation and
+modified skip callbacks remain separate capability gaps. The private field bindings are pinned
+to the inspected v0.107.1 host; native execution and replay of this new action remain unverified.
+
 Current-run Victory observation has focused native Windows and Linux v0.107.1 evidence from
 isolated forced-terminal fixtures; normal Windows/Linux addon builds compile and exclude
 the fixture. This does not establish a model-played win. See
@@ -189,6 +197,15 @@ an unavailable witness preserves an unknown outcome. Managed handler tests use
 synthetic completion events and do not promote the licensed-host compatibility row.
 The co-op helpers are not connected to the managed gameplay request path; their
 source-only validation does not establish multiplayer mutation fencing.
+
+The additive `runtime-map-v1` profile is pinned to schema digest
+`ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b` and is served by
+`GET /api/map/v1/snapshot`. The managed host projection compiles against the recorded STS2
+v0.107.1 Windows x86-64 assemblies (`sts2.dll` SHA-256
+`a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`) and has source-level
+synthetic coverage for bounded graph projection and fair-play pairing. This is build and test
+evidence only; map visibility outside the open UI, loader discovery, live snapshots, and settled
+navigation remain unverified.
 
 ## Workshop package profile
 

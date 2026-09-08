@@ -99,6 +99,7 @@ jobs:
           bash experiments/managed-rust-interop/provider-build.test.sh
           bash experiments/managed-rust-interop/session-install.test.sh
           bash experiments/managed-rust-interop/live-authorization.test.sh
+          bash experiments/managed-rust-interop/live-campaign-trace.test.sh
           bash experiments/managed-rust-interop/package-runtime-addon.test.sh
           bash experiments/managed-rust-interop/dev-cycle.test.sh
           bash experiments/managed-rust-interop/session-launcher.sh --self-test

@@ -8,6 +8,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 
 mod poc;
 mod protocol_artifact;
+mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
 mod workshop;
@@ -20,6 +21,13 @@ pub use poc::{
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
+};
+pub use runtime_map::{
+    RUNTIME_MAP_V1_ARTIFACT, RUNTIME_MAP_V1_GENERATOR, RUNTIME_MAP_V1_MAX_BINDINGS,
+    RUNTIME_MAP_V1_MAX_EDGES, RUNTIME_MAP_V1_MAX_GENERATION, RUNTIME_MAP_V1_MAX_HISTORY,
+    RUNTIME_MAP_V1_MAX_MESSAGE_BYTES, RUNTIME_MAP_V1_MAX_NODES, RUNTIME_MAP_V1_PROTOCOL_VERSION,
+    RUNTIME_MAP_V1_SCHEMA_DIGEST, RUNTIME_MAP_V1_SCHEMA_SOURCE, RuntimeMapArtifactError,
+    verify_runtime_map_artifact,
 };
 pub use runtime_v2::{
     FakeRuntimeV2Game, RUNTIME_V2_ARTIFACT, RUNTIME_V2_GENERATOR, RUNTIME_V2_MAX_GENERATION,

@@ -32,6 +32,10 @@ public static partial class ModEntry
         {
             return ProcessRuntimeV4ExpertActionWork(work.Context, work.Body);
         }
+        if (work.Kind >= RuntimeRequestKindCoopObservation && work.Kind <= RuntimeRequestKindCoopRecover)
+        {
+            return ProcessCoopNativeWork(work.Kind, work.Context, work.Body);
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));
@@ -39,6 +43,10 @@ public static partial class ModEntry
         if (work.Kind == RuntimeRequestKindGameplay)
         {
             return ProcessRuntimeV3GameplayWork(work.Context, work.Body);
+        }
+        if (work.Kind == RuntimeRequestKindMap)
+        {
+            return ProcessRuntimeMapV1Work(work.Context, work.Body);
         }
         if (work.Kind != RuntimeRequestKindAction)
         {

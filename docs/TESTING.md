@@ -43,6 +43,8 @@ cargo metadata --locked --no-deps --format-version 1
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
+cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -50,19 +52,24 @@ cargo test --locked --offline --workspace --all-targets --all-features
 ~~~
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
-`poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
-not launch the game or prove gameplay or Runtime-v2 host settlement.
+`poc-v1` and Runtime-map-v1 mapping seams. The commands prove source-level structure,
+queue/ABI/adapter composition, copied artifact identity, Runtime-v1 compatibility, and the
+Runtime-v2 deterministic fake lifecycle. The managed host-adapter build is a separate
+compiler/package oracle; these ordinary commands still do not launch the game or prove gameplay,
+map extraction, or Runtime-v2 host settlement.
+
+The game-mod Rust Runtime-map-v1 test verifies copied artifact bytes, provenance, and checksums;
+it is not payload-consumer conformance. Managed `RuntimeMapV1Contract` and its codec probe own
+the source-level payload validation checks for this target.
 
 ## Runtime-v2 deterministic seam
 
 CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
-the POC, Runtime-v1, and Runtime-v3 checksum gates, then discovers every `SHA256SUMS` under
-`protocol-artifact/`. The discovery step includes the `runtime-v4-expert` and
-`runtime-v4-expert-action` copies, so a newly copied profile cannot be omitted from CI. The
-copies are also checked locally and compared byte-for-byte against merged `sts2-protocol` main;
-a self-consistent inventory cannot detect a stale copy.
+the POC, Runtime-v1, and Runtime-v3 checksum gates. A checksum failure fails the Rust CI job.
+CI also discovers and checks every `SHA256SUMS` under `protocol-artifact/`, including the
+`runtime-v4-expert`, `runtime-v4-expert-action`, and `runtime-map-v1` copies. Compare copied
+artifacts byte-for-byte against the reviewed `sts2-protocol` revision before merge, because a
+self-consistent inventory cannot detect a stale copy.
 
 The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
 and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
@@ -176,6 +183,33 @@ argument when validating the optional visible debug banner; without it, the load
 produce no in-game overlay. The observed marker, overlay state, and all host inputs must be
 recorded in a separate evidence report; this is not part of ordinary CI. The completed report is
 [`docs/evidence/runtime-v1-host-live-20260902.md`](evidence/runtime-v1-host-live-20260902.md).
+
+## Runtime-map-v1 host projection
+
+The additive map profile remains separate from the closed Runtime-v3 gameplay root. Its native
+route is `GET /api/map/v1/snapshot`; the host maps the full public `ActMap` graph into bounded
+owned values, preserves overlapping coordinates and disconnected components, and binds only the
+same-generation legal map catalog. A closed or unsupported map returns an explicit unavailable
+snapshot. No map read opens, scrolls, selects, or navigates the host UI.
+
+Run the host-independent managed probe with the Windows .NET SDK:
+
+~~~text
+dotnet build experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+~~~
+
+The probe covers exact source/package artifact bytes and checksums, canonical ordering, UTF-8
+request and text/reason bounds, C0/DEL/C1 rejection, unavailable/pre-start positions,
+duplicate coordinates, cyclic and duplicate identities, independent graph/host/action-option
+identities including equal serialized values across namespaces, current-node binding rejection,
+paired hidden-state projections, bounded identity
+registry churn and reset on a new map lifetime, stable-ID graph reordering and rewiring, the
+deliberate non-start `Ancient` to `other` normalization, and the final-generation observation
+fence. The host map read returns an explicit unavailable result with `map_surface_changed` when
+the generation changes between graph/catalog capture and the final reobserve. The exact-host
+loader build remains separate evidence; neither build proves loader discovery, a live map
+snapshot, off-screen UI behavior, or settled gameplay navigation.
 
 ## Settings-specific verification
 
@@ -462,8 +496,8 @@ provenance, stale digests and cross-field contradictions. Rust recovery tests al
 exercise operation-bound completion, refreshed correlation, uncertain dispatch and
 JSON-safe generation exhaustion without fake mutation.
 
-Native loopback tests exercise all six Runtime-v3 method/route mappings against all six request
-kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
+Native loopback tests exercise all six Runtime-v3 method/route mappings plus the additive map
+snapshot route against all six request kinds, reversed HTTP methods, and malformed/duplicate/root-kind input. A synthetic callback
 counter establishes that rejected combinations never cross the ABI and accepted combinations
 retain gameplay callback kind 6 alongside v2 kinds 3–5. These are HTTP admission tests, not full message conformance
 or managed/live-host mutation evidence; the existing auth and absolute-deadline tests still run.

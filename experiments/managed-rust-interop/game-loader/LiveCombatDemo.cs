@@ -5,21 +5,20 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
-using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 using Environment = System.Environment;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-/// <summary>Explicit isolated combat demonstration; not a normal full-run bootstrap.</summary>
+/// <summary>Isolated local-save bootstrap for normal model-controlled campaigns.</summary>
 internal static class LiveCombatDemo
 {
     internal static bool Campaign => Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN") == "1";
+    internal static bool CampaignMapBound => Campaign
+        && Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN_MAP_BOUND") == "1";
     internal static bool Ready { get; private set; }
     internal static RuntimeV3GameplayRunOptions RunOptions => RuntimeV3GameplayRunOptions.Parse(
         Environment.GetEnvironmentVariable("STS2_LIVE_CAMPAIGN_MODE"),
@@ -28,6 +27,10 @@ internal static class LiveCombatDemo
     internal static void Initialize()
     {
         if (Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") != "1") return;
+#if !STS2_COMBAT_DEMO_PROBE && !STS2_VIDEO_MENU_PROBE && !STS2_HAND_CHOICE_PROBE && !STS2_TERMINAL_PROBE
+        if (!Campaign)
+            throw new InvalidOperationException("the production live runtime requires campaign mode");
+#endif
         string expected = Environment.GetEnvironmentVariable("STS2_LIVE_USER_DIR") ?? "";
         if (expected.Length == 0 || !string.Equals(Path.GetFullPath(OS.GetUserDataDir()),
             Path.GetFullPath(expected), StringComparison.OrdinalIgnoreCase))
@@ -76,8 +79,11 @@ internal static class LiveCombatDemo
 #elif STS2_TERMINAL_PROBE
             await TerminalProbe.RunAsync();
 #else
-            if (!Campaign) _ = StartAsync();
-            else GD.Print("[AI-ASCENSION LIVE] campaign setup ready for model selection");
+#if STS2_COMBAT_DEMO_PROBE
+            if (!Campaign) _ = LiveCombatFixture.StartAsync();
+            else
+#endif
+                GD.Print("[AI-ASCENSION LIVE] campaign setup ready for model selection");
 #endif
 #endif
         };
@@ -103,29 +109,4 @@ internal static class LiveCombatDemo
             acts, Array.Empty<ModifierModel>(), seed, GameMode.Custom);
     }
 
-    private static async Task StartAsync()
-    {
-        try
-        {
-            SaveManager.Instance.SetFtuesEnabled(false);
-            string seed = Environment.GetEnvironmentVariable("STS2_LIVE_SEED") ?? "AIASCENSIONREPLAY1";
-            if (!RuntimeV3GameplayContract.IsIdentity(seed))
-                throw new InvalidOperationException("invalid replay seed");
-            if (RunManager.Instance.IsInProgress)
-                throw new InvalidOperationException("demo refuses to replace an active run");
-            var acts = ModelDb.ActsByIndex.Select(options => options[0]).ToArray();
-            await NGame.Instance!.StartNewSingleplayerRun(ModelDb.Character<Ironclad>(), false,
-                acts, Array.Empty<ModifierModel>(), seed, GameMode.Custom);
-            EncounterModel encounter = ModelDb.AllEncounters.Where(e => e.IsWeak
-                && e.RoomType == RoomType.Monster && !e.IsDebugEncounter)
-                .OrderBy(e => e.Id.ToString(), StringComparer.Ordinal).First();
-            await RunManager.Instance.EnterRoomDebug(RoomType.Monster, MapPointType.Monster,
-                encounter.MutableClone(), false);
-            GD.Print($"[AI-ASCENSION LIVE] combat demo ready; seed={seed}; encounter={encounter.Id}");
-        }
-        catch (Exception error)
-        {
-            GD.PrintErr($"[AI-ASCENSION LIVE] bootstrap failed: {error.GetType().Name}: {error.Message}");
-        }
-    }
 }

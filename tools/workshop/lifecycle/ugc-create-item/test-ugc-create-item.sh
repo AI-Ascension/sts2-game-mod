@@ -30,7 +30,7 @@ printf 'preview\n' > "$temp_dir/preview.jpg"
 package="$temp_dir/package"
 bash "$repo_root/tools/workshop/package-platform-item.sh" \
     linux-x86_64 "$payload" "$package" 2868840 0 0.107.1 0.4.1 \
-    recovery-ugc-test "$temp_dir/preview.jpg" >/dev/null
+    recovery-ugc-test "$temp_dir/preview.jpg" --legacy-unbound >/dev/null
 
 cat > "$temp_dir/fake-steam-api.c" <<'FAKE_STEAM_API'
 #include <stdint.h>

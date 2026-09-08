@@ -56,10 +56,15 @@ SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 windows-x86_
 SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 linux-x86_64 /tmp/release/linux HEAD
 ```
 
-It archives tracked files from the resolved commit, rejects tracked host binaries, saves, profiles,
-and build output, and writes `RELEASE-MANIFEST.json`, `SHA256SUMS`, and an external archive checksum.
-The two platform labels make the compatibility target explicit; they are source bundles and do not
-include the managed loader, native companion, or proprietary host inputs.
+It resolves the requested commit, applies the checked-in
+`tools/release/source-distribution-policy-v1.json` exact tracked-path allowlist, and fails closed if
+the tree has an unreviewed path. The policy removes diagnostic and gameplay fixture sources from the
+production source archive while retaining the production build closure. It also rejects tracked host
+binaries, saves, profiles, and build output. `RELEASE-MANIFEST.json` records the original full Git
+tree, policy identity and hash, excluded paths, included path count and content digest; `SHA256SUMS`
+and an external archive checksum cover the resulting bytes. The two platform labels make the
+compatibility target explicit; these source bundles are separate from the built managed loader,
+native companion, and proprietary host inputs.
 
 Before distribution, extract each archive in a clean directory and run the embedded checksum check.
 For an update, retain the prior verified archive and manifest, stop the target disposable game
@@ -85,6 +90,55 @@ first-party published-file ID for each platform until a shared multi-platform it
 reviewed contract and exact host/platform evidence. A package is staged and installable only after
 the payload, manifest, and checksum gates pass; publication and host runtime evidence remain
 separate gates.
+
+### Reproducible Windows native builds
+
+The `x86_64-pc-windows-gnu` target configuration disables PE linker timestamps.
+Without `--no-insert-timestamp`, identical native source produces different DLL checksums
+at different build times. Preserve this target flag when building a release; environment
+`RUSTFLAGS` or `CARGO_ENCODED_RUSTFLAGS` overrides must not remove it. Use the pinned
+toolchain and locked dependencies, build the same commit into two independent Cargo target
+directories, and compare the resulting DLL bytes. Record this separately from package
+checksum validation and native loading evidence.
+
+The canonical native release helper is
+`experiments/managed-rust-interop/build-native-release.sh`. It accepts
+`windows-x86_64` or `linux-x86_64`, resolves Cargo's effective target directory, and passes
+remap flags for the checkout and `CARGO_HOME` through `CARGO_ENCODED_RUSTFLAGS`. The Windows
+path explicitly carries `-C link-arg=-Wl,--no-insert-timestamp` because encoded environment
+flags replace target-table flags. The helper rejects non-empty ambient `RUSTFLAGS` and
+`CARGO_ENCODED_RUSTFLAGS` rather than silently dropping an unreviewed override, and fails if
+either producer path remains in the native artifact. `package-runtime-addon.sh` invokes the
+helper for either platform package; the helper changes to the pinned checkout root internally.
+
+Canonical native checks are:
+
+~~~text
+experiments/managed-rust-interop/build-native-release.sh windows-x86_64
+experiments/managed-rust-interop/build-native-release.sh linux-x86_64
+~~~
+
+The helper output path is the artifact to copy into a package. It does not publish, upload,
+install, or launch anything.
+
+Release managed addons map their source directory to a stable logical path and do not
+embed a portable-PDB location. This keeps the operator checkout path out of the DLL and
+allows a second build in a different checkout to reproduce it. Debug builds retain the
+normal debugging settings. Compare managed DLLs using the same SDK and exact host reference
+assemblies; the Windows and Linux host references are distinct compatibility inputs.
+
+When building from a source archive without `.git` metadata, pass the exact source revision
+explicitly so the managed assembly carries the same informational version as a Git checkout:
+
+~~~text
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  --configuration Release -p:STS2GameDataDir=/path/to/host-data \
+  -p:SourceRevisionId=<exact-commit>
+~~~
+
+Use the same pinned .NET SDK and exact `sts2.dll` and `GodotSharp.dll` reference assemblies for
+the archive and checkout builds before comparing their bytes. An archive build without
+`SourceRevisionId` is a different managed artifact even when its source files match.
 
 ## Workshop publication
 

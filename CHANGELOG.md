@@ -6,6 +6,11 @@ do not establish release support.
 
 ## Unreleased
 
+- Add the independent `runtime-map-v1` read profile with bounded player-visible topology,
+  stable map-scoped node identities, exact current legal bindings, and generation fencing.
+  Add a disposable campaign/image validation handoff bounded to two decisions. Exact-host
+  compilation and synthetic probes pass; live map/provider acceptance remains unverified.
+
 - Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
   managed native-library validation, and a checksum-gated install/update/rollback tool with
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain

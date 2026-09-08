@@ -19,6 +19,7 @@ public static partial class ModEntry
     private const int RuntimeRequestKindRuntimeV2Action = 4;
     private const int RuntimeRequestKindRuntimeV2Operation = 5;
     private const int RuntimeRequestKindExpertAction = 8;
+    private const int RuntimeRequestKindMap = 14;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
@@ -226,7 +227,7 @@ public static partial class ModEntry
     private static int WriteNativeResponse(int status, string response, nint output, nuint outputCapacity, out nuint outputLength)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(response);
-        if (bytes.Length > (long)outputCapacity || bytes.Length > 128 * 1024)
+        if (bytes.Length > (long)outputCapacity || bytes.Length > RuntimeMapV1Contract.MaxMessageBytes)
         {
             outputLength = 0;
             return RuntimeUnavailable;
