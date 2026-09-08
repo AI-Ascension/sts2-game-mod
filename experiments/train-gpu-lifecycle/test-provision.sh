@@ -18,7 +18,11 @@ fixture() {
     for path in "${paths[@]}"; do mkdir -p "$(dirname "$path")"; printf '0\n' > "$path"; done
 }
 virsh() { printf 'shut off\n'; }
-podman() { printf 'false\n'; }
+podman() {
+    if [[ $1 == container && $2 == exists ]]; then return 1; fi
+    if [[ $1 == inspect ]]; then printf 'false\n'; return 0; fi
+    return 99
+}
 rejected() { if "$@" >/dev/null 2>&1; then fail 'expected refusal'; exit 1; fi; }
 
 (

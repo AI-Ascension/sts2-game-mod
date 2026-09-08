@@ -58,9 +58,16 @@ profile() {
     done
 }
 workload_idle() {
-    local state
-    state=$(podman inspect --format '{{.State.Running}}' "$llama") || return
-    [[ $state == false ]] || { fail 'conflicting GPU workload is running or unknown'; return 1; }
+    local state status
+    if podman container exists "$llama"; then
+        state=$(podman inspect --format '{{.State.Running}}' "$llama") || return
+        [[ $state == false ]] || { fail 'conflicting GPU workload is running or unknown'; return 1; }
+    else
+        status=$?
+        # Exit 1 means the exact retired workload is absent; other errors
+        # leave its state unknown and must block GPU provisioning.
+        [[ $status == 1 ]] || { fail 'conflicting GPU workload lookup failed'; return 1; }
+    fi
 }
 idle() {
     local state driver

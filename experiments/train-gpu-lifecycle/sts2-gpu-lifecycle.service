@@ -3,6 +3,7 @@ Description=Prepare the isolated STS2 Intel GPU virtual function
 Requires=sys-kernel-debug.mount
 After=sys-kernel-debug.mount network.target
 Before=libvirt-guests.service
+Before=user@1000.service
 
 [Service]
 Type=oneshot
