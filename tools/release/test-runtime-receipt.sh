@@ -26,21 +26,7 @@ printf 'managed fixture bytes\n' > "$fixture/AIAscensionSTS2GameMod.dll"
 printf '{"id":"AIAscensionSTS2GameMod","version":"0.4.0"}\n' > "$fixture/AIAscensionSTS2GameMod.json"
 printf 'native fixture bytes\n' > "$fixture/libAIAscensionSTS2GameModNative.so"
 
-dotnet_real="$temp_dir/dotnet.exe"
-printf '#!/bin/sh\nexit 0\n' > "$dotnet_real"
-chmod 0755 "$dotnet_real"
-ln -s -- "$dotnet_real" "$temp_dir/dotnet-link"
-PYTHONPATH="$script_dir" python3 -B - "$dotnet_real" "$temp_dir/dotnet-link" <<'PY'
-import sys
-
-from runtime_receipt_build import resolve_dotnet
-
-real = resolve_dotnet(sys.argv[1])
-link = resolve_dotnet(sys.argv[2])
-assert real.kind == "windows-exe" and real.path_style == "windows"
-assert link.kind == "windows-exe" and link.path_style == "windows"
-assert link.path == real.path
-PY
+cargo test --locked --offline --package sts2-release-tool resolves_symlinked_dotnet -- --exact >/dev/null
 
 if bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload-dir "$fixture" \
     --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \

@@ -2,6 +2,7 @@
 members = [
     "tools/repo-policy",
     "tools/mod-loading",
+    "tools/release-tool",
     "experiments/managed-rust-interop/native",
     "crates/host",
     "crates/http-adapter",
