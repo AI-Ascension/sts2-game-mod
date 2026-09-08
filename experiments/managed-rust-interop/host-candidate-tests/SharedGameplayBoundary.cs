@@ -40,6 +40,65 @@ public static partial class ModEntry
         CheckPendingV2BlocksSemantic();
         CheckPendingSemanticBlocksV2();
         CheckQueuedSemanticAdmission();
+        CheckPendingCoopBlocksOtherProfiles();
+        CheckPendingExpertBlocksOtherProfiles();
+    }
+
+    private static void CheckPendingCoopBlocksOtherProfiles()
+    {
+        Reset();
+        _runtimeCoopPending = true;
+        var source = new FakeHost();
+        ConfigureRuntimeV3Gameplay(source, new TestQueue());
+
+        Check(HasPendingNonExpertMutation(),
+            "actual v3 interop helper includes a pending co-op mutation");
+        Check(Status(Semantic("dispatch_action_request")) == "rejected" && source.Dispatches == 0,
+            "actual v3 interop callback fences semantic dispatch on pending co-op");
+        Check(Status(ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()))) == "rejected"
+            && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
+            "pending co-op mutation fences v2 dispatch");
+        Check(Semantic("state_request").Status == 200,
+            "pending co-op mutation still permits semantic observation");
+
+        _runtimeCoopPending = false;
+        var recoverySource = new FakeHost();
+        RuntimeV3GameplaySupport recoverySupport = RuntimeV3GameplaySupport.WithHost(
+            recoverySource, new TestQueue(), () => !_runtimeCoopPending);
+        string pending = recoverySupport.Handle("instance", "session", "lease", "corr", "1",
+            SemanticRequest("dispatch_action_request", "recovery-op"), out int pendingStatus);
+        Check(pendingStatus == 503 && pending.Contains("\"status\":\"unknown\"",
+                StringComparison.Ordinal),
+            "co-op gate test creates an uncertain semantic receipt");
+        _runtimeCoopPending = true;
+        recoverySource.Complete = true;
+        string recovered = recoverySupport.Handle("instance", "session", "lease", "corr", "1",
+            SemanticRequest("recover_request", "recovery-op"), out int recoveredStatus);
+        Check(recoveredStatus == 200 && recovered.Contains("\"status\":\"settled\"",
+                StringComparison.Ordinal) && recoverySource.Dispatches == 1,
+            "co-op pending gate does not block reconciliation of an existing semantic receipt");
+
+        _runtimeCoopPending = false;
+        Check(Status(Semantic("dispatch_action_request", "after-coop")) == "unknown"
+            && source.Dispatches == 1,
+            "released co-op mutation gate admits the next semantic dispatch");
+    }
+
+    private static void CheckPendingExpertBlocksOtherProfiles()
+    {
+        Reset();
+        RuntimeV4ExpertSupport.PendingForTest = true;
+        var source = new FakeHost();
+        ConfigureRuntimeV3Gameplay(source, new TestQueue());
+        Check(Status(Semantic("dispatch_action_request")) == "rejected" && source.Dispatches == 0,
+            "pending expert mutation fences semantic dispatch");
+        Check(Status(ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()))) == "rejected"
+            && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
+            "pending expert mutation fences v2 dispatch");
+        RuntimeV4ExpertSupport.PendingForTest = false;
+        Check(Status(Semantic("dispatch_action_request", "after-expert")) == "unknown"
+            && source.Dispatches == 1,
+            "released expert mutation gate admits the next semantic dispatch");
     }
 
     private static void CheckSharedIdentity()

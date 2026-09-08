@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
+    CALLBACK_ACTION, CALLBACK_COOP_ACTION, CALLBACK_COOP_OBSERVATION, CALLBACK_COOP_RECOVER,
+    CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE, CALLBACK_RUNTIME_V2_ACTION,
+    CALLBACK_RUNTIME_V2_OPERATION, CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT,
+    CALLBACK_RUNTIME_V4_EXPERT_ACTION, RuntimeRequestCallback, dispatch as dispatch_callback,
     dispatch_with_body, http,
 };
 
@@ -40,6 +42,39 @@ pub(super) fn dispatch(
                 operation_id,
                 stream,
             )
+        }
+        ("GET", "/api/v4/runtime/expert-state") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT, request, stream)
+        }
+        ("POST", "/api/v4/runtime/expert-action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT_ACTION, request, stream)
+        }
+        ("GET", path)
+            if request.body.is_empty() && path.starts_with("/api/v4/runtime/expert-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
+        ("GET", "/api/v1/coop/native/observation") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_COOP_OBSERVATION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_ACTION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/vote") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_VOTE, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/rejoin") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_REJOIN, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/recover") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_RECOVER, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

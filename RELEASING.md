@@ -86,6 +86,55 @@ reviewed contract and exact host/platform evidence. A package is staged and inst
 the payload, manifest, and checksum gates pass; publication and host runtime evidence remain
 separate gates.
 
+### Reproducible Windows native builds
+
+The `x86_64-pc-windows-gnu` target configuration disables PE linker timestamps.
+Without `--no-insert-timestamp`, identical native source produces different DLL checksums
+at different build times. Preserve this target flag when building a release; environment
+`RUSTFLAGS` or `CARGO_ENCODED_RUSTFLAGS` overrides must not remove it. Use the pinned
+toolchain and locked dependencies, build the same commit into two independent Cargo target
+directories, and compare the resulting DLL bytes. Record this separately from package
+checksum validation and native loading evidence.
+
+The canonical native release helper is
+`experiments/managed-rust-interop/build-native-release.sh`. It accepts
+`windows-x86_64` or `linux-x86_64`, resolves Cargo's effective target directory, and passes
+remap flags for the checkout and `CARGO_HOME` through `CARGO_ENCODED_RUSTFLAGS`. The Windows
+path explicitly carries `-C link-arg=-Wl,--no-insert-timestamp` because encoded environment
+flags replace target-table flags. The helper rejects non-empty ambient `RUSTFLAGS` and
+`CARGO_ENCODED_RUSTFLAGS` rather than silently dropping an unreviewed override, and fails if
+either producer path remains in the native artifact. `package-runtime-addon.sh` invokes the
+helper for either platform package; the helper changes to the pinned checkout root internally.
+
+Canonical native checks are:
+
+~~~text
+experiments/managed-rust-interop/build-native-release.sh windows-x86_64
+experiments/managed-rust-interop/build-native-release.sh linux-x86_64
+~~~
+
+The helper output path is the artifact to copy into a package. It does not publish, upload,
+install, or launch anything.
+
+Release managed addons map their source directory to a stable logical path and do not
+embed a portable-PDB location. This keeps the operator checkout path out of the DLL and
+allows a second build in a different checkout to reproduce it. Debug builds retain the
+normal debugging settings. Compare managed DLLs using the same SDK and exact host reference
+assemblies; the Windows and Linux host references are distinct compatibility inputs.
+
+When building from a source archive without `.git` metadata, pass the exact source revision
+explicitly so the managed assembly carries the same informational version as a Git checkout:
+
+~~~text
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  --configuration Release -p:STS2GameDataDir=/path/to/host-data \
+  -p:SourceRevisionId=<exact-commit>
+~~~
+
+Use the same pinned .NET SDK and exact `sts2.dll` and `GodotSharp.dll` reference assemblies for
+the archive and checkout builds before comparing their bytes. An archive build without
+`SourceRevisionId` is a different managed artifact even when its source files match.
+
 ## Workshop publication
 
 Workshop staging is a release-preparation action, not an ordinary CI action:

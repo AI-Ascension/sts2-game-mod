@@ -24,6 +24,18 @@ public static partial class ModEntry
         {
             return ProcessRuntimeV2Work(work);
         }
+        if (work.Kind == RuntimeRequestKindExpertState)
+        {
+            return ProcessRuntimeV4ExpertWork(work.Context);
+        }
+        if (work.Kind == RuntimeRequestKindExpertAction)
+        {
+            return ProcessRuntimeV4ExpertActionWork(work.Context, work.Body);
+        }
+        if (work.Kind >= RuntimeRequestKindCoopObservation && work.Kind <= RuntimeRequestKindCoopRecover)
+        {
+            return ProcessCoopNativeWork(work.Kind, work.Context, work.Body);
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));

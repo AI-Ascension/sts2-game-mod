@@ -18,6 +18,7 @@ public static partial class ModEntry
     private const int RuntimeRequestKindRuntimeV2State = 3;
     private const int RuntimeRequestKindRuntimeV2Action = 4;
     private const int RuntimeRequestKindRuntimeV2Operation = 5;
+    private const int RuntimeRequestKindExpertAction = 8;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
