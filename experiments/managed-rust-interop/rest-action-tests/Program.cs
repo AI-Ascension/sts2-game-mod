@@ -19,6 +19,7 @@ internal static class Program
     private static readonly string[] SecondSelected = { "card:1", "card:2" };
     private static readonly string[] SecondProgressActions =
         { "confirm_selection:12:smith", "cancel_selection:12:smith" };
+    private static readonly string[] MendSelected = { "player:2" };
 
     private static void Main()
     {
@@ -47,6 +48,10 @@ internal static class Program
             EarlyConfirmationCheck(fixtures);
             SerializedResponseChecks();
             ProducerConsumerSupportChecks();
+            SmithProducerConsumerChecks();
+            MendProducerConsumerChecks();
+            StaleAndEarlyConfirmationChecks();
+            UnknownReconciliationChecks();
         }
         finally
         {
@@ -174,7 +179,8 @@ internal static class Program
                 out completedError), "typed completion consumer rejected: " + completedError);
     }
 
-    private static RuntimeV4ExpertGameplayObservation Observation(ulong generation) =>
+    private static RuntimeV4ExpertGameplayObservation Observation(
+        ulong generation, string stateKind = "selection") =>
         new("live:" + generation, generation, "synthetic-visible-seed",
             new RuntimeV4ExpertGameplayRun("ironclad", 1, "rest:1"),
             new RuntimeV4ExpertGameplayPlayer(64, 80, null, 0, 99)
@@ -188,7 +194,7 @@ internal static class Program
                 Relics = Array.Empty<RuntimeV4ExpertGameplayRelic>(),
                 Potions = Array.Empty<RuntimeV4ExpertGameplayPotion>()
             },
-            new RuntimeV4ExpertGameplayState("selection")
+            new RuntimeV4ExpertGameplayState(stateKind)
             {
                 Choices = Array.Empty<RuntimeV4ExpertGameplayChoice>()
             },
@@ -244,6 +250,7 @@ internal static class Program
 
         internal FakeRestHost(RuntimeV4ExpertRestRequest request) => _request = request;
 
+        internal bool ThrowDispatch { get; set; }
         internal int DispatchCount { get; private set; }
         internal int CompletionCount { get; private set; }
 
@@ -257,6 +264,7 @@ internal static class Program
                 return false;
             _dispatched = true;
             DispatchCount++;
+            if (ThrowDispatch) throw new InvalidOperationException("synthetic host uncertainty");
             return true;
         }
 
@@ -278,6 +286,447 @@ internal static class Program
                 "heal", 9, 10, witness);
             return new RuntimeV4ExpertRestHostCompletion(
                 "settled", after, transition, witness, null);
+        }
+    }
+
+    private static void SmithProducerConsumerChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:smith-script");
+        var host = new SmithHost();
+        RuntimeV4ExpertRestActionSupport support =
+            RuntimeV4ExpertRestActionSupport.WithHost(host, work => work());
+
+        RuntimeV4ExpertRestHostProjection initial = host.ObserveRest();
+        RuntimeV4ExpertRestRequest parent = RequestFromProjection(context, initial,
+            "rest-op:smith:parent", initial.LegalActions.Single());
+        ExpectAccepted(support, context, parent);
+        string requested = Reconcile(support, context, parent.Operation.OperationId);
+        CheckTransition(requested, context, "rest_option_selection_requested");
+
+        RuntimeV4ExpertRestHostProjection firstSurface = host.ObserveRest();
+        Check(firstSurface.Selector?.RemainingCount == 2,
+            "Smith script did not expose its initial remaining count");
+        RuntimeV4ExpertRestRequest first = RequestFromProjection(context, firstSurface,
+            "rest-op:smith:first", firstSurface.LegalActions.Single(action =>
+                action.Action.Kind == "select_card" && action.Action.CardId == "card:1"));
+        ExpectAccepted(support, context, first);
+        string progressed = Reconcile(support, context, first.Operation.OperationId);
+        CheckTransition(progressed, context, "rest_option_selection_progressed");
+        Check(JsonDocument.Parse(progressed).RootElement.GetProperty("transition")
+            .GetProperty("remaining_count").GetInt32() == 1,
+            "Smith first selection did not reduce remaining count");
+
+        RuntimeV4ExpertRestHostProjection secondSurface = host.ObserveRest();
+        RuntimeV4ExpertRestRequest second = RequestFromProjection(context, secondSurface,
+            "rest-op:smith:second", secondSurface.LegalActions.Single(action =>
+                action.Action.Kind == "select_card" && action.Action.CardId == "card:2"));
+        ExpectAccepted(support, context, second);
+        string ready = Reconcile(support, context, second.Operation.OperationId);
+        CheckTransition(ready, context, "rest_option_selection_progressed");
+        Check(JsonDocument.Parse(ready).RootElement.GetProperty("transition")
+            .GetProperty("remaining_count").GetInt32() == 0,
+            "Smith second selection did not expose a complete count");
+
+        RuntimeV4ExpertRestHostProjection confirmSurface = host.ObserveRest();
+        RuntimeV4ExpertRestRequest confirmation = RequestFromProjection(context, confirmSurface,
+            "rest-op:smith:confirm", confirmSurface.LegalActions.Single(action =>
+                action.Action.Kind == "confirm_selection"));
+        ExpectAccepted(support, context, confirmation);
+        string completed = Reconcile(support, context, confirmation.Operation.OperationId);
+        CheckTransition(completed, context, "rest_option_selection_completed");
+        using JsonDocument document = JsonDocument.Parse(completed);
+        JsonElement transition = document.RootElement.GetProperty("transition");
+        Check(transition.GetProperty("selected_choice_ids").GetArrayLength() == 2,
+            "Smith completion did not retain both selected cards");
+        Check(document.RootElement.GetProperty("effect_witness").GetProperty("kind")
+                .GetString() == "smith_applied",
+            "Smith completion did not carry its effect witness");
+    }
+
+    private static void MendProducerConsumerChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:mend-script");
+        var host = new MendHost();
+        RuntimeV4ExpertRestActionSupport support =
+            RuntimeV4ExpertRestActionSupport.WithHost(host, work => work());
+        RuntimeV4ExpertRestHostProjection initial = host.ObserveRest();
+        RuntimeV4ExpertRestRequest parent = RequestFromProjection(context, initial,
+            "rest-op:mend:parent", initial.LegalActions.Single());
+        ExpectAccepted(support, context, parent);
+        string requested = Reconcile(support, context, parent.Operation.OperationId);
+        CheckTransition(requested, context, "rest_option_selection_requested");
+
+        RuntimeV4ExpertRestHostProjection targetSurface = host.ObserveRest();
+        RuntimeV4ExpertRestActionReference targetAction = targetSurface.LegalActions.Single(action =>
+            action.Action.Kind == "select_player");
+        RuntimeV4ExpertRestRequest target = RequestFromProjection(context, targetSurface,
+            "rest-op:mend:target", targetAction);
+        ExpectAccepted(support, context, target);
+        string completed = Reconcile(support, context, target.Operation.OperationId);
+        CheckTransition(completed, context, "rest_option_selection_completed");
+        using JsonDocument document = JsonDocument.Parse(completed);
+        Check(document.RootElement.GetProperty("effect_witness").GetProperty("target_player_id")
+                .GetString() == "player:2",
+            "Mend completion lost its selected player identity");
+
+        var cancellationHost = new MendHost();
+        RuntimeV4ExpertRestActionSupport cancellationSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(cancellationHost, work => work());
+        RuntimeV4ExpertRestHostProjection cancellationInitial = cancellationHost.ObserveRest();
+        RuntimeV4ExpertRestRequest cancellationParent = RequestFromProjection(context,
+            cancellationInitial, "rest-op:mend:cancel-parent", cancellationInitial.LegalActions.Single());
+        ExpectAccepted(cancellationSupport, context, cancellationParent);
+        Reconcile(cancellationSupport, context, cancellationParent.Operation.OperationId);
+        RuntimeV4ExpertRestHostProjection cancellationSurface = cancellationHost.ObserveRest();
+        RuntimeV4ExpertRestRequest cancellation = RequestFromProjection(context, cancellationSurface,
+            "rest-op:mend:cancel", cancellationSurface.LegalActions.Single(action =>
+                action.Action.Kind == "cancel_selection"));
+        ExpectAccepted(cancellationSupport, context, cancellation);
+        string cancelled = Reconcile(cancellationSupport, context, cancellation.Operation.OperationId);
+        using JsonDocument cancelledDocument = JsonDocument.Parse(cancelled);
+        Check(cancelledDocument.RootElement.GetProperty("status").GetString() == "cancelled",
+            "Mend cancellation did not return cancelled");
+        Check(cancelledDocument.RootElement.GetProperty("effect_witness").ValueKind
+                == JsonValueKind.Null, "Mend cancellation carried an effect witness");
+    }
+
+    private static void StaleAndEarlyConfirmationChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:stale-script");
+        RuntimeV4ExpertRestOperation currentOperation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-op:stale:current");
+        RuntimeV4ExpertRestActionReference currentAction = new(
+            "rest-option:9:heal", new RuntimeV4ExpertRestAction("rest_option", "heal"));
+        RuntimeV4ExpertRestRequest current = new(context, currentOperation, currentAction,
+            "live:9", 9);
+        var staleHost = new FakeRestHost(current);
+        RuntimeV4ExpertRestActionSupport staleSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(staleHost, work => work());
+        RuntimeV4ExpertRestRequest stale = current with
+        {
+            Operation = currentOperation with { OperationId = "rest-op:stale:old" },
+            StateId = "live:8", Generation = 8
+        };
+        string staleResponse = Submit(staleSupport, context, stale);
+        using (JsonDocument staleDocument = JsonDocument.Parse(staleResponse))
+        {
+            Check(staleDocument.RootElement.GetProperty("status").GetString() == "rejected",
+                "stale rest generation was not rejected");
+            Check(staleDocument.RootElement.GetProperty("error_code").GetString()
+                    == "sts2.game-mod/rest_option_not_legal",
+                "stale rest generation returned the wrong error");
+        }
+
+        var earlyHost = new SmithHost(initialPhase: 2);
+        RuntimeV4ExpertRestActionSupport earlySupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(earlyHost, work => work());
+        RuntimeV4ExpertRestHostProjection earlySurface = earlyHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference earlyAction = new(
+            "confirm_selection:11:smith",
+            new RuntimeV4ExpertRestAction("confirm_selection", "smith",
+                "selection:script:smith"));
+        RuntimeV4ExpertRestRequest early = RequestFromProjection(context, earlySurface,
+            "rest-op:early-confirm", earlyAction);
+        string earlyResponse = Submit(earlySupport, context, early);
+        using JsonDocument earlyDocument = JsonDocument.Parse(earlyResponse);
+        Check(earlyDocument.RootElement.GetProperty("status").GetString() == "rejected",
+            "early Smith confirmation was not rejected by the executable producer");
+        Check(earlyDocument.RootElement.GetProperty("error_code").GetString()
+                == "sts2.game-mod/rest_option_not_legal",
+            "early Smith confirmation returned the wrong executable error");
+
+        var staleSelectorHost = new SmithHost(initialPhase: 3);
+        RuntimeV4ExpertRestActionSupport staleSelectorSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(staleSelectorHost, work => work());
+        RuntimeV4ExpertRestHostProjection staleSelectorSurface = staleSelectorHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference staleSelectorAction = new(
+            "select_card:11:smith:card:2",
+            new RuntimeV4ExpertRestAction("select_card", "smith",
+                "selection:script:smith", CardId: "card:2"));
+        RuntimeV4ExpertRestRequest staleSelector = RequestFromProjection(context,
+            staleSelectorSurface, "rest-op:stale-selector", staleSelectorAction);
+        staleSelector = staleSelector with { StateId = "live:11", Generation = 11 };
+        string staleSelectorResponse = Submit(staleSelectorSupport, context, staleSelector);
+        using JsonDocument staleSelectorDocument = JsonDocument.Parse(staleSelectorResponse);
+        Check(staleSelectorDocument.RootElement.GetProperty("status").GetString() == "rejected",
+            "stale selector generation was not rejected");
+    }
+
+    private static void UnknownReconciliationChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:unknown-script");
+        RuntimeV4ExpertRestOperation operation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-op:unknown:heal");
+        RuntimeV4ExpertRestActionReference action = new(
+            "rest-option:9:heal", new RuntimeV4ExpertRestAction("rest_option", "heal"));
+        RuntimeV4ExpertRestRequest request = new(context, operation, action, "live:9", 9);
+        var host = new FakeRestHost(request) { ThrowDispatch = true };
+        RuntimeV4ExpertRestActionSupport support =
+            RuntimeV4ExpertRestActionSupport.WithHost(host, work => work());
+        string unknown = Submit(support, context, request);
+        using (JsonDocument unknownDocument = JsonDocument.Parse(unknown))
+            Check(unknownDocument.RootElement.GetProperty("status").GetString() == "unknown",
+                "uncertain native dispatch did not retain unknown status");
+        string settled = Reconcile(support, context, operation.OperationId);
+        using JsonDocument settledDocument = JsonDocument.Parse(settled);
+        Check(settledDocument.RootElement.GetProperty("status").GetString() == "settled",
+            "same operation reconciliation did not settle the retained unknown");
+        Check(host.DispatchCount == 1,
+            "unknown reconciliation dispatched the native mutation a second time");
+    }
+
+    private static RuntimeV4ExpertRestRequest RequestFromProjection(
+        RuntimeV4ExpertRestContext context,
+        RuntimeV4ExpertRestHostProjection projection,
+        string operationId,
+        RuntimeV4ExpertRestActionReference action) => new(
+            context,
+            new RuntimeV4ExpertRestOperation(context.InstanceId, context.SessionId,
+                context.LeaseId, context.LeaseEpoch, operationId),
+            action, projection.Observation.StateId, projection.Observation.Generation);
+
+    private static string Submit(
+        RuntimeV4ExpertRestActionSupport support,
+        RuntimeV4ExpertRestContext context,
+        RuntimeV4ExpertRestRequest request)
+    {
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeRequest(request, out string body,
+                out string error), "script request failed to serialize: " + error);
+        (int Status, string Response) response = support.Handle(context, body, out int status);
+        Check(response.Status == status, "support tuple and out status disagree");
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(response.Response, context,
+                out error), "script response failed consumer validation: " + error);
+        return response.Response;
+    }
+
+    private static void ExpectAccepted(
+        RuntimeV4ExpertRestActionSupport support,
+        RuntimeV4ExpertRestContext context,
+        RuntimeV4ExpertRestRequest request)
+    {
+        string response = Submit(support, context, request);
+        using JsonDocument document = JsonDocument.Parse(response);
+        Check(document.RootElement.GetProperty("status").GetString() == "accepted",
+            "script mutation was not accepted");
+    }
+
+    private static string Reconcile(
+        RuntimeV4ExpertRestActionSupport support,
+        RuntimeV4ExpertRestContext context,
+        string operationId)
+    {
+        (int Status, string Response) response = support.Handle(context, operationId,
+            out int status);
+        Check(response.Status == status, "reconciliation tuple and out status disagree");
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(response.Response, context,
+                out string error), "reconciliation response failed consumer validation: " + error);
+        return response.Response;
+    }
+
+    private static void CheckTransition(
+        string response,
+        RuntimeV4ExpertRestContext context,
+        string expectedKind)
+    {
+        using JsonDocument document = JsonDocument.Parse(response);
+        Check(document.RootElement.GetProperty("status").GetString() == "settled",
+            "script response did not settle");
+        Check(document.RootElement.GetProperty("transition").GetProperty("kind").GetString()
+                == expectedKind, "script response returned an unexpected transition");
+    }
+
+    private sealed class SmithHost : IRuntimeV4ExpertRestHostSource
+    {
+        private int _phase;
+        private (RuntimeV4ExpertRestOperation Operation,
+            RuntimeV4ExpertRestActionReference Action)? _pending;
+
+        internal SmithHost(int initialPhase = 0)
+        {
+            _phase = initialPhase;
+        }
+
+        public RuntimeV4ExpertRestHostProjection ObserveRest()
+        {
+            ulong generation = (ulong)(9 + _phase);
+            if (_phase == 0)
+            {
+                RuntimeV4ExpertRestActionReference option = new(
+                    "rest-option:9:smith", new RuntimeV4ExpertRestAction("rest_option", "smith"));
+                return new(Observation(generation, "rest"), new[] { option });
+            }
+            if (_phase >= 4)
+                return new(Observation(13, "rest"), Array.Empty<RuntimeV4ExpertRestActionReference>());
+            RuntimeV4ExpertRestSelector selector = Selector(generation, _phase);
+            return new(Observation(generation, "selection"), selector.LegalActions, selector);
+        }
+
+        public bool DispatchRest(RuntimeV4ExpertRestOperation operation,
+            RuntimeV4ExpertRestActionReference action, RuntimeV4ExpertRestHostProjection current)
+        {
+            if (_pending is not null || !current.LegalActions.Contains(action)) return false;
+            _pending = (operation, action);
+            return true;
+        }
+
+        public RuntimeV4ExpertRestHostCompletion? CompleteRest(
+            RuntimeV4ExpertRestOperation operation, RuntimeV4ExpertRestActionReference action)
+        {
+            if (_pending is not { } pending || pending.Operation != operation
+                || pending.Action != action) return null;
+            _pending = null;
+            ulong before = (ulong)(9 + _phase);
+            if (_phase == 0 && action.Action.Kind == "rest_option")
+            {
+                _phase = 1;
+                RuntimeV4ExpertRestSelector selector = Selector(10, 1);
+                var transition = new RuntimeV4ExpertRestSelectionRequestedTransition(
+                    "smith", 9, 10, selector);
+                return new("settled", Observation(10, "selection"), transition, null, null);
+            }
+            if (_phase == 1 && action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:1")
+            {
+                _phase = 2;
+                RuntimeV4ExpertRestSelector selector = Selector(11, 2);
+                var transition = new RuntimeV4ExpertRestSelectionProgressedTransition(
+                    "smith", 10, 11, selector);
+                return new("settled", Observation(11, "selection"), transition, null, null);
+            }
+            if (_phase == 2 && action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:2")
+            {
+                _phase = 3;
+                RuntimeV4ExpertRestSelector selector = Selector(12, 3);
+                var transition = new RuntimeV4ExpertRestSelectionProgressedTransition(
+                    "smith", 11, 12, selector);
+                return new("settled", Observation(12, "selection"), transition, null, null);
+            }
+            if (_phase == 3 && action.Action.Kind == "confirm_selection")
+            {
+                _phase = 4;
+                var witness = new RuntimeV4ExpertRestEffectWitness(
+                    "smith_applied", operation, "smith", 13,
+                    new RuntimeV4ExpertRestCardEvidence(Array.Empty<string>(), Array.Empty<string>(),
+                        SecondSelected));
+                var transition = new RuntimeV4ExpertRestSelectionCompletedTransition(
+                    "smith", before, 13, "selection:script:smith", "card", 2,
+                    SecondSelected, witness);
+                return new("settled", Observation(13, "rest"), transition, witness, null);
+            }
+            if (_phase is 1 or 2 or 3 && action.Action.Kind == "cancel_selection")
+            {
+                _phase = 4;
+                return new("cancelled", null, null, null, "sts2.game-mod/selection_cancelled");
+            }
+            return null;
+        }
+
+        private static RuntimeV4ExpertRestSelector Selector(ulong generation, int phase)
+        {
+            string selectionId = "selection:script:smith";
+            var actions = new List<RuntimeV4ExpertRestActionReference>();
+            if (phase == 1)
+                actions.Add(CardAction(generation, selectionId, "card:1"));
+            if (phase == 2)
+                actions.Add(CardAction(generation, selectionId, "card:2"));
+            if (phase == 3)
+                actions.Add(new RuntimeV4ExpertRestActionReference(
+                    $"confirm_selection:{generation}:smith",
+                    new RuntimeV4ExpertRestAction("confirm_selection", "smith", selectionId)));
+            actions.Add(new RuntimeV4ExpertRestActionReference(
+                $"cancel_selection:{generation}:smith",
+                new RuntimeV4ExpertRestAction("cancel_selection", "smith", selectionId)));
+            string[] selected = phase switch
+            {
+                1 => Array.Empty<string>(),
+                2 => new[] { "card:1" },
+                _ => new[] { "card:1", "card:2" }
+            };
+            return new(selectionId, "card", 2, selected, 2 - selected.Length, actions);
+        }
+
+        private static RuntimeV4ExpertRestActionReference CardAction(
+            ulong generation, string selectionId, string cardId) => new(
+                $"select_card:{generation}:smith:{cardId}",
+                new RuntimeV4ExpertRestAction("select_card", "smith", selectionId, cardId));
+    }
+
+    private sealed class MendHost : IRuntimeV4ExpertRestHostSource
+    {
+        private int _phase;
+        private (RuntimeV4ExpertRestOperation Operation,
+            RuntimeV4ExpertRestActionReference Action)? _pending;
+
+        public RuntimeV4ExpertRestHostProjection ObserveRest()
+        {
+            if (_phase == 0)
+            {
+                RuntimeV4ExpertRestActionReference option = new(
+                    "rest-option:9:mend", new RuntimeV4ExpertRestAction("rest_option", "mend"));
+                return new(Observation(9, "rest"), new[] { option });
+            }
+            if (_phase == 2)
+                return new(Observation(22, "rest"), Array.Empty<RuntimeV4ExpertRestActionReference>());
+            string selectionId = "selection:script:mend";
+            var target = new RuntimeV4ExpertRestActionReference(
+                "select_player:21:mend:player:2",
+                new RuntimeV4ExpertRestAction("select_player", "mend", selectionId,
+                    PlayerId: "player:2"));
+            var cancel = new RuntimeV4ExpertRestActionReference(
+                "cancel_selection:21:mend",
+                new RuntimeV4ExpertRestAction("cancel_selection", "mend", selectionId));
+            var selector = new RuntimeV4ExpertRestSelector(selectionId, "player", 1,
+                Array.Empty<string>(), 1, new[] { target, cancel });
+            return new(Observation(21, "selection"), selector.LegalActions, selector);
+        }
+
+        public bool DispatchRest(RuntimeV4ExpertRestOperation operation,
+            RuntimeV4ExpertRestActionReference action, RuntimeV4ExpertRestHostProjection current)
+        {
+            if (_pending is not null || !current.LegalActions.Contains(action)) return false;
+            _pending = (operation, action);
+            return true;
+        }
+
+        public RuntimeV4ExpertRestHostCompletion? CompleteRest(
+            RuntimeV4ExpertRestOperation operation, RuntimeV4ExpertRestActionReference action)
+        {
+            if (_pending is not { } pending || pending.Operation != operation
+                || pending.Action != action) return null;
+            _pending = null;
+            if (_phase == 0 && action.Action.Kind == "rest_option")
+            {
+                _phase = 1;
+                RuntimeV4ExpertRestSelector selector = ObserveRest().Selector!;
+                var transition = new RuntimeV4ExpertRestSelectionRequestedTransition(
+                    "mend", 9, 21, selector);
+                return new("settled", Observation(21, "selection"), transition, null, null);
+            }
+            if (_phase == 1 && action.Action.Kind == "select_player")
+            {
+                _phase = 2;
+                var witness = new RuntimeV4ExpertRestEffectWitness(
+                    "mend_applied", operation, "mend", 22,
+                    new RuntimeV4ExpertRestNativeEvidence("mend:" + operation.OperationId,
+                        "live:22"), "player:2");
+                var transition = new RuntimeV4ExpertRestSelectionCompletedTransition(
+                    "mend", 21, 22, "selection:script:mend", "player", 1,
+                    MendSelected, witness);
+                return new("settled", Observation(22, "rest"), transition, witness, null);
+            }
+            if (_phase == 1 && action.Action.Kind == "cancel_selection")
+            {
+                _phase = 2;
+                return new("cancelled", null, null, null, "sts2.game-mod/selection_cancelled");
+            }
+            return null;
         }
     }
 
