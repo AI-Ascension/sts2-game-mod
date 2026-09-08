@@ -56,10 +56,15 @@ SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 windows-x86_
 SOURCE_DATE_EPOCH=0 bash tools/release/build-source-bundle.sh 0.4.0 linux-x86_64 /tmp/release/linux HEAD
 ```
 
-It archives tracked files from the resolved commit, rejects tracked host binaries, saves, profiles,
-and build output, and writes `RELEASE-MANIFEST.json`, `SHA256SUMS`, and an external archive checksum.
-The two platform labels make the compatibility target explicit; they are source bundles and do not
-include the managed loader, native companion, or proprietary host inputs.
+It resolves the requested commit, applies the checked-in
+`tools/release/source-distribution-policy-v1.json` exact tracked-path allowlist, and fails closed if
+the tree has an unreviewed path. The policy removes diagnostic and gameplay fixture sources from the
+production source archive while retaining the production build closure. It also rejects tracked host
+binaries, saves, profiles, and build output. `RELEASE-MANIFEST.json` records the original full Git
+tree, policy identity and hash, excluded paths, included path count and content digest; `SHA256SUMS`
+and an external archive checksum cover the resulting bytes. The two platform labels make the
+compatibility target explicit; these source bundles are separate from the built managed loader,
+native companion, and proprietary host inputs.
 
 Before distribution, extract each archive in a clean directory and run the embedded checksum check.
 For an update, retain the prior verified archive and manifest, stop the target disposable game

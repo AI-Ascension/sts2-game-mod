@@ -4,6 +4,7 @@ mod common;
 mod manifest;
 mod package;
 mod receipt;
+mod source_policy;
 
 use std::process::ExitCode;
 
@@ -15,12 +16,14 @@ fn run() -> Result<(), String> {
         "build-runtime-receipt" => receipt::run(&rest),
         "build-artifact-manifest" => manifest::run(&rest),
         "package-platform-item" => package::run(&rest),
+        "validate-source-policy" => source_policy::run(&rest),
         "--help" | "-h" => {
             println!(
                 "sts2-release-tool <command> [args]\n\nCommands:\n  \
 build-runtime-receipt       Build one platform receipt\n  \
 build-artifact-manifest     Bind paired production receipts\n  \
-package-platform-item       Stage one platform Workshop package"
+package-platform-item       Stage one platform Workshop package\n  \
+validate-source-policy      Validate the source distribution path policy"
             );
             Ok(())
         }
@@ -29,7 +32,7 @@ package-platform-item       Stage one platform Workshop package"
 }
 
 fn usage() -> String {
-    "a release command is required: build-runtime-receipt, build-artifact-manifest, or package-platform-item".into()
+    "a release command is required: build-runtime-receipt, build-artifact-manifest, package-platform-item, or validate-source-policy".into()
 }
 
 fn main() -> ExitCode {
