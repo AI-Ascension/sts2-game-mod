@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
@@ -129,7 +130,11 @@ internal sealed partial class LiveCombatSource
         if (matches.Length != 1 || !NTargetManager.Instance.IsInSelection)
             throw new InvalidOperationException("mend player choice is not unique");
         NTargetManager targetManager = NTargetManager.Instance;
-        targetManager.OnNodeHovered(matches[0]);
+        NRestSiteCharacter target = matches[0];
+        targetManager.OnNodeHovered(target);
+        Player player = target.Player;
+        selector.MendTargetSnapshot = (U16(player.Creature.CurrentHp),
+            U16(player.Creature.MaxHp));
         targetManager._Input(new InputEventMouseButton
         {
             ButtonIndex = MouseButton.Left,
@@ -145,7 +150,7 @@ internal sealed partial class LiveCombatSource
                 if ((current is null || !ReferenceEquals(current, selector.Button))
                     && Clickable(room.ProceedButton))
                 {
-                    selector.SelectedPlayer = matches[0].Player;
+                    selector.SelectedPlayer = player;
                     return;
                 }
             }

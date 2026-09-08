@@ -152,7 +152,18 @@ internal static partial class Program
                 new RuntimeV4ExpertRestAction("cancel_selection", "mend", selectionId));
             var selector = new RuntimeV4ExpertRestSelector(selectionId, "player", 1,
                 Array.Empty<string>(), 1, new[] { target, cancel });
-            return new(Observation(21, "selection"), selector.LegalActions, selector);
+            RuntimeV4ExpertGameplayObservation observation = Observation(21, "selection") with
+            {
+                State = new RuntimeV4ExpertGameplayState("selection")
+                {
+                    Choices = new[]
+                    {
+                        new RuntimeV4ExpertGameplayChoice(
+                            "player:2", "Target", "selection", null)
+                    }
+                }
+            };
+            return new(observation, selector.LegalActions, selector);
         }
 
         public bool DispatchRest(RuntimeV4ExpertRestOperation operation,
@@ -173,21 +184,25 @@ internal static partial class Program
             {
                 _phase = 1;
                 RuntimeV4ExpertRestSelector selector = ObserveRest().Selector!;
+                RuntimeV4ExpertGameplayObservation observation = ObserveRest().Observation;
                 var transition = new RuntimeV4ExpertRestSelectionRequestedTransition(
                     "mend", 9, 21, selector);
-                return new("settled", Observation(21, "selection"), transition, null, null);
+                return new("settled", observation, transition, null, null);
             }
             if (_phase == 1 && action.Action.Kind == "select_player")
             {
                 _phase = 2;
+                RuntimeV4ExpertGameplayObservation after = Observation(22, "rest") with
+                {
+                    Player = Observation(22, "rest").Player with { Hp = 74 }
+                };
                 var witness = new RuntimeV4ExpertRestEffectWitness(
                     "mend_applied", operation, "mend", 22,
-                    new RuntimeV4ExpertRestNativeEvidence("mend:" + operation.OperationId,
-                        "live:22"), "player:2");
+                    new RuntimeV4ExpertRestHpEvidence(64, 74, 80, 80), "player:2");
                 var transition = new RuntimeV4ExpertRestSelectionCompletedTransition(
                     "mend", 21, 22, "selection:script:mend", "player", 1,
                     MendSelected, witness);
-                return new("settled", Observation(22, "rest"), transition, witness, null);
+                return new("settled", after, transition, witness, null);
             }
             if (_phase == 1 && action.Action.Kind == "cancel_selection")
             {

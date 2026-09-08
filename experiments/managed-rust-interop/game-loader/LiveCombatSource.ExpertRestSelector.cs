@@ -55,6 +55,7 @@ internal sealed partial class LiveCombatSource
         internal List<CardModel> SelectedCards { get; } = new();
         internal List<NRestSiteCharacter> MendTargets { get; } = new();
         internal Player? SelectedPlayer { get; set; }
+        internal (ushort Hp, ushort MaxHp)? MendTargetSnapshot { get; set; }
         internal RuntimeV4ExpertRestOperation? ChildOperation { get; set; }
     }
 

@@ -47,20 +47,27 @@ internal sealed partial class LiveCombatSource
         RuntimeV4ExpertGameplayObservation before = pending.Before;
         if (pending.Action.Action.Kind == "select_player")
         {
-            if (selector.SelectedPlayer is null) return null;
-            _expertRestSelectors.Remove(selector.SelectionId);
+            if (selector.SelectedPlayer is not { } selectedPlayer
+                || selector.MendTargetSnapshot is not { } snapshot)
+                return null;
             RuntimeV4ExpertGameplayObservation after = ObserveExpert();
             if (after.Generation <= before.Generation) return null;
-            string targetId = RestPlayerId(selector.SelectedPlayer);
+            ushort hpAfter = U16(selectedPlayer.Creature.CurrentHp);
+            ushort maxHpAfter = U16(selectedPlayer.Creature.MaxHp);
+            if (snapshot.Hp > snapshot.MaxHp || hpAfter <= snapshot.Hp
+                || hpAfter > maxHpAfter)
+                return null;
+            string targetId = RestPlayerId(selectedPlayer);
             var witness = new RuntimeV4ExpertRestEffectWitness(
                 "mend_applied", pending.Operation, "mend", after.Generation,
-                new RuntimeV4ExpertRestNativeEvidence(
-                    $"mend:{pending.Operation.OperationId}:{targetId}", after.StateId), targetId);
+                new RuntimeV4ExpertRestHpEvidence(snapshot.Hp, hpAfter,
+                    snapshot.MaxHp, maxHpAfter), targetId);
             var transition = new RuntimeV4ExpertRestSelectionCompletedTransition(
                 "mend", before.Generation, after.Generation, selector.SelectionId, "player", 1,
                 new[] { targetId }, witness);
             var completed = new RuntimeV4ExpertRestHostCompletion(
                 "settled", after, transition, witness, null);
+            _expertRestSelectors.Remove(selector.SelectionId);
             _expertRestPending.Remove(pending.Operation);
             pending.Completion = completed;
             return completed;

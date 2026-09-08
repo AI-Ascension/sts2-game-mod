@@ -95,6 +95,26 @@ internal static partial class Program
             "same operation reconciliation did not settle the retained unknown");
         Check(host.DispatchCount == 1,
             "unknown reconciliation dispatched the native mutation a second time");
+
+        RuntimeV4ExpertRestOperation missingOperation = operation with
+        {
+            OperationId = "rest-op:unknown:missing-witness"
+        };
+        RuntimeV4ExpertRestRequest missingRequest = request with { Operation = missingOperation };
+        var missingHost = new FakeRestHost(missingRequest) { MissingCompletion = true };
+        RuntimeV4ExpertRestActionSupport missingSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(missingHost, work => work());
+        ExpectAccepted(missingSupport, context, missingRequest);
+        string missing = Reconcile(missingSupport, context, missingOperation.OperationId);
+        using (JsonDocument missingDocument = JsonDocument.Parse(missing))
+            Check(missingDocument.RootElement.GetProperty("status").GetString() == "unknown",
+                "missing native evidence did not retain unknown status");
+        string retried = Reconcile(missingSupport, context, missingOperation.OperationId);
+        using (JsonDocument retriedDocument = JsonDocument.Parse(retried))
+            Check(retriedDocument.RootElement.GetProperty("status").GetString() == "unknown",
+                "missing native evidence did not retain the original operation");
+        Check(missingHost.DispatchCount == 1 && missingHost.CompletionCount == 2,
+            "missing native evidence retried dispatch instead of reconciling the same operation");
     }
 
     private static RuntimeV4ExpertRestRequest RequestFromProjection(

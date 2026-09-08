@@ -158,11 +158,30 @@ internal static partial class RuntimeV4ExpertRestActionCodec
         };
 
     private static bool BoundedIds(JsonElement value, string field) =>
-        value.TryGetProperty(field, out JsonElement ids)
-        && ids.ValueKind == JsonValueKind.Array
-        && ids.GetArrayLength() <= RuntimeV4ExpertRestActionContract.MaxChoices
-        && ids.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String
-            && RuntimeV4ExpertRestActionContract.IsIdentity(item.GetString()));
+        BoundedIds(value, field, out _);
+
+    private static bool BoundedIds(
+        JsonElement value,
+        string field,
+        out string[] ids)
+    {
+        ids = Array.Empty<string>();
+        if (!value.TryGetProperty(field, out JsonElement array)
+            || array.ValueKind != JsonValueKind.Array
+            || array.GetArrayLength() > RuntimeV4ExpertRestActionContract.MaxChoices)
+            return false;
+        var parsed = new List<string>(array.GetArrayLength());
+        var unique = new HashSet<string>(StringComparer.Ordinal);
+        foreach (JsonElement item in array.EnumerateArray())
+        {
+            string? id = item.ValueKind == JsonValueKind.String ? item.GetString() : null;
+            if (!RuntimeV4ExpertRestActionContract.IsIdentity(id) || !unique.Add(id!))
+                return false;
+            parsed.Add(id!);
+        }
+        ids = parsed.ToArray();
+        return true;
+    }
 
     private static bool Provenance(JsonElement root) =>
         root.TryGetProperty("provenance", out JsonElement value)

@@ -65,10 +65,18 @@ internal static partial class RuntimeV4ExpertRestActionCodec
             bool witnessNull = root.GetProperty("effect_witness").ValueKind == JsonValueKind.Null;
             bool errorNull = root.GetProperty("error_code").ValueKind == JsonValueKind.Null;
 
+            if (actionNull
+                || !TryParseAction(root.GetProperty("action"),
+                    out RuntimeV4ExpertRestActionReference? action, out error)
+                || action is null)
+                return Fail(out error, "rest response action is invalid");
+
             if (status == "accepted")
             {
                 if (actionNull || !observationNull || !transitionNull || !witnessNull || !errorNull)
                     return Fail(out error, "accepted rest response has invalid settlement fields");
+                if (!RuntimeV4ExpertRestActionContract.TryValidateAction(action, out error))
+                    return false;
                 return true;
             }
             if (status is "rejected" or "unknown" or "cancelled")
@@ -77,25 +85,33 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                     || errorNull || !RuntimeV4ExpertRestActionContract.IsIdentity(
                         StringField(root, "error_code")))
                     return Fail(out error, "non-settled rest response has invalid fields");
-                return ValidateActionReference(root.GetProperty("action"), out error);
+                return RuntimeV4ExpertRestActionContract.TryValidateAction(action, out error);
             }
 
             if (actionNull || observationNull || transitionNull || !errorNull)
                 return Fail(out error, "settled rest response has invalid fields");
-            if (!ValidateActionReference(root.GetProperty("action"), out error)) return false;
-            if (!ValidateObservation(root.GetProperty("observation"), generation, out error)) return false;
+            if (!RuntimeV4ExpertRestActionContract.TryValidateAction(action, out error)) return false;
+            string stateId = StringField(root, "state_id")!;
+            JsonElement observation = root.GetProperty("observation");
+            if (!ValidateObservation(observation, stateId, generation, out error)) return false;
             if (!ValidateTransition(root.GetProperty("transition"), generation,
-                    root.GetProperty("operation_id").GetString()!, out string? transitionOption,
-                    out bool transitionWitness, out error)) return false;
+                    root.GetProperty("operation_id").GetString()!, action, observation,
+                    out string? transitionOption, out bool transitionWitness, out error))
+                return false;
             if (transitionWitness != !witnessNull)
                 return Fail(out error, "root and transition witness presence differs");
             if (!witnessNull && !ValidateWitness(root.GetProperty("effect_witness"), generation,
-                    root.GetProperty("operation_id").GetString()!, transitionOption!, out error))
+                    root.GetProperty("operation_id").GetString()!, transitionOption!, stateId,
+                    out error))
                 return false;
             if (!witnessNull && !JsonElementDeepEquals(
                     root.GetProperty("effect_witness"),
                     root.GetProperty("transition").GetProperty("effect_witness")))
                 return Fail(out error, "root and transition witnesses differ");
+            if (!witnessNull && !ValidateCompletedWitnessBinding(
+                    root.GetProperty("effect_witness"), root.GetProperty("transition"), action,
+                    transitionOption!, out error))
+                return false;
             return true;
         }
         catch (JsonException)

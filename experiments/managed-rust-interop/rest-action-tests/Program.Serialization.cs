@@ -20,10 +20,12 @@ internal static partial class Program
             "select_card:11:smith:card:2",
             new RuntimeV4ExpertRestAction("select_card", "smith", "selection:10:smith", "card:2"));
         RuntimeV4ExpertRestSelector progressedSelector = new(
-            "selection:10:smith", "card", 2, FirstSelected, 1,
+            "selection:10:smith", "card", 2, SecondSelected, 0,
             new[]
             {
-                secondPick,
+                new RuntimeV4ExpertRestActionReference("confirm_selection:12:smith",
+                    new RuntimeV4ExpertRestAction("confirm_selection", "smith",
+                        "selection:10:smith")),
                 new RuntimeV4ExpertRestActionReference("cancel_selection:11:smith",
                     new RuntimeV4ExpertRestAction("cancel_selection", "smith", "selection:10:smith"))
             });
@@ -48,7 +50,7 @@ internal static partial class Program
             new RuntimeV4ExpertRestCardEvidence(Array.Empty<string>(), Array.Empty<string>(),
                 SecondSelected));
         var completed = new RuntimeV4ExpertRestResponse(
-            context, "live:13", 13, confirmationOperation, confirmation, "settled", Observation(13),
+            context, "live:13", 13, confirmationOperation, confirmation, "settled", Observation(13, "rest"),
             new RuntimeV4ExpertRestSelectionCompletedTransition("smith", 12, 13,
                 "selection:10:smith", "card", 2, SecondSelected, witness), witness, null);
         Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(completed, out string completedJson,
@@ -72,11 +74,27 @@ internal static partial class Program
                 Relics = Array.Empty<RuntimeV4ExpertGameplayRelic>(),
                 Potions = Array.Empty<RuntimeV4ExpertGameplayPotion>()
             },
-            new RuntimeV4ExpertGameplayState(stateKind)
+        new RuntimeV4ExpertGameplayState(stateKind)
             {
-                Choices = Array.Empty<RuntimeV4ExpertGameplayChoice>()
+                Choices = stateKind == "selection"
+                    ? new[]
+                    {
+                        new RuntimeV4ExpertGameplayChoice("card:1", "Strike", "selection", null),
+                        new RuntimeV4ExpertGameplayChoice("card:2", "Bash", "selection", null)
+                    }
+                    : Array.Empty<RuntimeV4ExpertGameplayChoice>()
             },
-            Array.Empty<RuntimeV4ExpertGameplayAction>());
+            stateKind == "selection"
+                ? new[]
+                {
+                    new RuntimeV4ExpertGameplayAction(
+                        $"select_card:{generation}:card:1", "select_card", "card:1", null,
+                        $"selection:{generation}"),
+                    new RuntimeV4ExpertGameplayAction(
+                        $"cancel_selection:{generation}", "cancel_selection", null, null,
+                        $"selection:{generation}")
+                }
+                : Array.Empty<RuntimeV4ExpertGameplayAction>());
 
     private static void ProducerConsumerSupportChecks()
     {
@@ -129,11 +147,12 @@ internal static partial class Program
         internal FakeRestHost(RuntimeV4ExpertRestRequest request) => _request = request;
 
         internal bool ThrowDispatch { get; set; }
+        internal bool MissingCompletion { get; set; }
         internal int DispatchCount { get; private set; }
         internal int CompletionCount { get; private set; }
 
         public RuntimeV4ExpertRestHostProjection ObserveRest() =>
-            new(Observation(_request.Generation), new[] { _request.Action });
+            new(Observation(_request.Generation, "rest"), new[] { _request.Action });
 
         public bool DispatchRest(RuntimeV4ExpertRestOperation operation,
             RuntimeV4ExpertRestActionReference action, RuntimeV4ExpertRestHostProjection current)
@@ -152,8 +171,9 @@ internal static partial class Program
             if (!_dispatched || operation != _request.Operation || action != _request.Action)
                 return null;
             CompletionCount++;
-            RuntimeV4ExpertGameplayObservation before = Observation(9);
-            RuntimeV4ExpertGameplayObservation after = Observation(10) with
+            if (MissingCompletion) return null;
+            RuntimeV4ExpertGameplayObservation before = Observation(9, "rest");
+            RuntimeV4ExpertGameplayObservation after = Observation(10, "rest") with
             {
                 Player = before.Player with { Hp = 70 }
             };

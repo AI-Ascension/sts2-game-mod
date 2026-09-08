@@ -204,8 +204,6 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
             "cook" => CardEvidence(before.Player.Deck, after.Player.Deck,
                 requireAdded: false, requireRemoved: true, requireUpgraded: false),
             "dig" or "hatch" => RelicEvidence(before.Player.Relics, after.Player.Relics),
-            "kindle" or "lift" => new RuntimeV4ExpertRestNativeEvidence(
-                $"{optionId}:{operation.OperationId}", after.StateId),
             _ => null
         };
         if (evidence is null) return null;

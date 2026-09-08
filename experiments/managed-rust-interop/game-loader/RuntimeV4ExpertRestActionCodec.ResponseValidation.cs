@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+using System;
+using System.Linq;
+
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static partial class RuntimeV4ExpertRestActionCodec
@@ -86,7 +89,10 @@ internal static partial class RuntimeV4ExpertRestActionCodec
             error = "settled rest response values are invalid";
             return false;
         }
-        if (response.Transition.AfterGeneration != response.Generation
+        if (!ValidateObservationValue(response.Observation, response.StateId,
+                response.Generation, out error)) return false;
+        if (response.Transition.RestOptionId != response.Action.Action.RestOptionId
+            || response.Transition.AfterGeneration != response.Generation
             || response.Transition.AfterGeneration <= response.Transition.BeforeGeneration)
         {
             error = "rest transition generation is not fenced";
@@ -94,7 +100,10 @@ internal static partial class RuntimeV4ExpertRestActionCodec
         }
         if (response.Transition is RuntimeV4ExpertRestSelectionRequestedTransition requested)
         {
-            if (response.EffectWitness is not null || requested.Selector is null)
+            if (response.Action.Action.Kind != "rest_option"
+                || !RuntimeV4ExpertRestActionContract.SelectorOptionKinds.Contains(
+                    response.Transition.RestOptionId)
+                || response.EffectWitness is not null || requested.Selector is null)
             {
                 error = "selection request cannot carry an effect witness";
                 return false;
@@ -103,7 +112,8 @@ internal static partial class RuntimeV4ExpertRestActionCodec
         }
         if (response.Transition is RuntimeV4ExpertRestSelectionProgressedTransition progressed)
         {
-            if (response.EffectWitness is not null || progressed.Selector is null)
+            if (response.Action.Action.Kind is not ("select_card" or "select_player")
+                || response.EffectWitness is not null || progressed.Selector is null)
             {
                 error = "selection progress cannot carry an effect witness";
                 return false;
@@ -120,22 +130,64 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                 error = "selection completion witness or selection identity is invalid";
                 return false;
             }
-            return ValidateWitness(response.EffectWitness, response.Generation,
-                response.Operation.OperationId, completed.RestOptionId, out error)
-                && completed.SelectedChoiceIds.Count == completed.RequiredCount;
+            if (response.Action.Action.Kind is not ("confirm_selection" or "select_player")
+                || (completed.RestOptionId == "smith"
+                    && (completed.SelectionKind != "card"
+                        || response.Action.Action.Kind != "confirm_selection"))
+                || (completed.RestOptionId == "mend"
+                    && (completed.SelectionKind != "player"
+                        || response.Action.Action.Kind is not ("confirm_selection" or "select_player")))
+                || completed.SelectedChoiceIds.Count != completed.RequiredCount
+                || completed.SelectedChoiceIds.Count != completed.SelectedChoiceIds
+                    .Distinct(StringComparer.Ordinal).Count())
+            {
+                error = "selection completion fields are invalid";
+                return false;
+            }
+            if (!ValidateWitness(response.EffectWitness, response.Generation,
+                    response.Operation, completed.RestOptionId, response.StateId,
+                    out error)) return false;
+            return ValidateTypedCompletedWitnessBinding(response.EffectWitness, completed,
+                response.Action, out error);
         }
         if (response.Transition is RuntimeV4ExpertRestCompletedTransition completedOption)
         {
-            if (response.EffectWitness is null
+            if (response.Action.Action.Kind != "rest_option"
+                || RuntimeV4ExpertRestActionContract.SelectorOptionKinds.Contains(
+                    completedOption.RestOptionId)
+                || response.EffectWitness is null
                 || completedOption.EffectWitness != response.EffectWitness)
             {
                 error = "rest completion witness is missing or duplicated incorrectly";
                 return false;
             }
             return ValidateWitness(response.EffectWitness, response.Generation,
-                response.Operation.OperationId, completedOption.RestOptionId, out error);
+                response.Operation, completedOption.RestOptionId, response.StateId,
+                out error);
         }
         error = "rest transition type is unsupported";
         return false;
+    }
+
+    private static bool ValidateTypedCompletedWitnessBinding(
+        RuntimeV4ExpertRestEffectWitness witness,
+        RuntimeV4ExpertRestSelectionCompletedTransition transition,
+        RuntimeV4ExpertRestActionReference action,
+        out string error)
+    {
+        error = string.Empty;
+        if (transition.RestOptionId == "smith"
+            && (witness.Evidence is not RuntimeV4ExpertRestCardEvidence cards
+                || !transition.SelectedChoiceIds.SequenceEqual(
+                    cards.UpgradedCardIds, StringComparer.Ordinal)))
+            return Fail(out error, "Smith completion witness does not bind selected cards");
+        if (transition.RestOptionId == "mend"
+            && (witness.TargetPlayerId is null
+                || transition.SelectedChoiceIds.Count != 1
+                || transition.SelectedChoiceIds[0] != witness.TargetPlayerId
+                || action.Action.Kind == "select_player"
+                    && action.Action.PlayerId != witness.TargetPlayerId))
+            return Fail(out error, "Mend completion witness does not bind selected player");
+        return true;
     }
 }

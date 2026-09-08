@@ -87,9 +87,13 @@ internal static partial class Program
         string completed = Reconcile(support, context, target.Operation.OperationId);
         CheckTransition(completed, context, "rest_option_selection_completed");
         using JsonDocument document = JsonDocument.Parse(completed);
-        Check(document.RootElement.GetProperty("effect_witness").GetProperty("target_player_id")
-                .GetString() == "player:2",
+        JsonElement witness = document.RootElement.GetProperty("effect_witness");
+        Check(witness.GetProperty("target_player_id").GetString() == "player:2",
             "Mend completion lost its selected player identity");
+        Check(witness.GetProperty("evidence").GetProperty("kind").GetString() == "hp_change"
+                && witness.GetProperty("evidence").GetProperty("hp_before").GetUInt16() == 64
+                && witness.GetProperty("evidence").GetProperty("hp_after").GetUInt16() == 74,
+            "Mend completion did not carry the retained target HP change");
 
         var cancellationHost = new MendHost();
         RuntimeV4ExpertRestActionSupport cancellationSupport =

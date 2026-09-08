@@ -10,14 +10,15 @@ internal static partial class RuntimeV4ExpertRestActionCodec
     private static bool ValidateWitness(
         RuntimeV4ExpertRestEffectWitness witness,
         ulong generation,
-        string operationId,
+        RuntimeV4ExpertRestOperation operation,
         string optionId,
+        string stateId,
         out string error)
     {
         error = string.Empty;
         if (witness is null
             || witness.Operation is null
-            || witness.Operation.OperationId != operationId
+            || witness.Operation != operation
             || witness.RestOptionId != optionId
             || witness.Generation != generation
             || (optionId == "mend") != (witness.TargetPlayerId is not null)
@@ -29,7 +30,8 @@ internal static partial class RuntimeV4ExpertRestActionCodec
         }
         using JsonDocument document = JsonDocument.Parse(JsonSerializer.Serialize(
             EffectWitness(witness)));
-        return ValidateWitness(document.RootElement, generation, operationId, optionId, out error);
+        return ValidateWitness(document.RootElement, generation, operation.OperationId, optionId,
+            stateId, out error);
     }
 
     private static bool ValidateWitness(
@@ -37,6 +39,7 @@ internal static partial class RuntimeV4ExpertRestActionCodec
         ulong generation,
         string operationId,
         string optionId,
+        string stateId,
         out string error)
     {
         error = string.Empty;
@@ -77,10 +80,14 @@ internal static partial class RuntimeV4ExpertRestActionCodec
             error = "rest effect witness target identity is invalid";
             return false;
         }
-        return ValidateEvidence(evidence, kind!, out error);
+        return ValidateEvidence(evidence, kind!, stateId, out error);
     }
 
-    private static bool ValidateEvidence(JsonElement evidence, string witnessKind, out string error)
+    private static bool ValidateEvidence(
+        JsonElement evidence,
+        string witnessKind,
+        string stateId,
+        out string error)
     {
         error = string.Empty;
         string? kind = StringField(evidence, "kind");
@@ -89,9 +96,16 @@ internal static partial class RuntimeV4ExpertRestActionCodec
             error = "rest effect evidence kind is missing";
             return false;
         }
-        if (witnessKind is "heal_applied" or "mend_applied")
+        if (witnessKind == "heal_applied")
+            return kind == "hp_change"
+                && ValidateHpEvidence(evidence, requireIncrease: true, out error)
+                || Fail(out error, "HP evidence is required");
+        if (witnessKind == "mend_applied")
             return kind is "hp_change" or "native_completion"
-                ? true : Fail(out error, "HP or native evidence is required");
+                && (kind == "hp_change"
+                    ? ValidateHpEvidence(evidence, requireIncrease: true, out error)
+                    : ValidateNativeEvidence(evidence, stateId, out error))
+                || Fail(out error, "HP or native evidence is required");
         if (witnessKind is "clone_applied" or "cook_applied" or "smith_applied")
             return kind == "card_change"
                 ? HasExactFields(evidence, "kind", "added_card_ids", "removed_card_ids", "upgraded_card_ids")
@@ -112,13 +126,90 @@ internal static partial class RuntimeV4ExpertRestActionCodec
                 : Fail(out error, "relic evidence is required");
         if (witnessKind == "lift_applied")
             return kind is "stat_change" or "native_completion"
-                ? true : Fail(out error, "stat or native evidence is required");
+                && (kind == "stat_change"
+                    ? ValidateStatEvidence(evidence, out error)
+                    : ValidateNativeEvidence(evidence, stateId, out error))
+                || Fail(out error, "stat or native evidence is required");
         if (witnessKind == "kindle_applied")
             return kind == "native_completion"
-                ? HasExactFields(evidence, "kind", "completion_id", "native_state_id")
-                    && RuntimeV4ExpertRestActionContract.IsIdentity(StringField(evidence, "completion_id"))
-                    && RuntimeV4ExpertRestActionContract.IsIdentity(StringField(evidence, "native_state_id"))
-                : Fail(out error, "native completion evidence is required");
+                && ValidateNativeEvidence(evidence, stateId, out error)
+                || Fail(out error, "native completion evidence is required");
         return Fail(out error, "rest effect witness kind is unsupported");
+    }
+
+    private static bool ValidateHpEvidence(
+        JsonElement evidence,
+        bool requireIncrease,
+        out string error)
+    {
+        error = string.Empty;
+        if (!HasExactFields(evidence, "kind", "hp_before", "hp_after", "max_hp_before",
+                "max_hp_after")
+            || !UInt16Field(evidence, "hp_before", out ushort before)
+            || !UInt16Field(evidence, "hp_after", out ushort after)
+            || !UInt16Field(evidence, "max_hp_before", out ushort maxBefore)
+            || !UInt16Field(evidence, "max_hp_after", out ushort maxAfter)
+            || before > maxBefore || after > maxAfter
+            || requireIncrease && after <= before)
+            return Fail(out error, "rest HP evidence is incomplete or unchanged");
+        return true;
+    }
+
+    private static bool ValidateStatEvidence(JsonElement evidence, out string error)
+    {
+        error = string.Empty;
+        if (!HasExactFields(evidence, "kind", "stat_id", "before", "after")
+            || !IdentityField(evidence, "stat_id")
+            || !Int32Field(evidence, "before", -65535, 65535, out int before)
+            || !Int32Field(evidence, "after", -65535, 65535, out int after)
+            || before == after)
+            return Fail(out error, "rest stat evidence is incomplete or unchanged");
+        return true;
+    }
+
+    private static bool ValidateNativeEvidence(
+        JsonElement evidence,
+        string stateId,
+        out string error)
+    {
+        error = string.Empty;
+        if (!HasExactFields(evidence, "kind", "completion_id", "native_state_id")
+            || !IdentityField(evidence, "completion_id")
+            || !IdentityField(evidence, "native_state_id")
+            || StringField(evidence, "native_state_id") != stateId)
+            return Fail(out error, "rest native completion evidence is invalid");
+        return true;
+    }
+
+    private static bool ValidateCompletedWitnessBinding(
+        JsonElement witness,
+        JsonElement transition,
+        RuntimeV4ExpertRestActionReference action,
+        string optionId,
+        out string error)
+    {
+        error = string.Empty;
+        string? witnessKind = StringField(witness, "kind");
+        if (optionId == "smith")
+        {
+            if (action.Action.Kind != "confirm_selection"
+                || witnessKind != "smith_applied"
+                || !JsonElementDeepEquals(
+                    transition.GetProperty("selected_choice_ids"),
+                    witness.GetProperty("evidence").GetProperty("upgraded_card_ids")))
+                return Fail(out error, "Smith completion witness does not bind selected cards");
+            return true;
+        }
+        if (optionId == "mend")
+        {
+            string? target = StringField(witness, "target_player_id");
+            JsonElement selected = transition.GetProperty("selected_choice_ids");
+            if (witnessKind != "mend_applied" || target is null
+                || selected.GetArrayLength() != 1
+                || selected[0].GetString() != target
+                || action.Action.Kind == "select_player" && action.Action.PlayerId != target)
+                return Fail(out error, "Mend completion witness does not bind selected player");
+        }
+        return true;
     }
 }
