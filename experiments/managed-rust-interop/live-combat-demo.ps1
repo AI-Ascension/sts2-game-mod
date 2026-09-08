@@ -4,8 +4,10 @@ param(
     [Parameter(Mandatory=$true)][string]$UserDirectory,
     [Parameter(Mandatory=$true)][string]$LogPath,
     [Parameter(Mandatory=$true)][string]$StopFile,
+    [ValidateSet('campaign','demo')][string]$RunKind = 'campaign',
     [ValidateSet('standard','practice')][string]$CampaignMode = 'standard',
     [string]$Seed = '',
+    [ValidateRange(0,3600)][int]$MaxRuntimeSeconds = 0,
     [ValidateRange(1,65535)][int]$Port = 15626,
     [ValidateRange(-1,31)][int]$Display = -1,
     [ValidateRange(640,16384)][int]$Width = 1280,
@@ -13,6 +15,12 @@ param(
     [ValidateSet('windowed','fullscreen','borderless','maximized')][string]$WindowMode = 'windowed'
 )
 $ErrorActionPreference = 'Stop'
+$defaultMaxRuntimeSeconds = if ($RunKind -eq 'campaign') { 3600 } else { 900 }
+if ($MaxRuntimeSeconds -eq 0) { $MaxRuntimeSeconds = $defaultMaxRuntimeSeconds }
+$maximumAllowedRuntimeSeconds = if ($RunKind -eq 'campaign') { 3600 } else { 900 }
+if ($MaxRuntimeSeconds -lt 60 -or $MaxRuntimeSeconds -gt $maximumAllowedRuntimeSeconds) {
+    throw "MaxRuntimeSeconds must be between 60 and $maximumAllowedRuntimeSeconds for $RunKind"
+}
 if ($LogPath.Contains('"') -or $LogPath.Contains("`r") -or $LogPath.Contains("`n")) { throw 'Invalid log path' }
 Add-Type -AssemblyName System.Windows.Forms
 if ($Display -ge [System.Windows.Forms.Screen]::AllScreens.Count) { throw 'Selected display is unavailable' }
@@ -25,15 +33,24 @@ $env:STS2_RUNTIME_BIND_ADDRESS = '127.0.0.1'
 $env:STS2_RUNTIME_PORT = "$Port"
 $env:STS2_RUNTIME_SESSION = '1'
 $env:STS2_LIVE_COMBAT = '1'
-$env:STS2_LIVE_CAMPAIGN = '1'
-$env:STS2_LIVE_CAMPAIGN_MODE = $CampaignMode
 $env:STS2_LIVE_USER_DIR = $UserDirectory
-if ($CampaignMode -eq 'practice') {
-    if ([string]::IsNullOrEmpty($Seed)) { throw 'Practice campaign mode requires an explicit seed' }
-    $env:STS2_LIVE_SEED = $Seed
+if ($RunKind -eq 'campaign') {
+    $env:STS2_LIVE_CAMPAIGN = '1'
+    $env:STS2_LIVE_CAMPAIGN_MODE = $CampaignMode
+    if ($CampaignMode -eq 'practice') {
+        if ([string]::IsNullOrEmpty($Seed)) { throw 'Practice campaign mode requires an explicit seed' }
+        $env:STS2_LIVE_SEED = $Seed
+    } else {
+        if (-not [string]::IsNullOrEmpty($Seed)) { throw 'Standard campaign mode does not accept a seed' }
+        Remove-Item Env:STS2_LIVE_SEED -ErrorAction SilentlyContinue
+    }
 } else {
-    if (-not [string]::IsNullOrEmpty($Seed)) { throw 'Standard campaign mode does not accept a seed' }
-    Remove-Item Env:STS2_LIVE_SEED -ErrorAction SilentlyContinue
+    if ($CampaignMode -ne 'standard') { throw 'The historical demo does not accept a campaign mode' }
+    if ([string]::IsNullOrEmpty($Seed)) { $Seed = 'AIASCENSIONREPLAY1' }
+    if ($Seed -notmatch '^[A-Za-z0-9_-]{1,128}$') { throw 'Invalid demo seed' }
+    Remove-Item Env:STS2_LIVE_CAMPAIGN -ErrorAction SilentlyContinue
+    Remove-Item Env:STS2_LIVE_CAMPAIGN_MODE -ErrorAction SilentlyContinue
+    $env:STS2_LIVE_SEED = $Seed
 }
 foreach ($entry in @(@('Display','DISPLAY'), @('Width','WIDTH'), @('Height','HEIGHT'), @('WindowMode','WINDOW_MODE'))) {
     $name = 'STS2_LIVE_' + $entry[1]
@@ -53,7 +70,8 @@ if ($PSBoundParameters.ContainsKey('WindowMode')) { switch ($WindowMode) {
 $owned = Start-Process -FilePath "$HostDirectory\SlayTheSpire2.exe" -WorkingDirectory $HostDirectory -ArgumentList $arguments -PassThru
 try {
     Write-Output "OWNED_GAME_PID=$($owned.Id)"
-    $deadline = [DateTime]::UtcNow.AddMinutes(15)
+    Write-Output "GUARDIAN_MAX_RUNTIME_SECONDS=$MaxRuntimeSeconds"
+    $deadline = [DateTime]::UtcNow.AddSeconds($MaxRuntimeSeconds)
     while (-not $owned.WaitForExit(500)) {
         if ((Test-Path $StopFile) -or [DateTime]::UtcNow -gt $deadline) { break }
     }

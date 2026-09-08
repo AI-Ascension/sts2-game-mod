@@ -1,25 +1,37 @@
-# Isolated visible combat demo
+# Isolated visible campaign and historical combat fixture
 
-This opt-in host adapter runs a real single-player campaign through runtime-v3 gameplay.
+The production session launcher runs a real single-player campaign through runtime-v3 gameplay.
 Production launches use normal model-selected character and map progression. The source supports
 standard host-generated seeds and explicit practice seeds; neither mode is a release compatibility
-claim by itself.
+claim by itself. The session guardian defaults to 3600 seconds for a campaign and accepts a bounded
+`--max-runtime-seconds` override.
 
-As of 2026-09-07, build `GameLoaderProbe.csproj` with
-`-p:EnableCombatDemoProbe=true` for this room-entry demonstration. The diagnostic
-`LiveCombatFixture` type is excluded from the default production assembly. Production
-live launches require `STS2_LIVE_CAMPAIGN=1` and retain normal model-selected character
-and map progression; the existing video, hand-choice, and terminal probe build options
-remain separate explicit diagnostics. Do not publish an addon built with any probe option.
+## Production campaign session
+
+Build the default `GameLoaderProbe.csproj` without `EnableCombatDemoProbe`. The production
+live launch requires `STS2_LIVE_CAMPAIGN=1` and retains normal model-selected character and map
+progression. Use `--run-kind campaign --campaign-mode standard` for a saving-enabled host run,
+or `--run-kind campaign --campaign-mode practice --seed VALUE` for a deterministic run and its
+fresh-process replay. The guardian duration is bounded to 60 through 3600 seconds for campaigns.
+
+## Historical diagnostic room fixture
+
+The old room-entry combat fixture is a separate privileged diagnostic. It is excluded from the
+default assembly and may only be compiled explicitly with `-p:EnableCombatDemoProbe=true`; do not
+publish that addon or describe its result as campaign evidence. To run that historical fixture,
+use `--run-kind demo` with the explicitly built probe and an optional seed (default
+`AIASCENSIONREPLAY1`). Its guardian duration defaults to 900 seconds and is bounded to 60 through
+900 seconds. The fixture retains the older forced weak-encounter behavior and is useful only for
+focused room-entry/replay diagnostics.
 
 The operator must supply a disposable Windows host directory with its own `override.cfg`
 and Godot user directory. Keep proprietary files, logs, saves, and generated addons outside
 this repository. The original Steam installation is not the demo install target.
 
 `experiments/managed-rust-interop/live-combat-demo.ps1` accepts `HostDirectory`,
-`UserDirectory`, `LogPath`, `StopFile`, `Seed`, and `Port`. A fresh runtime credential is
-read from stdin. The launcher owns only its spawned process and stops it on stop-file,
-exit, or the 15-minute deadline.
+`UserDirectory`, `LogPath`, `StopFile`, `RunKind`, `CampaignMode`, `Seed`, `MaxRuntimeSeconds`,
+and `Port`. A fresh runtime credential is read from stdin. The launcher owns only its spawned
+process and stops it on stop-file, exit, or the configured bounded deadline.
 
 Before launch, select `-Display -1 -Width 1280 -Height 720 -WindowMode windowed`.
 Display indexes are zero-based Godot screen indexes; -1 (default) selects the primary display.
@@ -79,10 +91,14 @@ Use `bash experiments/managed-rust-interop/live-combat-session.sh --help` for th
 repeatable operator entrypoint. Supply explicit host/user/artifact directories and gateway,
 MCP, harness and provider executable paths. It creates fresh role-separated credentials,
 launches the visible host, runs the configured model through the episode harness, and retains
-bounded external logs. Use `--campaign-mode standard` for a normal saving-enabled host run. Use
-`--campaign-mode practice --seed VALUE` for a deterministic run and its fresh-process replay.
-Use `--display`, `--width`, `--height`, and `--window-mode` before launching.
-`--replay-trajectory` replays a completed practice trajectory without inference; use the same seed.
+bounded external logs. Use `--run-kind campaign --campaign-mode standard` for a normal
+saving-enabled host run. Use `--run-kind campaign --campaign-mode practice --seed VALUE` for a
+deterministic run and its fresh-process replay. Use `--run-kind demo` only with the explicit
+historical fixture build. `--max-runtime-seconds N` is bounded per run kind (60-3600 for campaign,
+60-900 for demo) and is passed to the PowerShell guardian. Use `--display`, `--width`,
+`--height`, and `--window-mode` before launching.
+`--replay-trajectory` replays a completed deterministic trajectory without inference; use the
+same seed.
 The selected semantic action must exist in the fresh catalog and visible game content must
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).

@@ -4,14 +4,16 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 host_dir='' user_dir='' artifacts='' gateway='' mcp='' harness='' provider=''
 powershell=powershell.exe
-display='' width='' height='' window_mode='' campaign_mode=standard seed='' seed_set=false hold=300 replay=''
+display='' width='' height='' window_mode='' run_kind=campaign campaign_mode=standard
+seed='' seed_set=false max_runtime_seconds='' hold=300 replay=''
 usage() {
     cat <<'HELP'
 Usage: live-combat-session.sh --host-dir PATH --user-dir WINDOWS_PATH --artifacts-dir PATH
   --gateway-binary PATH --mcp-binary PATH --harness-binary PATH --provider-binary PATH
   [--display N] [--width N] [--height N]
   [--window-mode windowed|fullscreen|borderless|maximized]
-  [--campaign-mode standard|practice] [--seed VALUE]
+  [--run-kind campaign|demo] [--campaign-mode standard|practice] [--seed VALUE]
+  [--max-runtime-seconds N]
   [--hold-seconds 300] [--replay-trajectory PATH]
   [--powershell-binary PATH]
 Requires an already prepared disposable host, accepted addon, Windows PowerShell,
@@ -34,8 +36,10 @@ while (($#)); do
         --width) width=${2:?}; shift ;;
         --height) height=${2:?}; shift ;;
         --window-mode) window_mode=${2:?}; shift ;;
+        --run-kind) run_kind=${2:?}; shift ;;
         --campaign-mode) campaign_mode=${2:?}; shift ;;
         --seed) seed=${2:?}; seed_set=true; shift ;;
+        --max-runtime-seconds) max_runtime_seconds=${2:?}; shift ;;
         --hold-seconds) hold=${2:?}; shift ;;
         --replay-trajectory) replay=${2:?}; shift ;;
         --powershell-binary) powershell=${2:?}; shift ;;
@@ -46,6 +50,20 @@ done
 for binary in "$gateway" "$mcp" "$harness" "$provider"; do
     [[ -x "$binary" ]] || { printf 'Missing executable\n' >&2; exit 2; }
 done
+case "$run_kind" in
+    campaign) max_runtime_default=3600; max_runtime_limit=3600 ;;
+    demo) max_runtime_default=900; max_runtime_limit=900 ;;
+    *) printf 'unsupported run kind\n' >&2; exit 2 ;;
+esac
+[[ -n "$max_runtime_seconds" ]] || max_runtime_seconds=$max_runtime_default
+[[ "$max_runtime_seconds" =~ ^[0-9]+$ ]] || { printf 'max runtime must be an integer\n' >&2; exit 2; }
+(( ${#max_runtime_seconds} <= 4 )) || { printf 'max runtime is too large\n' >&2; exit 2; }
+max_runtime_seconds_value=$((10#$max_runtime_seconds))
+(( max_runtime_seconds_value >= 60 && max_runtime_seconds_value <= max_runtime_limit )) || {
+    printf 'max runtime must be between 60 and %s seconds for %s\n' "$max_runtime_limit" "$run_kind" >&2
+    exit 2
+}
+max_runtime_seconds=$max_runtime_seconds_value
 provider_metadata=$("$provider" --describe)
 provider_kind=$(jq -er '.kind' <<<"$provider_metadata")
 provider_name=$(jq -er '.provider' <<<"$provider_metadata")
@@ -62,7 +80,19 @@ esac
 [[ "$hold" =~ ^[0-9]+$ && "$hold" -le 600 ]] || exit 2
 [[ -z "$seed" || "$seed" =~ ^[A-Za-z0-9_-]{1,128}$ ]] || exit 2
 case "$window_mode" in ''|windowed|fullscreen|borderless|maximized) ;; *) exit 2 ;; esac
-case "$campaign_mode" in standard) [[ "$seed_set" == false ]] || { printf 'standard mode does not accept --seed\n' >&2; exit 2; } ;; practice) [[ -n "$seed" ]] || { printf 'practice mode requires --seed\n' >&2; exit 2; } ;; *) printf 'unsupported campaign mode\n' >&2; exit 2 ;; esac
+case "$run_kind" in
+    campaign)
+        case "$campaign_mode" in
+            standard) [[ "$seed_set" == false ]] || { printf 'standard mode does not accept --seed\n' >&2; exit 2; } ;;
+            practice) [[ -n "$seed" ]] || { printf 'practice mode requires --seed\n' >&2; exit 2; } ;;
+            *) printf 'unsupported campaign mode\n' >&2; exit 2 ;;
+        esac
+        ;;
+    demo)
+        [[ "$campaign_mode" == standard ]] || { printf 'demo does not accept a campaign mode\n' >&2; exit 2; }
+        [[ -n "$seed" ]] || seed=AIASCENSIONREPLAY1
+        ;;
+esac
 video_args=()
 [[ -z "$display" ]] || video_args+=(-Display "$display")
 [[ -z "$width" ]] || video_args+=(-Width "$width")
@@ -95,8 +125,9 @@ trap 'exit 130' INT TERM
 guardian_args=(
     -HostDirectory "$(wslpath -w "$host_dir")" -UserDirectory "$user_dir"
     -LogPath "$(wslpath -w "$run/game.log")" -StopFile "$(wslpath -w "$run/stop")"
-    -CampaignMode "$campaign_mode"
+    -RunKind "$run_kind" -MaxRuntimeSeconds "$max_runtime_seconds"
 )
+[[ "$run_kind" == demo ]] || guardian_args+=( -CampaignMode "$campaign_mode" )
 [[ -z "$seed" ]] || guardian_args+=( -Seed "$seed" )
 "$powershell" -NoProfile -File "$(wslpath -w "$script_dir/live-combat-demo.ps1")" \
     "${guardian_args[@]}" "${video_args[@]}" \
@@ -127,20 +158,30 @@ export STS2_RUNTIME_PROFILE=runtime-v3-gameplay STS2_MCP_BINARY="$mcp"
 export STS2_EXO_BRIDGE_BINARY="$provider" STS2_EXO_BRIDGE_ARGS_JSON='[]'
 export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
-export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false STS2_LIVE_EPISODE=true \
-    STS2_EXO_FORWARD_VISIBLE_SEED=true
+if [[ "$run_kind" == demo ]]; then
+    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true STS2_LIVE_EPISODE=true
+    export STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
+else
+    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false STS2_LIVE_EPISODE=true
+    export STS2_OBJECTIVE='Complete the campaign while preserving HP.' STS2_MAX_STEPS=1024
+fi
+export STS2_EXO_FORWARD_VISIBLE_SEED=true
 if [[ "$provider_kind" == openai-astra ]]; then
     export STS2_EXO_INHERITED_ENV_JSON='["HOME","PATH"]'
 else
     export STS2_EXO_INHERITED_ENV_JSON='[]'
 fi
-export STS2_OBJECTIVE='Complete the campaign while preserving HP.' STS2_MAX_STEPS=1024
 export STS2_REPLAY_TRAJECTORY="$replay"
-jq -n --arg seed "$seed" --arg bridge "$STS2_EXO_REVISION" --arg campaign_mode "$campaign_mode" \
+manifest_campaign_mode=$campaign_mode
+[[ "$run_kind" == campaign ]] || manifest_campaign_mode=''
+jq -n --arg seed "$seed" --arg run_kind "$run_kind" --arg max_runtime "$max_runtime_seconds" \
+    --arg bridge "$STS2_EXO_REVISION" --arg campaign_mode "$manifest_campaign_mode" \
     --arg window_mode "$window_mode" \
     --arg provider "$provider_name" --arg model "$provider_model" \
     --arg display "$display" --arg width "$width" --arg height "$height" --arg replay "$replay" \
-    '{seed:($seed | if . == "" then null else . end),campaign_mode:$campaign_mode,
+    '{run_kind:$run_kind,max_runtime_seconds:($max_runtime | tonumber),
+    seed:($seed | if . == "" then null else . end),
+    campaign_mode:($campaign_mode | if . == "" then null else . end),
     bridge_sha256:$bridge,provider:$provider,model:$model,
     display:($display | if . == "" then null else tonumber end),
     width:($width | if . == "" then null else tonumber end),
