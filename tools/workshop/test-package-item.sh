@@ -223,6 +223,23 @@ assert '"publishedfileid" "123456789"' in vdf
 assert '"previewfile"' in vdf
 PY
 
+relative_caller="$temp_dir/relative-caller"
+relative_payload="$relative_caller/payload"
+mkdir -p "$relative_payload"
+cp -- "$payload_dir/AIAscensionSTS2GameMod.dll" "$relative_payload/AIAscensionSTS2GameMod.dll"
+cp -- "$payload_dir/AIAscensionSTS2GameMod.json" "$relative_payload/AIAscensionSTS2GameMod.json"
+cp -- "$payload_dir/AIAscensionSTS2GameModNative.dll" "$relative_payload/AIAscensionSTS2GameModNative.dll"
+cp -- "$preview_file" "$relative_caller/preview.jpg"
+(
+    cd "$relative_caller"
+    bash "$script_dir/package-item.sh" \
+        payload relative-output 480 123456788 0.107.1 0.4.0 "$source_revision" preview.jpg \
+        --build-manifest "$build_manifest"
+)
+[[ -f "$relative_caller/relative-output/sts2-workshop-manifest.json" ]]
+[[ -f "$relative_caller/relative-output.vdf" ]]
+printf '%s\n' 'caller-relative package wrapper test passed.'
+
 bad_receipt_manifest="$temp_dir/bad-receipt-manifest.json"
 cp -- "$build_manifest" "$bad_receipt_manifest"
 python3 - "$bad_receipt_manifest" <<'PY'

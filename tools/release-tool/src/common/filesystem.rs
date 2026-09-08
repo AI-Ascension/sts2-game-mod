@@ -90,14 +90,20 @@ pub fn claim(path: &Path) -> Result<Claim, String> {
     let mut file = options
         .open(path)
         .map_err(|error| format!("could not claim output: {error}"))?;
-    let id = identity(
-        &file
-            .metadata()
-            .map_err(|error| format!("cannot inspect output claim: {error}"))?,
-    );
-    writeln!(file, "pid={}", std::process::id())
-        .and_then(|()| file.sync_all())
-        .map_err(|error| format!("could not persist output claim: {error}"))?;
+    let id = match file.metadata() {
+        Ok(metadata) => identity(&metadata),
+        Err(error) => {
+            drop(file);
+            let _ = fs::remove_file(path);
+            return Err(format!("cannot inspect output claim: {error}"));
+        }
+    };
+    if let Err(error) = writeln!(file, "pid={}", std::process::id()).and_then(|()| file.sync_all())
+    {
+        drop(file);
+        remove_owned_file_identity(path, &id);
+        return Err(format!("could not persist output claim: {error}"));
+    }
     Ok(Claim {
         path: path.to_path_buf(),
         id,

@@ -49,6 +49,11 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
         )),
     };
     build_support::validate_roots(&output, &evidence, &repo, host.as_deref())?;
+    let host_before = if production {
+        build_support::host_records(host.as_deref().ok_or("production host is missing")?)?.values
+    } else {
+        std::collections::BTreeMap::new()
+    };
     build_support::prepare(&output, &evidence)?;
     let logs = evidence.join("logs");
     let scratch = evidence.join(format!("scratch-{}", temp_suffix()));
@@ -63,11 +68,6 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
     build_support::set_private(&stage_payload)?;
     let claim_path = std::path::PathBuf::from(format!("{}.claim", output.display()));
     let claim = crate::common::claim(&claim_path)?;
-    let host_before = if production {
-        build_support::host_records(host.as_deref().ok_or("production host is missing")?)?.values
-    } else {
-        std::collections::BTreeMap::new()
-    };
     let mut committed = false;
     let result = (|| {
         let inputs = if production {
