@@ -38,8 +38,9 @@ do not establish release support.
   managed player-visible expert projection with host-generated legal actions, and one admitted
   mutation (`use_potion`) fenced by lease, epoch, session, correlation, generation, state and
   operation identity. Pending v2, v3 and v4 mutations exclude one another. Copies of the
-  `runtime-v4-expert` and `runtime-v4-expert-action` artifacts match protocol main
-  `6d7fb8591d`. Runtime-v3 combat observations now project a visible single intent (ADR 0030)
+  `runtime-v4-expert` and `runtime-v4-expert-action` artifacts match merged protocol main
+  `b3d3034f32e68d70c9e681f906ee37d74db153c4`. Runtime-v3 combat observations now project a visible
+  single intent (ADR 0030)
   instead of `Unknown`, and `start_run` accepts any profile-unlocked character instead of only
   Ironclad. Source, build and synthetic-probe evidence only; live expert gameplay, potion
   settlement, exact-host builds and package builds remain `unverified`.
