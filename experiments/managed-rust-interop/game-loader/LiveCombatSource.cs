@@ -82,7 +82,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
         string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result))
-            + "|" + MapSurfaceFingerprint();
+            + "|" + MapSurfaceFingerprint()
+            + "|" + RestSelectionFingerprint();
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
