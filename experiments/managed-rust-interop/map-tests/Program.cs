@@ -176,12 +176,14 @@ internal static partial class Program
 
     private static void CheckObservationGenerationFence()
     {
-        Check(RuntimeMapV1ObservationFence.IsStable(17, 17),
-            "unchanged graph and legal-catalog generation remains eligible");
+        Check(RuntimeMapV1ObservationFence.IsStable("live:17", 17, "live:17", 17),
+            "unchanged gameplay identity and generation remains eligible");
         RuntimeMapV1Snapshot rejected = RuntimeMapV1ObservationFence.RejectChangedSurface(
-            Snapshot(), 18);
-        Check(!RuntimeMapV1ObservationFence.IsStable(17, 18)
+            Snapshot(), "live:18", 18);
+        Check(!RuntimeMapV1ObservationFence.IsStable("live:17", 17, "live:17", 18)
+            && !RuntimeMapV1ObservationFence.IsStable("live:17", 17, "live:18", 17)
             && rejected.Generation == 18
+            && rejected.StateId == "live:18"
             && rejected.Availability == "unavailable"
             && rejected.Completeness == "unknown"
             && rejected.Reason == RuntimeMapV1ObservationFence.ChangedSurfaceReason

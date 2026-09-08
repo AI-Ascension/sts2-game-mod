@@ -8,7 +8,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 internal static partial class Program
 {
     private static RuntimeMapV1Snapshot Snapshot() => new(
-        StateId: "map-state-42",
+        // Map snapshots carry the shared Runtime-v3 gameplay identity for their generation.
+        StateId: "live:42",
         Generation: 42,
         SchemaVersion: RuntimeMapV1Contract.SnapshotSchemaVersion,
         ProjectionVersion: RuntimeMapV1Contract.ProjectionVersion,
@@ -48,7 +49,7 @@ internal static partial class Program
 
     private static RuntimeMapV1Snapshot Unavailable() => Snapshot() with
     {
-        StateId = "map-unavailable-42",
+        StateId = "live:42",
         MapInstanceId = null,
         ActId = null,
         ScopeId = null,

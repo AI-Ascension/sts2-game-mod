@@ -8,13 +8,16 @@ internal static class RuntimeMapV1ObservationFence
 {
     internal const string ChangedSurfaceReason = "map_surface_changed";
 
-    internal static bool IsStable(ulong capturedGeneration, ulong finalGeneration) =>
-        capturedGeneration == finalGeneration;
+    internal static bool IsStable(string capturedStateId, ulong capturedGeneration,
+        string finalStateId, ulong finalGeneration) =>
+        // Generation and state identity are one fence; either changing requires a retry.
+        capturedGeneration == finalGeneration
+        && string.Equals(capturedStateId, finalStateId, StringComparison.Ordinal);
 
     internal static RuntimeMapV1Snapshot RejectChangedSurface(
-        RuntimeMapV1Snapshot snapshot, ulong finalGeneration) =>
+        RuntimeMapV1Snapshot snapshot, string finalStateId, ulong finalGeneration) =>
         new(
-            StateId: $"map-unavailable:{finalGeneration}",
+            StateId: finalStateId,
             Generation: finalGeneration,
             SchemaVersion: snapshot.SchemaVersion,
             ProjectionVersion: snapshot.ProjectionVersion,

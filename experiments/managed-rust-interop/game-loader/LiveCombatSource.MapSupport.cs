@@ -156,13 +156,15 @@ internal sealed partial class LiveCombatSource
         return "unknown";
     }
 
-    private static RuntimeMapV1Snapshot UnavailableMap(ulong generation, string reason,
+    private static RuntimeMapV1Snapshot UnavailableMap(RuntimeV3GameplayObservation observation,
+        string reason,
         string? mapInstanceId = null, int? act = null, string availability = "unavailable")
     {
         uint? actId = act is { } value ? (uint)Math.Max(value, 0) : null;
         return new(
-            StateId: $"map-unavailable:{generation}",
-            Generation: generation,
+            // Failures remain joinable to the exact gameplay observation that fenced this read.
+            StateId: observation.StateId,
+            Generation: observation.Generation,
             SchemaVersion: RuntimeMapV1Contract.SnapshotSchemaVersion,
             ProjectionVersion: RuntimeMapV1Contract.ProjectionVersion,
             GameBuild: CurrentGameBuild(),

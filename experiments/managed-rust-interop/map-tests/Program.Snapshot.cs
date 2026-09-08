@@ -11,8 +11,15 @@ internal static partial class Program
 {
     private static void CheckSnapshotValidation()
     {
-        Check(Snapshot().Validate(out _), "complete synthetic map validates");
-        Check(Unavailable().Validate(out _), "unavailable projection validates");
+        RuntimeMapV1Snapshot snapshot = Snapshot();
+        Check(snapshot.StateId == "live:42" && snapshot.Generation == 42
+            && snapshot.Validate(out _),
+            "complete map uses the shared gameplay identity for its generation");
+        RuntimeMapV1Snapshot unavailable = Unavailable();
+        Check(unavailable.StateId == snapshot.StateId
+            && unavailable.Generation == snapshot.Generation
+            && unavailable.Validate(out _),
+            "unavailable map preserves the shared gameplay identity");
     }
 
     private static void CheckCodecAndCanonicalShape()

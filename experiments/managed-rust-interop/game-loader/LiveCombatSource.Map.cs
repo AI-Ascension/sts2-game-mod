@@ -28,11 +28,11 @@ internal sealed partial class LiveCombatSource
         try
         {
             if (!LiveCombatDemo.Campaign || !RunManager.Instance.IsInProgress)
-                return UnavailableMap(observation.Generation, "campaign_not_active");
+                return UnavailableMap(observation, "campaign_not_active");
 
             RunState? run = RunManager.Instance.DebugOnlyGetState();
             if (run?.Map == null)
-                return UnavailableMap(observation.Generation, "map_state_unavailable");
+                return UnavailableMap(observation, "map_state_unavailable");
 
             string mapInstanceId = EnsureMapInstanceId(run, run.Map);
             knownMapInstanceId = mapInstanceId;
@@ -41,7 +41,7 @@ internal sealed partial class LiveCombatSource
             if (mapScreen?.IsOpen != true || !mapScreen.IsVisibleInTree())
             {
                 mapNotObservable = true;
-                return UnavailableMap(observation.Generation, "map_not_open", mapInstanceId,
+                return UnavailableMap(observation, "map_not_open", mapInstanceId,
                     run.CurrentActIndex, "not_observable");
             }
 
@@ -53,17 +53,17 @@ internal sealed partial class LiveCombatSource
             // one generation. The latest generation is returned with an explicit unavailable
             // result, allowing the caller to retry through the normal stale-read boundary.
             RuntimeV3GameplayObservation finalObservation = Observe();
-            if (!RuntimeMapV1ObservationFence.IsStable(observation.Generation,
-                    finalObservation.Generation))
+            if (!RuntimeMapV1ObservationFence.IsStable(observation.StateId,
+                    observation.Generation, finalObservation.StateId, finalObservation.Generation))
             {
                 return RuntimeMapV1ObservationFence.RejectChangedSurface(snapshot,
-                    finalObservation.Generation);
+                    finalObservation.StateId, finalObservation.Generation);
             }
             return snapshot;
         }
         catch
         {
-            return UnavailableMap(observation.Generation, "map_projection_failed",
+            return UnavailableMap(observation, "map_projection_failed",
                 knownMapInstanceId, knownAct, mapNotObservable ? "not_observable" : "unavailable");
         }
     }
@@ -71,16 +71,15 @@ internal sealed partial class LiveCombatSource
     private RuntimeMapV1Snapshot BuildMapSnapshot(RunState run, string mapInstanceId,
         RuntimeV3GameplayObservation observation)
     {
-        ulong generation = observation.Generation;
         ActMap map = run.Map;
         if (!TryCollectMapPoints(map, out List<MapPoint> points, out string traversalReason))
-            return UnavailableMap(generation, traversalReason, mapInstanceId,
+            return UnavailableMap(observation, traversalReason, mapInstanceId,
                 run.CurrentActIndex);
 
         if (!TryStableMapNodeIds(mapInstanceId, run.CurrentActIndex, points,
                 out Dictionary<MapPoint, string> nodeIds, out string identityReason))
         {
-            return UnavailableMap(generation, identityReason, mapInstanceId,
+            return UnavailableMap(observation, identityReason, mapInstanceId,
                 run.CurrentActIndex);
         }
         points = points.OrderBy(point => nodeIds[point], StringComparer.Ordinal).ToList();
@@ -88,7 +87,7 @@ internal sealed partial class LiveCombatSource
         if (!TryCollectVisitedCoordinates(run, out HashSet<(int Row, int Column)> visited,
                 out bool hasVisitedCoordinates, out string visitedReason))
         {
-            return UnavailableMap(generation, visitedReason, mapInstanceId,
+            return UnavailableMap(observation, visitedReason, mapInstanceId,
                 run.CurrentActIndex);
         }
 
@@ -113,10 +112,10 @@ internal sealed partial class LiveCombatSource
             foreach (MapPoint child in point.Children)
             {
                 if (++edgeWork > RuntimeMapV1Contract.MaxEdges)
-                    return UnavailableMap(generation, "map_edge_bound_exceeded", mapInstanceId,
+                    return UnavailableMap(observation, "map_edge_bound_exceeded", mapInstanceId,
                         run.CurrentActIndex);
                 if (!nodeIds.TryGetValue(child, out string? to))
-                    return UnavailableMap(generation, "map_edge_endpoint_missing", mapInstanceId,
+                    return UnavailableMap(observation, "map_edge_endpoint_missing", mapInstanceId,
                         run.CurrentActIndex);
                 if (edgeKeys.Add((from, to)))
                 {
@@ -202,8 +201,10 @@ internal sealed partial class LiveCombatSource
         string? reason = ambiguousIdentity ? "map_coordinate_identity_ambiguous"
             : unmappedAction ? "map_legal_action_unmapped" : null;
         var snapshot = new RuntimeMapV1Snapshot(
-            StateId: $"map:{run.CurrentActIndex}:{generation}",
-            Generation: generation,
+            // Runtime-v3 and runtime-map-v1 share the same host observation identity. The map
+            // profile must not mint an act-specific ID that consumers cannot join to gameplay.
+            StateId: observation.StateId,
+            Generation: observation.Generation,
             SchemaVersion: RuntimeMapV1Contract.SnapshotSchemaVersion,
             ProjectionVersion: RuntimeMapV1Contract.ProjectionVersion,
             GameBuild: CurrentGameBuild(),
@@ -232,7 +233,7 @@ internal sealed partial class LiveCombatSource
             Bindings = Array.Empty<RuntimeMapV1ActionBinding>()
         };
         return incomplete.Validate(out _) ? incomplete
-            : UnavailableMap(generation, "map_topology_invalid", mapInstanceId,
+            : UnavailableMap(observation, "map_topology_invalid", mapInstanceId,
                 run.CurrentActIndex);
 
         void AddDeclaredTerminal(MapPoint point)

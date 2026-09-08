@@ -35,15 +35,17 @@ closed after exhaustion until a new run/map object resets it. Projection is boun
 nodes, 1024 edges, and finite traversal work; responses are limited to 256 KiB.
 
 The projection captures gameplay state/catalog generation, copies the map, and reobserves.
-A changed generation returns an explicit `map_surface_changed` unavailable response. Stable
-public node identities participate in the topology fingerprint so tied coordinates do not
-conceal rewiring. Host references do not leave the callback as snapshot data.
+The snapshot copies the exact `state_id` from that gameplay observation, including unavailable
+and changed-surface responses, so map and gameplay profiles share one identity at a generation. A
+changed generation returns an explicit `map_surface_changed` unavailable response. Stable public
+node identities participate in the topology fingerprint so tied coordinates do not conceal
+rewiring. Host references do not leave the callback as snapshot data.
 
 ## Validation and rollout
 
-Managed probes characterize identity churn/reset, hidden-category normalization, tied-coordinate
-rewiring, and generation rejection. Native route tests preserve the fixed read seam and legacy
-behavior. Exact-host builds and package hashes are in
+Managed probes characterize shared gameplay/map identity, identity churn/reset, hidden-category
+normalization, tied-coordinate rewiring, and generation rejection. Native route tests preserve the
+fixed read seam and legacy behavior. Exact-host builds and package hashes are in
 [the host evidence](../evidence/runtime-map-v1-host-build-20260907.md); none proves live extraction,
 provider image delivery, or a settled map action.
 
