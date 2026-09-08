@@ -24,6 +24,7 @@ Run the boundary tests from this directory:
 ```sh
 bash test-provision.sh
 bash test-boot.sh
+bash test-workload-idle.sh
 ```
 
 ## Required before deployment
@@ -54,9 +55,10 @@ bash test-boot.sh
 ## Boot and startup configuration
 
 `sts2-gpu-lifecycle.service` runs `boot.sh` before the distribution's `libvirt-guests`
-service. It creates a private state directory and uses the kernel boot ID for the
-exclusive rollback filename. Repeating a failed application in the same boot cannot
-overwrite that record. A successful application is followed by a read-only check.
+service and the `user@1000.service` manager that can start rootless GPU consumers. It
+creates a private state directory and uses the kernel boot ID for the exclusive rollback
+filename. Repeating a failed application in the same boot cannot overwrite that record.
+A successful application is followed by a read-only check.
 There is no automatic shutdown rollback or automatic restart after failure.
 
 `qemu-start-gate.sh` checks only the named Windows fixture on prepare/start and
