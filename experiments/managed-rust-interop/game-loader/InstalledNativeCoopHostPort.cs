@@ -28,6 +28,7 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
     private readonly MessageHandlerDelegate<ChecksumDataMessage> _checksumMessageHandler;
     private string? _authorityKey;
     private string? _authorityEpoch;
+    private string? _rejoinAuthorityEpoch;
     private bool _lastAuthorityConnected;
     private string? _lastHostFingerprint;
     private ulong _hostSequence;
@@ -48,11 +49,8 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
     {
         RunManager manager = RunManager.Instance
             ?? throw new InvalidOperationException("run manager is unavailable");
-        INetGameService service =
-#if STS2_NATIVE_COOP_PROBE
-            CoopNativeLobbyController.ActiveService ??
-#endif
-            manager.NetService
+        INetGameService service = NativeCoopSessionController.ActiveService
+            ?? manager.NetService
             ?? throw new InvalidOperationException("native network service is unavailable");
         EnsureChecksumHooks(manager.ChecksumTracker, service);
         CoopHostRole role = service.Type switch
@@ -70,6 +68,7 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
         ulong hostNativeId = NativeHostId(service, localNativeId);
         RunState? run = manager.IsInProgress ? manager.DebugOnlyGetState() : null;
         IReadOnlyList<ulong> connectedNativeIds = ConnectedNativePeerIds(service, localNativeId);
+        ulong[] unresponsiveNativeIds = UnresponsiveNativePeerIds(service);
         IReadOnlyList<ulong> rosterNativeIds = RunRosterNativePeerIds(
             run, connectedNativeIds, localNativeId);
         string authorityId = CreateAuthorityId(lobby, hostNativeId);
@@ -77,6 +76,8 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
             && role is CoopHostRole.Host or CoopHostRole.Client;
         string authorityEpoch = UpdateAuthorityEpoch(
             lobby, hostNativeId, authorityConnected);
+        bool clearRejoinFenceAfterObservation =
+            authorityConnected && NativeCoopSessionController.IsRejoinRecovered;
         UpdatePeerBindings(connectedNativeIds, rosterNativeIds);
         string localPeerId = OpaquePeer(localNativeId);
         string runId = CreateRunId(run, lobby);
@@ -84,7 +85,8 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
         string hostDigest = _nativeChecksumDigest
             ?? CreateSharedStateDigest(run, rosterNativeIds, service.IsConnected);
         string hostFingerprint = $"{runId}|{hostDigest}|{string.Join(',', rosterNativeIds)}|"
-            + $"{string.Join(',', connectedNativeIds)}|{service.IsGameLoading}";
+            + $"{string.Join(',', connectedNativeIds)}|{string.Join(',', unresponsiveNativeIds)}|"
+            + $"{service.IsGameLoading}";
         if (!string.Equals(_lastHostFingerprint, hostFingerprint, StringComparison.Ordinal))
         {
             if (_lastHostFingerprint is not null)
@@ -167,7 +169,7 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
             });
         }
 
-        return new CoopHostObservation(
+        CoopHostObservation observation = new CoopHostObservation(
             SessionId: $"native:{runId}|{authorityEpoch}",
             LocalPeerId: localPeerId,
             Role: role,
@@ -176,7 +178,11 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
             HostGeneration: _hostSequence,
             HostStateDigest: hostDigest,
             Peers: peers,
-            RecoveryRequired: !service.IsConnected || manager.IsCleaningUp,
+            RecoveryRequired: !service.IsConnected || manager.IsCleaningUp
+                || role == CoopHostRole.Host
+                && (unresponsiveNativeIds.Length > 0
+                    || rosterNativeIds.Any(id => id != localNativeId
+                        && !connectedNativeIds.Contains(id))),
             PendingProposal: null)
         {
             AuthorityId = authorityId,
@@ -190,6 +196,9 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
             HostLoading = service.IsGameLoading,
             HostDivergent = _nativeStateDiverged
         };
+        if (clearRejoinFenceAfterObservation)
+            _rejoinAuthorityEpoch = null;
+        return observation;
     }
 
     public bool TryResolvePeer(string opaquePeerId, out CoopNativePeerBinding binding) =>

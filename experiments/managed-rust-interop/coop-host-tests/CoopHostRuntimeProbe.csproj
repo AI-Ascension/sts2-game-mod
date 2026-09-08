@@ -14,5 +14,7 @@
     <Compile Include="../game-loader/CoopHostRuntime.Helpers.cs" Link="CoopHostRuntime.Helpers.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="CoopHostRuntime.Rejoin.cs" />
     <Compile Include="../game-loader/CoopNativeEncoding.cs" Link="CoopNativeEncoding.cs" />
+    <Compile Include="../game-loader/NativeCoopAttemptWindow.cs" Link="NativeCoopAttemptWindow.cs" />
+    <Compile Include="../game-loader/NativeCoopPeerLiveness.cs" Link="NativeCoopPeerLiveness.cs" />
   </ItemGroup>
 </Project>

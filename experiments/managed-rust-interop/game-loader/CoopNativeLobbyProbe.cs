@@ -129,7 +129,7 @@ internal static partial class CoopNativeLobbyProbe
     {
         RunManager manager = RunManager.Instance
             ?? throw new InvalidOperationException("run manager is unavailable");
-        INetGameService service = CoopNativeLobbyController.ActiveService
+        INetGameService service = NativeCoopSessionController.ActiveService
             ?? manager.NetService
             ?? throw new InvalidOperationException("native network service is unavailable");
         NativeTransportSnapshot native = ReadNativeTransport(service);

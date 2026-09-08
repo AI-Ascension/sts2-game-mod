@@ -40,3 +40,9 @@ internal sealed class TestGameplaySupport
 
     internal bool HasPendingMutation => _pending;
 }
+
+// This probe links the production profile gate without starting a native session.
+internal static class NativeCoopSessionController
+{
+    internal static void StartIfConfigured() { }
+}

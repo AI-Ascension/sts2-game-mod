@@ -234,8 +234,22 @@ internal sealed partial class CoopHostRuntime
             ErrorCode = null
         };
         _receipts[operationId] = settled;
+        ConfirmNativeSettlement(operationId);
         receipt = settled;
         return true;
+    }
+
+    private void ConfirmNativeSettlement(string operationId)
+    {
+        try
+        {
+            _port.ConfirmSettlement(operationId);
+        }
+        catch
+        {
+            // Receipt settlement is already fenced by the host observation. A cleanup marker
+            // in the adapter must not turn an otherwise settled receipt into an exception.
+        }
     }
 
     private bool TryPassExternalAdmission(out string error)

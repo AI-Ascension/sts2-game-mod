@@ -61,9 +61,16 @@ internal sealed class NativePendingOperation
     private readonly Dictionary<ulong, NetChecksumData> _remoteChecksums = new();
 
     internal bool TryRecordPassiveChecksum(
-        ulong ordinal, string context, NetChecksumData checksum)
+        ulong ordinal, string context, NetChecksumData checksum,
+        NetFullCombatState fullState)
     {
         if (PassiveChecksumOrdinal.HasValue || Action is null)
+            return false;
+
+        // The checksum callback is operation-bound only when its serialized native state names
+        // the same action that was admitted. Context text remains a useful diagnostic fence,
+        // but it is not the identity by itself and can be reproduced by another action.
+        if (!Action.Id.HasValue || fullState.lastExecutedActionId != Action.Id)
             return false;
 
         const string prefix = "finished action execution ";

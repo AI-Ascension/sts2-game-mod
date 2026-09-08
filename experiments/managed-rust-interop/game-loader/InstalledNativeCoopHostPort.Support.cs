@@ -69,11 +69,7 @@ internal sealed partial class InstalledNativeCoopHostPort
 
     private static INetGameService? CurrentService(RunManager? manager)
     {
-#if STS2_NATIVE_COOP_PROBE
-        return CoopNativeLobbyController.ActiveService ?? manager?.NetService;
-#else
-        return manager?.NetService;
-#endif
+        return NativeCoopSessionController.ActiveService ?? manager?.NetService;
     }
 
     private string OpaquePeer(ulong nativeId)
@@ -90,9 +86,18 @@ internal sealed partial class InstalledNativeCoopHostPort
     private string UpdateAuthorityEpoch(string? lobby, ulong hostNativeId, bool connected)
     {
         string key = $"{lobby ?? "none"}|{hostNativeId:x16}";
+        if (NativeCoopSessionController.RejoinStatus.StartsWith(
+                "failed:", StringComparison.Ordinal))
+        {
+            _rejoinAuthorityEpoch = null;
+        }
+        bool controlledRejoin = connected && !_lastAuthorityConnected
+            && _rejoinAuthorityEpoch is not null
+            && string.Equals(_rejoinAuthorityEpoch, _authorityEpoch,
+                StringComparison.Ordinal);
         if (_authorityEpoch is null
             || !string.Equals(_authorityKey, key, StringComparison.Ordinal)
-            || (!_lastAuthorityConnected && connected))
+            || (!_lastAuthorityConnected && connected && !controlledRejoin))
         {
             _authorityKey = key;
             _authorityEpoch = CreateAuthorityEpoch();
@@ -122,11 +127,23 @@ internal sealed partial class InstalledNativeCoopHostPort
         var connected = connectedNativeIds.ToHashSet();
         foreach (ulong nativeId in rosterNativeIds)
         {
-            if (connected.Contains(nativeId) && _knownDisconnectedNativeIds.Contains(nativeId))
+            bool preserveRejoinBinding = _rejoinAuthorityEpoch is not null
+                && (NativeCoopSessionController.IsRejoinInProgress
+                    || NativeCoopSessionController.IsRejoinRecovered);
+            if (connected.Contains(nativeId) && _knownDisconnectedNativeIds.Contains(nativeId)
+                && !preserveRejoinBinding)
             {
                 if (_opaqueByNativeId.TryGetValue(nativeId, out string? previous))
                     _bindings.Remove(previous);
                 _opaqueByNativeId.Remove(nativeId);
+                _knownDisconnectedNativeIds.Remove(nativeId);
+            }
+            else if (connected.Contains(nativeId)
+                && NativeCoopSessionController.IsRejoinRecovered)
+            {
+                // The replacement client has now been observed on the original authority.
+                // Retain its opaque identity after the recovery fence is cleared so a later
+                // observation does not mistake the settled rejoin for a new peer.
                 _knownDisconnectedNativeIds.Remove(nativeId);
             }
             _ = OpaquePeer(nativeId);
@@ -158,4 +175,7 @@ internal sealed partial class InstalledNativeCoopHostPort
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
+
+    private static string Sha256Hex(ReadOnlySpan<byte> bytes) =>
+        Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 }

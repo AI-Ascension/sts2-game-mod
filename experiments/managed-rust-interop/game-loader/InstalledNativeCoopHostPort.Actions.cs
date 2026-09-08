@@ -25,6 +25,12 @@ internal sealed partial class InstalledNativeCoopHostPort
             return CoopNativeDispatchResult.Rejected(error);
         }
 
+        // The installed checksum message is client-to-host and this adapter has no supported
+        // client-origin action receipt route. Admit local mutations only on the native host so a
+        // client cannot receive an Accepted/Unknown receipt that can never settle.
+        if (service.Type != NetGameType.Host)
+            return CoopNativeDispatchResult.Rejected("native_action_requires_host_authority");
+
         if (request.ActionKind is not ("end_turn" or "play_card"))
         {
             return CoopNativeDispatchResult.Rejected("native_action_kind_not_supported");

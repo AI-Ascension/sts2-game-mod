@@ -2,12 +2,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
+using Godot;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Checksums;
+using MegaCrit.Sts2.Core.Multiplayer.Serialization;
+using MegaCrit.Sts2.Core.Multiplayer.Quality;
 using MegaCrit.Sts2.Core.Multiplayer.Transport;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -62,14 +64,15 @@ internal sealed partial class InstalledNativeCoopHostPort
     }
 
     private void OnChecksumGenerated(NetChecksumData checksum, string context,
-        NetFullCombatState _)
+        NetFullCombatState fullState)
     {
-        RecordNativeChecksum(checksum, context);
+        RecordNativeChecksum(checksum, fullState);
         foreach (NativePendingOperation pending in _pending.Values)
         {
             // A checksum context has no operation ID. Bind one callback to one matching pending
             // operation; never let duplicate action renderings settle two requests.
-            if (pending.TryRecordPassiveChecksum(_nativeChecksumOrdinal, context, checksum))
+            if (pending.TryRecordPassiveChecksum(
+                    _nativeChecksumOrdinal, context, checksum, fullState))
                 break;
         }
     }
@@ -97,16 +100,19 @@ internal sealed partial class InstalledNativeCoopHostPort
             _nativeStateDiverged = true;
     }
 
-    private void RecordNativeChecksum(NetChecksumData checksum, string context)
+    private void RecordNativeChecksum(NetChecksumData checksum, NetFullCombatState fullState)
     {
         _nativeChecksumOrdinal++;
         _nativeChecksumData = checksum;
-        string boundedContext = context.Length <= 256 ? context : context[..256];
-        // NetChecksumData does not override ValueType.ToString(). Its public fields are the
-        // serialized native witness.
-        string checksumFields = checksum.id.ToString("x8", CultureInfo.InvariantCulture)
-            + "|" + checksum.checksum.ToString("x8", CultureInfo.InvariantCulture);
-        _nativeChecksumDigest = Sha256Hex($"native-checksum|{checksumFields}|{boundedContext}");
+        // The first-party checksum is only a 32-bit comparison value. The event also supplies
+        // the exact NetFullCombatState that produced it; hash its first-party packet encoding
+        // so HostStateDigest is an actual state witness rather than a context-derived string.
+        var writer = new PacketWriter();
+        fullState.Serialize(writer);
+        // GenerateChecksum clears the unused tail bits before hashing the packet. Match that
+        // first-party canonicalization so the adapter's digest covers exactly the same bytes.
+        writer.ZeroByteRemainder();
+        _nativeChecksumDigest = Sha256Hex(writer.Buffer.AsSpan(0, writer.BytePosition));
         _nativeStateDiverged = RemoteChecksumsDiverge(checksum);
     }
 
@@ -145,14 +151,37 @@ internal sealed partial class InstalledNativeCoopHostPort
         _nativeStateDiverged = true;
     }
 
+    // ConnectedPeerIds is the first-party transport roster. Quality metrics are kept in a
+    // separate recovery diagnostic so a loss estimate never invents a disconnected peer.
     private static ulong[] ConnectedNativePeerIds(
         INetGameService service, ulong localNativeId)
     {
+        return NativePeerIds(service, localNativeId);
+    }
+
+    private static ulong[] UnresponsiveNativePeerIds(INetGameService service)
+    {
         var ids = new HashSet<ulong>();
-        if (service is INetHostGameService host)
+        if (service is INetHostGameService host
+            && service.IsConnected
+            && host.NetHost is { IsConnected: true } nativeHost)
         {
-            NetHost? nativeHost = host.NetHost;
-            if (service.IsConnected && nativeHost is not null && nativeHost.IsConnected)
+            ulong nowMsec = Time.GetTicksMsec();
+            foreach (ulong peerId in nativeHost.ConnectedPeerIds)
+            {
+                if (IsNativePeerUnresponsive(host, peerId, nowMsec))
+                    ids.Add(peerId);
+            }
+        }
+        return ids.OrderBy(id => id).ToArray();
+    }
+
+    private static ulong[] NativePeerIds(INetGameService service, ulong localNativeId)
+    {
+        var ids = new HashSet<ulong>();
+        if (service is INetHostGameService { NetHost: { } nativeHost } host)
+        {
+            if (service.IsConnected && nativeHost.IsConnected)
             {
                 foreach (ulong peerId in nativeHost.ConnectedPeerIds)
                     ids.Add(peerId);
@@ -167,6 +196,24 @@ internal sealed partial class InstalledNativeCoopHostPort
         if (service.IsConnected)
             ids.Add(localNativeId);
         return ids.OrderBy(id => id).ToArray();
+    }
+
+    private static bool IsNativePeerUnresponsive(
+        INetHostGameService host, ulong peerId, ulong nowMsec)
+    {
+        try
+        {
+            ConnectionStats? stats = host.GetStatsForPeer(peerId);
+            return stats is not null && NativeCoopPeerLiveness.IsUnresponsive(
+                stats.PacketLoss, stats.LastReceivedTime, nowMsec);
+        }
+        catch
+        {
+            // A quality-tracker read is diagnostic. Keep the first-party ConnectedPeerIds
+            // roster when it is not readable; only a successful, fresh quality sample can add a
+            // recovery diagnostic.
+            return false;
+        }
     }
 
     private static ulong[] RunRosterNativePeerIds(

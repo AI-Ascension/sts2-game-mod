@@ -33,7 +33,7 @@ internal static class Program
             new ulong[] { 101, 202, 303 });
         NetChecksumData local = new() { id = 19, checksum = 0x1234u };
         Check(pending.TryRecordPassiveChecksum(
-            8, "finished action execution test-action", local),
+            8, "finished action execution test-action", local, StateFor(action)),
             "the exact native action callback binds the local checkpoint");
         pending.RecordRemoteChecksum(202, local);
         Check(!pending.HasMatchingRemoteChecksums(new ulong[] { 101, 202 }, 101),
@@ -66,7 +66,8 @@ internal static class Program
             "op:mismatch", "end_turn", 3, 7, action, null!, "epoch:test",
             new ulong[] { 101, 202 });
         NetChecksumData local = new() { id = 19, checksum = 0x1234u };
-        pending.TryRecordPassiveChecksum(8, "finished action execution test-action", local);
+        pending.TryRecordPassiveChecksum(8, "finished action execution test-action", local,
+            StateFor(action));
         pending.RecordRemoteChecksum(202, new NetChecksumData { id = 19, checksum = 0x9999u });
         Check(!pending.HasMatchingRemoteChecksums(new ulong[] { 202 }, 101),
             "a same-ID checksum with a different value is divergence, not settlement");
@@ -79,7 +80,7 @@ internal static class Program
             "op:missing", "end_turn", 3, 7, action, null!, "epoch:test",
             new ulong[] { 101, 202 });
         pending.TryRecordPassiveChecksum(8, "finished action execution test-action",
-            new NetChecksumData { id = 19, checksum = 0x1234u });
+            new NetChecksumData { id = 19, checksum = 0x1234u }, StateFor(action));
         Check(!pending.HasMatchingRemoteChecksums(new ulong[] { 202 }, 101),
             "a local checkpoint alone cannot settle a multiplayer operation");
     }
@@ -150,5 +151,16 @@ internal static class Program
         protected override Task ExecuteAction() => Task.CompletedTask;
         public override INetAction ToNetAction() => null!;
         public override string ToString() => "test-action";
+    }
+
+    private static NetFullCombatState StateFor(TestAction action)
+    {
+        // OnEnqueued wires native queue callbacks and enters Godot's native runtime. The
+        // checkpoint probe is a managed correlation test, so set the same generated action ID
+        // directly without invoking the host queue.
+        MethodInfo setter = typeof(GameAction).GetMethod(
+            "set_Id", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        setter.Invoke(action, new object?[] { (uint?)19 });
+        return new NetFullCombatState { lastExecutedActionId = action.Id };
     }
 }

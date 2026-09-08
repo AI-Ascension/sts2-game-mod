@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Multiplayer;
 using MegaCrit.Sts2.Core.Multiplayer.Connection;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Multiplayer.Game.Lobby;
+using MegaCrit.Sts2.Core.Multiplayer.Messages.Lobby;
 using MegaCrit.Sts2.Core.Multiplayer.Transport;
 using MegaCrit.Sts2.Core.Multiplayer.Transport.ENet;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
@@ -19,7 +20,7 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-internal static partial class CoopNativeLobbyController
+internal static partial class NativeCoopSessionController
 {
     private static NSubmenuStack? FindSubmenuStack(SceneTree tree)
     {
@@ -40,28 +41,6 @@ internal static partial class CoopNativeLobbyController
                 pending.Push((child, depth + 1));
         }
         return null;
-    }
-
-    private static bool HasClientCharacterLobbyEvidence(
-        NSubmenuStack stack, ControllerState state)
-    {
-        NetClientGameService service = state.ClientService!;
-        if (service.NetId == 0 || service.HostNetId == 0
-            || service.HostNetId != state.HostId
-            || service.NetId != state.ClientId
-            || service.NetId == service.HostNetId
-            || service.NetClient is not { IsConnected: true, HostNetId: not 0 })
-        {
-            return false;
-        }
-
-        if (stack.Peek() is not NCharacterSelectScreen characterScreen
-            || characterScreen.Lobby is not { } lobby)
-        {
-            return false;
-        }
-
-        return ReferenceEquals(lobby.NetService, service);
     }
 
     private static bool TryAdmitOwnedHostRun(ControllerState state)
@@ -133,6 +112,8 @@ internal static partial class CoopNativeLobbyController
     {
         state.Completed = true;
         Status = status;
+        if (state.IsRejoin)
+            RejoinStatus = "recovered";
         DetachProcessFrame();
     }
 
@@ -140,6 +121,8 @@ internal static partial class CoopNativeLobbyController
     {
         state.Completed = true;
         Status = "failed:" + reason;
+        if (state.IsRejoin)
+            RejoinStatus = Status;
         ActiveService = null;
         DetachProcessFrame();
         state.Dispose();
@@ -166,8 +149,8 @@ internal static partial class CoopNativeLobbyController
             HostId = hostId;
             ClientId = clientId;
             AutoAdmitRun = autoAdmitRun;
-            DeadlineTimestamp = Stopwatch.GetTimestamp()
-                + (long)(MaxStartupSeconds * Stopwatch.Frequency);
+            AttemptWindow = new NativeCoopAttemptWindow(
+                Stopwatch.GetTimestamp(), Stopwatch.Frequency, MaxStartupSeconds);
         }
 
         internal string Role { get; }
@@ -177,7 +160,8 @@ internal static partial class CoopNativeLobbyController
         internal ulong HostId { get; }
         internal ulong ClientId { get; }
         internal bool AutoAdmitRun { get; }
-        internal long DeadlineTimestamp { get; }
+        private NativeCoopAttemptWindow AttemptWindow { get; }
+        internal long DeadlineTimestamp => AttemptWindow.DeadlineTimestamp;
         internal int Frames { get; set; }
         internal bool Completed { get; set; }
         internal NetHostGameService? HostService { get; set; }
@@ -187,11 +171,26 @@ internal static partial class CoopNativeLobbyController
         internal bool HostCharacterReady { get; set; }
         internal bool ClientCharacterReady { get; set; }
         internal CapturingConnectionInitializer? Initializer { get; set; }
-        internal NJoinFriendScreen? JoinScreen { get; set; }
-        internal Task? JoinTask { get; set; }
+        internal JoinFlow? JoinFlow { get; set; }
+        internal Task<JoinResult>? JoinTask { get; set; }
+        internal NCharacterSelectScreen? CharacterScreen { get; set; }
+        internal LoadRunLobby? LoadLobby { get; set; }
+        internal ClientRejoinResponseMessage? RejoinResponse { get; set; }
+        internal Task? RestoreTask { get; set; }
+        internal bool JoinResultHandled { get; set; }
+        internal bool IsRejoin { get; set; }
         private bool _disposed;
 
-        internal bool IsExpired() => Stopwatch.GetTimestamp() >= DeadlineTimestamp;
+        internal bool IsExpired() => AttemptWindow.IsExpired(Stopwatch.GetTimestamp());
+
+        internal bool TryResetForRejoinAttempt()
+        {
+            if (!AttemptWindow.TryReset(IsRejoin && !Completed, Stopwatch.GetTimestamp()))
+                return false;
+            _disposed = false;
+            Frames = 0;
+            return true;
+        }
 
         public void Dispose()
         {
@@ -199,6 +198,12 @@ internal static partial class CoopNativeLobbyController
                 return;
             _disposed = true;
             TryCleanup("join cancellation", static state => state.Initializer?.Cancel(), this);
+            TryCleanup("join flow cancellation", static state => state.JoinFlow?.CancelToken.Cancel(), this);
+            TryCleanup("load lobby cleanup", static state =>
+            {
+                state.LoadLobby?.CleanUp(disconnectSession: false);
+                state.LoadLobby = null;
+            }, this);
             TryCleanup("client disconnect", static state =>
                 state.ClientService?.Disconnect(NetError.CancelledJoin, true), this);
             TryCleanup("host disconnect", static state =>
@@ -222,8 +227,8 @@ internal static partial class CoopNativeLobbyController
     }
 
     /// <summary>Delegates to the first-party ENet initializer while retaining the service that
-    /// JoinFlow creates internally. JoinGameAsync owns that service; constructing a second client
-    /// here would observe a disconnected transport and bypass the normal join flow.</summary>
+    /// JoinFlow creates internally. JoinFlow owns that service; constructing a second client here
+    /// would observe a disconnected transport and bypass the normal join flow.</summary>
     private sealed class CapturingConnectionInitializer : IClientConnectionInitializer, IDisposable
     {
         private readonly ENetClientConnectionInitializer _inner;

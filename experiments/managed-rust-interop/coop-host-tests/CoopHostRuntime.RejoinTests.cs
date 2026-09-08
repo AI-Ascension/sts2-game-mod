@@ -20,6 +20,18 @@ internal static partial class Program
             "reconciliation must not adopt a different authority epoch as the original admission");
     }
 
+    private static void RejoinRecoveryGateAllowsDisconnectedLocalPeer()
+    {
+        FakePort port = new() { LocalPeerDisconnected = true };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt receipt = runtime.Rejoin(
+            "op:rejoin-disconnected", "peer:host1", 7);
+        Check(receipt.Outcome == CoopOutcome.Accepted
+            && receipt.ErrorCode == "rejoin_recovery_required"
+            && port.RejoinCount == 1,
+            "rejoin may be admitted for the bound local peer while transport recovery is required");
+    }
+
     private static void RejoinReplayDoesNotRepeatNativeMutation()
     {
         FakePort port = new() { RejoinSetsConverged = true };
@@ -44,6 +56,24 @@ internal static partial class Program
             && recovered?.Outcome == CoopOutcome.Recovered
             && port.RejoinCount == 1,
             "accepted rejoin reconciles from a fresh convergence observation");
+    }
+
+    private static void AcceptedRejoinWaitsForNativeSettlement()
+    {
+        FakePort port = new() { RejoinSetsConverged = true, NativeRejoinSettled = false };
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt first = runtime.Rejoin(
+            "op:rejoin-async", "peer:host1", 8);
+        Check(first.Outcome == CoopOutcome.Accepted
+            && first.ErrorCode == "rejoin_recovery_pending"
+            && runtime.HasPendingMutation
+            && port.RejoinCount == 1,
+            "a converged pre-settlement observation cannot settle an asynchronous rejoin");
+        port.NativeRejoinSettled = true;
+        Check(runtime.Reconcile("op:rejoin-async", out CoopOperationReceipt? recovered)
+            && recovered?.Outcome == CoopOutcome.Recovered
+            && port.RejoinCount == 1,
+            "native settlement witness allows the pending rejoin to reconcile");
     }
 
     private static void UnknownRejoinStaysUnknownWithoutNativeWitness()
@@ -90,10 +120,13 @@ internal static partial class Program
         internal bool RejoinSetsConverged { get; init; }
         internal bool RejoinStartsDivergent { get; init; }
         internal bool ChangeEpochAfterRejoin { get; init; }
-        internal bool DisconnectClientBeforeEffect { get; init; }
+        internal bool LocalPeerDisconnected { get; init; }
+        internal bool DisconnectClientBeforeEffect { get; set; }
+        internal bool NativeRejoinSettled { get; set; } = true;
         internal bool DigestKnown { get; init; } = true;
         internal bool AuthorityIdsMatch { get; init; } = true;
         internal bool EffectPublished { get; set; }
+        internal int ConfirmedOperationCount { get; private set; }
         internal int RejoinCount { get; private set; }
         private string _operationId = "op:none";
 
@@ -105,7 +138,8 @@ internal static partial class Program
                 EffectPublished ? 2UL : 1UL, Digest,
                 new[]
                 {
-                    new CoopPeerSnapshot("peer:host1", true, true, EffectPublished ? 2UL : 1UL, Digest),
+                    new CoopPeerSnapshot("peer:host1", true, !LocalPeerDisconnected,
+                        EffectPublished ? 2UL : 1UL, Digest),
                     new CoopPeerSnapshot("peer:client1", false, clientConnected,
                         EffectPublished ? 1UL : 0UL,
                         RejoinStartsDivergent && !EffectPublished ? DivergentDigest : Digest)
@@ -113,7 +147,7 @@ internal static partial class Program
                         AuthorityId = AuthorityIdsMatch ? "authority:test" : "authority:other"
                     }
                 },
-                false, null)
+                LocalPeerDisconnected, null)
             {
                 AuthorityId = "authority:test",
                 AuthorityEpoch = ChangeEpochAfterRejoin && RejoinCount > 0 ? "epoch:other" : "epoch:test",
@@ -142,6 +176,8 @@ internal static partial class Program
             DispatchLocalAction(new(request.OperationId, request.ExpectedHostGeneration,
                 request.VoterPeerId, "shared_vote", request.Choice, null));
 
+        public void ConfirmSettlement(string operationId) => ConfirmedOperationCount++;
+
         public CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch)
         {
             RejoinCount++;
@@ -157,6 +193,8 @@ internal static partial class Program
         }
 
         public CoopEffectWitness? Reconcile(string operationId) => EffectPublished ? Effect() : null;
+
+        public bool IsRejoinSettled() => NativeRejoinSettled;
 
         private CoopEffectWitness Effect() =>
             new(_operationId, "effect:1", "turn_ended", 1, 2, Digest);

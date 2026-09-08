@@ -120,6 +120,14 @@ internal interface ICoopNativeHostPort
     // unreadable. The operation must then stay accepted/unknown until Reconcile proves the
     // native effect and all peer checkpoints converge. Test ports default to fail-closed.
     bool MayDispatchWithUnknownDigest(CoopHostObservation observation) => false;
+    // A real native port may need to settle an asynchronous transport/recovery flow before an
+    // observation can prove rejoin. Test ports and synchronous adapters remain immediately
+    // reconcilable by default.
+    bool IsRejoinSettled() => true;
+    // The native adapter may retain an operation-local completion marker, but it may only mark
+    // that operation complete after the outer runtime has accepted the fresh all-peer
+    // convergence observation. Test ports do not need to retain such a marker.
+    void ConfirmSettlement(string operationId) { }
     CoopNativeDispatchResult DispatchLocalAction(CoopLocalActionRequest request);
     CoopNativeDispatchResult SubmitSharedVote(CoopSharedVoteRequest request);
     CoopNativeDispatchResult Rejoin(string opaquePeerId, ulong rejoinEpoch);

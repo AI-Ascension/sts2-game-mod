@@ -24,7 +24,7 @@ internal sealed partial class CoopHostRuntime
         }
 
         CoopHostObservation before = Observe();
-        if (!CanDispatch(before, before.HostGeneration, actorPeerId, out string error))
+        if (!CanDispatchRejoin(before, before.HostGeneration, actorPeerId, out string error))
         {
             return Rejected(operationId, before.HostGeneration, error);
         }
@@ -91,6 +91,22 @@ internal sealed partial class CoopHostRuntime
             // pending so recovery can reobserve without issuing a second rejoin mutation.
             return StoreRejoin(current, CoopOutcome.Accepted, before, "rejoin_observation_unknown");
         }
+        try
+        {
+            // JoinFlow acceptance is asynchronous. A converged observation from the same
+            // frame may describe the pre-rejoin state, so require the native adapter's own
+            // recovery witness before allowing this initial dispatch to settle.
+            if (!_port.IsRejoinSettled())
+            {
+                return StoreRejoin(current, CoopOutcome.Accepted, after,
+                    "rejoin_recovery_pending");
+            }
+        }
+        catch
+        {
+            return StoreRejoin(current, CoopOutcome.Accepted, after,
+                "rejoin_settlement_unknown");
+        }
         if (after.RecoveryRequired || !after.AllConnectedPeersConverged()
             || !string.Equals(after.AuthorityId, before.AuthorityId, StringComparison.Ordinal)
             || !string.Equals(after.AuthorityEpoch, before.AuthorityEpoch, StringComparison.Ordinal))
@@ -107,6 +123,16 @@ internal sealed partial class CoopHostRuntime
         // An unknown native call has no rejoin effect witness. Convergence alone cannot turn
         // that outcome into recovery, because the call may never have reached the transport.
         if (receipt.Outcome != CoopOutcome.Accepted)
+        {
+            return true;
+        }
+
+        try
+        {
+            if (!_port.IsRejoinSettled())
+                return true;
+        }
+        catch
         {
             return true;
         }
