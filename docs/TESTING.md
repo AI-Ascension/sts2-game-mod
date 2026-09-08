@@ -59,6 +59,9 @@ not launch the game or prove gameplay or Runtime-v2 host settlement.
 
 CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
 the POC, Runtime-v1, and Runtime-v3 checksum gates. A checksum failure fails the Rust CI job.
+The `runtime-v4-expert` and `runtime-v4-expert-action` copies are not yet in that CI gate; they
+are checked locally with `sha256sum -c SHA256SUMS` and compared byte-for-byte against
+`sts2-protocol` main before merge, because a self-consistent inventory cannot detect a stale copy.
 
 The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
 and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
@@ -391,6 +394,12 @@ regressions plus shared v2/semantic identity and mutation-exclusion cases in bot
 delayed queue admission, uncertainty, exact retries, read-only reconciliation and release after
 independent completion. It compiles production routing and handler sources against owned fakes.
 These checks do not load a host, touch a profile/save, or contact a provider.
+
+Three further probe cases cover the Runtime-v4 expert gate: a pending expert mutation rejects
+semantic and v2 dispatch without a host call, and releasing it admits the next semantic dispatch.
+The native `runtime_endpoint_tests` also assert that the three v4 routes reach callback kinds 7 and
+8 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement code
+compiles only against the host assembly and has no source-only probe; its behavior is `unverified`.
 
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 

@@ -5,6 +5,18 @@ and has no released product behavior.
 
 ## Unreleased
 
+- Add the additive Runtime-v4 expert profile as a source/build candidate: native routes
+  `GET /api/v4/runtime/expert-state`, `POST /api/v4/runtime/expert-action` and
+  `GET /api/v4/runtime/expert-actions/{operation_id}` with ABI callback kinds 7 and 8, a
+  managed player-visible expert projection with host-generated legal actions, and one admitted
+  mutation (`use_potion`) fenced by lease, epoch, session, correlation, generation, state and
+  operation identity. Pending v2, v3 and v4 mutations exclude one another. Copies of the
+  `runtime-v4-expert` and `runtime-v4-expert-action` artifacts match protocol main
+  `6d7fb8591d`. Runtime-v3 combat observations now project a visible single intent (ADR 0030)
+  instead of `Unknown`, and `start_run` accepts any profile-unlocked character instead of only
+  Ironclad. Source, build and synthetic-probe evidence only; live expert gameplay, potion
+  settlement, exact-host builds and package builds remain `unverified`.
+
 - Translate merchant purchases, card removal and shop exit through native controls;
   verified Windows Astra relic purchase and shop exit. Reject potion reward claims when
   native potion storage is full. See native shop evidence for unverified paths.

@@ -310,6 +310,23 @@ operation in either profile therefore excludes a fresh mutation through the othe
 replay retained receipts before fresh admission; observations and read-only reconciliation remain
 available while the outcome is uncertain.
 
+## Runtime-v4 expert bridge
+
+The additive `runtime-v4-expert` state profile and `runtime-v4-expert-action` transport reuse the
+Runtime-v3 host source and host-thread queue. The native adapter maps `GET /api/v4/runtime/expert-state`
+(empty body) to callback kind 7 and `POST /api/v4/runtime/expert-action` (JSON) plus
+`GET /api/v4/runtime/expert-actions/{operation_id}` to callback kind 8; the operation suffix must be a
+bounded identity without `..`, and every other v4 path falls through to the existing 404. Kinds 3–6
+are unchanged. `RuntimeV4ExpertSupport` authorizes the bound host identity first, requires the exact
+eighteen-field request envelope, admits only a host-generated `use_potion` action that is still legal
+at the requested state and generation on the host thread, retains one receipt per operation
+identity, and settles only after the exact queued host action finished, the addressed potion instance
+left the belt, and a fresh observation advanced the generation. A queue or host exception leaves the
+receipt `unknown` for same-identity reconciliation and blocks further mutations. The expert
+projection reads public host properties by name and the rendered `NIntent` presentation fields named
+in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`. This is source and
+build evidence; live expert gameplay and settlement remain unverified.
+
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 

@@ -159,6 +159,17 @@ typed catalog checks, host-thread adapter, separate co-op helpers, and postcondi
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
+The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
+and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
+copies under `protocol-artifact/` are byte-identical to `sts2-protocol` main `6d7fb8591d`. The v4 routes
+add native callback kinds 7 and 8 without changing the ABI structure, version, or kinds 3–6. The
+only admitted expert mutation is `use_potion`; it shares the v2/v3 host identity fence and the
+pending-mutation exclusion in all directions. The Runtime-v3 combat observation now projects one
+visible intent per enemy under ADR 0030 and `start_run` accepts any character the native profile
+unlock state reports; neither changes the v3 digest. All of this is source/build and synthetic-probe
+evidence: live expert gameplay, potion settlement, intent accuracy against the licensed host, and
+the Windows/Linux package builds named in PR #52 remain `unverified`.
+
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
 This corrects admission without changing the protocol digest. The unmerged semantic callback
