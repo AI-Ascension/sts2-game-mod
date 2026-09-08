@@ -17,7 +17,7 @@
     <DefineConstants>$(DefineConstants);STS2_COMBAT_DEMO_PROBE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="LiveCombatFixture.cs" />
+    <Compile Remove="LiveCombatFixture.cs;RuntimeV3GameplayFixtures.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(EnableCombatDemoProbe)' == 'true'">
     <Compile Include="LiveCombatFixture.cs" />
