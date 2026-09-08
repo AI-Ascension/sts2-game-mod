@@ -21,6 +21,8 @@ internal sealed partial class LiveCombatSource
         postcondition = () => false;
         effect = "";
         Node? screen = RewardOverlay();
+        if (action.Kind == "skip_reward" && screen is NCardRewardSelectionScreen skipScreen)
+            return PrepareRewardSkip(skipScreen, out invoke, out postcondition, out effect);
         if (action.Kind == "choose_reward" && screen is NRewardsScreen)
         {
             var matches = RewardButtons(screen).Where(button => RewardId(button) == action.Value

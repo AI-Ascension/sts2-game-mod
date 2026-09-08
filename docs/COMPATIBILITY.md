@@ -1,5 +1,13 @@
 # Compatibility policy and matrix
 
+The 2026-09-08 reward-skip candidate exposes the existing `skip_reward` action only for a
+unique visible, enabled plain `Skip` alternative on the native card-reward selection screen.
+It retains the screen's selection task and exact alternate index, rechecks the binding before
+the native click, and requires that selected result, a closed selection surface, an unchanged
+deck and the ordinary fresh-generation settlement checks. Reroll, event cancellation and
+modified skip callbacks remain separate capability gaps. The private field bindings are pinned
+to the inspected v0.107.1 host; native execution and replay of this new action remain unverified.
+
 Current-run Victory observation has focused native Windows and Linux v0.107.1 evidence from
 isolated forced-terminal fixtures; normal Windows/Linux addon builds compile and exclude
 the fixture. This does not establish a model-played win. See

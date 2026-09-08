@@ -19,6 +19,7 @@ internal static class Program
         ReadsDiscoverNewGenerations();
         FingerprintChecks.Run();
         CombatSettlementChecks.Run();
+        RewardSkipChecks.Run();
         ContinuationChecks.Run();
         RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
