@@ -137,19 +137,13 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
 
     private async Task ExecuteImmediateRestAsync(ExpertRestPending pending)
     {
-        pending.Button.ForceClick();
-        for (int frame = 0; frame < 600; frame++)
+        if (IsNativeWitnessOption(pending.Option))
         {
-            await WaitCampaignFrameAsync();
-            RequireThread();
-            NRestSiteRoom? room = CurrentRestSite();
-            if (room is null) return;
-            NRestSiteButton? current = room.GetButtonForOption(pending.Option);
-            if (current is null && Clickable(room.ProceedButton)) return;
-            if (current is not null && !ReferenceEquals(current, pending.Button)
-                && Clickable(room.ProceedButton)) return;
+            await ExecuteNativeImmediateRestAsync(pending);
+            return;
         }
-        throw new InvalidOperationException("native rest option did not settle");
+        pending.Button.ForceClick();
+        await WaitImmediateRestSettledAsync(pending);
     }
 
     private RuntimeV4ExpertRestHostCompletion? CompleteExpertRest(
@@ -173,8 +167,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
 
         RuntimeV4ExpertGameplayObservation after = ObserveExpert();
         if (after.Generation <= pending.Before.Generation) return null;
-        RuntimeV4ExpertRestEffectWitness? witness = ImmediateWitness(
-            pending.Operation, pending.Option, pending.Before, after);
+        RuntimeV4ExpertRestEffectWitness? witness = ImmediateWitness(pending, after);
         if (witness is null) return null;
         var transition = new RuntimeV4ExpertRestCompletedTransition(
             WireRestOptionId(pending.Option.OptionId)!, pending.Before.Generation,
@@ -187,12 +180,13 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
     }
 
     private static RuntimeV4ExpertRestEffectWitness? ImmediateWitness(
-        RuntimeV4ExpertRestOperation operation,
-        RestSiteOption option,
-        RuntimeV4ExpertGameplayObservation before,
+        ExpertRestPending pending,
         RuntimeV4ExpertGameplayObservation after)
     {
-        string optionId = WireRestOptionId(option.OptionId)!;
+        string optionId = WireRestOptionId(pending.Option.OptionId)!;
+        if (optionId is "kindle" or "lift")
+            return NativeImmediateWitness(pending, after);
+        RuntimeV4ExpertGameplayObservation before = pending.Before;
         RuntimeV4ExpertRestEvidence? evidence = optionId switch
         {
             "heal" => before.Player.Hp <= after.Player.Hp
@@ -208,7 +202,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
         };
         if (evidence is null) return null;
         return new RuntimeV4ExpertRestEffectWitness(
-            optionId + "_applied", operation, optionId, after.Generation, evidence);
+            optionId + "_applied", pending.Operation, optionId, after.Generation, evidence);
     }
 
     private static RuntimeV4ExpertRestCardEvidence? CardEvidence(
@@ -244,29 +238,4 @@ internal sealed partial class LiveCombatSource : IRuntimeV4ExpertRestHostSource
             ? null : new RuntimeV4ExpertRestRelicEvidence(added, removed);
     }
 
-    private sealed class ExpertRestPending
-    {
-        internal ExpertRestPending(
-            RuntimeV4ExpertRestOperation operation,
-            RuntimeV4ExpertRestActionReference action,
-            RuntimeV4ExpertGameplayObservation before,
-            NRestSiteButton button,
-            RestSiteOption option)
-        {
-            Operation = operation;
-            Action = action;
-            Before = before;
-            Button = button;
-            Option = option;
-        }
-
-        internal RuntimeV4ExpertRestOperation Operation { get; }
-        internal RuntimeV4ExpertRestActionReference Action { get; }
-        internal RuntimeV4ExpertGameplayObservation Before { get; }
-        internal NRestSiteButton Button { get; }
-        internal RestSiteOption Option { get; }
-        internal ExpertRestSelector? Selector { get; set; }
-        internal Task? Work { get; set; }
-        internal RuntimeV4ExpertRestHostCompletion? Completion { get; set; }
-    }
 }

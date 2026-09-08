@@ -9,6 +9,50 @@ namespace AiAscension.Sts2GameMod.RestActionTests;
 
 internal static partial class Program
 {
+    private static void NativeWitnessChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:native-witness");
+        RuntimeV4ExpertRestOperation kindleOperation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-op:native:kindle");
+        RuntimeV4ExpertRestActionReference kindleAction = new(
+            "rest-option:9:kindle", new RuntimeV4ExpertRestAction("rest_option", "kindle"));
+        var kindleWitness = new RuntimeV4ExpertRestEffectWitness(
+            "kindle_applied", kindleOperation, "kindle", 10,
+            new RuntimeV4ExpertRestNativeEvidence(kindleOperation.OperationId, "live:10"));
+        var kindleTransition = new RuntimeV4ExpertRestCompletedTransition(
+            "kindle", 9, 10, kindleWitness);
+        var kindleResponse = new RuntimeV4ExpertRestResponse(
+            context, "live:10", 10, kindleOperation, kindleAction, "settled",
+            Observation(10, "rest"), kindleTransition, kindleWitness, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(kindleResponse,
+                out string kindleJson, out string error),
+            "Kindle callback witness failed to serialize: " + error);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(kindleJson, context,
+                out error), "Kindle callback witness failed consumer validation: " + error);
+
+        RuntimeV4ExpertRestOperation liftOperation = kindleOperation with
+        {
+            OperationId = "rest-op:native:lift"
+        };
+        RuntimeV4ExpertRestActionReference liftAction = new(
+            "rest-option:10:lift", new RuntimeV4ExpertRestAction("rest_option", "lift"));
+        var liftWitness = new RuntimeV4ExpertRestEffectWitness(
+            "lift_applied", liftOperation, "lift", 11,
+            new RuntimeV4ExpertRestStatEvidence("times_lifted", 1, 2));
+        var liftTransition = new RuntimeV4ExpertRestCompletedTransition(
+            "lift", 10, 11, liftWitness);
+        var liftResponse = new RuntimeV4ExpertRestResponse(
+            context, "live:11", 11, liftOperation, liftAction, "settled",
+            Observation(11, "rest"), liftTransition, liftWitness, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(liftResponse,
+                out string liftJson, out error),
+            "Lift callback witness failed to serialize: " + error);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(liftJson, context,
+                out error), "Lift callback witness failed consumer validation: " + error);
+    }
+
     private static void SerializedResponseChecks()
     {
         RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,

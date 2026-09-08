@@ -47,6 +47,7 @@ internal static partial class Program
             SmithSequenceChecks(fixtures);
             EarlyConfirmationCheck(fixtures);
             SerializedResponseChecks();
+            NativeWitnessChecks();
             ProducerConsumerSupportChecks();
             SmithProducerConsumerChecks();
             MendProducerConsumerChecks();
