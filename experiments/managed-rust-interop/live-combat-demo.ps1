@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory=$true)][string]$UserDirectory,
     [Parameter(Mandatory=$true)][string]$LogPath,
     [Parameter(Mandatory=$true)][string]$StopFile,
-    [string]$Seed = 'AIASCENSIONREPLAY1',
+    [ValidateSet('standard','practice')][string]$CampaignMode = 'standard',
+    [string]$Seed = '',
     [ValidateRange(1,65535)][int]$Port = 15626,
     [ValidateRange(-1,31)][int]$Display = -1,
     [ValidateRange(640,16384)][int]$Width = 1280,
@@ -24,8 +25,16 @@ $env:STS2_RUNTIME_BIND_ADDRESS = '127.0.0.1'
 $env:STS2_RUNTIME_PORT = "$Port"
 $env:STS2_RUNTIME_SESSION = '1'
 $env:STS2_LIVE_COMBAT = '1'
+$env:STS2_LIVE_CAMPAIGN = '1'
+$env:STS2_LIVE_CAMPAIGN_MODE = $CampaignMode
 $env:STS2_LIVE_USER_DIR = $UserDirectory
-$env:STS2_LIVE_SEED = $Seed
+if ($CampaignMode -eq 'practice') {
+    if ([string]::IsNullOrEmpty($Seed)) { throw 'Practice campaign mode requires an explicit seed' }
+    $env:STS2_LIVE_SEED = $Seed
+} else {
+    if (-not [string]::IsNullOrEmpty($Seed)) { throw 'Standard campaign mode does not accept a seed' }
+    Remove-Item Env:STS2_LIVE_SEED -ErrorAction SilentlyContinue
+}
 foreach ($entry in @(@('Display','DISPLAY'), @('Width','WIDTH'), @('Height','HEIGHT'), @('WindowMode','WINDOW_MODE'))) {
     $name = 'STS2_LIVE_' + $entry[1]
     if ($PSBoundParameters.ContainsKey($entry[0])) {

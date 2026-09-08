@@ -1,8 +1,9 @@
 # Isolated visible combat demo
 
-This opt-in host adapter runs one real single-player Ironclad combat against the first
-alphabetically ordered weak encounter. It uses a fixed visible seed and runtime-v3 gameplay.
-It is a combat demonstration, not full-run navigation or a release compatibility claim.
+This opt-in host adapter runs a real single-player campaign through runtime-v3 gameplay.
+Production launches use normal model-selected character and map progression. The source supports
+standard host-generated seeds and explicit practice seeds; neither mode is a release compatibility
+claim by itself.
 
 As of 2026-09-07, build `GameLoaderProbe.csproj` with
 `-p:EnableCombatDemoProbe=true` for this room-entry demonstration. The diagnostic
@@ -77,9 +78,11 @@ Borderless 1024x768 on display 1 and maximized 1920x1009 on display 0 were also 
 Use `bash experiments/managed-rust-interop/live-combat-session.sh --help` for the complete
 repeatable operator entrypoint. Supply explicit host/user/artifact directories and gateway,
 MCP, harness and provider executable paths. It creates fresh role-separated credentials,
-launches the visible host, runs the configured model through the harness, and retains bounded
-external logs. Use `--display`, `--width`, `--height`, and `--window-mode` before launching.
-`--replay-trajectory` replays a completed model trajectory without inference; use the same seed.
+launches the visible host, runs the configured model through the episode harness, and retains
+bounded external logs. Use `--campaign-mode standard` for a normal saving-enabled host run. Use
+`--campaign-mode practice --seed VALUE` for a deterministic run and its fresh-process replay.
+Use `--display`, `--width`, `--height`, and `--window-mode` before launching.
+`--replay-trajectory` replays a completed practice trajectory without inference; use the same seed.
 The selected semantic action must exist in the fresh catalog and visible game content must
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).

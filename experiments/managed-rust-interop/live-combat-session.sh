@@ -4,13 +4,14 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 host_dir='' user_dir='' artifacts='' gateway='' mcp='' harness='' provider=''
 powershell=powershell.exe
-display='' width='' height='' mode='' seed=AIASCENSIONREPLAY1 hold=300 replay=''
+display='' width='' height='' window_mode='' campaign_mode=standard seed='' seed_set=false hold=300 replay=''
 usage() {
     cat <<'HELP'
 Usage: live-combat-session.sh --host-dir PATH --user-dir WINDOWS_PATH --artifacts-dir PATH
   --gateway-binary PATH --mcp-binary PATH --harness-binary PATH --provider-binary PATH
   [--display N] [--width N] [--height N]
-  [--window-mode windowed|fullscreen|borderless|maximized] [--seed VALUE]
+  [--window-mode windowed|fullscreen|borderless|maximized]
+  [--campaign-mode standard|practice] [--seed VALUE]
   [--hold-seconds 300] [--replay-trajectory PATH]
   [--powershell-binary PATH]
 Requires an already prepared disposable host, accepted addon, Windows PowerShell,
@@ -32,8 +33,9 @@ while (($#)); do
         --display) display=${2:?}; shift ;;
         --width) width=${2:?}; shift ;;
         --height) height=${2:?}; shift ;;
-        --window-mode) mode=${2:?}; shift ;;
-        --seed) seed=${2:?}; shift ;;
+        --window-mode) window_mode=${2:?}; shift ;;
+        --campaign-mode) campaign_mode=${2:?}; shift ;;
+        --seed) seed=${2:?}; seed_set=true; shift ;;
         --hold-seconds) hold=${2:?}; shift ;;
         --replay-trajectory) replay=${2:?}; shift ;;
         --powershell-binary) powershell=${2:?}; shift ;;
@@ -58,14 +60,16 @@ esac
 [[ -z "$width" || "$width" =~ ^[0-9]+$ ]] || exit 2
 [[ -z "$height" || "$height" =~ ^[0-9]+$ ]] || exit 2
 [[ "$hold" =~ ^[0-9]+$ && "$hold" -le 600 ]] || exit 2
-[[ "$seed" =~ ^[A-Za-z0-9_-]{1,128}$ ]] || exit 2
-case "$mode" in ''|windowed|fullscreen|borderless|maximized) ;; *) exit 2 ;; esac
+[[ -z "$seed" || "$seed" =~ ^[A-Za-z0-9_-]{1,128}$ ]] || exit 2
+case "$window_mode" in ''|windowed|fullscreen|borderless|maximized) ;; *) exit 2 ;; esac
+case "$campaign_mode" in standard) [[ "$seed_set" == false ]] || { printf 'standard mode does not accept --seed\n' >&2; exit 2; } ;; practice) [[ -n "$seed" ]] || { printf 'practice mode requires --seed\n' >&2; exit 2; } ;; *) printf 'unsupported campaign mode\n' >&2; exit 2 ;; esac
 video_args=()
 [[ -z "$display" ]] || video_args+=(-Display "$display")
 [[ -z "$width" ]] || video_args+=(-Width "$width")
 [[ -z "$height" ]] || video_args+=(-Height "$height")
-[[ -z "$mode" ]] || video_args+=(-WindowMode "$mode")
+[[ -z "$window_mode" ]] || video_args+=(-WindowMode "$window_mode")
 [[ -z "$replay" || -f "$replay" ]] || exit 2
+[[ -z "$replay" || "$campaign_mode" == practice ]] || { printf 'fresh-process replay requires practice mode and its explicit seed\n' >&2; exit 2; }
 for command in wslpath curl jq openssl "$powershell"; do command -v "$command" >/dev/null; done
 umask 077
 repo_root=$(cd -- "$script_dir/../.." && pwd -P)
@@ -88,10 +92,14 @@ cleanup() {
 }
 trap cleanup EXIT
 trap 'exit 130' INT TERM
+guardian_args=(
+    -HostDirectory "$(wslpath -w "$host_dir")" -UserDirectory "$user_dir"
+    -LogPath "$(wslpath -w "$run/game.log")" -StopFile "$(wslpath -w "$run/stop")"
+    -CampaignMode "$campaign_mode"
+)
+[[ -z "$seed" ]] || guardian_args+=( -Seed "$seed" )
 "$powershell" -NoProfile -File "$(wslpath -w "$script_dir/live-combat-demo.ps1")" \
-    -HostDirectory "$(wslpath -w "$host_dir")" -UserDirectory "$user_dir" \
-    -LogPath "$(wslpath -w "$run/game.log")" -StopFile "$(wslpath -w "$run/stop")" \
-    -Seed "$seed" "${video_args[@]}" \
+    "${guardian_args[@]}" "${video_args[@]}" \
     <<<"$runtime_token" >"$run/guardian.log" 2>&1 &
 host_pid=$!
 printf 'Artifacts: %s\n' "$run"
@@ -119,22 +127,25 @@ export STS2_RUNTIME_PROFILE=runtime-v3-gameplay STS2_MCP_BINARY="$mcp"
 export STS2_EXO_BRIDGE_BINARY="$provider" STS2_EXO_BRIDGE_ARGS_JSON='[]'
 export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
-export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true STS2_EXO_FORWARD_VISIBLE_SEED=true
+export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false STS2_LIVE_EPISODE=true \
+    STS2_EXO_FORWARD_VISIBLE_SEED=true
 if [[ "$provider_kind" == openai-astra ]]; then
     export STS2_EXO_INHERITED_ENV_JSON='["HOME","PATH"]'
 else
     export STS2_EXO_INHERITED_ENV_JSON='[]'
 fi
-export STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
+export STS2_OBJECTIVE='Complete the campaign while preserving HP.' STS2_MAX_STEPS=1024
 export STS2_REPLAY_TRAJECTORY="$replay"
-jq -n --arg seed "$seed" --arg bridge "$STS2_EXO_REVISION" --arg mode "$mode" \
+jq -n --arg seed "$seed" --arg bridge "$STS2_EXO_REVISION" --arg campaign_mode "$campaign_mode" \
+    --arg window_mode "$window_mode" \
     --arg provider "$provider_name" --arg model "$provider_model" \
     --arg display "$display" --arg width "$width" --arg height "$height" --arg replay "$replay" \
-    '{seed:$seed,bridge_sha256:$bridge,provider:$provider,model:$model,
+    '{seed:($seed | if . == "" then null else . end),campaign_mode:$campaign_mode,
+    bridge_sha256:$bridge,provider:$provider,model:$model,
     display:($display | if . == "" then null else tonumber end),
     width:($width | if . == "" then null else tonumber end),
     height:($height | if . == "" then null else tonumber end),
-    window_mode:($mode | if . == "" then null else . end),
+    window_mode:($window_mode | if . == "" then null else . end),
     video_values:"requested overrides; null uses saved preference or default; actual values are in game.log",
     replay:$replay}' >"$run/manifest.json"
 sha256sum "$gateway" "$mcp" "$harness" "$provider" >"$run/binaries.sha256"
