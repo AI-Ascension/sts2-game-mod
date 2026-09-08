@@ -5,6 +5,11 @@ credential line, then reads exactly three receipt lines with an absolute startup
 a 128-character per-line bound. It does not wait for stdout EOF. Missing or malformed receipts
 trigger cancellation and report cleanup uncertainty, never an invented game PID or success.
 
+The Linux/WSL shell measures that relative allowance using kernel uptime from
+`/proc/uptime`, so wall-clock corrections cannot invalidate a timely receipt or
+extend its elapsed deadline. A missing elapsed clock fails closed. Authorization
+expiry remains a separate epoch-time check; see [ADR 0031](decisions/0031-monotonic-bridge-handoff.md).
+
 The guardian supplies an unnamed, non-inheritable kill-on-close Job through
 `PROC_THREAD_ATTRIBUTE_JOB_LIST` in the same extended `CreateProcessW` call as the NUL-only
 handle list. There is no create-then-assign gap. Unsupported configurations fail closed;

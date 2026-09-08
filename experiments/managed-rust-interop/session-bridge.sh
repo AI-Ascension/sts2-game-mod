@@ -8,6 +8,15 @@ bridge_input_fd=''
 bridge_output_fd=''
 bridge_started=0
 
+launcher_elapsed_seconds() {
+    # This launcher runs under Linux/WSL. Kernel uptime is unaffected by wall-clock
+    # corrections and includes suspend time; a missing clock fails closed.
+    local uptime _idle
+    IFS=' ' read -r uptime _idle </proc/uptime || return 1
+    [[ "$uptime" =~ ^([0-9]+)\.[0-9]+$ ]] || return 1
+    printf '%s\n' "${BASH_REMATCH[1]}"
+}
+
 close_bridge_pipes() {
     if [[ -n "$bridge_input_fd" ]]; then exec {bridge_input_fd}>&-; bridge_input_fd=''; fi
     if [[ -n "$bridge_output_fd" ]]; then exec {bridge_output_fd}<&-; bridge_output_fd=''; fi
@@ -33,7 +42,9 @@ launch_owned_bridge() {
     (( lease_seconds <= 3600 )) || lease_seconds=3600
     local allowance=$startup_timeout_seconds
     (( allowance <= lease_seconds )) || allowance=$lease_seconds
-    local handshake_deadline=$((SECONDS + allowance))
+    local elapsed_now handshake_deadline
+    elapsed_now=$(launcher_elapsed_seconds) || die 'Linux elapsed-time clock unavailable'
+    handshake_deadline=$((elapsed_now + allowance))
     local identity original_input original_output remaining line field
     local -a receipt=()
 
@@ -53,7 +64,8 @@ launch_owned_bridge() {
     # has not read yet. No subsequent writes are needed: closing stdin cancels.
     printf '%s\n' "$runtime_token" >&"$bridge_input_fd" || die 'bridge credential pipe failed'
     for field in STARTED PID START_TICKS; do
-        remaining=$((handshake_deadline - SECONDS))
+        elapsed_now=$(launcher_elapsed_seconds) || die 'Linux elapsed-time clock unavailable'
+        remaining=$((handshake_deadline - elapsed_now))
         (( remaining > 0 )) || die 'Windows game launch handoff timed out'
         line=''
         IFS= read -r -n 128 -t "$remaining" line <&"$bridge_output_fd" \

@@ -6,6 +6,10 @@ do not establish release support.
 
 ## Unreleased
 
+- Measure the Linux/WSL guardian receipt timeout with kernel elapsed time so
+  calendar-clock adjustments cannot reject timely receipts. Preserve epoch-based
+  authorization expiry and add synthetic clock-step and missing-clock checks.
+
 - Omit raw exception messages from native listener and loader failure logs while
   retaining their event/type diagnostics and existing failure status. Add source-linked
   ABI and synthetic log-redaction regressions; no host or wire contract changes.
