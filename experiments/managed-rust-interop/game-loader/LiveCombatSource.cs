@@ -63,7 +63,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         var state = player?.Creature.IsDead == true ? RuntimeV3GameplayState.Defeat
             : rewards ? RuntimeV3GameplayState.Reward
             : active ? RuntimeV3GameplayState.Combat : RuntimeV3GameplayState.Recovery;
-        string[] values = state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
+        string[] values = state == RuntimeV3GameplayState.Defeat ? new[] { "player_dead" }
+            : state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
             : Array.Empty<string>();
         string? seed = player == null ? null : RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed;
         var result = new RuntimeV3GameplayObservation("live", 0, seed, projection, state, values, enemies)
