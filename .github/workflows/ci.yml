@@ -46,6 +46,16 @@ jobs:
         working-directory: protocol-artifact/runtime-v3-gameplay
         run: sha256sum -c SHA256SUMS
 
+      - name: Verify every copied protocol artifact inventory
+        # Discovers every SHA256SUMS under protocol-artifact/ so a profile copied later
+        # (for example runtime-v4-expert or runtime-v4-expert-action) cannot be missed.
+        run: |
+          inventories=$(find protocol-artifact -mindepth 2 -name SHA256SUMS -type f | LC_ALL=C sort)
+          test -n "$inventories"
+          for inventory in $inventories; do
+            (cd "$(dirname "$inventory")" && sha256sum -c SHA256SUMS)
+          done
+
       - name: Validate copied POC JSON fixtures
         run: |
           cmp protocol-artifact/poc-v1/schema.json schemas/poc-v1.schema.json
