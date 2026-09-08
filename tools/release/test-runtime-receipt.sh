@@ -26,21 +26,12 @@ printf 'managed fixture bytes\n' > "$fixture/AIAscensionSTS2GameMod.dll"
 printf '{"id":"AIAscensionSTS2GameMod","version":"0.4.0"}\n' > "$fixture/AIAscensionSTS2GameMod.json"
 printf 'native fixture bytes\n' > "$fixture/libAIAscensionSTS2GameModNative.so"
 
-dotnet_real="$temp_dir/dotnet.exe"
-printf '#!/bin/sh\nexit 0\n' > "$dotnet_real"
-chmod 0755 "$dotnet_real"
-ln -s -- "$dotnet_real" "$temp_dir/dotnet-link"
-PYTHONPATH="$script_dir" python3 -B - "$dotnet_real" "$temp_dir/dotnet-link" <<'PY'
-import sys
-
-from runtime_receipt_build import resolve_dotnet
-
-real = resolve_dotnet(sys.argv[1])
-link = resolve_dotnet(sys.argv[2])
-assert real.kind == "windows-exe" and real.path_style == "windows"
-assert link.kind == "windows-exe" and link.path_style == "windows"
-assert link.path == real.path
-PY
+symlink_test_log="$temp_dir/symlink-test.log"
+cargo test --locked --offline --package sts2-release-tool \
+    receipt::build_support::production::tool::tests::resolves_symlinked_dotnet_exe -- --exact \
+    > "$symlink_test_log"
+grep -Eq '^running 1 test$' "$symlink_test_log"
+grep -Eq '^test result: ok\. 1 passed; 0 failed;' "$symlink_test_log"
 
 if bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload-dir "$fixture" \
     --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
@@ -129,12 +120,39 @@ for record in receipt["payload"]:
 assert "fixture" not in json.dumps(receipt["payload"])
 PY
 
+relative_caller="$temp_dir/relative-caller"
+mkdir -p -- "$relative_caller/fixture"
+cp -- "$fixture/AIAscensionSTS2GameMod.dll" "$relative_caller/fixture/AIAscensionSTS2GameMod.dll"
+cp -- "$fixture/AIAscensionSTS2GameMod.json" "$relative_caller/fixture/AIAscensionSTS2GameMod.json"
+cp -- "$fixture/libAIAscensionSTS2GameModNative.so" "$relative_caller/fixture/libAIAscensionSTS2GameModNative.so"
+(
+    cd "$relative_caller"
+    bash "$script_dir/build-runtime-receipt.sh" --scope fixture --fixture-payload-dir fixture \
+        --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
+        --package-version 0.4.0 --output-dir receipt --evidence-dir evidence >/dev/null
+)
+[[ -f "$relative_caller/receipt/build-receipt.json" ]]
+[[ -d "$relative_caller/evidence/logs" ]]
+[[ ! -e "$relative_caller/receipt.claim" ]]
+
 if bash "$script_dir/build-runtime-receipt.sh" --platform linux-x86_64 \
     --source-commit "$source_commit" --game-version 0.107.1 --package-version 0.4.0 \
     --output-dir "$temp_dir/no-host" >/dev/null 2>&1; then
     printf '%s\n' 'production receipt without host references unexpectedly succeeded' >&2
     exit 1
 fi
+
+partial_host="$temp_dir/partial-host"
+mkdir -p -- "$partial_host"
+printf 'host assembly fixture\n' > "$partial_host/sts2.dll"
+if bash "$script_dir/build-runtime-receipt.sh" --scope production \
+    --host-data-dir "$partial_host" --dotnet "$temp_dir/missing-dotnet" \
+    --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
+    --package-version 0.4.0 --output-dir "$temp_dir/partial-host-receipt" >/dev/null 2>&1; then
+    printf '%s\n' 'missing host reference unexpectedly succeeded' >&2
+    exit 1
+fi
+[[ ! -e "$temp_dir/partial-host-receipt" && ! -e "$temp_dir/partial-host-receipt.claim" ]]
 
 if bash "$script_dir/build-runtime-receipt.sh" --scope production --fixture-payload-dir "$fixture" \
     --platform linux-x86_64 --source-commit "$source_commit" --game-version 0.107.1 \
