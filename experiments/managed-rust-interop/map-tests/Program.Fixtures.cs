@@ -41,9 +41,9 @@ internal static partial class Program
         Bindings: new[]
         {
             new RuntimeMapV1ActionBinding("map:1:1:0",
-                "select_map_node:42:map:1:1:0", "map:1:1:0"),
+                "select_map_node:42:map:1:1:0", "host-action:42:map:1:1:0"),
             new RuntimeMapV1ActionBinding("map:1:1:1",
-                "select_map_node:42:map:1:1:1", "map:1:1:1")
+                "select_map_node:42:map:1:1:1", "host-action:42:map:1:1:1")
         });
 
     private static RuntimeMapV1Snapshot Unavailable() => Snapshot() with

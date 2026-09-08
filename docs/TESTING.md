@@ -43,6 +43,8 @@ cargo metadata --locked --no-deps --format-version 1
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
+cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -50,10 +52,15 @@ cargo test --locked --offline --workspace --all-targets --all-features
 ~~~
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
-`poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
-not launch the game or prove gameplay or Runtime-v2 host settlement.
+`poc-v1` and Runtime-map-v1 mapping seams. The commands prove source-level structure,
+queue/ABI/adapter composition, copied artifact identity, Runtime-v1 compatibility, and the
+Runtime-v2 deterministic fake lifecycle. The managed host-adapter build is a separate
+compiler/package oracle; these ordinary commands still do not launch the game or prove gameplay,
+map extraction, or Runtime-v2 host settlement.
+
+The game-mod Rust Runtime-map-v1 test verifies copied artifact bytes, provenance, and checksums;
+it is not payload-consumer conformance. Managed `RuntimeMapV1Contract` and its codec probe own
+the source-level payload validation checks for this target.
 
 ## Runtime-v2 deterministic seam
 
@@ -188,9 +195,11 @@ dotnet build experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj
 dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
 ~~~
 
-The probe covers canonical ordering, UTF-8 request bounds, unavailable/pre-start positions,
+The probe covers exact source/package artifact bytes and checksums, canonical ordering, UTF-8
+request and text/reason bounds, C0/DEL/C1 rejection, unavailable/pre-start positions,
 duplicate coordinates, cyclic and duplicate identities, independent graph/host/action-option
-identities, current-node binding rejection, paired hidden-state projections, bounded identity
+identities including equal serialized values across namespaces, current-node binding rejection,
+paired hidden-state projections, bounded identity
 registry churn and reset on a new map lifetime, stable-ID graph reordering and rewiring, the
 deliberate non-start `Ancient` to `other` normalization, and the final-generation observation
 fence. The host map read returns an explicit unavailable result with `map_surface_changed` when

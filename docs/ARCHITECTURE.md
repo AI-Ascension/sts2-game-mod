@@ -4,7 +4,8 @@
 
 The additive map-read profile copies permitted topology and current legal bindings on the host
 thread, then verifies the observation generation again before returning owned values. Protocol
-owns the neutral contract; graph analysis and presentation remain downstream. See
+owns the neutral contract; the game-mod consumer provides verification for the copied map artifact;
+graph analysis and presentation remain downstream. See
 [ADR 0032](decisions/0032-runtime-map-projection.md) for scope, bounds, and rejection behavior.
 
 The opt-in live combat composition is documented in [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md).

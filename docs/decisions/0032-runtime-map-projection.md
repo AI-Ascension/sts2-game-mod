@@ -10,8 +10,8 @@ decision identifier. The projection scope is unchanged.
 
 Expose the fixed authenticated `GET /api/map/v1/snapshot` route under the independent
 `runtime-map-v1` profile. Consume the protocol-owned contract at revision
-`d9ffb190ad8990e15f43d7992581dcb2d60b1971`, with schema SHA-256
-`6340f3cbe6c1b5728144fe89fdfdf8645acf2f59a77c0e0c30ebfeafc77515d8`.
+`7c448bd8d7a695ada48830176f3d738286caafe4`, with schema SHA-256
+`ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b`.
 Existing gameplay profiles, envelopes, and mutation witnesses retain their meanings.
 The private managed/native callback table assigns map reads ID 14; expert state/action remain
 7/8 and native co-op remains 9 through 13.

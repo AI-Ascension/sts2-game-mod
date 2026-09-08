@@ -43,7 +43,8 @@ internal static partial class Program
         RuntimeMapV1Snapshot staleBinding = Snapshot() with
         {
             Bindings = new[] { new RuntimeMapV1ActionBinding(
-                "map:1:1:0", "select_map_node:41:map:1:1:0", "map:1:1:0") }
+                "map:1:1:0", "select_map_node:41:map:1:1:0",
+                "host-action:41:map:1:1:0") }
         };
         Check(staleBinding.Validate(out _),
             "binding generation remains an opaque host action identity at snapshot validation");

@@ -29,6 +29,7 @@ internal static partial class Program
         CheckGraphFingerprintIdentityAndOrdering();
         CheckAncientCategoryNormalization();
         CheckObservationGenerationFence();
+        CheckArtifactBytesAndContractBoundaries();
         Console.WriteLine("RuntimeMapV1Probe: PASS");
         return 0;
     }

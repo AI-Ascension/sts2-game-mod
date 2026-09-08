@@ -18,7 +18,7 @@ internal static class RuntimeMapV1Contract
     internal const string SchemaSource = "schemas/runtime-map-v1.schema.json";
     internal const string Generator = "hand-authored";
     internal const string SchemaDigest =
-        "6340f3cbe6c1b5728144fe89fdfdf8645acf2f59a77c0e0c30ebfeafc77515d8";
+        "ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b";
     internal const string SnapshotSchemaVersion = "visible-map-v1";
     internal const string ProjectionVersion = "runtime-map-v1";
     internal const string ModVersion = "0.4.0";
