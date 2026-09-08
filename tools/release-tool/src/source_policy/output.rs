@@ -29,8 +29,13 @@ pub(crate) fn write_lists(
 }
 
 fn write_list(path: &Path, label: &str, values: &[String]) -> Result<(), String> {
-    let mut data = values.join("\n");
-    data.push('\n');
+    let data = if values.is_empty() {
+        String::new()
+    } else {
+        let mut data = values.join("\n");
+        data.push('\n');
+        data
+    };
     write_new(path, data.as_bytes(), label, 0o644)
 }
 

@@ -104,4 +104,40 @@ mod tests {
         assert_eq!(fs::read_to_string(required).expect("required"), "a.txt\n");
         fs::remove_dir_all(root).expect("fixture cleanup");
     }
+
+    #[test]
+    fn command_writes_empty_lists_without_blank_paths() {
+        let root = fixture_root();
+        let policy = root.join("policy.json");
+        let inventory = root.join("source-paths");
+        let allowed = root.join("allowed");
+        let excluded = root.join("excluded");
+        let required = root.join("required");
+        let value = json!({
+            "schema_version": "ai-ascension-source-distribution-policy-v1",
+            "policy_id": "source-distribution-v1",
+            "artifact_kind": "source_bundle",
+            "artifact_scope": "production_source_only",
+            "selection_mode": "exact_tracked_path_allowlist",
+            "allow_only_regular_files": true,
+            "allowed_paths": ["a.txt"],
+            "excluded_paths": [],
+            "required_paths": []
+        });
+        fs::write(&policy, serde_json::to_vec(&value).expect("policy JSON")).expect("policy");
+        fs::write(&inventory, b"a.txt\n").expect("inventory");
+        let args = vec![
+            policy.display().to_string(),
+            inventory.display().to_string(),
+            allowed.display().to_string(),
+            excluded.display().to_string(),
+            required.display().to_string(),
+        ];
+        run(&args).expect("empty policy command");
+        assert_eq!(fs::read_to_string(&allowed).expect("allowed"), "a.txt\n");
+        for path in [&excluded, &required] {
+            assert!(fs::read(path).expect("output").is_empty());
+        }
+        fs::remove_dir_all(root).expect("fixture cleanup");
+    }
 }
