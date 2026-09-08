@@ -123,7 +123,7 @@ internal sealed partial class RuntimeV4ExpertRestActionSupport
 
     private static bool ChoiceIdsMatch(
         IReadOnlyList<string> actual,
-        IReadOnlyList<string> expected)
+        List<string> expected)
     {
         if (actual.Count != expected.Count) return false;
         for (int index = 0; index < expected.Count; index++)

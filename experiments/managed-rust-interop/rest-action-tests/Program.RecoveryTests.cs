@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using System.Linq;
 using System.Text.Json;
 using AiAscension.Sts2GameMod.Runtime;
 

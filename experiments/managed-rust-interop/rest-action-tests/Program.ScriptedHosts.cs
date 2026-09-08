@@ -83,7 +83,8 @@ internal static partial class Program
                     {
                         State = observation.State with
                         {
-                            Choices = observation.State.Choices.Append(
+                            Choices = (observation.State.Choices ??
+                                Array.Empty<RuntimeV4ExpertGameplayChoice>()).Append(
                                 new RuntimeV4ExpertGameplayChoice(
                                     "card:3", "Defend", "selection", null)).ToArray()
                         }
