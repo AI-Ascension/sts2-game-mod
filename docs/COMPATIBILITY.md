@@ -148,6 +148,7 @@ Windows host reconfiguration and unload remain separately unverified.
 | --- | --- | --- | --- |
 | `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Exact source/component head `0a46af3`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -161,7 +162,8 @@ settlement, and multiplayer behavior remain `unverified`.
 
 The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
 and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
-copies under `protocol-artifact/` are byte-identical to `sts2-protocol` main `6d7fb8591d`. The v4 routes
+copies under `protocol-artifact/` are byte-identical to merged `sts2-protocol` main
+`b3d3034f32e68d70c9e681f906ee37d74db153c4`. The v4 routes
 add native callback kinds 7 and 8 without changing the ABI structure, version, or kinds 3–6. The
 only admitted expert mutation is `use_potion`; it shares the v2/v3 host identity fence and the
 pending-mutation exclusion in all directions. The Runtime-v3 combat observation now projects one
@@ -172,15 +174,15 @@ the Windows/Linux package builds named in PR #52 remain `unverified`.
 
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
-This corrects admission without changing the protocol digest. The unmerged semantic callback
-now uses kind 6 to preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
+This corrects admission without changing the protocol digest. The semantic callback uses kind 6 to
+preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
 It does not permit a GET observation route to dispatch a mutation merely because its body names
 an action request. Both profiles share host identity and pending-operation admission fences.
 
 The internal Runtime-v3 host-source interface receives scoped operation identities
 and must supply independent completion evidence. The internal completion correction
-leaves message shapes unchanged. Separately, the unmerged protocol revision tightens
-schema shape validation, explicit nullable fields, and closed tagged variants.
+leaves message shapes unchanged. The checked-in protocol revision tightens schema shape validation,
+explicit nullable fields, and closed tagged variants.
 Consumers must update together to the new digest above; old-digest requests fail closed.
 Host implementations must implement the completion port;
 an unavailable witness preserves an unknown outcome. Managed handler tests use

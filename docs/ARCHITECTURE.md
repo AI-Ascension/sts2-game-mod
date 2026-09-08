@@ -327,6 +327,11 @@ projection reads public host properties by name and the rendered `NIntent` prese
 in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`. This is source and
 build evidence; live expert gameplay and settlement remain unverified.
 
+At current mod main `0a46af363896f6cdd645e73dd774023693d450a9`, the source/component boundary is
+checked against the copied expert artifacts from merged protocol main
+`b3d3034f32e68d70c9e681f906ee37d74db153c4`. This identity and checksum evidence does not establish
+licensed-host extraction, live expert action settlement, package compatibility, or release support.
+
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 

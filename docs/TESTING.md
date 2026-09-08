@@ -58,10 +58,11 @@ not launch the game or prove gameplay or Runtime-v2 host settlement.
 ## Runtime-v2 deterministic seam
 
 CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
-the POC, Runtime-v1, and Runtime-v3 checksum gates. A checksum failure fails the Rust CI job.
-The `runtime-v4-expert` and `runtime-v4-expert-action` copies are not yet in that CI gate; they
-are checked locally with `sha256sum -c SHA256SUMS` and compared byte-for-byte against
-`sts2-protocol` main before merge, because a self-consistent inventory cannot detect a stale copy.
+the POC, Runtime-v1, and Runtime-v3 checksum gates, then discovers every `SHA256SUMS` under
+`protocol-artifact/`. The discovery step includes the `runtime-v4-expert` and
+`runtime-v4-expert-action` copies, so a newly copied profile cannot be omitted from CI. The
+copies are also checked locally and compared byte-for-byte against merged `sts2-protocol` main;
+a self-consistent inventory cannot detect a stale copy.
 
 The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
 and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
