@@ -32,6 +32,10 @@ public static partial class ModEntry
         {
             return ProcessRuntimeV4ExpertActionWork(work.Context, work.Body);
         }
+        if (work.Kind is RuntimeRequestKindSeededRun or RuntimeRequestKindSeededOperation)
+        {
+            return ProcessSeededRunWork(work);
+        }
         if (work.Kind == RuntimeRequestKindState)
         {
             return (RuntimeAccepted, RuntimeStateResponse(work.Context));

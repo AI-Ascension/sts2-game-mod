@@ -65,6 +65,8 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
         ("GET", "/api/v2/runtime/state", "", 203),
         ("POST", "/api/v2/runtime/action", "{}", 204),
         ("GET", "/api/v2/runtime/operations/run/operation", "", 205),
+        ("POST", "/v2/seeded-run", "{}", 209),
+        ("GET", "/v2/seeded-operations/seed-op-1", "", 210),
         ("GET", "/api/v3/runtime/state", "", 400),
         (
             "GET",

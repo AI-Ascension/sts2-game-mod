@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use super::{
-    CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT, CALLBACK_RUNTIME_V4_EXPERT_ACTION,
-    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
-};
+use super::{RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http};
+
+const CALLBACK_ACTION: u32 = 2;
+const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
+const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
+const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
+pub(super) const CALLBACK_GAMEPLAY: u32 = 6;
+const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
+const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
+const CALLBACK_SEEDED_RUN: u32 = 9;
+const CALLBACK_SEEDED_OPERATION: u32 = 10;
 
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
@@ -28,6 +34,19 @@ pub(super) fn dispatch(
         }
         ("POST", "/api/v2/runtime/action") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_RUNTIME_V2_ACTION, request, stream)
+        }
+        ("POST", "/v2/seeded-run") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_SEEDED_RUN, request, stream)
+        }
+        ("GET", path) if request.body.is_empty() && path.starts_with("/v2/seeded-operations/") => {
+            let operation_id = &path["/v2/seeded-operations/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_SEEDED_OPERATION,
+                request,
+                operation_id,
+                stream,
+            )
         }
         ("GET", path)
             if request.body.is_empty() && path.starts_with("/api/v2/runtime/operations/") =>
@@ -76,7 +95,7 @@ fn dispatch_gameplay(
     if !super::gameplay_route::body_matches(&request.body, expected) {
         return http::write_response(stream, 400, b"{\"error_code\":\"invalid_route_message\"}");
     }
-    dispatch_callback(callback, super::CALLBACK_GAMEPLAY, request, stream)
+    dispatch_callback(callback, CALLBACK_GAMEPLAY, request, stream)
 }
 
 fn dispatch_operation(

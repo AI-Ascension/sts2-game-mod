@@ -6,13 +6,6 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-const CALLBACK_ACTION: u32 = 2;
-const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
-const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
-const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
-const CALLBACK_GAMEPLAY: u32 = 6;
-const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
-const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
 const MAX_RESPONSE_BYTES: usize = 128 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
