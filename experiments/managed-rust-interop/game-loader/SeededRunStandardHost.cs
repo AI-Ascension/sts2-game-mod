@@ -51,7 +51,8 @@ internal static partial class SeededRunStandardHost
         if (Operations.TryGetValue(operationId, out PendingOperation? existing))
         {
             string fingerprint = SafeFingerprint(request);
-            if (string.Equals(existing.Fingerprint, fingerprint, StringComparison.Ordinal))
+            if (IsExactReplay(existing.Fingerprint, fingerprint,
+                    existing.Receipt.RequestGeneration, requestGeneration))
             {
                 Pump(existing);
                 return existing.Receipt;

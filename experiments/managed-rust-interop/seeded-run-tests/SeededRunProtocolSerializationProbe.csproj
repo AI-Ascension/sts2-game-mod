@@ -13,6 +13,7 @@
     <Compile Include="ProtocolSerializationProbe.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+    <Compile Include="../game-loader/SeededRunStandardHost.Idempotency.cs" />
     <Compile Include="../game-loader/SeededRunStandardHost.Types.cs" />
     <Compile Include="../game-loader/SeededRunProtocolSerialization.cs" />
     <None Include="../../../protocol-artifact/seeded-run-v1/schema.json"

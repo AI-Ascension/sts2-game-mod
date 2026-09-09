@@ -54,6 +54,12 @@ public static partial class ModEntry
         SeededRunSelectionContext context = Context();
         RuntimeContext runtimeContext = new(
             "instance-1", "caller-1", "session-1", "lease-1", "1", "corr-seed-0001");
+        Check(SeededRunStandardHost.IsExactReplay("fingerprint", "fingerprint", 7, 7),
+            "same fingerprint and request generation are an exact replay");
+        Check(!SeededRunStandardHost.IsExactReplay("fingerprint", "fingerprint", 7, 8),
+            "changed request generation is an idempotency conflict");
+        Check(!SeededRunStandardHost.IsExactReplay("fingerprint", "changed", 7, 7),
+            "changed request fingerprint is an idempotency conflict");
         SeededRunStandardHostReceipt accepted = new(
             "op-seed-1", "ironclad-42", "seeded_training", context,
             SeededRunStandardHostStatus.Accepted, null, null, null, null, 0);
