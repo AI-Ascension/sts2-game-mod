@@ -80,7 +80,8 @@ public static partial class ModEntry
         // lookup must precede the generation fence so an exact duplicate cannot redispatch.
         if (SeededRunStandardHost.TryGetReceipt(parsedRequest.OperationId, out _))
         {
-            SeededRunStandardHostReceipt replay = SeededRunStandardHost.Start(parsedRequest);
+            SeededRunStandardHostReceipt replay = SeededRunStandardHost.Start(
+                parsedRequest, requestGeneration);
             return SeededRunResponse(work.Context, "start_response", replay);
         }
 
@@ -92,12 +93,13 @@ public static partial class ModEntry
         if (requestGeneration != currentGeneration)
         {
             SeededRunStandardHostReceipt stale = SeededRunStandardHost.Reject(
-                parsedRequest, "stale_generation");
+                parsedRequest, "stale_generation", requestGeneration);
             (int _, string response) = SeededRunResponse(work.Context, "start_response", stale);
             return (RuntimeRejected, response);
         }
 
-        SeededRunStandardHostReceipt receipt = SeededRunStandardHost.Start(parsedRequest);
+        SeededRunStandardHostReceipt receipt = SeededRunStandardHost.Start(
+            parsedRequest, requestGeneration);
         return SeededRunResponse(work.Context, "start_response", receipt);
     }
 

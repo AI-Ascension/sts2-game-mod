@@ -35,4 +35,5 @@ internal sealed record SeededRunStandardHostReceipt(
     string? CanonicalSeed,
     SeededRunStandardObservation? Observation,
     SeededRunStandardEffectWitness? EffectWitness,
-    string? ErrorCode);
+    string? ErrorCode,
+    ulong RequestGeneration);

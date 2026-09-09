@@ -36,7 +36,9 @@ internal static partial class SeededRunStandardHost
     /// Admits one request on the Godot host thread. The native lobby begins asynchronously; callers
     /// must reconcile the operation to obtain a settled witness.
     /// </summary>
-    internal static SeededRunStandardHostReceipt Start(SeededRunStandardRequest request)
+    internal static SeededRunStandardHostReceipt Start(
+        SeededRunStandardRequest request,
+        ulong requestGeneration = 0)
     {
         RequireHostThread();
 
@@ -68,17 +70,17 @@ internal static partial class SeededRunStandardHost
         if (!request.Validate(out string requestError))
         {
             return RetainRejected(request, requestError == ""
-                ? "invalid_request" : "invalid_context");
+                ? "invalid_request" : "invalid_context", requestGeneration);
         }
 
         if (_active is not null)
         {
-            return RetainRejected(request, "operation_in_progress");
+            return RetainRejected(request, "operation_in_progress", requestGeneration);
         }
 
         if (Operations.Count >= MaxReceipts)
         {
-            return AcceptedShape(request) with
+            return AcceptedShape(request, requestGeneration) with
             {
                 Status = SeededRunStandardHostStatus.Rejected,
                 ErrorCode = "receipt_capacity_exhausted"
@@ -89,13 +91,13 @@ internal static partial class SeededRunStandardHost
                 out string canonicalSeed, out SeededRunStandardCompatibilitySnapshot? compatibility,
                 out ulong generationBefore, out string preparationError))
         {
-            return RetainRejected(request, preparationError);
+            return RetainRejected(request, preparationError, requestGeneration);
         }
 
         var pending = new PendingOperation(
             request,
             request.Fingerprint(),
-            AcceptedShape(request),
+            AcceptedShape(request, requestGeneration),
             canonicalSeed,
             compatibility,
             screen,
@@ -174,10 +176,11 @@ internal static partial class SeededRunStandardHost
     /// <summary>Retains a protocol-valid request as rejected before mutation admission.</summary>
     internal static SeededRunStandardHostReceipt Reject(
         SeededRunStandardRequest request,
-        string errorCode)
+        string errorCode,
+        ulong requestGeneration = 0)
     {
         RequireHostThread();
-        return RetainRejected(request, errorCode);
+        return RetainRejected(request, errorCode, requestGeneration);
     }
 
     /// <summary>Allows a host frame pump to advance an admitted launch.</summary>

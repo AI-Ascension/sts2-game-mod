@@ -11,9 +11,10 @@ internal static partial class SeededRunStandardHost
 {
     private static SeededRunStandardHostReceipt RetainRejected(
         SeededRunStandardRequest request,
-        string errorCode)
+        string errorCode,
+        ulong requestGeneration = 0)
     {
-        SeededRunStandardHostReceipt receipt = AcceptedShape(request) with
+        SeededRunStandardHostReceipt receipt = AcceptedShape(request, requestGeneration) with
         {
             Status = SeededRunStandardHostStatus.Rejected,
             ErrorCode = errorCode
@@ -35,18 +36,21 @@ internal static partial class SeededRunStandardHost
         return receipt;
     }
 
-    private static SeededRunStandardHostReceipt AcceptedShape(SeededRunStandardRequest request) =>
+    private static SeededRunStandardHostReceipt AcceptedShape(
+        SeededRunStandardRequest request,
+        ulong requestGeneration = 0) =>
         new(request.OperationId, request.RequestedSeed, request.RunMode,
             request.SelectedContext, SeededRunStandardHostStatus.Accepted,
-            null, null, null, null);
+            null, null, null, null, requestGeneration);
 
     private static SeededRunStandardHostReceipt InvalidReceipt(
         string operationId,
         string requestedSeed,
         SeededRunSelectionContext? context,
-        string errorCode) =>
+        string errorCode,
+        ulong requestGeneration = 0) =>
         new(operationId, requestedSeed, "diagnostic", context,
-            SeededRunStandardHostStatus.Rejected, null, null, null, errorCode);
+            SeededRunStandardHostStatus.Rejected, null, null, null, errorCode, requestGeneration);
 
     private static string SafeFingerprint(SeededRunStandardRequest request)
     {

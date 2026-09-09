@@ -12,12 +12,6 @@ public static partial class ModEntry
         string kind,
         SeededRunStandardHostReceipt receipt)
     {
-        ulong generation = receipt.Observation?.Generation ?? 0;
-        if (generation == 0 && LiveCombatSource.TryReadCurrentGeneration(out ulong current))
-        {
-            generation = current;
-        }
-
         var payload = new Dictionary<string, object?>
         {
             ["protocol_version"] = SeededRunProtocolVersion,
@@ -33,7 +27,9 @@ public static partial class ModEntry
             ["session_id"] = context.SessionId,
             ["lease_id"] = context.LeaseId,
             ["lease_epoch"] = ParseEpoch(context.LeaseEpoch),
-            ["generation"] = generation,
+            // The envelope generation is the generation carried by the original start request.
+            // A settled observation/witness carries the post-start generation separately.
+            ["generation"] = receipt.RequestGeneration,
             ["kind"] = kind,
             ["operation_id"] = receipt.OperationId,
             ["requested_seed"] = receipt.RequestedSeed,
