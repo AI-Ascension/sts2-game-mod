@@ -23,6 +23,13 @@ internal static partial class Program
 
     private static void Main()
     {
+        string? captureDirectory = Environment.GetEnvironmentVariable("STS2_REST_PRODUCER_CAPTURE_DIR");
+        if (captureDirectory is not null)
+        {
+            EmitProducerFixtures(captureDirectory);
+            return;
+        }
+
         string proposal = FindProposalDirectory();
         string schemaPath = Path.Combine(proposal, "schema.json");
         string digest = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(schemaPath)))

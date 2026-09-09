@@ -85,9 +85,11 @@ typed and operation-bound; a cancelled response has no settlement witness.
 
 All settled transitions require `after_generation > before_generation` and
 `after_generation` equal to the outer response generation. A selection boundary is never
-encoded as `rest_option_completed`. The shared `runtime-v4-expert` observation remains nested
-and unchanged; the rest profile's `transition.selector` catalog is authoritative for the
-rest-specific player action and count-aware selector follow-up.
+encoded as `rest_option_completed`. The shared `runtime-v4-expert` observation remains nested and
+its `legal_actions` includes additive host-derived `rest_option` entries for visible enabled native
+rest buttons. Stateful selector follow-ups remain in the rest profile's `transition.selector`
+catalog, which is authoritative for the rest-specific player action and count-aware selector
+follow-up.
 
 ## Native admission and settlement
 
@@ -104,8 +106,12 @@ is visible, unambiguous, and actionable. It retains the native selector state an
 typed catalog. The Smith path must preserve repeated card selections and count state. The Mend
 path must bind `NTargetManager`/`PlayerChoiceResult` to `select_player` and cancellation. The
 final selector callback must complete before the producer emits the option-specific witness.
-Missing, ambiguous, stale, or unavailable native evidence stays unknown and reconciles by the
-original operation identity. `proceed` remains a separate action.
+During progression, every prior choice that remains on the native observation surface must retain
+its typed action unless it was selected; a choice withdrawn by the native selector may disappear
+from the next observation and catalog. At zero remaining choices the selector emits no selectable
+actions and retains exactly its confirmation and cancellation controls. Missing, ambiguous, stale,
+or unavailable native evidence stays unknown and reconciles by the original operation identity.
+`proceed` remains a separate action.
 
 The intended consumer chain is gateway exact forwarding, MCP one-for-one action mapping, and
 harness orchestration of `rest_option` followed by optional selector progress and confirmation.

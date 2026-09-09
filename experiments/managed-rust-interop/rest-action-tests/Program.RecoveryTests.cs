@@ -175,6 +175,50 @@ internal static partial class Program
         Check(catalogDocument.RootElement.GetProperty("status").GetString() == "unknown",
             "selector completion with a fabricated follow-up catalog did not remain unknown");
 
+        var droppedCatalogHost = new SmithHost { TamperDroppedCatalog = true };
+        RuntimeV4ExpertRestActionSupport droppedCatalogSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(droppedCatalogHost, work => work());
+        RuntimeV4ExpertRestHostProjection droppedInitial = droppedCatalogHost.ObserveRest();
+        RuntimeV4ExpertRestRequest droppedParent = RequestFromProjection(context, droppedInitial,
+            "rest-op:selector-binding:dropped-parent", droppedInitial.LegalActions.Single());
+        ExpectAccepted(droppedCatalogSupport, context, droppedParent);
+        _ = Reconcile(droppedCatalogSupport, context, droppedParent.Operation.OperationId);
+        RuntimeV4ExpertRestHostProjection droppedSelector = droppedCatalogHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference droppedFirstAction = droppedSelector.LegalActions
+            .Single(action => action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:1");
+        RuntimeV4ExpertRestRequest droppedFirst = RequestFromProjection(context, droppedSelector,
+            "rest-op:selector-binding:dropped-first", droppedFirstAction);
+        ExpectAccepted(droppedCatalogSupport, context, droppedFirst);
+        string droppedUnknown = Reconcile(droppedCatalogSupport, context,
+            droppedFirst.Operation.OperationId);
+        using JsonDocument droppedDocument = JsonDocument.Parse(droppedUnknown);
+        Check(droppedDocument.RootElement.GetProperty("status").GetString() == "unknown",
+            "selector completion that dropped a still-visible choice did not remain unknown");
+
+        var changedCatalogHost = new SmithHost { NativeCatalogChanged = true };
+        RuntimeV4ExpertRestActionSupport changedCatalogSupport =
+            RuntimeV4ExpertRestActionSupport.WithHost(changedCatalogHost, work => work());
+        RuntimeV4ExpertRestHostProjection changedInitial = changedCatalogHost.ObserveRest();
+        RuntimeV4ExpertRestRequest changedParent = RequestFromProjection(context, changedInitial,
+            "rest-op:selector-binding:changed-parent", changedInitial.LegalActions.Single());
+        ExpectAccepted(changedCatalogSupport, context, changedParent);
+        _ = Reconcile(changedCatalogSupport, context, changedParent.Operation.OperationId);
+        RuntimeV4ExpertRestHostProjection changedSelector = changedCatalogHost.ObserveRest();
+        RuntimeV4ExpertRestActionReference changedFirstAction = changedSelector.LegalActions
+            .Single(action => action.Action.Kind == "select_card"
+                && action.Action.CardId == "card:1");
+        RuntimeV4ExpertRestRequest changedFirst = RequestFromProjection(context, changedSelector,
+            "rest-op:selector-binding:changed-first", changedFirstAction);
+        ExpectAccepted(changedCatalogSupport, context, changedFirst);
+        string changedSettled = Reconcile(changedCatalogSupport, context,
+            changedFirst.Operation.OperationId);
+        using JsonDocument changedDocument = JsonDocument.Parse(changedSettled);
+        Check(changedDocument.RootElement.GetProperty("status").GetString() == "settled"
+                && changedDocument.RootElement.GetProperty("transition").GetProperty("kind")
+                    .GetString() == "rest_option_selection_progressed",
+            "selector completion with a native choice removal did not settle its valid catalog");
+
         var cancellationHost = new SmithHost { TamperCancellation = true };
         RuntimeV4ExpertRestActionSupport cancellationSupport =
             RuntimeV4ExpertRestActionSupport.WithHost(cancellationHost, work => work());

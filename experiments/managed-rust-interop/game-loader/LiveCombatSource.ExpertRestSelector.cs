@@ -82,6 +82,9 @@ internal sealed partial class LiveCombatSource
         ExpertRestSelector selector,
         ulong generation)
     {
+        // Smith re-reads the retained native screen on every projection. A selected holder is
+        // removed explicitly; an unselected holder that disappears or becomes unavailable is no
+        // longer a native legal choice and may therefore disappear from the next catalog.
         var actions = new List<RuntimeV4ExpertRestActionReference>();
         if (selector.SelectionKind == "card")
         {

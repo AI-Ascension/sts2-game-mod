@@ -31,8 +31,9 @@ return `rest_option_selection_progressed` after each typed `select_card`; Smith 
 the advertised number of distinct cards before `confirm_selection`. The final confirmation
 returns `rest_option_selection_completed` with `smith_applied` evidence. A player selector uses
 the same contract with a typed `select_player` action, so Mend no longer depends on an action
-arm that the shared expert observation does not provide. `cancel_selection` is typed and
-operation-bound; its cancelled response carries no settlement witness.
+arm in the shared observation: the shared observation carries the native `rest_option` action,
+while stateful selector follow-ups remain in `transition.selector`. `cancel_selection` is typed
+and operation-bound; its cancelled response carries no settlement witness.
 
 The producer and consumer ownership, dispatch ordering, option evidence mapping, and adoption
 gates are recorded in [implementation-path.md](implementation-path.md). The producer must

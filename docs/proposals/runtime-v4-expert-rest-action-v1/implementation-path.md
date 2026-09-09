@@ -30,6 +30,12 @@ zero. Mend exposes `select_player` and `cancel_selection` from its retained
 `NTargetManager`/`PlayerChoiceResult` path. Selector closure and the native option callback must
 complete before a final option-specific witness is emitted.
 
+Selector progression is bound to the native choice surface. A prior choice that remains present on
+that surface keeps its typed follow-up action unless it was selected; a native choice that becomes
+unavailable may disappear from both the observation and the next catalog. Once `remaining_count`
+reaches zero, no selectable action is emitted and the native `confirm_selection` and
+`cancel_selection` controls remain. A completion that violates those catalog rules stays unknown.
+
 A missing, ambiguous, stale, or unavailable native witness produces `unknown` and retains the
 same operation identity for reconciliation. The producer never treats generation change,
 screen closure, a button becoming unclickable, or an HTTP success as an effect witness.
@@ -50,11 +56,12 @@ uses a new operation ID for every follow-up, preserves the returned state and ge
 reconciles an `unknown` result by the original operation ID. It never sends a follow-up against
 an older selector generation or retries an uncertain native mutation as a new operation.
 
-The shared `runtime-v4-expert` observation remains a nested state projection. Its existing
-`legal_actions` field is not extended by this proposal. The rest profile's `transition.selector`
-catalog is the authoritative typed catalog for `select_player`, count-aware Smith selection,
-and the rest-specific cancellation path. This keeps the additive proposal from silently
-changing the already-consumed expert-state or potion profiles.
+The shared `runtime-v4-expert` observation remains a nested state projection. Its `legal_actions`
+field includes the additive `rest_option` actions projected from the currently visible enabled
+native rest buttons. Stateful selector follow-ups remain in the rest profile's
+`transition.selector` catalog, which is authoritative for `select_player`, count-aware Smith
+selection, and the rest-specific cancellation path. This keeps selector state separate while
+making the native rest-option surface visible through the shared expert observation.
 
 ## Evidence before adoption
 
@@ -69,10 +76,19 @@ changing the already-consumed expert-state or potion profiles.
 
 The source-only managed probe in
 `experiments/managed-rust-interop/rest-action-tests/` exercises the serialized producer and
-consumer boundary. The Smith fixtures in
+consumer boundary, including rejection of a follow-up that drops a still-visible native choice
+and acceptance of a follow-up after the native surface removes that choice. The Smith fixtures in
 `smith-two-pick-confirmation-sequence.json` bind each follow-up request to the exact typed
 catalog entry from the preceding response and require the action reference to be echoed without
 an opaque ID rewrite.
+
+The checked-in producer exporter and regression command is
+`bash experiments/managed-rust-interop/rest-action-producer-capture.sh`. With no argument it
+writes to an ignored temporary directory and compares both generated fixtures byte-for-byte with
+the candidate producer payload. An optional output directory exports the same two files there.
+It uses the selected .NET 9 SDK command, synthetic hosts, and isolated build/cache directories;
+set `DOTNET` when the pinned SDK is not first on `PATH`. It does not read a host assembly or
+write the production payload.
 
 Until those gates pass, the profile remains a bounded protocol design proposal for cross-owner
 consumers. The local mod source candidate does not advertise gateway, MCP, harness, or live

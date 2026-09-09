@@ -90,6 +90,27 @@ internal static partial class Program
                 responseName + " has a selector field that disagrees with its refreshed snapshot: " + field);
     }
 
+    private static RuntimeV4ExpertGameplayObservation SelectorObservation(
+        ulong generation,
+        bool extendedCatalog,
+        bool omitCard2 = false)
+    {
+        IEnumerable<RuntimeV4ExpertGameplayChoice> choices =
+            (Observation(generation, "selection").State.Choices
+                ?? Array.Empty<RuntimeV4ExpertGameplayChoice>()).Concat(
+                    extendedCatalog ? new[] { new RuntimeV4ExpertGameplayChoice(
+                        "card:3", "Defend", "selection", null) }
+                    : Array.Empty<RuntimeV4ExpertGameplayChoice>());
+        return Observation(generation, "selection") with
+        {
+            State = Observation(generation, "selection").State with
+            {
+                Choices = (omitCard2
+                    ? choices.Where(choice => choice.ChoiceId != "card:2") : choices).ToArray()
+            }
+        };
+    }
+
     private static RuntimeV4ExpertRestContext Context(JsonElement root) => new(
         StringField(root, "instance_id")!, StringField(root, "session_id")!,
         StringField(root, "lease_id")!, root.GetProperty("lease_epoch").GetUInt64(),
