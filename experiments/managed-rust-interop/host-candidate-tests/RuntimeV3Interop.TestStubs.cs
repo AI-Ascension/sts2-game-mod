@@ -67,3 +67,37 @@ internal sealed class RuntimeV4ExpertSupport
         return (status, "{\"error_code\":\"runtime_v4_expert_host_unavailable\"}");
     }
 }
+
+// The host-candidate probe compiles the shared runtime dispatcher but does not exercise the
+// source-only rest-action boundary. Keep the new route explicit and fail closed if this probe
+// ever crosses into it, just as the existing expert and native co-op stubs do.
+internal sealed record RuntimeV4ExpertRestContext(
+    string InstanceId,
+    string SessionId,
+    string LeaseId,
+    ulong LeaseEpoch,
+    string CorrelationId);
+
+internal sealed class RuntimeV4ExpertRestActionSupport
+{
+    private bool _pendingMutation;
+
+    private RuntimeV4ExpertRestActionSupport()
+    {
+        _pendingMutation = false;
+    }
+
+    internal static RuntimeV4ExpertRestActionSupport Unconfigured() => new();
+
+    internal static RuntimeV4ExpertRestActionSupport WithHost(
+        LiveCombatSource source, Action<Action> enqueue, Func<bool>? canDispatch = null) => new();
+
+    internal bool HasPendingMutation => _pendingMutation;
+
+    internal (int Status, string Response) Handle(
+        RuntimeV4ExpertRestContext context, string body, out int status)
+    {
+        status = HasPendingMutation ? 409 : 503;
+        return (status, "{\"error_code\":\"host_candidate_rest_unavailable\"}");
+    }
+}

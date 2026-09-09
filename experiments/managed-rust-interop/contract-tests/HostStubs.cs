@@ -33,6 +33,7 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const uint RuntimeRequestKindGameplay = 6;
         private const uint RuntimeRequestKindExpertState = 7;
         private const uint RuntimeRequestKindExpertAction = 8;
+        private const uint RuntimeRequestKindExpertRestAction = 15;
         private const uint RuntimeRequestKindCoopObservation = 9;
         private const uint RuntimeRequestKindCoopRecover = 13;
         private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
@@ -43,6 +44,8 @@ namespace AiAscension.Sts2GameMod.Runtime
             throw new InvalidOperationException("v1 test crossed into expert gameplay");
         private static (int, string) ProcessRuntimeV4ExpertActionWork(RuntimeContext context, string body) =>
             throw new InvalidOperationException("v1 test crossed into expert gameplay");
+        private static (int, string) ProcessRuntimeV4ExpertRestActionWork(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into expert rest action");
         // Co-op behavior belongs to the co-op probes; crossing that route here is a test failure.
         private static (int, string) ProcessCoopNativeWork(uint kind, RuntimeContext context, string body) =>
             throw new InvalidOperationException("v1 test crossed into native co-op");
