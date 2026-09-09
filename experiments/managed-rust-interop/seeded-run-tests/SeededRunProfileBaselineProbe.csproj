@@ -5,10 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputPath>bin/ProfileBaselineProbe/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj/ProfileBaselineProbe/$(Configuration)/</IntermediateOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="ProtocolSerializationProbe.cs" />
-    <Compile Remove="ProfileBaselineProbe.cs" />
+    <Compile Include="ProfileBaselineProbe.cs" />
+    <Compile Include="../game-loader/SeededRunProfileBaseline.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
   </ItemGroup>
 </Project>

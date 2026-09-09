@@ -19,7 +19,7 @@ internal static class SeededRunProfileBaseline
 {
     private static string? _digest;
 
-    internal static void CaptureInitial()
+    internal static string CaptureInitial()
     {
         string root = Path.GetFullPath(OS.GetUserDataDir());
         if (!Directory.Exists(root))
@@ -31,6 +31,11 @@ internal static class SeededRunProfileBaseline
         foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             string relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+            if (IsBootDerivedPath(relative))
+            {
+                continue;
+            }
+
             inventory[relative] = Convert.ToHexString(
                 SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         }
@@ -42,6 +47,20 @@ internal static class SeededRunProfileBaseline
 
         _digest = Convert.ToHexString(
             SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(inventory))).ToLowerInvariant();
+        return _digest;
+    }
+
+    private static bool IsBootDerivedPath(string relative)
+    {
+        if (string.Equals(relative, "sentry.dat", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        int separator = relative.IndexOf('/');
+        string firstComponent = separator < 0 ? relative : relative[..separator];
+        return string.Equals(firstComponent, "shader_cache", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(firstComponent, "sentry", StringComparison.OrdinalIgnoreCase);
     }
 
     internal static bool Matches(

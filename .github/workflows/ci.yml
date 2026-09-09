@@ -141,6 +141,9 @@ jobs:
       - name: Run managed seeded-run serializer generation probe
         run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
 
+      - name: Run managed seeded-run profile baseline inventory probe
+        run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
+
       - name: Run managed profile settings validation probe
         run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
 

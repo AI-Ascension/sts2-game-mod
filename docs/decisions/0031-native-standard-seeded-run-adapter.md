@@ -27,6 +27,13 @@ native character and setting `NGame.DebugSeedOverride` only while the standard l
 call consumes it; the override is cleared in `finally`. Custom-run entry points, direct RNG writes,
 act mutation, and save deletion remain outside this adapter.
 
+The fresh-profile baseline is a deterministic SHA-256 over a sorted relative-path inventory and
+the SHA-256 of each file. It excludes only the root-level `shader_cache/` and `sentry/` subtrees
+and root-level `sentry.dat`, with ordinal case-insensitive name matching because these are created
+as boot telemetry. Every other path remains an input, including settings, progress, current-run
+saves, nested directories with similar names, and unknown files. The baseline is captured before
+the seeded-run overlay and is compared through the existing profile identity and digest fence.
+
 Settlement requires a causal native witness. The pre-admission guard requires a null
 `RunManager.DebugOnlyGetState()`; after `SetReady` admits the native transition, the first
 non-null `RunState` observed by the host pump is retained before the current `NRun` gate. Readback
@@ -45,7 +52,9 @@ mutation.
 
 The native route tests cover callback IDs and both seeded paths. The source-only context probe
 covers canonical digest ordering, native uppercase act IDs, enabled-save context, and rejection of
-digest/list mutations. The exact host build compiles against the operator-supplied Linux host
+digest/list mutations. The profile baseline filesystem probe verifies that cache and sentry
+telemetry changes preserve the digest while settings, progress, current-run saves, and unknown
+files change it. The exact host build compiles against the operator-supplied Linux host
 assemblies, and the release package is retained outside the repository. Repository policy, format,
 Clippy, workspace tests, managed source probes, and package-path tests were rerun after the
 reference-binding change. These checks establish source and compatibility evidence; they do not
