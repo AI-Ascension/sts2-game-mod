@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
@@ -111,6 +113,8 @@ internal static partial class SeededRunStandardHost
         internal long StartedAt { get; }
         internal bool MutationAttempted { get; set; }
         internal bool AllowLateReadback { get; set; }
+        internal RunState? StartedState { get; set; }
+        internal NRun? StartedRunNode { get; set; }
     }
 
     private readonly record struct ReadbackResult(

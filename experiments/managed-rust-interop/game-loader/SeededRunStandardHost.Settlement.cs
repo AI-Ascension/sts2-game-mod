@@ -50,15 +50,50 @@ internal static partial class SeededRunStandardHost
         try
         {
             RunManager manager = RunManager.Instance;
+            // The pre-admission guard requires a null state. Read the first state as soon as the
+            // native transition exposes it; IsInProgress and the run node settle later.
+            RunState? state = manager.DebugOnlyGetState();
+            if (state is null)
+            {
+                return false;
+            }
+
+            if (pending.StartedState is null)
+            {
+                // SetReady starts the native transition synchronously, but RunState is assigned
+                // only after that transition yields. Bind the first non-null state observed by
+                // the host pump before requiring a settled run node.
+                pending.StartedState = state;
+            }
+            else if (!ReferenceEquals(state, pending.StartedState))
+            {
+                result = new ReadbackResult(false, null, null, 0,
+                    "native_run_identity_mismatch", false);
+                return true;
+            }
+
             if (!manager.IsInProgress)
             {
                 return false;
             }
 
-            RunState? state = manager.DebugOnlyGetState();
-            if (state is null || NGame.Instance?.CurrentRunNode is null)
+            NRun? currentRunNode = NGame.Instance?.CurrentRunNode;
+            if (pending.StartedRunNode is null && currentRunNode is not null)
+            {
+                pending.StartedRunNode = currentRunNode;
+            }
+
+            if (currentRunNode is null)
             {
                 return false;
+            }
+
+            if (pending.StartedRunNode is { } startedRunNode
+                && !ReferenceEquals(currentRunNode, startedRunNode))
+            {
+                result = new ReadbackResult(false, null, null, 0,
+                    "native_run_node_mismatch", false);
+                return true;
             }
 
             if (manager.ShouldSave

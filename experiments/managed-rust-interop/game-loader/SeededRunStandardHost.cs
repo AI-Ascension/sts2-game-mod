@@ -115,11 +115,11 @@ internal static partial class SeededRunStandardHost
 
             // SetReady is the mutation boundary. The host itself consumes DebugSeedOverride when
             // standard lobby BeginRunForAllPlayersIfAllReady chooses its canonical seed.
-            pending.MutationAttempted = true;
             NGame game = NGame.Instance!;
             game.DebugSeedOverride = canonicalSeed;
             try
             {
+                pending.MutationAttempted = true;
                 screen.Lobby.SetReady(ready: true);
             }
             finally
