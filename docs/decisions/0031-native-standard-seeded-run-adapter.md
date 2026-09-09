@@ -39,7 +39,9 @@ Settlement requires a causal native witness. The pre-admission guard requires a 
 non-null `RunState` observed by the host pump is retained before the current `NRun` gate. Readback
 must continue to observe that same native state object (and the first current run node when
 available), the requested context, the canonical RNG seed, native saving, and a fresh Runtime-v3
-generation. A later run that happens to use the same seed and context cannot settle the operation;
+generation whose visible surface is actionable and has a non-empty host-generated legal catalog.
+This waits through the transient post-start `outside_combat` recovery projection before handing
+the receipt to Runtime-v3. A later run that happens to use the same seed and context cannot settle the operation;
 an instance change returns an unknown outcome. The settled receipt carries the `run_started`
 effect witness and the matched observation.
 

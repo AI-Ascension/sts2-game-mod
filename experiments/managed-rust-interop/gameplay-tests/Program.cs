@@ -17,6 +17,7 @@ internal static class Program
             return;
         }
         ReadsDiscoverNewGenerations();
+        GameplayReadinessChecks.Run();
         FingerprintChecks.Run();
         CombatSettlementChecks.Run();
         ContinuationChecks.Run();

@@ -112,11 +112,15 @@ internal static partial class SeededRunStandardHost
                     .SequenceEqual(pending.Request.SelectedContext.Acts, StringComparer.Ordinal)
                 && SaveManager.Instance.Progress.NumberOfRuns == 0)
             {
-                if (!LiveCombatSource.TryReadCurrentGeneration(out ulong generation))
+                // A native RunState can exist while the first map/surface is still being built.
+                // Settle only after the same host projection exposes an actionable catalog so the
+                // receipt handed to Runtime-v3 cannot start an episode in transient recovery.
+                if (!LiveCombatSource.TryReadReadyGeneration(out ulong generation))
                 {
-                    result = new ReadbackResult(false, null, null, 0,
-                        "runtime_generation_unavailable", true);
-                    return true;
+                    // This is expected during the post-start surface transition. Keep the
+                    // operation accepted and let the host pump retry until the start timeout;
+                    // an unavailable surface is not evidence of a failed native mutation.
+                    return false;
                 }
 
                 if (generation <= pending.GenerationBefore)

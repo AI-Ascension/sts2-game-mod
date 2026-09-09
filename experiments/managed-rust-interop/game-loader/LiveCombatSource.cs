@@ -49,6 +49,37 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         }
     }
 
+    /// <summary>
+    /// Reads a generation only after the visible gameplay surface and its host-generated catalog
+    /// are ready. Native run creation can precede that surface by several host frames.
+    /// </summary>
+    internal static bool TryReadReadyGeneration(out ulong generation)
+    {
+        generation = 0;
+        LiveCombatSource? source = _active;
+        if (source is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            RuntimeV3GameplayObservation observation = source.Observe();
+            IReadOnlyList<LegalActionReference> actions = source.LegalActions(observation);
+            if (!RuntimeV3GameplayReadiness.IsReady(observation, actions))
+            {
+                return false;
+            }
+
+            generation = observation.Generation;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public void Enqueue(Action work)
     {
         RequireThread();
