@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../game-loader/RuntimeContract.cs" Link="RuntimeContract.cs" />
+    <Compile Include="ContractCoopStubs.cs" />
     <Compile Include="../game-loader/RuntimeContractValidation.cs" Link="RuntimeContractValidation.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
     <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" Link="Boundary/%(Filename)%(Extension)" />

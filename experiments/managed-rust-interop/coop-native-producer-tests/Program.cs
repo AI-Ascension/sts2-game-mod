@@ -15,7 +15,7 @@ internal static class Program
     private const string Artifact = "sts2-protocol/coop-native-v1";
     private const string SchemaSource = "schemas/coop-native-v1.schema.json";
     private const string SchemaDigest =
-        "9c24c6d0dbcc3b52c2c504b2a60c9faf9d02f902c00cf16712a2a810c2358391";
+        "2f3bc99e53080fa11b39592b64fb0ab964a16f568719a2622d0b2caf766ab629";
     private const string InstanceId = "instance:native-test";
     private const string SessionId = "session:native-test";
     private const string LeaseId = "lease:native-test";
