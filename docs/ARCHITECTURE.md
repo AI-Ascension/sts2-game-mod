@@ -67,6 +67,22 @@ The adapter uses only symbols present in the recorded v0.107.1 host: `IsInProgre
 `IsPlayPhase`, but the adapter does not depend on that release-specific property. The candidate is
 source/build evidence only until exercised in an explicitly authorized disposable host profile.
 
+### Seeded-run native adapter
+
+The additive `seeded-run-v1` adapter keeps standard seeded launch authority in the native host. The
+listener maps `POST /v2/seeded-run` to callback kind 9 and bodyless
+`GET /v2/seeded-operations/{operation_id}` to callback kind 10. The managed boundary accepts only
+the concrete standard Ironclad context with ascension 0, no modifiers, ordered native acts, enabled
+saving, a fresh profile baseline, and matching game/mod compatibility identities. It computes and
+binds the selected-context digest before admission and clears the temporary native seed override in
+`finally` after the lobby consumes it.
+
+An accepted response is admission only. Settlement requires the same native run state through the
+host pump, canonical seed and context readback, a fresh actionable Runtime-v3 generation, and the
+`run_started` effect witness. A timeout or host exception remains unknown and can only be reconciled
+read-only by the original operation identity. The adapter and its source-only probes prove boundary
+behavior; they do not establish live host settlement, save/profile safety, or release compatibility.
+
 ### Ephemeral session orchestration
 
 `experiments/managed-rust-interop/session-launcher.sh` is a development/test orchestrator owned by
@@ -328,9 +344,9 @@ in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknow
 build evidence; live expert gameplay and settlement remain unverified.
 
 At current mod main
-`d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`, the source/component boundary is checked against the
+`caae865986d2274736d92b4f9be2bbda24bab83d`, the source/component boundary is checked against the
 copied expert artifacts from current protocol main
-`f2dac90529f584a6511c1760adce9da28f7f910a`. The expert-state and expert-action schema digests are
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The expert-state and expert-action schema digests are
 `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
 `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. This identity and checksum
 evidence does not establish licensed-host extraction, live expert action settlement, package

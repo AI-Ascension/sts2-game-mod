@@ -6,6 +6,14 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
+  read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
+  readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest
+  `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`, aligned with protocol main
+  `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build evidence does not establish a live seeded
+  run, save isolation, gameplay, or release compatibility; ADR 0031 remains proposed pending host
+  verification.
+
 - Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
   managed native-library validation, and a checksum-gated install/update/rollback tool with
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
