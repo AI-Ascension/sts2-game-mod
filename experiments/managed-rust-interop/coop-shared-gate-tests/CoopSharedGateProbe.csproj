@@ -20,6 +20,7 @@
     <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="CoopHostRuntime.Rejoin.cs" />
     <Compile Include="../game-loader/CoopRuntime.cs" Link="CoopRuntime.cs" />
     <Compile Include="../game-loader/CoopRuntime.Helpers.cs" Link="CoopRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopRuntime.Validation.cs" Link="CoopRuntime.Validation.cs" />
     <Compile Include="../game-loader/CoopNativeRuntime.ModEntry.cs" Link="CoopNativeRuntime.ModEntry.cs" />
     <Compile Include="CoopNativeRuntime.TestHooks.cs" />
     <Compile Include="SharedGateComposition.cs" />

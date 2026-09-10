@@ -21,5 +21,6 @@
     <Compile Include="../game-loader/CoopNativeLegalCatalog.cs" Link="Boundary/CoopNativeLegalCatalog.cs" />
     <Compile Include="../game-loader/CoopRuntime.cs" Link="Boundary/CoopRuntime.cs" />
     <Compile Include="../game-loader/CoopRuntime.Helpers.cs" Link="Boundary/CoopRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopRuntime.Validation.cs" Link="Boundary/CoopRuntime.Validation.cs" />
   </ItemGroup>
 </Project>
