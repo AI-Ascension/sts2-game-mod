@@ -21,11 +21,21 @@ have also been exercised in authorized disposable profiles. Current native evide
 STS2 v0.107.1 on the tested Windows and Linux guests; it records model-controlled setup-to-Defeat
 campaigns and fresh replays, plus separate forced terminal-observation fixtures.
 
+The native standard `seeded-run-v1` adapter is present at source/component level at current mod main
+[`caae865986d2274736d92b4f9be2bbda24bab83d`](https://github.com/AI-Ascension/sts2-game-mod/commit/caae865986d2274736d92b4f9be2bbda24bab83d).
+It exposes authenticated start and read-only reconciliation routes, accepts only the bounded
+standard Ironclad context, binds a fresh profile baseline and ordered native acts, and requires
+canonical seed readback plus a `run_started` witness before settlement. Its copied protocol artifact
+is `seeded-run-v1` at schema digest `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`,
+from protocol main `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build and synthetic probes do
+not prove a live seeded run; independent disposable-host verification, save isolation, and broader
+compatibility remain unverified. See [ADR 0031](docs/decisions/0031-native-standard-seeded-run-adapter.md).
+
 The additive Runtime-v4 expert state/action bridge is present at source/component level at current
 mod main
-[`d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`](https://github.com/AI-Ascension/sts2-game-mod/commit/d8b46bccbee9eff108efdab9c8fc9b27dbf2c034).
+[`caae865986d2274736d92b4f9be2bbda24bab83d`](https://github.com/AI-Ascension/sts2-game-mod/commit/caae865986d2274736d92b4f9be2bbda24bab83d).
 Its copied protocol artifacts are checksum-verified against current protocol main
-`f2dac90529f584a6511c1760adce9da28f7f910a`; the expert-state and expert-action schema digests are
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`; the expert-state and expert-action schema digests are
 `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
 `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. Rust/managed source and
 synthetic route/admission checks cover the bounded expert surface. Live expert gameplay, potion
@@ -65,6 +75,9 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   inert copied artifacts for the additive expert state/action bridge. Their schema digests are
   `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
   `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`.
+- [protocol-artifact/seeded-run-v1/](protocol-artifact/seeded-run-v1/) is the copied explicit
+  seeded-launch contract at schema digest
+  `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`.
 - `crates/game-mod/src/poc/` maps state reads and one typed `use_budget` action through a narrow
   `PocCorePort`, records correlation/instance/generation metadata, and emits one settled-effect
   witness for an accepted action.

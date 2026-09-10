@@ -43,6 +43,7 @@ cargo metadata --locked --no-deps --format-version 1
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/seeded-run-v1 && sha256sum -c SHA256SUMS)
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -75,6 +76,23 @@ post-write disconnect reconciliation, and pre-dispatch timeout removal. `sha256s
 copied release-like artifact from repository-relative paths. No Rust test invokes STS2 or any
 persistent profile/save/provider path; the managed build resolves concrete host symbols without
 executing them.
+
+## Seeded-run source checks
+
+The copied `seeded-run-v1` artifact is checked with `sha256sum -c SHA256SUMS`. The source-only
+managed probes cover the selected-context canonical digest, fixed standard host context, profile
+baseline inventory, protocol serialization, callback route/method mapping, and bounded unknown or
+identity failures:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
+~~~
+
+These probes do not load a proprietary host, start a native run, access a real profile/save, or
+establish seed settlement. The host-dependent adapter remains unverified until a disposable exact
+host test records canonical seed readback, the `run_started` witness, profile isolation, and cleanup.
 
 ## Runtime-v2 host-adapter build
 

@@ -148,7 +148,8 @@ Windows host reconfiguration and unload remain separately unverified.
 | --- | --- | --- | --- |
 | `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/seeded-run-v1` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; callback/route, selected-context, profile-baseline, canonical-seed, and `run_started` witness probes | Source/component evidence only; live seeded-run settlement, save isolation, exact-host/package compatibility, gameplay, and release unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -163,7 +164,7 @@ settlement, and multiplayer behavior remain `unverified`.
 The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
 and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
 copies under `protocol-artifact/` are byte-identical to current `sts2-protocol` main
-`f2dac90529f584a6511c1760adce9da28f7f910a`. The v4 routes
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The v4 routes
 add native callback kinds 7 and 8 without changing the ABI structure, version, or kinds 3–6. The
 only admitted expert mutation is `use_potion`; it shares the v2/v3 host identity fence and the
 pending-mutation exclusion in all directions. The Runtime-v3 combat observation now projects one
@@ -171,6 +172,22 @@ visible intent per enemy under ADR 0030 and `start_run` accepts any character th
 unlock state reports; neither changes the v3 digest. All of this is source/build and synthetic-probe
 evidence: live expert gameplay, potion settlement, intent accuracy against the licensed host, and
 the Windows/Linux package builds named in PR #52 remain `unverified`.
+
+## Seeded-run native adapter
+
+The native standard `seeded-run-v1` adapter uses callback kinds 9 and 10 for
+`POST /v2/seeded-run` and bodyless `GET /v2/seeded-operations/{operation_id}`. It accepts only a
+concrete standard Ironclad, ascension-0, no-modifier context with the configured profile baseline,
+ordered acts, enabled saving, and matching game/mod compatibility identities. Admission retains the
+operation identity; an uncertain result is reconciled read-only with that same identity.
+
+Settlement requires the host to read back the requested context and canonical seed, observe the
+same run state through the host pump, advance the Runtime-v3 generation, expose an actionable
+non-empty catalog, and emit the `run_started` witness. The copied artifact is schema digest
+`5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`, aligned with protocol main
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The route, context, baseline, and source-only host
+probes are source/component evidence. A live disposable-host seeded run, save/profile isolation,
+and broader compatibility remain unverified; ADR 0031 is proposed pending that evidence.
 
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
