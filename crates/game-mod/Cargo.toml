@@ -9,7 +9,7 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-sha2 = "=0.10.9"
+sha2 = "=0.11.0"
 sts2-game-mod-host = { path = "../host" }
 sts2-game-mod-http-adapter = { path = "../http-adapter" }
 
