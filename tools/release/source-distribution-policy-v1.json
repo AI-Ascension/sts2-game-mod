@@ -430,6 +430,7 @@
     "experiments/managed-rust-interop/game-loader/WorkshopContentModels.cs",
     "experiments/managed-rust-interop/game-loader/WorkshopPackageIO.cs",
     "experiments/managed-rust-interop/game-loader/mod_manifest.json",
+    "experiments/managed-rust-interop/gameplay-tests/AdmissionChecks.cs",
     "experiments/managed-rust-interop/gameplay-tests/CombatSettlementChecks.cs",
     "experiments/managed-rust-interop/gameplay-tests/ContinuationChecks.cs",
     "experiments/managed-rust-interop/gameplay-tests/ContractFrames.cs",
