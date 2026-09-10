@@ -12,6 +12,7 @@ internal sealed class FakeHost : IRuntimeV3HostSource
     internal ulong Generation { get; set; } = 1;
     internal int Dispatches { get; private set; }
     internal bool Complete { get; set; }
+    internal bool AdvanceGenerationOnDispatch { get; set; } = true;
     internal bool ThrowReads { get; set; }
     internal bool WrongOperation { get; set; }
     internal bool WrongAction { get; set; }
@@ -43,7 +44,7 @@ internal sealed class FakeHost : IRuntimeV3HostSource
         Dispatches++;
         _operation = operation;
         _action = action;
-        Generation++;
+        if (AdvanceGenerationOnDispatch) { Generation++; }
         _completedObservation = Observation();
         return true;
     }
@@ -76,5 +77,10 @@ internal sealed class TestQueue : IRuntimeV3HostThread
     internal void Run()
     {
         while (_pending.TryDequeue(out Action? work)) { work(); }
+    }
+
+    internal void RunNext()
+    {
+        if (_pending.TryDequeue(out Action? work)) { work(); }
     }
 }

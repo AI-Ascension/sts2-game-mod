@@ -37,10 +37,13 @@ internal sealed partial class RuntimeV3GameplaySupport
     internal static RuntimeV3GameplaySupport WithHost(
         IRuntimeV3HostSource source,
         IRuntimeV3HostThread thread,
-        Func<bool>? canDispatch = null) =>
+        Func<RuntimeV3OperationKey, bool>? canDispatch = null) =>
         new(new RuntimeV3GameplayHost(source, thread, canDispatch));
 
     internal bool HasPendingMutation => _host?.HasPendingMutation ?? false;
+
+    internal bool HasPendingMutationExcept(RuntimeV3OperationKey operation) =>
+        _host?.HasOtherPendingMutation(operation) ?? false;
 
     internal string Handle(
         string instanceId,
