@@ -170,5 +170,11 @@ jobs:
       - name: Run managed Runtime-v3 request and settlement probe
         run: dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
 
+      - name: Run managed native co-op source probes
+        run: |
+          dotnet run --project experiments/managed-rust-interop/coop-admission-tests/CoopAdmissionProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRuntimeProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
+
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

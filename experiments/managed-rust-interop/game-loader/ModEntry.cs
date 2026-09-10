@@ -77,6 +77,7 @@ public static partial class ModEntry
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
                 LiveCombatDemo.Initialize();
                 InitializeRuntimeV3Gameplay();
+                ConfigureCoopNative(new InstalledNativeCoopHostPort());
                 if (System.Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") == "1")
                 {
                     var source = new LiveCombatSource();

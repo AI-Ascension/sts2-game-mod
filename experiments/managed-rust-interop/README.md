@@ -285,6 +285,28 @@ gameplay execution, settlement, restart behavior, and gateway/MCP/harness integr
 unverified. The runtime token, host assemblies, game files, saves, and logs are not stored or
 packaged.
 
+### Native co-op source candidate
+
+The managed loader wires the source candidate `coop-native-v1` to the game-thread callback path.
+The native listener reserves callback kinds 16 through 20 for observation, local action, shared
+vote, rejoin, and recovery; seeded callbacks 9 and 10 remain unchanged. Mutations are admitted
+only for an authenticated local peer on a connected native multiplayer service, and settlement
+requires a fresh native checkpoint, an operation-bound witness, and convergence from every
+participant retained in the run roster. The v2, v3, v4, and seeded profiles share the same
+serialized pending-mutation exclusion.
+
+The optional first-party lobby bootstrap is controlled by
+`STS2_NATIVE_COOP_AUTOSTART_ROLE=host` or `client`, with the client also requiring distinct
+`STS2_NATIVE_COOP_HOST_ID` and `STS2_NATIVE_COOP_CLIENT_ID` values. It uses loopback ENet by
+default, does not automate character selection unless
+`STS2_NATIVE_COOP_AUTO_ADMIT_RUN=1` is explicitly set, and supports the bounded running-session
+rejoin path. These environment variables are for an authorized disposable host only.
+
+This is a source/component candidate. The protocol schema/artifact remains unadmitted and is owned
+by the protocol target; gateway, MCP, and harness consumers are not supplied here. The source
+probes and exact-host compilation do not prove a live two-peer run, native effect settlement,
+checksum semantics, disconnect/rejoin recovery, or package compatibility.
+
 ## Review correction (2026-09-04)
 
 The source review replaced the candidate's state-delta settlement inference. Neither a later turn

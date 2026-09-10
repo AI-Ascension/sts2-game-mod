@@ -11,6 +11,14 @@ const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
 const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
 const CALLBACK_SEEDED_RUN: u32 = 9;
 const CALLBACK_SEEDED_OPERATION: u32 = 10;
+// Runtime-v2 seeded-run owns callback IDs 9 (start) and 10 (reconcile). Keep co-op callbacks
+// disjoint from every existing runtime profile in the seeded mainline.
+const CALLBACK_COOP_OBSERVATION: u32 = 16;
+const CALLBACK_COOP_ACTION: u32 = 17;
+const CALLBACK_COOP_VOTE: u32 = 18;
+const CALLBACK_COOP_REJOIN: u32 = 19;
+const CALLBACK_COOP_RECOVER: u32 = 20;
+const CALLBACK_COOP_LEGAL_CATALOG: u32 = 21;
 
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
@@ -77,6 +85,24 @@ pub(super) fn dispatch(
                 operation_id,
                 stream,
             )
+        }
+        ("GET", "/api/v1/coop/native/observation") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_COOP_OBSERVATION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_ACTION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/vote") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_VOTE, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/rejoin") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_REJOIN, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/recover") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_RECOVER, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/legal-catalog") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_LEGAL_CATALOG, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

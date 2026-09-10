@@ -79,6 +79,11 @@ internal static partial class SeededRunStandardHost
             return RetainRejected(request, "operation_in_progress", requestGeneration);
         }
 
+        if (ModEntry.HasPendingNonSeededMutation())
+        {
+            return RetainRejected(request, "operation_in_progress", requestGeneration);
+        }
+
         if (Operations.Count >= MaxReceipts)
         {
             return AcceptedShape(request, requestGeneration) with

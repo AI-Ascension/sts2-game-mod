@@ -32,6 +32,10 @@ public static partial class ModEntry
         {
             return ProcessRuntimeV4ExpertActionWork(work.Context, work.Body);
         }
+        if (work.Kind >= RuntimeRequestKindCoopObservation && work.Kind <= RuntimeRequestKindCoopLegalCatalog)
+        {
+            return ProcessCoopNativeWork(work.Kind, work.Context, work.Body);
+        }
         if (work.Kind is RuntimeRequestKindSeededRun or RuntimeRequestKindSeededOperation)
         {
             return ProcessSeededRunWork(work);

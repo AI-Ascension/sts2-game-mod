@@ -363,11 +363,21 @@ completion evidence; a generation increase alone cannot settle an action. The ma
 component probe exercises this production handler without a licensed host.
 
 `FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
-The separate co-op helper validates peer identity and synchronization metadata, and reports whether
-mutation would be allowed. It is not wired into the gameplay host, wire observation, or mutation
-admission. The admitted `coop-synchronization-v1` profile is a separate read-only gateway/MCP
-coordinator-report contract; neither profile establishes native peer admission, actions, votes, shared
-effects, or disconnect/rejoin recovery.
+The native co-op candidate adds a game-thread `CoopNativeRuntime` over
+`InstalledNativeCoopHostPort`. The listener maps observation, local action, shared vote, rejoin, and
+recovery routes to callback kinds 16 through 20, leaving seeded callbacks 9 and 10 unchanged. The
+host adapter owns peer identity, authority epochs, native checksum checkpoints, action/vote
+dispatch, rejoin loading, and the all-peer postcondition; the managed runtime retains one receipt
+per operation and reports `unknown` when the native effect or peer convergence cannot be proved.
+Every co-op mutation checks the v2, v3, v4, and seeded pending-operation fences in the serialized
+game-thread path.
+
+`coop-native-v1` is still an unadmitted protocol candidate. Its schema/artifact and cross-target
+consumers are not copied into this target, so no gateway, MCP, harness, or live multiplayer claim
+follows from this source wiring. The exact-host build and source-linked probes establish managed
+boundary evidence only. The older `CoopProjection`/`CoopSynchronization` helper remains an
+independent read-only source component, and `coop-synchronization-v1` remains the separate admitted
+gateway/MCP coordinator-report contract.
 No
 provider policy, raw input, host object, save, executable, or future random state is represented.
 The bridge is source/build evidence only until the exact licensed host assemblies are available.

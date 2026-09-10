@@ -78,6 +78,12 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
         ("GET", "/api/v4/runtime/expert-state", "", 207),
         ("POST", "/api/v4/runtime/expert-action", "{}", 208),
         ("GET", "/api/v4/runtime/expert-actions/potion-op-1", "", 208),
+        ("GET", "/api/v1/coop/native/observation", "", 216),
+        ("POST", "/api/v1/coop/native/action", "{}", 217),
+        ("POST", "/api/v1/coop/native/vote", "{}", 218),
+        ("POST", "/api/v1/coop/native/rejoin", "{}", 219),
+        ("POST", "/api/v1/coop/native/recover", "{}", 220),
+        ("POST", "/api/v1/coop/native/legal-catalog", "{}", 221),
         ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
     ] {
         let request = format!(
