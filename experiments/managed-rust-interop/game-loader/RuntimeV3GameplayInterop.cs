@@ -26,7 +26,8 @@ public static partial class ModEntry
     {
         _liveCombatSource = source as LiveCombatSource;
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
-            () => !HasPendingNonSeededMutation() && !SeededRunStandardHost.HasPendingMutation);
+            operation => !HasPendingNonSeededMutationExcept(operation)
+                && !SeededRunStandardHost.HasPendingMutation);
         _runtimeV4Expert = _liveCombatSource is null
             ? RuntimeV4ExpertSupport.Unconfigured()
             : RuntimeV4ExpertSupport.WithHost(_liveCombatSource, thread);
@@ -45,8 +46,16 @@ public static partial class ModEntry
     internal static bool HasPendingNonSeededMutation() =>
         HasPendingNonCoopMutation() || HasPendingCoopMutation;
 
+    private static bool HasPendingNonSeededMutationExcept(RuntimeV3OperationKey operation) =>
+        HasPendingNonCoopMutationExcept(operation) || HasPendingCoopMutation;
+
     internal static bool HasPendingNonCoopMutation() =>
         _runtimeV2Pending is not null || (_runtimeV3Gameplay?.HasPendingMutation ?? false)
+            || HasPendingRuntimeV4ExpertMutation() || HasPendingRuntimeV4ExpertRestMutation();
+
+    private static bool HasPendingNonCoopMutationExcept(RuntimeV3OperationKey operation) =>
+        _runtimeV2Pending is not null
+            || (_runtimeV3Gameplay?.HasPendingMutationExcept(operation) ?? false)
             || HasPendingRuntimeV4ExpertMutation() || HasPendingRuntimeV4ExpertRestMutation();
 
     private static bool HasPendingRuntimeV4ExpertMutation() =>

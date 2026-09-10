@@ -64,7 +64,7 @@ public static partial class ModEntry
         _runtimeCoopPending = false;
         var recoverySource = new FakeHost();
         RuntimeV3GameplaySupport recoverySupport = RuntimeV3GameplaySupport.WithHost(
-            recoverySource, new TestQueue(), () => !_runtimeCoopPending);
+            recoverySource, new TestQueue(), _ => !_runtimeCoopPending);
         string pending = recoverySupport.Handle("instance", "session", "lease", "corr", "1",
             SemanticRequest("dispatch_action_request", "recovery-op"), out int pendingStatus);
         Check(pendingStatus == 503 && pending.Contains("\"status\":\"unknown\"",
@@ -180,7 +180,7 @@ public static partial class ModEntry
         bool admitted = true;
         source = new FakeHost();
         queue = new TestQueue { Deferred = true };
-        RuntimeV3GameplaySupport support = RuntimeV3GameplaySupport.WithHost(source, queue, () => admitted);
+        RuntimeV3GameplaySupport support = RuntimeV3GameplaySupport.WithHost(source, queue, _ => admitted);
         support.Handle("instance", "session", "lease", "corr", "1", SemanticRequest("dispatch_action_request"), out _);
         admitted = false;
         queue.Run();

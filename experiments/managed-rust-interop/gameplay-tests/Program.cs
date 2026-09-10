@@ -25,6 +25,7 @@ internal static class Program
         RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();
+        AdmissionChecks.Run();
         UnrelatedTransitionDoesNotSettle();
         MismatchedCompletionDoesNotSettle();
         QueuedActionRechecksGeneration();
