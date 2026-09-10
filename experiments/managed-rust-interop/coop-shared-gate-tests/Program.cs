@@ -61,7 +61,7 @@ internal static class Program
 
     private static string ValidActionRequest() =>
         "{\"protocol_version\":\"coop-native-v1\",\"schema_digest\":\""
-        + "9c24c6d0dbcc3b52c2c504b2a60c9faf9d02f902c00cf16712a2a810c2358391"
+        + "2f3bc99e53080fa11b39592b64fb0ab964a16f568719a2622d0b2caf766ab629"
         + "\",\"provenance\":{\"artifact\":\"sts2-protocol/coop-native-v1\","
         + "\"source\":\"schemas/coop-native-v1.schema.json\",\"generator\":\"hand-authored\"},"
         + "\"correlation_id\":\"corr:one\",\"instance_id\":\"instance:one\","
@@ -75,7 +75,7 @@ internal static class Program
 
     private static string ValidCatalogRequest(ulong generation) =>
         "{\"protocol_version\":\"coop-native-v1\",\"schema_digest\":\""
-        + "9c24c6d0dbcc3b52c2c504b2a60c9faf9d02f902c00cf16712a2a810c2358391"
+        + "2f3bc99e53080fa11b39592b64fb0ab964a16f568719a2622d0b2caf766ab629"
         + "\",\"provenance\":{\"artifact\":\"sts2-protocol/coop-native-v1\","
         + "\"source\":\"schemas/coop-native-v1.schema.json\",\"generator\":\"hand-authored\"},"
         + "\"correlation_id\":\"corr:catalog\",\"instance_id\":\"instance:one\","
