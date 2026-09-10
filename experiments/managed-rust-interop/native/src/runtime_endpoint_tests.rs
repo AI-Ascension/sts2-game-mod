@@ -74,6 +74,9 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
             r#"{"kind":"state_request"}"#,
             206,
         ),
+        ("GET", "/api/map/v1/snapshot", "", 214),
+        ("POST", "/api/map/v1/snapshot", "{}", 404),
+        ("GET", "/api/map/v1/snapshot", "{}", 404),
         ("POST", "/api/v3/runtime/action", "{}", 400),
         ("GET", "/api/v4/runtime/expert-state", "", 207),
         ("POST", "/api/v4/runtime/expert-action", "{}", 208),
@@ -84,6 +87,13 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
         ("POST", "/api/v1/coop/native/rejoin", "{}", 219),
         ("POST", "/api/v1/coop/native/recover", "{}", 220),
         ("POST", "/api/v1/coop/native/legal-catalog", "{}", 221),
+        ("POST", "/api/v4/runtime/expert-rest-action", "{}", 215),
+        (
+            "GET",
+            "/api/v4/runtime/expert-rest-actions/rest-op-1",
+            "",
+            215,
+        ),
         ("GET", "/api/v3/runtime/operations/run/operation", "", 404),
     ] {
         let request = format!(
@@ -105,6 +115,61 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
             "{path}: {response}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn coop_native_routes_have_disjoint_callback_ids() -> std::io::Result<()> {
+    assert_eq!(super::CALLBACK_COOP_OBSERVATION, 16);
+    assert_eq!(super::CALLBACK_COOP_ACTION, 17);
+    assert_eq!(super::CALLBACK_COOP_VOTE, 18);
+    assert_eq!(super::CALLBACK_COOP_REJOIN, 19);
+    assert_eq!(super::CALLBACK_COOP_RECOVER, 20);
+    assert_eq!(super::CALLBACK_COOP_LEGAL_CATALOG, 21);
+    for (method, path, body, expected) in [
+        ("GET", "/api/v1/coop/native/observation", "", 216),
+        ("POST", "/api/v1/coop/native/action", "{}", 217),
+        ("POST", "/api/v1/coop/native/vote", "{}", 218),
+        ("POST", "/api/v1/coop/native/rejoin", "{}", 219),
+        ("POST", "/api/v1/coop/native/recover", "{}", 220),
+        ("POST", "/api/v1/coop/native/legal-catalog", "{}", 221),
+    ] {
+        let request = format!(
+            concat!(
+                "{method} {path} HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+                "Content-Type: application/json\r\nContent-Length: {length}\r\n",
+                "X-Sts2-Instance-Id: instance\r\nX-Sts2-Caller-Id: caller\r\n",
+                "X-Sts2-Session-Id: session\r\nX-Sts2-Lease-Id: lease\r\n",
+                "X-Sts2-Lease-Epoch: 1\r\nX-Sts2-Correlation-Id: request\r\n\r\n{body}"
+            ),
+            method = method,
+            path = path,
+            length = body.len(),
+            body = body,
+        );
+        let response = exchange(request.as_bytes(), callback_kind_status)?;
+        assert!(
+            response.starts_with(&format!("HTTP/1.1 {expected} ")),
+            "{path}: {response}"
+        );
+    }
+    assert_ne!(super::CALLBACK_COOP_OBSERVATION, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_ACTION, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_VOTE, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_REJOIN, super::CALLBACK_GAMEPLAY);
+    assert_ne!(super::CALLBACK_COOP_RECOVER, super::CALLBACK_GAMEPLAY);
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_RUNTIME_V4_EXPERT
+    );
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_RUNTIME_V4_EXPERT_ACTION
+    );
+    assert_ne!(
+        super::CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+        super::CALLBACK_GAMEPLAY
+    );
     Ok(())
 }
 

@@ -150,10 +150,8 @@ Windows host reconfiguration and unload remain separately unverified.
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/seeded-run-v1` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; callback/route, selected-context, profile-baseline, canonical-seed, and `run_started` witness probes | Source/component evidence only; live seeded-run settlement, save isolation, exact-host/package compatibility, gameplay, and release unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/coop-native-v1` candidate | Rebased managed/native source, callback route checks, source-linked host/fencing probes, and exact-host compile | Candidate source/component evidence only; protocol admission, gateway/MCP/harness consumers, live two-peer behavior, effect settlement, rejoin, and package support remain unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/coop-native-v1` candidate | Rebased managed/native source, callback route checks, source-linked host/fencing probes, and exact-host compile | Candidate source/component evidence only; protocol admission, gateway/MCP/harness consumers, live two-peer behavior, effect settlement, rejoin, and package support remain unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-map-v1` candidate | Copied artifact, native route checks, managed projection/identity probes | Source/component evidence only; live map extraction, provider delivery, settled navigation, and package compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert-rest-action-v1` candidate | Copied candidate artifact, native route checks, managed selector/witness/recovery probes | Candidate source/component evidence only; protocol admission, gateway/MCP/harness adoption, live rest settlement, exact-host/package compatibility, and release unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -192,6 +190,24 @@ non-empty catalog, and emit the `run_started` witness. The copied artifact is sc
 `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The route, context, baseline, and source-only host
 probes are source/component evidence. A live disposable-host seeded run, save/profile isolation,
 and broader compatibility remain unverified; ADR 0031 is proposed pending that evidence.
+
+## Runtime-map-v1 read profile
+
+The additive map profile is an authenticated read-only route with schema digest
+`ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b`. The host projection copies
+bounded player-visible nodes, edges, categories, and current legal bindings, assigns map-lifetime
+identities, and reobserves the gameplay generation before returning the snapshot. Closed,
+unsupported, or changed surfaces return explicit unavailable results; no UI navigation is performed.
+The artifact and source probes do not establish live extraction or gameplay navigation.
+
+## Runtime-v4 expert rest-action candidate
+
+The separate rest-action transport is pinned to schema digest
+`bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd`, uses callback kind 15, and
+retains the original operation through accepted, uncertain, and selector follow-up receipts. Smith
+and Mend selectors bind their native catalogs, identities, counts, selected IDs, and cancellation
+actions; settlement requires option-specific completion evidence. This candidate remains unadmitted
+and source/component-only until protocol and all consumers agree on one artifact revision.
 
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.

@@ -99,6 +99,7 @@ jobs:
           bash experiments/managed-rust-interop/provider-build.test.sh
           bash experiments/managed-rust-interop/session-install.test.sh
           bash experiments/managed-rust-interop/live-authorization.test.sh
+          bash experiments/managed-rust-interop/live-campaign-trace.test.sh
           bash experiments/managed-rust-interop/package-runtime-addon.test.sh
           bash experiments/managed-rust-interop/dev-cycle.test.sh
           bash experiments/managed-rust-interop/session-launcher.sh --self-test
@@ -153,6 +154,16 @@ jobs:
 
       - name: Run managed runtime-v1 contract regressions
         run: dotnet run --project experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj --configuration Release
+
+      - name: Run managed Runtime-v4 expert rest action regressions
+        # This source-only probe covers the additive rest selector boundary and its recovery
+        # semantics without loading proprietary host assemblies.
+        run: dotnet run --project experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj --configuration Release
+
+      - name: Run managed Runtime-map-v1 projection regressions
+        # This source-only probe covers bounded map projection, identity fencing, and artifact
+        # provenance without loading proprietary host assemblies.
+        run: dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
 
       - name: Run source-linked replay controller regressions
         # These fakes exercise controller logic, not host compatibility.

@@ -96,6 +96,9 @@ internal sealed partial class LiveCombatSource
         foreach (string value in values)
             actions.Add(new($"{kind}:{observation.Generation}:{value}", kind, value, null,
                 observation.Generation));
+        if (screen is NCardRewardSelectionScreen cardRewards && TryRewardSkip(cardRewards, out _))
+            actions.Add(new($"skip_reward:{observation.Generation}", "skip_reward", null, null,
+                observation.Generation));
         if (screen is NRewardsScreen && Descendants(screen).OfType<NProceedButton>()
             .Count(Clickable) == 1)
             actions.Add(new($"proceed:{observation.Generation}", "proceed", null, null,

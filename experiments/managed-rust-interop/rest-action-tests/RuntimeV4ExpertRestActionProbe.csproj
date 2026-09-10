@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program*.cs" />
+    <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" Link="Boundary/RuntimeV3GameplayContract.cs" />
+    <Compile Include="../game-loader/RuntimeV4ExpertGameplayObservation.cs" Link="Boundary/RuntimeV4ExpertGameplayObservation.cs" />
+    <Compile Include="../game-loader/RuntimeV4ExpertGameplayCodec.cs" Link="Boundary/RuntimeV4ExpertGameplayCodec.cs" />
+    <Compile Include="../game-loader/RuntimeV4ExpertRestActionContract.cs" Link="Boundary/RuntimeV4ExpertRestActionContract.cs" />
+    <Compile Include="../game-loader/RuntimeV4ExpertRestActionCodec*.cs" LinkBase="Boundary" />
+    <Compile Include="../game-loader/RuntimeV4ExpertRestActionSupport*.cs" LinkBase="Boundary" />
+  </ItemGroup>
+</Project>

@@ -19,7 +19,7 @@ stage_package() {
     local platform=$1 payload=$2 output=$3 item_id=$4
     bash "$repo_root/tools/workshop/package-platform-item.sh" \
         "$platform" "$payload" "$output" 480 "$item_id" 0.107.1 "$item_id" "commit-$item_id" \
-        "$temp_dir/preview.jpg" >/dev/null
+        "$temp_dir/preview.jpg" --legacy-unbound >/dev/null
 }
 
 printf 'synthetic preview\n' > "$temp_dir/preview.jpg"

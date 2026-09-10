@@ -36,6 +36,12 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+
+      - name: Fetch locked Rust dependencies
+        run: cargo +1.97.1 fetch --locked
+
       - name: Resolve release version
         id: version
         shell: bash

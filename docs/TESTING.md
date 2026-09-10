@@ -44,6 +44,9 @@ cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
 (cd protocol-artifact/seeded-run-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-v4-expert-rest-action && sha256sum -c SHA256SUMS)
+cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -52,9 +55,10 @@ cargo test --locked --offline --workspace --all-targets --all-features
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
-not launch the game or prove gameplay or Runtime-v2 host settlement.
+artifact identity, Runtime-v1 compatibility, Runtime-map-v1 projection boundaries, and the
+Runtime-v2 deterministic fake lifecycle. The managed host-adapter build is a separate
+compiler/package oracle; these ordinary commands still do not launch the game or prove gameplay,
+map extraction, or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
 
@@ -93,6 +97,20 @@ dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRun
 These probes do not load a proprietary host, start a native run, access a real profile/save, or
 establish seed settlement. The host-dependent adapter remains unverified until a disposable exact
 host test records canonical seed readback, the `run_started` witness, profile isolation, and cleanup.
+
+## Runtime-map-v1 projection checks
+
+The copied `runtime-map-v1` artifact is checked with `sha256sum -c SHA256SUMS` and the managed
+source-only probe covers bounded graph projection, canonical ordering, map-scoped identity churn,
+current legal-action binding, unavailable/changed surfaces, and the final-generation fence:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+~~~
+
+The native loopback suite also checks `GET /api/map/v1/snapshot` reaches callback kind 14 while
+reversed methods and non-empty bodies stop at HTTP admission. These tests do not prove map loading,
+off-screen visibility, provider image delivery, or settled navigation in a licensed host.
 
 ## Runtime-v2 host-adapter build
 
@@ -443,9 +461,21 @@ These checks do not load a host, touch a profile/save, or contact a provider.
 
 Three further probe cases cover the Runtime-v4 expert gate: a pending expert mutation rejects
 semantic and v2 dispatch without a host call, and releasing it admits the next semantic dispatch.
-The native `runtime_endpoint_tests` also assert that the three v4 routes reach callback kinds 7 and
-8 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement code
+The native `runtime_endpoint_tests` also assert that the expert and rest routes reach callback kinds
+7, 8, and 15 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement code
 compiles only against the host assembly and has no source-only probe; its behavior is `unverified`.
+
+The rest-action source-only probe exercises the candidate serializer, strict response validator,
+host-thread support, typed Smith/Mend selector sequences, option-specific witnesses, stale and early
+confirmation rejection, and same-operation unknown reconciliation:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj --configuration Release
+~~~
+
+It does not establish protocol adoption, gateway/MCP/harness conformance, licensed-host API
+compatibility, live rest effects, or package/release support. The native loopback suite asserts
+callback kind 15 for both rest admission and operation lookup while retaining callback kinds 7 and 8.
 
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 

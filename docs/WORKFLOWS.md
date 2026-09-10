@@ -4,6 +4,9 @@ For an already prepared disposable host, `live-combat-session.sh --help` under
 `experiments/managed-rust-interop` describes the repeatable visible model/replay launcher.
 It requires explicit executable paths and external artifact storage; it does not install game files.
 See [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md) before using that exact-host experiment.
+The optional `--campaign-map` mode is separately bounded to one standard `start_run` and one
+current legal map selection plus a verified graph image; its expected guard exit is accepted only
+after trace and image validation.
 
 ## Lifecycle
 
