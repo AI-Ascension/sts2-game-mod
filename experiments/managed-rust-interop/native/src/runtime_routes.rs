@@ -1,24 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use super::{RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http};
+use super::{
+    CALLBACK_ACTION, CALLBACK_COOP_ACTION, CALLBACK_COOP_LEGAL_CATALOG, CALLBACK_COOP_OBSERVATION,
+    CALLBACK_COOP_RECOVER, CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE, CALLBACK_RUNTIME_MAP,
+    CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION, CALLBACK_RUNTIME_V2_STATE,
+    CALLBACK_RUNTIME_V4_EXPERT, CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+    CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION, CALLBACK_SEEDED_OPERATION, CALLBACK_SEEDED_RUN,
+    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
+};
 
-const CALLBACK_ACTION: u32 = 2;
-const CALLBACK_RUNTIME_V2_STATE: u32 = 3;
-const CALLBACK_RUNTIME_V2_ACTION: u32 = 4;
-const CALLBACK_RUNTIME_V2_OPERATION: u32 = 5;
-pub(super) const CALLBACK_GAMEPLAY: u32 = 6;
-const CALLBACK_RUNTIME_V4_EXPERT: u32 = 7;
-const CALLBACK_RUNTIME_V4_EXPERT_ACTION: u32 = 8;
-const CALLBACK_SEEDED_RUN: u32 = 9;
-const CALLBACK_SEEDED_OPERATION: u32 = 10;
-// Runtime-v2 seeded-run owns callback IDs 9 (start) and 10 (reconcile). Keep co-op callbacks
-// disjoint from every existing runtime profile in the seeded mainline.
-const CALLBACK_COOP_OBSERVATION: u32 = 16;
-const CALLBACK_COOP_ACTION: u32 = 17;
-const CALLBACK_COOP_VOTE: u32 = 18;
-const CALLBACK_COOP_REJOIN: u32 = 19;
-const CALLBACK_COOP_RECOVER: u32 = 20;
-const CALLBACK_COOP_LEGAL_CATALOG: u32 = 21;
+pub(super) const CALLBACK_GAMEPLAY: u32 = super::CALLBACK_GAMEPLAY;
 
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
@@ -86,6 +77,27 @@ pub(super) fn dispatch(
                 stream,
             )
         }
+        ("POST", "/api/v4/runtime/expert-rest-action") if request.content_type_is_json() => {
+            dispatch_callback(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+                request,
+                stream,
+            )
+        }
+        ("GET", path)
+            if request.body.is_empty()
+                && path.starts_with("/api/v4/runtime/expert-rest-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-rest-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
         ("GET", "/api/v1/coop/native/observation") if request.body.is_empty() => {
             dispatch_callback(callback, CALLBACK_COOP_OBSERVATION, request, stream)
         }
@@ -103,6 +115,9 @@ pub(super) fn dispatch(
         }
         ("POST", "/api/v1/coop/native/legal-catalog") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_COOP_LEGAL_CATALOG, request, stream)
+        }
+        ("GET", "/api/map/v1/snapshot") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_MAP, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

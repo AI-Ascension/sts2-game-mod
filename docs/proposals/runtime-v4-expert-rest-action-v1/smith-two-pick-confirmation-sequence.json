@@ -1,0 +1,40 @@
+{
+  "protocol_version": "runtime-v4-expert-rest-action-v1",
+  "schema_digest": "bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd",
+  "profile": "expert-rest-action",
+  "sequence": [
+    {
+      "request": "golden/action-selection-option-request.json",
+      "response": "golden/action-selection-requested.json",
+      "generation": 9,
+      "next_generation": 10,
+      "catalog_action": "rest-option:9:smith"
+    },
+    {
+      "request": "golden/action-selection-first-request.json",
+      "response": "golden/action-selection-progressed.json",
+      "generation": 10,
+      "next_generation": 11,
+      "catalog_action": "select_card:10:smith:card:1"
+    },
+    {
+      "request": "golden/action-selection-second-request.json",
+      "response": "golden/action-selection-second-progressed.json",
+      "generation": 11,
+      "next_generation": 12,
+      "catalog_action": "select_card:11:smith:card:2"
+    },
+    {
+      "request": "golden/action-selection-confirm-request.json",
+      "response": "golden/action-selection-completed.json",
+      "generation": 12,
+      "next_generation": 13,
+      "catalog_action": "confirm_selection:12:smith"
+    }
+  ],
+  "assertions": [
+    "Each request action is echoed byte-for-byte as the response action object.",
+    "Each follow-up request action object is copied from the preceding response transition.selector legal_actions catalog.",
+    "Each response advances exactly one generation and the final witness is bound to the confirmation operation."
+  ]
+}

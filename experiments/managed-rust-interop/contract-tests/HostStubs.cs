@@ -35,6 +35,7 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const uint RuntimeRequestKindGameplay = 6;
         private const uint RuntimeRequestKindExpertState = 7;
         private const uint RuntimeRequestKindExpertAction = 8;
+        private const uint RuntimeRequestKindExpertRestAction = 15;
         private static (int, string) ProcessRuntimeV2Work(RuntimeWork work) =>
             throw new InvalidOperationException("v1 test crossed into v2");
         private static (int, string) ProcessRuntimeV3GameplayWork(RuntimeContext context, string body) =>
@@ -45,6 +46,11 @@ namespace AiAscension.Sts2GameMod.Runtime
             throw new InvalidOperationException("v1 test crossed into expert gameplay");
         private static (int, string) ProcessSeededRunWork(RuntimeWork work) =>
             (RuntimeUnavailable, "{\"error_code\":\"seeded_run_host_unavailable\"}");
+        private static (int, string) ProcessRuntimeV4ExpertRestActionWork(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into expert rest action");
+        private const int RuntimeRequestKindMap = 14;
+        private static (int, string) ProcessRuntimeMapV1Work(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into map");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>

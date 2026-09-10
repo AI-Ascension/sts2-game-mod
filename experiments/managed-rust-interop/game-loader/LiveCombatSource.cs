@@ -14,7 +14,8 @@ using MegaCrit.Sts2.Core.Runs;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
-internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
+internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread,
+    IRuntimeMapV1HostSource
 {
     private static LiveCombatSource? _active;
     private readonly int _threadId = System.Environment.CurrentManagedThreadId;
@@ -22,6 +23,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     private string? _fingerprint;
     private ulong _generation;
     private int _nextCardId;
+    private bool _campaignStartDispatched;
+    private bool _campaignMapSelectionDispatched;
 
     internal LiveCombatSource()
     {
@@ -121,7 +124,8 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         var state = player?.Creature.IsDead == true ? RuntimeV3GameplayState.Defeat
             : rewards ? RuntimeV3GameplayState.Reward
             : active ? RuntimeV3GameplayState.Combat : RuntimeV3GameplayState.Recovery;
-        string[] values = state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
+        string[] values = state == RuntimeV3GameplayState.Defeat ? new[] { "player_dead" }
+            : state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
             : Array.Empty<string>();
         string? seed = player == null ? null : RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed;
         var result = new RuntimeV3GameplayObservation("live", 0, seed, projection, state, values, enemies)
@@ -135,7 +139,9 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         result = ProjectVictory(result);
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
-        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));
+        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result))
+            + "|" + MapSurfaceFingerprint()
+            + "|" + RestSelectionFingerprint();
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
@@ -168,6 +174,12 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
     {
         RequireThread();
         var actions = new List<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && observation.State is not RuntimeV3GameplayState.Setup
+                and not RuntimeV3GameplayState.Map)
+        {
+            return actions;
+        }
         Player? player = CurrentPlayer();
         if (LiveCombatDemo.Campaign && observation.State != RuntimeV3GameplayState.Combat)
             return CampaignActions(observation);

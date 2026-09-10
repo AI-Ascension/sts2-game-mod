@@ -41,6 +41,18 @@ Its copied protocol artifacts are checksum-verified against current protocol mai
 synthetic route/admission checks cover the bounded expert surface. Live expert gameplay, potion
 settlement, exact-host/package builds, and broader compatibility remain `unverified`.
 
+The additive `runtime-map-v1` read profile is present at source/component level. It serves
+authenticated `GET /api/map/v1/snapshot`, copies only bounded player-visible topology and current
+legal bindings, and rechecks the gameplay generation before returning owned values. The copied
+artifact and source probes pass; live map extraction, provider delivery, and settled navigation
+remain `unverified` (see [ADR 0035](docs/decisions/0035-runtime-map-projection.md)).
+
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds native rest-option actions and
+generation-fenced Smith/Mend selector follow-ups with option-specific completion witnesses and
+same-operation recovery. Its protocol manifest remains `candidate` / `none_admitted`; gateway,
+MCP, harness, live rest settlement, exact-host/package, and release evidence remain `unverified`
+(see [ADR 0036](docs/decisions/0036-runtime-v4-rest-option-action.md)).
+
 ## Responsibility and consumers
 
 The mod owner maintains the managed loader, host translation, main-thread boundary, authoritative
@@ -78,6 +90,13 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
 - [protocol-artifact/seeded-run-v1/](protocol-artifact/seeded-run-v1/) is the copied explicit
   seeded-launch contract at schema digest
   `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`.
+- [protocol-artifact/runtime-map-v1/](protocol-artifact/runtime-map-v1/) is the inert copied map
+  read artifact, pinned to schema digest
+  `ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b`.
+- [protocol-artifact/runtime-v4-expert-rest-action/](protocol-artifact/runtime-v4-expert-rest-action/)
+  is the inert copied rest-action candidate, pinned to schema digest
+  `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd` and not admitted to any
+  external consumer.
 - `crates/game-mod/src/poc/` maps state reads and one typed `use_budget` action through a narrow
   `PocCorePort`, records correlation/instance/generation metadata, and emits one settled-effect
   witness for an accepted action.

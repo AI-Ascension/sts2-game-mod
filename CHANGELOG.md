@@ -14,6 +14,22 @@ do not establish release support.
   run, save isolation, gameplay, or release compatibility; ADR 0031 remains proposed pending host
   verification.
 
+- Added the source-only `runtime-map-v1` read profile with bounded player-visible topology,
+  stable map-scoped identities, exact current legal bindings, generation fencing, and an
+  authenticated `GET /api/map/v1/snapshot` route. Copied map artifacts, native route checks, and
+  managed projection probes pass; live extraction, provider delivery, and navigation remain
+  unverified. See ADR 0035.
+
+- Added the source-only `runtime-v4-expert-rest-action-v1` candidate with authenticated rest-option
+  and selector follow-up routes, typed Smith/Mend catalogs, option-specific completion witnesses,
+  and same-operation unknown reconciliation. Its copied candidate artifact remains unadmitted;
+  protocol consumers, live rest settlement, exact-host/package builds, and release compatibility
+  remain unverified. See ADR 0036.
+
+- Added locked Rust release-provenance tooling for runtime receipts, platform artifact manifests,
+  Workshop staging, and source-distribution policy validation. The tooling and fixture gates pass;
+  publication, installation, and host/runtime compatibility remain separately gated. See ADR 0034.
+
 - Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
   managed native-library validation, and a checksum-gated install/update/rollback tool with
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain

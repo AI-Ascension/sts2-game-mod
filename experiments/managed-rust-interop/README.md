@@ -257,7 +257,11 @@ saved-off UI toggle cannot silently prevent the session readiness check.
 `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. The
 listener exposes the v1 probe routes and the frozen Runtime-v2 routes
 `/api/v2/runtime/state`, `/api/v2/runtime/action`, and
-`/api/v2/runtime/operations/{operation_id}` with bearer authentication. Requests are copied into a
+`/api/v2/runtime/operations/{operation_id}` plus the additive read-only map snapshot route
+`/api/map/v1/snapshot` with bearer authentication. Map snapshots use the frozen
+`sts2-protocol/runtime-map-v1` schema digest and are served from the host thread only while the
+campaign map is observable; closed or unsupported map surfaces return an explicit unavailable
+snapshot. Requests are copied into a
 bounded managed queue and processed on the Godot main thread. Runtime-v1 retains the
 `show_runtime_probe` integration action. Runtime-v2 admits only argument-free `end_turn` and reports `unknown` after dispatch until an
 independent host completion binding is implemented. `STS2_RUNTIME_QUEUE_CAPACITY` may set a bounded mod-side queue from `1`
@@ -278,6 +282,14 @@ until the exact host action finishes, the addressed potion instance is gone, and
 observation proves the generation transition. Lost responses are reconciled with the same
 operation identity. These routes are source/build evidence; live expert-state gameplay and
 gateway/MCP/harness integration remain unverified.
+
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds
+`/api/v4/runtime/expert-rest-action` and
+`/api/v4/runtime/expert-rest-actions/{operation_id}` with callback kind 15. It projects only
+unique visible enabled native rest options, retains typed Smith/Mend selector catalogs, and
+requires option-specific completion witnesses before settlement. The copied candidate artifact
+remains unadmitted; protocol, gateway/MCP/harness, live rest, exact-host/package, and release
+support remain unverified.
 
 The exact STS2 v0.107.1 Windows x86-64 host probe is recorded in the target evidence report. The
 Runtime-v2 host-adapter candidate builds are recorded separately; their live

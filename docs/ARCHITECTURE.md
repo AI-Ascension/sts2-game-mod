@@ -352,6 +352,21 @@ copied expert artifacts from current protocol main
 evidence does not establish licensed-host extraction, live expert action settlement, package
 compatibility, or release support.
 
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds callback kind 15 and authenticated
+rest-option and operation-reconciliation routes. `LiveCombatSource` projects only unique visible,
+enabled native rest options; Smith and Mend selectors retain their native catalogs and use separate
+generation-fenced follow-up operations. Receipts preserve the original action and settle only with
+option-specific host completion evidence (or remain `unknown` for same-operation recovery). The
+copied candidate artifact is not admitted to protocol, gateway, MCP, or harness consumers, so live
+rest effects, exact-host/package compatibility, and release support remain unverified.
+
+The independent `runtime-map-v1` read profile serves `GET /api/map/v1/snapshot`. It copies bounded
+player-visible map topology and the exact current legal bindings on the host thread, assigns stable
+map-scoped identities, and reobserves the gameplay generation before returning owned values. Closed,
+unsupported, or changed surfaces return explicit unavailable results; the route never opens or
+navigates the map UI. Its copied artifact and managed/native probes establish source/component
+evidence only, not live extraction, provider delivery, or settled navigation.
+
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 

@@ -11,6 +11,7 @@ internal static partial class SeededRunStandardHost
 
 public static partial class ModEntry
 {
+    private static bool _runtimeCoopPending;
     private const uint RuntimeRequestKindCoopObservation = 16;
     private const uint RuntimeRequestKindCoopAction = 17;
     private const uint RuntimeRequestKindCoopVote = 18;
@@ -18,7 +19,7 @@ public static partial class ModEntry
     private const uint RuntimeRequestKindCoopRecover = 20;
     private const uint RuntimeRequestKindCoopLegalCatalog = 21;
 
-    internal static bool HasPendingCoopMutation => false;
+    internal static bool HasPendingCoopMutation => _runtimeCoopPending;
 
     private static (int Status, string Response) ProcessCoopNativeWork(
         uint kind, RuntimeContext context, string body) =>
