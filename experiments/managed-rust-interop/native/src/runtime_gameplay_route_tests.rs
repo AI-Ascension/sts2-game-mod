@@ -88,7 +88,7 @@ unsafe extern "C" fn callback(
     // SAFETY: dispatch provides valid borrowed pointers for the callback duration.
     unsafe {
         length.write(0);
-        if (*request).kind == super::CALLBACK_GAMEPLAY {
+        if (*request).kind == super::routes::CALLBACK_GAMEPLAY {
             204
         } else {
             500

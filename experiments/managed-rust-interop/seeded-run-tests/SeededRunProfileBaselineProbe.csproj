@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputPath>bin/ProfileBaselineProbe/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj/ProfileBaselineProbe/$(Configuration)/</IntermediateOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ProfileBaselineProbe.cs" />
+    <Compile Include="../game-loader/SeededRunProfileBaseline.cs" />
+    <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+  </ItemGroup>
+</Project>

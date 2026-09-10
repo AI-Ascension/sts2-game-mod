@@ -2,6 +2,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 // Original minimal test doubles, not host implementation or compatibility evidence.
 namespace Godot
@@ -59,6 +60,21 @@ namespace AiAscension.Sts2GameMod.Runtime
                 var work = new RuntimeWork(2, default, "{}");
                 if (ExecuteRuntimeWork(work) != (503, "{\"error_code\":\"main_thread_outcome_unknown\"}"))
                     throw new InvalidOperationException("exception incorrectly claims rejection");
+
+                SeededRunStandardHost.Reset();
+                SeededRunStandardHost.BeginPendingMutation();
+                Volatile.Write(ref _runtimePumpReady, 1);
+                var pending = RuntimeQueue.Enqueue(new RuntimeWork(2, default, "{}"))
+                    ?? throw new InvalidOperationException("runtime queue admission");
+                ProcessRuntimeQueue();
+                if (RuntimeQueue.Wait(pending, TimeSpan.Zero).Status != 503)
+                    throw new InvalidOperationException("queued exception outcome");
+                if (SeededRunStandardHost.PumpCount != 1
+                    || SeededRunStandardHost.HasPendingMutation)
+                {
+                    throw new InvalidOperationException("host pump did not settle pending ownership");
+                }
+                Volatile.Write(ref _runtimePumpReady, 0);
             }
             finally
             {

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputPath>bin/ProtocolSerializationProbe/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj/ProtocolSerializationProbe/$(Configuration)/</IntermediateOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ProtocolSerializationProbe.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+    <Compile Include="../game-loader/SeededRunStandardHost.Idempotency.cs" />
+    <Compile Include="../game-loader/SeededRunStandardHost.Types.cs" />
+    <Compile Include="../game-loader/SeededRunProtocolSerialization.cs" />
+    <None Include="../../../protocol-artifact/seeded-run-v1/schema.json"
+          Link="protocol-artifact/seeded-run-v1/schema.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../protocol-artifact/seeded-run-v1/golden/*.json"
+          Link="protocol-artifact/seeded-run-v1/golden/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

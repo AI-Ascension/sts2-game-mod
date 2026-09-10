@@ -32,6 +32,9 @@ internal static class LiveCombatDemo
         if (expected.Length == 0 || !string.Equals(Path.GetFullPath(OS.GetUserDataDir()),
             Path.GetFullPath(expected), StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("live demo requires its isolated user directory");
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                "STS2_SEED_PROFILE_BASELINE_IDENTITY")))
+            SeededRunProfileBaseline.CaptureInitial();
         // The game still executes real combat. Only the save backend is replaced with local
         // storage so this demonstration has no Steam cloud save writer.
         var acceptedMods = SaveManager.Instance.SettingsSave.ModSettings;

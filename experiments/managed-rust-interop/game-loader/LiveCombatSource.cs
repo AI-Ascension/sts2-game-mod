@@ -16,11 +16,69 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
 internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
 {
+    private static LiveCombatSource? _active;
     private readonly int _threadId = System.Environment.CurrentManagedThreadId;
     private readonly Dictionary<CardModel, string> _cardIds = new();
     private string? _fingerprint;
     private ulong _generation;
     private int _nextCardId;
+
+    internal LiveCombatSource()
+    {
+        _active = this;
+    }
+
+    /// <summary>Returns the generation from the same visible host projection used by Runtime-v3.</summary>
+    internal static bool TryReadCurrentGeneration(out ulong generation)
+    {
+        generation = 0;
+        LiveCombatSource? source = _active;
+        if (source is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            generation = source.Observe().Generation;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Reads a generation only after the visible gameplay surface and its host-generated catalog
+    /// are ready. Native run creation can precede that surface by several host frames.
+    /// </summary>
+    internal static bool TryReadReadyGeneration(out ulong generation)
+    {
+        generation = 0;
+        LiveCombatSource? source = _active;
+        if (source is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            RuntimeV3GameplayObservation observation = source.Observe();
+            IReadOnlyList<LegalActionReference> actions = source.LegalActions(observation);
+            if (!RuntimeV3GameplayReadiness.IsReady(observation, actions))
+            {
+                return false;
+            }
+
+            generation = observation.Generation;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     public void Enqueue(Action work)
     {

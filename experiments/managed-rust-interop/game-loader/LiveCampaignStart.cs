@@ -59,7 +59,7 @@ internal static class LiveCampaignStart
         GD.Print("[AI-ASCENSION LIVE] standard campaign resumed through host save APIs");
     }
 
-    private static void LoadProgress()
+    internal static void LoadProgress()
     {
         // Model registration must finish before progress can resolve character identities.
         var progress = SaveManager.Instance.InitProgressData();
