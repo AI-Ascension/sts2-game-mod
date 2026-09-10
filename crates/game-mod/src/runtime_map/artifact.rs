@@ -8,7 +8,6 @@
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-
 /// Protocol version required by every Runtime-map-v1 message.
 pub const RUNTIME_MAP_V1_PROTOCOL_VERSION: &str = "runtime-map-v1";
 /// Release-like artifact identity from the protocol-owner handoff.
@@ -176,12 +175,23 @@ fn parse(text: &str) -> Result<Value, RuntimeMapArtifactError> {
 
 fn verify_bytes(files: [&str; 7]) -> Result<(), RuntimeMapArtifactError> {
     for (contents, entry) in files.into_iter().zip(EXPECTED_CHECKSUMS) {
-        let digest = format!("{:x}", Sha256::digest(contents.as_bytes()));
+        let digest = hex_digest(contents.as_bytes());
         if entry.split_once("  ").map(|(expected, _)| expected) != Some(digest.as_str()) {
             return Err(RuntimeMapArtifactError::ChecksumMismatch);
         }
     }
     Ok(())
+}
+
+fn hex_digest(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let digest = Sha256::digest(bytes);
+    let mut output = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    output
 }
 
 #[cfg(test)]

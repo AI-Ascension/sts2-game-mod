@@ -6,7 +6,7 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-use super::{MAX_FILE_BYTES, fail, filesystem::write_new, regular_file_path};
+use super::{MAX_FILE_BYTES, fail, filesystem::write_new, hex_bytes, regular_file_path};
 
 pub fn digest(path: &Path, label: &str) -> Result<(u64, String), String> {
     regular_file_path(path, label)?;
@@ -27,7 +27,7 @@ pub fn digest(path: &Path, label: &str) -> Result<(u64, String), String> {
     if size == 0 || size > MAX_FILE_BYTES {
         return fail(format!("{label} has an invalid size: {}", path.display()));
     }
-    Ok((size, format!("{:x}", hasher.finalize())))
+    Ok((size, hex_bytes(hasher.finalize())))
 }
 
 pub fn read_bounded(path: &Path, label: &str, maximum: u64) -> Result<Vec<u8>, String> {
@@ -87,7 +87,7 @@ pub fn copy_checked(
     output
         .sync_all()
         .map_err(|error| format!("cannot persist payload: {error}"))?;
-    if size != expected_size || format!("{:x}", hasher.finalize()) != expected_digest {
+    if size != expected_size || hex_bytes(hasher.finalize()) != expected_digest {
         return fail(format!(
             "payload bytes do not match the immutable build manifest: {}",
             source.display()
