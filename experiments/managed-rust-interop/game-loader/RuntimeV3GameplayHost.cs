@@ -46,16 +46,16 @@ internal sealed class RuntimeV3GameplayHost
     private const int MaxReceipts = 4096;
     private readonly IRuntimeV3HostSource _source;
     private readonly IRuntimeV3HostThread _thread;
-    private readonly Func<bool> _canDispatch;
+    private readonly Func<RuntimeV3OperationKey, bool> _canDispatch;
     private readonly ConcurrentDictionary<RuntimeV3OperationKey, RuntimeV3DispatchReceipt> _receipts = new();
     private readonly object _receiptGate = new();
 
     internal RuntimeV3GameplayHost(IRuntimeV3HostSource source, IRuntimeV3HostThread thread,
-        Func<bool>? canDispatch = null)
+        Func<RuntimeV3OperationKey, bool>? canDispatch = null)
     {
         _source = source;
         _thread = thread;
-        _canDispatch = canDispatch ?? (() => true);
+        _canDispatch = canDispatch ?? (_ => true);
     }
 
     internal bool HasPendingMutation
@@ -71,6 +71,19 @@ internal sealed class RuntimeV3GameplayHost
             }
             return false;
         }
+    }
+
+    internal bool HasOtherPendingMutation(RuntimeV3OperationKey operation)
+    {
+        foreach (KeyValuePair<RuntimeV3OperationKey, RuntimeV3DispatchReceipt> entry in _receipts)
+        {
+            if (entry.Key != operation
+                && entry.Value.Status is RuntimeV3DispatchStatus.Accepted or RuntimeV3DispatchStatus.Unknown)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     internal RuntimeV3GameplayObservation Observe()
@@ -181,7 +194,8 @@ internal sealed class RuntimeV3GameplayHost
         {
             RuntimeV3GameplayObservation current = Observe();
             IReadOnlyList<LegalActionReference> actions = LegalActions(current);
-            string? rejection = !_canDispatch() ? "operation_in_progress"
+            string? rejection = HasOtherPendingMutation(operation) || !_canDispatch(operation)
+                ? "operation_in_progress"
                 : current.Generation != receipt.Before.Generation
                 || current.StateId != receipt.Before.StateId ? "stale_generation"
                 : !current.IsActionable || current.ModalBlocking || !current.InputEnabled ? "input_disabled"

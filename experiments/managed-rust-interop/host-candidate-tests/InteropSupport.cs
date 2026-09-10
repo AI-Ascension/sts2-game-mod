@@ -24,7 +24,9 @@ public static partial class ModEntry
     private static void ConfigureRuntimeV3Gameplay(
         IRuntimeV3HostSource source, IRuntimeV3HostThread thread) =>
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
-            () => _runtimeV2Pending is null && !HasPendingRuntimeV4ExpertMutation()
+            operation => _runtimeV2Pending is null
+                && !(_runtimeV3Gameplay?.HasPendingMutationExcept(operation) ?? false)
+                && !HasPendingRuntimeV4ExpertMutation()
                 && !HasPendingCoopMutation && !HasPendingRuntimeV4ExpertRestMutation());
 
     private static bool HasPendingRuntimeV4ExpertMutation() => RuntimeV4ExpertSupport.PendingForTest;
