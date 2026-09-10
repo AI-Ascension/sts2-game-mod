@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" Link="RuntimeV3GameplayContract.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/CoopHostContracts.cs" Link="CoopHostContracts.cs" />
+    <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
+    <Compile Include="../game-loader/CoopNativeLegalCatalog.cs" Link="CoopNativeLegalCatalog.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.cs" Link="CoopHostRuntime.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Helpers.cs" Link="CoopHostRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Authority.cs" Link="CoopHostRuntime.Authority.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Catalog.cs" Link="CoopHostRuntime.Catalog.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="CoopHostRuntime.Rejoin.cs" />
+    <Compile Include="../game-loader/CoopRuntime.cs" Link="CoopRuntime.cs" />
+    <Compile Include="../game-loader/CoopRuntime.Helpers.cs" Link="CoopRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopNativeRuntime.ModEntry.cs" Link="CoopNativeRuntime.ModEntry.cs" />
+    <Compile Include="CoopNativeRuntime.TestHooks.cs" />
+    <Compile Include="SharedGateComposition.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

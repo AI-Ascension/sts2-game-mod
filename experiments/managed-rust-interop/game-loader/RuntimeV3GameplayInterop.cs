@@ -23,14 +23,21 @@ public static partial class ModEntry
     {
         _liveCombatSource = source as LiveCombatSource;
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
-            () => _runtimeV2Pending is null && !HasPendingRuntimeV4ExpertMutation());
+            () => !HasPendingNonSeededMutation() && !SeededRunStandardHost.HasPendingMutation);
         _runtimeV4Expert = _liveCombatSource is null
             ? RuntimeV4ExpertSupport.Unconfigured()
             : RuntimeV4ExpertSupport.WithHost(_liveCombatSource, thread);
     }
 
     internal static bool HasPendingNonExpertMutation() =>
-        _runtimeV2Pending is not null || (_runtimeV3Gameplay?.HasPendingMutation ?? false);
+        HasPendingNonSeededMutation() || SeededRunStandardHost.HasPendingMutation;
+
+    internal static bool HasPendingNonSeededMutation() =>
+        HasPendingNonCoopMutation() || HasPendingCoopMutation;
+
+    internal static bool HasPendingNonCoopMutation() =>
+        _runtimeV2Pending is not null || (_runtimeV3Gameplay?.HasPendingMutation ?? false)
+            || HasPendingRuntimeV4ExpertMutation();
 
     private static bool HasPendingRuntimeV4ExpertMutation() =>
         _runtimeV4Expert.HasPendingMutation;

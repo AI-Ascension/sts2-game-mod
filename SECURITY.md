@@ -62,6 +62,14 @@ The native HTTP listener bounds each accepted connection's socket I/O with one a
 resource bound, not a host callback cancellation mechanism or a guarantee of real-time shutdown.
 Only loopback synthetic connections are used in the regression suite.
 
+The native co-op candidate adds five authenticated loopback routes. They require the existing
+instance, caller, session, lease, epoch, and correlation headers, and the managed host adapter
+accepts mutations only for the authenticated local native peer. Client-side callers cannot supply
+an effect witness, peer identity binding, authority epoch, or checksum; unknown native outcomes
+remain pending for same-operation recovery. The optional ENet bootstrap accepts loopback addresses
+only and is disabled unless its explicit role variable is set. The protocol remains unadmitted and
+the candidate has no external consumer or live network evidence.
+
 ## Workshop package boundary
 
 The Runtime-v2 candidate enforces an instance/caller/session/lease fence. An

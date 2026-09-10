@@ -102,12 +102,15 @@ are implemented for the reviewed bounded path. The Rust POC core port remains a 
 evidence confirms the exact v0.107.1 Windows/Linux campaign and replay paths recorded by the harness;
 it does not establish every character, seed, branch, host patch, or multiplayer behavior.
 
-The separate co-op helper remains a local source/component check and is not wired into the gameplay
-host or a native multiplayer transport. The admitted `coop-synchronization-v1` profile is a separate
-read-only gateway/MCP coordinator-report contract; this helper does not implement its wire path.
-Neither its synchronization metadata checks nor the admitted report path establishes native peer
-admission, actions, votes, shared host effects, disconnect/rejoin recovery, or multiplayer
-compatibility.
+The native co-op source candidate is now wired through the managed game-thread callback path and
+native listener routes 16 through 20. It binds host actions, shared votes, peer rejoin, and
+same-operation recovery to the first-party multiplayer service and shares the pending-mutation gate
+with the seeded and gameplay profiles. `coop-native-v1` remains an unadmitted candidate contract:
+its protocol schema/artifact and gateway/MCP/harness consumers are owned by separate targets and
+are not present in this target. Source probes and an exact-host compile cover the managed boundary;
+they do not establish a live two-peer session, native effect settlement, disconnect/rejoin behavior,
+or multiplayer compatibility. The admitted `coop-synchronization-v1` profile remains a separate
+read-only gateway/MCP coordinator-report contract.
 
 ## Steam Workshop package
 

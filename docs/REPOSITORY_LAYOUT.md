@@ -16,7 +16,7 @@ sts2-game-mod/
 ├── conformance/cases/runtime-v2.json  copied Runtime-v2 conformance evidence
 ├── schemas/game-http-v1              future owner-local HTTP schema
 ├── tests                             future component and host-test seams
-├── experiments/managed-rust-interop/ managed load-smoke package and Rust companion source
+├── experiments/managed-rust-interop/ managed load-smoke package, native companion, and source probes
 ├── tools/workshop/                  deterministic Workshop staging and fixture checks
 ├── tools/repo-policy/                target-local governance checker
 ├── docs/                             architecture, policy, testing, and decisions

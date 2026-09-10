@@ -150,6 +150,10 @@ Windows host reconfiguration and unload remain separately unverified.
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/seeded-run-v1` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; callback/route, selected-context, profile-baseline, canonical-seed, and `run_started` witness probes | Source/component evidence only; live seeded-run settlement, save isolation, exact-host/package compatibility, gameplay, and release unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/coop-native-v1` candidate | Rebased managed/native source, callback route checks, source-linked host/fencing probes, and exact-host compile | Candidate source/component evidence only; protocol admission, gateway/MCP/harness consumers, live two-peer behavior, effect settlement, rejoin, and package support remain unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/coop-native-v1` candidate | Rebased managed/native source, callback route checks, source-linked host/fencing probes, and exact-host compile | Candidate source/component evidence only; protocol admission, gateway/MCP/harness consumers, live two-peer behavior, effect settlement, rejoin, and package support remain unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -204,10 +208,13 @@ Consumers must update together to the new digest above; old-digest requests fail
 Host implementations must implement the completion port;
 an unavailable witness preserves an unknown outcome. Managed handler tests use
 synthetic completion events and do not promote the licensed-host compatibility row.
-The co-op helpers are not connected to the managed gameplay request path; their source/component
-validation does not establish multiplayer mutation fencing. The admitted `coop-synchronization-v1`
-profile is a separate read-only gateway/MCP coordinator-report contract and does not establish native
-peer admission, actions, votes, shared effects, or disconnect/rejoin recovery.
+The `coop-native-v1` source candidate is connected to the managed callback path with callback kinds
+16 through 20 and fences mutations against v2, v3, v4, and seeded pending operations. The candidate
+schema/artifact remains outside this target because the protocol owner has not admitted it and no
+gateway, MCP, or harness consumer has passed cross-boundary conformance. Source-linked probes and
+an exact-host compile do not establish a live two-peer session, native effect settlement, checksum
+semantics, disconnect/rejoin recovery, or Windows/Linux package support. The older co-op helpers and
+the admitted `coop-synchronization-v1` profile remain separate read-only components.
 
 ## Workshop package profile
 

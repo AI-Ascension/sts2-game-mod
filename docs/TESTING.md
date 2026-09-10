@@ -488,8 +488,25 @@ or managed/live-host mutation evidence; the existing auth and absolute-deadline 
 
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
 operation identities, stale observations, host-thread queueing, settlement witnesses, projection
-redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local
-identity, generation disagreement, missing peers, disconnect, ally targeting, and mutation
-suspension in the isolated helper. The gameplay host does not consume the co-op
-helper, so these tests do not establish integrated co-op admission, a licensed
-target build, or live multiplayer compatibility.
+redaction, and explicit unknown outcomes. The source-linked co-op probes cover closed-envelope
+parsing, two-to-four peer bounds, one local identity, generation disagreement, missing peers,
+disconnect, ally targeting, action/rejoin receipts, and cross-profile mutation fencing. The
+source-only checks are:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/coop-admission-tests/CoopAdmissionProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRuntimeProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
+~~~
+
+The checkpoint and installed-synchronizer probe requires an operator-supplied exact host assembly:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/coop-checkpoint-tests/CoopCheckpointProbe.csproj --configuration Release --property:STS2GameDataDir=/path/to/Slay\ the\ Spire\ 2/data_sts2_windows_x86_64
+~~~
+
+It checks native service and checksum-hook composition against the supplied assemblies, but does
+not launch the game. The `coop-native-v1` schema/artifact is an unadmitted protocol-owner
+candidate, so this target has no cross-language co-op conformance fixture. None of these checks
+establishes a live two-peer session, native effect settlement, disconnect/rejoin behavior, or
+multiplayer compatibility.
