@@ -327,10 +327,14 @@ projection reads public host properties by name and the rendered `NIntent` prese
 in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`. This is source and
 build evidence; live expert gameplay and settlement remain unverified.
 
-At current mod main `0a46af363896f6cdd645e73dd774023693d450a9`, the source/component boundary is
-checked against the copied expert artifacts from merged protocol main
-`b3d3034f32e68d70c9e681f906ee37d74db153c4`. This identity and checksum evidence does not establish
-licensed-host extraction, live expert action settlement, package compatibility, or release support.
+At current mod main
+`d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`, the source/component boundary is checked against the
+copied expert artifacts from current protocol main
+`f2dac90529f584a6511c1760adce9da28f7f910a`. The expert-state and expert-action schema digests are
+`0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
+`393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. This identity and checksum
+evidence does not establish licensed-host extraction, live expert action settlement, package
+compatibility, or release support.
 
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
@@ -343,9 +347,11 @@ completion evidence; a generation increase alone cannot settle an action. The ma
 component probe exercises this production handler without a licensed host.
 
 `FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
-The separate co-op helper validates peer identity and synchronization metadata, and
-reports whether mutation would be allowed. It is not wired into the gameplay host,
-wire observation, or mutation admission; this PR does not implement co-op enforcement.
+The separate co-op helper validates peer identity and synchronization metadata, and reports whether
+mutation would be allowed. It is not wired into the gameplay host, wire observation, or mutation
+admission. The admitted `coop-synchronization-v1` profile is a separate read-only gateway/MCP
+coordinator-report contract; neither profile establishes native peer admission, actions, votes, shared
+effects, or disconnect/rejoin recovery.
 No
 provider policy, raw input, host object, save, executable, or future random state is represented.
 The bridge is source/build evidence only until the exact licensed host assemblies are available.
