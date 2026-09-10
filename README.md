@@ -21,9 +21,13 @@ have also been exercised in authorized disposable profiles. Current native evide
 STS2 v0.107.1 on the tested Windows and Linux guests; it records model-controlled setup-to-Defeat
 campaigns and fresh replays, plus separate forced terminal-observation fixtures.
 
-The additive Runtime-v4 expert state/action bridge is present at source/component level at mod main
-`0a46af363896f6cdd645e73dd774023693d450a9`. Its copied protocol artifacts are checksum-verified
-against merged protocol main `b3d3034f32e68d70c9e681f906ee37d74db153c4`; Rust/managed source and
+The additive Runtime-v4 expert state/action bridge is present at source/component level at current
+mod main
+[`d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`](https://github.com/AI-Ascension/sts2-game-mod/commit/d8b46bccbee9eff108efdab9c8fc9b27dbf2c034).
+Its copied protocol artifacts are checksum-verified against current protocol main
+`f2dac90529f584a6511c1760adce9da28f7f910a`; the expert-state and expert-action schema digests are
+`0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
+`393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. Rust/managed source and
 synthetic route/admission checks cover the bounded expert surface. Live expert gameplay, potion
 settlement, exact-host/package builds, and broader compatibility remain `unverified`.
 
@@ -85,9 +89,12 @@ are implemented for the reviewed bounded path. The Rust POC core port remains a 
 evidence confirms the exact v0.107.1 Windows/Linux campaign and replay paths recorded by the harness;
 it does not establish every character, seed, branch, host patch, or multiplayer behavior.
 
-The separate co-op helper remains a local source-only check and is not wired into the gameplay host
-or a native multiplayer transport. Its synchronization metadata checks do not establish peer
-admission, shared host effects, disconnect/rejoin recovery, or multiplayer compatibility.
+The separate co-op helper remains a local source/component check and is not wired into the gameplay
+host or a native multiplayer transport. The admitted `coop-synchronization-v1` profile is a separate
+read-only gateway/MCP coordinator-report contract; this helper does not implement its wire path.
+Neither its synchronization metadata checks nor the admitted report path establishes native peer
+admission, actions, votes, shared host effects, disconnect/rejoin recovery, or multiplayer
+compatibility.
 
 ## Steam Workshop package
 

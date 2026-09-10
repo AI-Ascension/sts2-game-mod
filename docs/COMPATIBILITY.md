@@ -148,7 +148,7 @@ Windows host reconfiguration and unload remain separately unverified.
 | --- | --- | --- | --- |
 | `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
-| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Exact source/component head `0a46af3`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `d8b46bccbee9eff108efdab9c8fc9b27dbf2c034`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -162,8 +162,8 @@ settlement, and multiplayer behavior remain `unverified`.
 
 The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
 and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
-copies under `protocol-artifact/` are byte-identical to merged `sts2-protocol` main
-`b3d3034f32e68d70c9e681f906ee37d74db153c4`. The v4 routes
+copies under `protocol-artifact/` are byte-identical to current `sts2-protocol` main
+`f2dac90529f584a6511c1760adce9da28f7f910a`. The v4 routes
 add native callback kinds 7 and 8 without changing the ABI structure, version, or kinds 3–6. The
 only admitted expert mutation is `use_potion`; it shares the v2/v3 host identity fence and the
 pending-mutation exclusion in all directions. The Runtime-v3 combat observation now projects one
@@ -187,8 +187,10 @@ Consumers must update together to the new digest above; old-digest requests fail
 Host implementations must implement the completion port;
 an unavailable witness preserves an unknown outcome. Managed handler tests use
 synthetic completion events and do not promote the licensed-host compatibility row.
-The co-op helpers are not connected to the managed gameplay request path; their
-source-only validation does not establish multiplayer mutation fencing.
+The co-op helpers are not connected to the managed gameplay request path; their source/component
+validation does not establish multiplayer mutation fencing. The admitted `coop-synchronization-v1`
+profile is a separate read-only gateway/MCP coordinator-report contract and does not establish native
+peer admission, actions, votes, shared effects, or disconnect/rejoin recovery.
 
 ## Workshop package profile
 
