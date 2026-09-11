@@ -46,26 +46,41 @@ EOF
 
 cat > "$fixture_root/bin/provider" <<'EOF'
 #!/usr/bin/env bash
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' provider >> "$FAKE_PROCESS_MARKERS"
 if [[ "${1:-}" == --describe ]]; then
     printf '%s\n' '{"kind":"ollama","provider":"ollama","model":"gemma4:31b-cloud"}'
 fi
 EOF
 cat > "$fixture_root/bin/gateway" <<'EOF'
 #!/usr/bin/env bash
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' gateway >> "$FAKE_PROCESS_MARKERS"
 trap 'exit 0' INT TERM
 while :; do sleep 1; done
 EOF
 cat > "$fixture_root/bin/mcp" <<'EOF'
 #!/usr/bin/env bash
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' mcp >> "$FAKE_PROCESS_MARKERS"
 exit 0
 EOF
 cat > "$fixture_root/bin/harness" <<'EOF'
 #!/usr/bin/env bash
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' harness >> "$FAKE_PROCESS_MARKERS"
+"$STS2_MCP_BINARY"
 printf '%s\n' "STS2_COMBAT_DEMO=${STS2_COMBAT_DEMO:-}" "STS2_MAX_STEPS=${STS2_MAX_STEPS:-}" > "$FAKE_HARNESS_ENV_FILE"
 printf '%s\n' '{"stage":"defeat"}'
 EOF
 cat > "$fixture_root/bin/powershell" <<'EOF'
 #!/usr/bin/env bash
+if [[ "$*" == *steam-usability-preflight.ps1* ]]; then
+    [[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' steam-preflight >> "$FAKE_PROCESS_MARKERS"
+    if [[ -n "${FAKE_STEAM_PREFLIGHT_JSON:-}" ]]; then
+        printf '%s\n' "$FAKE_STEAM_PREFLIGHT_JSON"
+    else
+        printf '%s\n' '{"state":"process_present_account_unverified"}'
+    fi
+    exit 0
+fi
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' guardian >> "$FAKE_PROCESS_MARKERS"
 printf '%s\n' "$@" > "$FAKE_GUARDIAN_ARGS_FILE"
 sleep 2
 EOF
@@ -86,10 +101,20 @@ base_args=(
 run_case() {
     local label=$1
     shift
+    local status
+    set +e
     FAKE_GUARDIAN_ARGS_FILE="$fixture_root/$label.guardian" \
         FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
+        FAKE_PROCESS_MARKERS="$fixture_root/$label.processes" \
+        FAKE_STEAM_PREFLIGHT_JSON='{"state":"process_present_account_unverified"}' \
         PATH="$fixture_root/bin:$PATH" \
         bash "$launcher" "${base_args[@]}" "$@" >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
+    status=$?
+    set -e
+    if [[ $status -ne 0 ]]; then
+        cat "$fixture_root/$label.err" >&2
+        return "$status"
+    fi
 }
 
 has_arg() { grep -Fx -- "$1" "$2" >/dev/null; }
@@ -161,4 +186,40 @@ expect_rejected map_demo --run-kind demo --campaign-map
 expect_rejected map_practice --run-kind campaign --campaign-mode practice --seed MAP1 --campaign-map
 printf changed > "$fixture_root/host/data_sts2_windows_x86_64/sts2.dll"
 expect_rejected changed_host --run-kind campaign
-printf 'PASS: campaign/demo guardian wiring, manifest identity, and bounded argument rejection\n'
+
+expect_steam_rejected() {
+    local label=$1 state=$2 expected=$3 marker_file="$fixture_root/$1.processes"
+    set +e
+    FAKE_GUARDIAN_ARGS_FILE="$fixture_root/$label.guardian" \
+        FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
+        FAKE_PROCESS_MARKERS="$marker_file" \
+        FAKE_STEAM_PREFLIGHT_JSON="$state" \
+        PATH="$fixture_root/bin:$PATH" \
+        bash "$launcher" "${base_args[@]}" --run-kind campaign \
+        >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
+    local status=$?
+    set -e
+    [[ $status -eq 2 ]] || { printf 'expected Steam rejection for %s, got %s\n' "$label" "$status" >&2; exit 1; }
+    grep -Fx -- "$expected" "$fixture_root/$label.err" >/dev/null
+    [[ -f "$marker_file" ]] || { printf 'Steam preflight did not run for %s\n' "$label" >&2; exit 1; }
+    grep -Fx steam-preflight "$marker_file" >/dev/null
+    for process in guardian provider gateway mcp harness; do
+        ! grep -Fx "$process" "$marker_file" >/dev/null || {
+            printf 'Steam failure started %s for %s\n' "$process" "$label" >&2
+            exit 1
+        }
+    done
+}
+
+expect_steam_rejected steam_absent '{"state":"absent_client"}' 'Steam usability preflight: client absent.'
+expect_steam_rejected steam_process_only '{"state":"process_only_unready"}' 'Steam usability preflight: client process is not ready.'
+expect_steam_rejected steam_invalid '{"state":"process_present_account_unverified","detail":"private-value"}' 'Steam usability preflight returned an invalid diagnostic.'
+! grep -F 'private-value' "$fixture_root/steam_invalid.err" >/dev/null
+steam_preflight_source=$(<"$script_dir/steam-usability-preflight.ps1")
+[[ "$steam_preflight_source" != *'Start-Process'* && "$steam_preflight_source" != *'Stop-Process'* && \
+    "$steam_preflight_source" != *'Set-ItemProperty'* && "$steam_preflight_source" != *'New-ItemProperty'* && \
+    "$steam_preflight_source" != *'Remove-ItemProperty'* && "$steam_preflight_source" != *'NamedPipeClientStream'* ]] || {
+    printf '%s\n' 'Steam preflight must not start, stop, or configure Steam.' >&2
+    exit 1
+}
+printf 'PASS: campaign/demo guardian wiring, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
