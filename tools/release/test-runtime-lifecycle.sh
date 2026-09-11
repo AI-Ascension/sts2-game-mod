@@ -78,6 +78,42 @@ fi
 [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
 [[ ! -e "$temp_dir/backup-wrong-package-id" ]]
 
+assert_manifest_refusal() {
+    local label=$1 mutation=$2 package="$temp_dir/$1-package"
+    cp -a -- "$temp_dir/package-v1" "$package"
+    python3 - "$package/sts2-workshop-manifest.json" "$mutation" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+if sys.argv[2] == "missing-key": del value["package_id"]
+elif sys.argv[2] == "unknown-key": value["unknown_reviewer_key"] = True
+elif sys.argv[2] == "unsafe-provenance": value["source_revision"] = "candidate..unsafe"
+else: raise SystemExit("unknown mutation")
+path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+PY
+    manifest_digest=$(sha256sum "$package/sts2-workshop-manifest.json" | awk '{print $1}')
+    sed -i "s/^[0-9a-f]*  sts2-workshop-manifest.json$/$manifest_digest  sts2-workshop-manifest.json/" "$package/SHA256SUMS"
+    if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 "$package" "$install_dir" "$temp_dir/backup-$label" >/dev/null 2>&1; then
+        printf '%s\n' "checksum-valid $label manifest was installed" >&2; exit 1
+    fi
+    [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' && ! -e "$temp_dir/backup-$label" ]]
+}
+assert_manifest_refusal missing-key missing-key
+assert_manifest_refusal unknown-key unknown-key
+assert_manifest_refusal unsafe-provenance unsafe-provenance
+
+for metadata in manifest checksum; do
+    package="$temp_dir/oversized-$metadata-package"
+    cp -a -- "$temp_dir/package-v1" "$package"
+    truncate -s 65537 "$package/$([[ $metadata == manifest ]] && printf sts2-workshop-manifest.json || printf SHA256SUMS)"
+    if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 "$package" "$install_dir" "$temp_dir/backup-oversized-$metadata" >/dev/null 2>&1; then
+        printf '%s\n' "oversized $metadata was installed" >&2; exit 1
+    fi
+    [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' && ! -e "$temp_dir/backup-oversized-$metadata" ]]
+done
+
 ln -s -- "$temp_dir/package-v2" "$temp_dir/package-link"
 if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
     "$temp_dir/package-link" "$install_dir" "$temp_dir/backup-package-link" >/dev/null 2>&1; then

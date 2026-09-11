@@ -44,7 +44,10 @@ bash tools/release/install-runtime-addon.sh install windows-x86_64 PACKAGE MODS 
 bash tools/release/install-runtime-addon.sh rollback MODS BACKUP
 ```
 
-The installer verifies the manifest platform, exact native filename, and `SHA256SUMS`, preserves
-unrelated files, and records replaced files in the supplied backup directory. Run
+The installer verifies the complete canonical first-party manifest identity, bounded manifest and
+checksum metadata, platform, exact native filename, and `SHA256SUMS`; it preserves unrelated files
+and records replaced files in the supplied backup directory. It binds the consumer App ID to the
+current first-party policy; it cannot establish a live Steam/Workshop or installed-game identity.
+Run
 `bash tools/release/test-runtime-lifecycle.sh` for a synthetic Windows/Linux install/update/rollback
 check. These fixture checks do not mutate a host or contact Steam.

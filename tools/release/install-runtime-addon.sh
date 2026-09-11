@@ -147,6 +147,11 @@ platform = sys.argv[2]
 native_name = sys.argv[3]
 manifest_path = package_dir / sys.argv[4]
 checksum_path = package_dir / sys.argv[5]
+maximum_metadata_bytes = 64 * 1024
+
+for path, label in ((manifest_path, "manifest"), (checksum_path, "checksum inventory")):
+    if path.stat().st_size > maximum_metadata_bytes:
+        raise SystemExit(f"{label} exceeds the {maximum_metadata_bytes}-byte limit")
 
 def reject_duplicate_properties(pairs):
     result = {}
@@ -157,6 +162,13 @@ def reject_duplicate_properties(pairs):
     return result
 
 manifest = json.loads(manifest_path.read_text(), object_pairs_hook=reject_duplicate_properties)
+expected_manifest_keys = {
+    "schema_version", "package_id", "package_version", "consumer_app_id",
+    "published_file_id", "game_version", "platform", "loader_contract",
+    "content_kind", "entrypoint", "files", "content_digest", "source_revision",
+}
+if set(manifest) != expected_manifest_keys:
+    raise SystemExit("manifest keys do not match the runtime package contract")
 canonical_identity = {
     "schema_version": "sts2-workshop-manifest-v1",
     "package_id": "ai-ascension.sts2-game-mod",
@@ -171,8 +183,13 @@ if type(manifest.get("consumer_app_id")) is not int or manifest["consumer_app_id
     raise SystemExit("manifest consumer App ID is not the canonical STS2 first-party App ID")
 if type(manifest.get("published_file_id")) is not int or not 0 < manifest["published_file_id"] <= 0xffffffffffffffff:
     raise SystemExit("manifest published file ID is outside the first-party uint64 policy")
-if not isinstance(manifest.get("game_version"), str) or re.fullmatch(r"[A-Za-z0-9._-]{1,128}", manifest["game_version"]) is None:
-    raise SystemExit("manifest game version is outside the canonical package policy")
+if (not isinstance(manifest.get("package_version"), str)
+        or re.fullmatch(r"(?!.*\.\.)[A-Za-z0-9._:-]{1,256}", manifest["package_version"]) is None
+        or not isinstance(manifest.get("game_version"), str)
+        or re.fullmatch(r"[A-Za-z0-9._-]{1,128}", manifest["game_version"]) is None) or (
+        not isinstance(manifest.get("source_revision"), str)
+        or re.fullmatch(r"(?!.*\.\.)[A-Za-z0-9._:/-]{1,256}", manifest["source_revision"]) is None):
+    raise SystemExit("manifest compatibility or provenance token is malformed")
 expected = ["AIAscensionSTS2GameMod.dll", "AIAscensionSTS2GameMod.json", native_name]
 if manifest.get("platform") != platform:
     raise SystemExit(f"manifest platform does not match requested platform: {manifest.get('platform')!r}")
