@@ -32,6 +32,30 @@ Omitted video options use saved mod-menu choices, then the first-launch defaults
 No installation is performed.
 HELP
 }
+steam_usability_preflight() {
+    local result state
+    if ! result=$("$powershell" -NoProfile -NonInteractive -File \
+        "$(wslpath -w "$script_dir/steam-usability-preflight.ps1")" 2>/dev/null); then
+        printf '%s\n' 'Steam usability preflight could not be completed.' >&2
+        return 1
+    fi
+    if ! state=$(jq -er '
+        if type == "object" and (keys | sort) == ["state"] and (.state | type) == "string"
+        then .state
+        else error("invalid Steam preflight result")
+        end
+    ' <<<"$result" 2>/dev/null); then
+        printf '%s\n' 'Steam usability preflight returned an invalid diagnostic.' >&2
+        return 1
+    fi
+    case "$state" in
+        process_present_account_indicated) printf '%s\n' 'Steam preflight: client process present; account indicator is unbound.' ;;
+        process_present_account_unverified) printf '%s\n' 'Steam preflight: client process present; account/API/IPC are unverified.' ;;
+        absent_client) printf '%s\n' 'Steam usability preflight: client absent.' >&2; return 1 ;;
+        process_only_unready) printf '%s\n' 'Steam usability preflight: client process is not ready.' >&2; return 1 ;;
+        *) printf '%s\n' 'Steam usability preflight returned an invalid diagnostic.' >&2; return 1 ;;
+    esac
+}
 while (($#)); do
     case "$1" in
         --help) usage; exit 0 ;;
@@ -78,6 +102,16 @@ max_runtime_seconds_value=$((10#$max_runtime_seconds))
     exit 2
 }
 max_runtime_seconds=$max_runtime_seconds_value
+if ! command -v "$powershell" >/dev/null 2>&1 \
+    && [[ -x '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' ]]; then
+    powershell='/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
+fi
+for command in wslpath jq "$powershell"; do command -v "$command" >/dev/null; done
+[[ -f "$script_dir/steam-usability-preflight.ps1" ]] || {
+    printf '%s\n' 'Steam usability preflight is unavailable.' >&2
+    exit 2
+}
+steam_usability_preflight || exit 2
 provider_metadata=$("$provider" --describe)
 provider_kind=$(jq -er '.kind' <<<"$provider_metadata")
 provider_name=$(jq -er '.provider' <<<"$provider_metadata")
@@ -96,10 +130,6 @@ case "$artifacts/" in "$repo_root/"*) printf '%s\n' 'Artifacts must be outside t
 if [[ -z "$addon_dir" ]]; then addon_dir="$host_dir/mods"; fi
 addon_dir=$(realpath -m -- "$addon_dir")
 case "$addon_dir/" in "$repo_root/"*) printf '%s\n' 'Addon directory must be outside the repository' >&2; exit 2 ;; esac
-if ! command -v "$powershell" >/dev/null 2>&1 \
-    && [[ -x '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' ]]; then
-    powershell='/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
-fi
 if [[ "$campaign_map" == true ]]; then
     [[ "$run_kind" == campaign && "$campaign_mode" == standard ]] || {
         printf '%s\n' 'Campaign/map mode requires a standard campaign' >&2
@@ -163,7 +193,7 @@ video_args=()
 [[ -z "$window_mode" ]] || video_args+=(-WindowMode "$window_mode")
 [[ -z "$replay" || -f "$replay" ]] || exit 2
 [[ -z "$replay" || "$campaign_mode" == practice ]] || { printf 'fresh-process replay requires practice mode and its explicit seed\n' >&2; exit 2; }
-for command in wslpath curl jq openssl "$powershell"; do command -v "$command" >/dev/null; done
+for command in curl openssl; do command -v "$command" >/dev/null; done
 user_dir_wsl=$(wslpath -u "$user_dir") || {
     printf '%s\n' 'User directory must be an absolute Windows path' >&2
     exit 2

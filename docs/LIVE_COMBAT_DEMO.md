@@ -103,6 +103,15 @@ The selected semantic action must exist in the fresh catalog and visible game co
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).
 
+Before it queries the provider or starts the PowerShell guardian, gateway, MCP, or harness, the
+launcher performs a read-only Steam presence preflight. It refuses only an absent client or absent
+Steam process. Its account registry indicator is explicitly unbound from the observed process, and
+it does not probe or infer the Steam API, IPC contract, game entitlement, or launch usability. It
+never starts, stops, logs into, or configures Steam, and emits only a fixed diagnostic category
+rather than account, installation, process, or IPC details. A refusal leaves the disposable host
+and all downstream processes untouched; a passing presence diagnostic is not proof that Steam will
+launch the game or that the host/addon is runtime-compatible.
+
 For a bounded standard campaign/map handoff, add `--campaign-map` together with a pinned
 `--map-renderer-binary` and its lowercase `--map-renderer-sha256`. This mode requires the OpenAI
 Astra provider, starts a host-generated standard run, requests the complete current map graph and
