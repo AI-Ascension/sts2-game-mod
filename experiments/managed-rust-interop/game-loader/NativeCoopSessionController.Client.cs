@@ -57,7 +57,7 @@ internal static partial class NativeCoopSessionController
                 service =>
                 {
                     state.ClientService = service;
-                    ActiveService = service;
+                    SetActiveService(service);
                 });
             state.JoinFlow = new JoinFlow();
             state.JoinTask = state.JoinFlow.Begin(state.Initializer, tree);
@@ -65,7 +65,7 @@ internal static partial class NativeCoopSessionController
             Status = state.IsRejoin
                 ? "client_rejoining_via_native_join_flow"
                 : "client_joining_via_native_join_flow";
-            GD.Print($"[AI-ASCENSION COOP LOBBY] client {(state.IsRejoin ? "rejoining" : "joining")} {state.Address}:{state.Port} via JoinFlow; host_net_id={state.HostId}");
+            GD.Print($"[AI-ASCENSION COOP LOBBY] client {(state.IsRejoin ? "rejoining" : "joining")} {state.Address}:{state.Port} via JoinFlow; expected_host_net_id={state.HostId}");
             return;
         }
 
@@ -84,7 +84,7 @@ internal static partial class NativeCoopSessionController
         if (state.ClientService is null && state.JoinFlow?.NetService is { } flowService)
         {
             state.ClientService = flowService;
-            ActiveService = flowService;
+            SetActiveService(flowService);
         }
         if (state.ClientService is not { IsConnected: true } service)
         {
@@ -189,7 +189,7 @@ internal static partial class NativeCoopSessionController
     {
         NetClientGameService service = state.ClientService!;
         if (service.NetId == 0 || service.HostNetId == 0
-            || service.HostNetId != state.HostId
+            || (state.HostId != 0 && service.HostNetId != state.HostId)
             || service.NetId != state.ClientId
             || service.NetId == service.HostNetId
             || service.NetClient is not { IsConnected: true, HostNetId: not 0 })
@@ -203,6 +203,7 @@ internal static partial class NativeCoopSessionController
             return false;
         }
 
+        state.ObservedHostId = service.HostNetId;
         return ReferenceEquals(lobby.NetService, service);
     }
 
@@ -214,6 +215,7 @@ internal static partial class NativeCoopSessionController
             Status = "client_waiting_for_distinct_native_identity";
             return;
         }
+        GD.Print($"[AI-ASCENSION COOP LOBBY] client native lobby identity confirmed; local_net_id={service.NetId}; host_net_id={state.ObservedHostId}");
         if (!state.AutoAdmitRun)
         {
             Succeed(state, "client_native_lobby_joined_admission_disabled");

@@ -28,6 +28,7 @@ internal static partial class Program
         RejoinMustRetainOriginalAuthorityEpoch();
         RejoinRecoveryGateAllowsDisconnectedLocalPeer();
         UnboundOpaqueIdentityIsRejected();
+        AuthenticatedNativePeerMayActOnlyThroughItsBoundOpaqueIdentity();
         DisconnectedPeerBlocksSettlement();
         MismatchedAuthorityIdentityBlocksSettlement();
         UnknownDigestBlocksDispatch();

@@ -187,5 +187,12 @@ jobs:
           dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRuntimeProbe.csproj --configuration Release
           dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
 
+      - name: Run managed opaque-operation and metadata reflection regressions
+        run: |
+          dotnet run --project experiments/managed-rust-interop/coop-causality-reflection-tests/CoopCausalityReflectionTests.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/opaque-operation-adapter-tests/OpaqueOperationAdapterProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/opaque-operation-composition-tests/OpaqueOperationCompositionProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/opaque-operation-native-message-tests/OpaqueOperationNativeMessageProbe.csproj --configuration Release
+
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Import the experiment-wide compiler policy before selecting a per-project external build
+       root. MSBuildProjectExtensionsPath must be fixed before Microsoft.Common.props imports. -->
+  <Import Project="../Directory.Build.props" />
+  <PropertyGroup Condition="'$(ManagedBuildRoot)' != ''">
+    <BaseOutputPath>$(ManagedBuildRoot)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ManagedBuildRoot)/obj/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(ManagedBuildRoot)/obj/</MSBuildProjectExtensionsPath>
+    <!-- Old local build artifacts must not re-enter the default source glob while the active
+         intermediate path is intentionally external. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/bin/**;$(MSBuildProjectDirectory)/obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

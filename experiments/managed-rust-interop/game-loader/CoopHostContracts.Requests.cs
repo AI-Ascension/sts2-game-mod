@@ -121,6 +121,14 @@ internal interface ICoopNativeHostPort
 {
     CoopHostObservation Observe();
     bool TryResolvePeer(string opaquePeerId, out CoopNativePeerBinding binding);
+    // A native carrier supplies only its transport-authenticated numeric sender ID. The host
+    // adapter maps that ID to its session-scoped opaque identity on the game thread; it never
+    // accepts an opaque identity claimed in carrier payload.
+    bool TryResolveNativePeer(ulong nativePeerId, out CoopNativePeerBinding binding)
+    {
+        binding = null!;
+        return false;
+    }
     // A native synchronizer may accept an operation while the installed checksum remains
     // unreadable. The operation must then stay accepted/unknown until Reconcile proves the
     // native effect and all peer checkpoints converge. Test ports default to fail-closed.

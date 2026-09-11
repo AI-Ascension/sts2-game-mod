@@ -8,8 +8,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../opaque-operation-native-message-tests/HostShapeStubs.cs" Link="HostShapeStubs.cs" />
     <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" Link="RuntimeV3GameplayContract.cs" />
-    <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
     <Compile Include="../game-loader/CoopHostContracts.cs" Link="CoopHostContracts.cs" />
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
     <Compile Include="../game-loader/CoopNativeLegalCatalog.cs" Link="CoopNativeLegalCatalog.cs" />
@@ -23,8 +24,12 @@
     <Compile Include="../game-loader/CoopRuntime.cs" Link="CoopRuntime.cs" />
     <Compile Include="../game-loader/CoopRuntime.Helpers.cs" Link="CoopRuntime.Helpers.cs" />
     <Compile Include="../game-loader/CoopRuntime.Validation.cs" Link="CoopRuntime.Validation.cs" />
-    <Compile Include="CoopNativeRuntime.TestHooks.cs" />
-    <Compile Include="SharedGateComposition.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="../game-loader/CoopNativeRuntime.ClientCarrier.cs" Link="CoopNativeRuntime.ClientCarrier.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationHostDispatcher.cs" Link="CoopOpaqueOperationHostDispatcher.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationHostDispatcher.Validation.cs" Link="CoopOpaqueOperationHostDispatcher.Validation.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationNativeMessage.cs" Link="CoopOpaqueOperationNativeMessage.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationNativeMessageAdapter.cs" Link="CoopOpaqueOperationNativeMessageAdapter.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationNativeMessageAdapter.Records.cs" Link="CoopOpaqueOperationNativeMessageAdapter.Records.cs" />
+    <Compile Include="../game-loader/CoopOpaqueOperationClientBridge.cs" Link="CoopOpaqueOperationClientBridge.cs" />
   </ItemGroup>
 </Project>

@@ -39,6 +39,34 @@ internal sealed partial class CoopNativeRuntime
 
     internal bool HasPendingMutation => _host.HasPendingMutation;
 
+    internal bool TryResolveAuthenticatedNativePeer(ulong nativePeerId,
+        out CoopNativePeerBinding binding)
+    {
+        binding = null!;
+        try
+        {
+            _ = _host.Observe();
+            return _host.TryResolveNativePeer(nativePeerId, out binding)
+                && binding.Validate(out _)
+                && binding.NativePeerId == nativePeerId;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal CoopOperationReceipt DispatchAuthenticatedLocalAction(
+        CoopLocalActionRequest request, CoopNativePeerBinding binding) =>
+        _host.DispatchAuthenticatedLocalAction(request, binding.NativePeerId);
+
+    internal CoopOperationReceipt DispatchAuthenticatedSharedVote(
+        CoopSharedVoteRequest request, CoopNativePeerBinding binding) =>
+        _host.SubmitAuthenticatedSharedVote(request, binding.NativePeerId);
+
+    internal bool ReconcileOpaqueOperation(string operationId,
+        out CoopOperationReceipt? receipt) => _host.Reconcile(operationId, out receipt);
+
     internal (int Status, string Response) Handle(
         string instanceId,
         string sessionId,

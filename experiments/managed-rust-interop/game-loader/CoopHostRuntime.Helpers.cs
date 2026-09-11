@@ -62,7 +62,8 @@ internal sealed partial class CoopHostRuntime
     }
 
     private bool CanDispatch(CoopHostObservation observation,
-        ulong expectedHostGeneration, string actorPeerId, out string error)
+        ulong expectedHostGeneration, string actorPeerId, ulong? authenticatedNativePeerId,
+        out string error)
     {
         if (HasPendingMutation)
         {
@@ -121,7 +122,8 @@ internal sealed partial class CoopHostRuntime
             error = "unknown_or_stale_peer_identity";
             return false;
         }
-        if (!string.Equals(actorPeerId, observation.LocalPeerId, StringComparison.Ordinal))
+        if (!authenticatedNativePeerId.HasValue
+            && !string.Equals(actorPeerId, observation.LocalPeerId, StringComparison.Ordinal))
         {
             error = "actor_is_not_local_peer";
             return false;
@@ -159,6 +161,12 @@ internal sealed partial class CoopHostRuntime
             || !string.Equals(binding.OpaquePeerId, actorPeerId, StringComparison.Ordinal))
         {
             error = "unknown_or_stale_peer_identity";
+            return false;
+        }
+        if (authenticatedNativePeerId.HasValue
+            && binding.NativePeerId != authenticatedNativePeerId.Value)
+        {
+            error = "native_peer_identity_mismatch";
             return false;
         }
         error = string.Empty;
@@ -241,22 +249,4 @@ internal sealed partial class CoopHostRuntime
         ? prior
         : prior with { Outcome = CoopOutcome.Rejected, ErrorCode = "idempotency_conflict" };
 
-    private static string Fingerprint(CoopLocalActionRequest request) =>
-        $"local|{request.ExpectedHostGeneration}|{request.ActorPeerId}|{request.ActionKind}|{request.Value}|{request.TargetPeerId}";
-
-    private static string Fingerprint(CoopSharedVoteRequest request) =>
-        $"vote|{request.ProposalId}|{request.ExpectedHostGeneration}|{request.VoterPeerId}|{request.Domain}|{request.Choice}";
-
-    private static CoopOperationReceipt Rejected(string operationId,
-        ulong generation, string errorCode)
-    {
-        // Rejected requests have no native snapshot. The caller must observe before retrying;
-        // this placeholder is never exported as a successful host observation.
-        var empty = new CoopHostObservation("unavailable", "peer:local", CoopHostRole.Unknown,
-            "unknown", null, generation, "digest:unknown",
-            new[] { new CoopPeerSnapshot("peer:local", true, false, generation, "digest:unknown") },
-            true, null);
-        return new CoopOperationReceipt(operationId, string.Empty, CoopOutcome.Rejected, generation,
-            null, null, empty, errorCode);
-    }
 }

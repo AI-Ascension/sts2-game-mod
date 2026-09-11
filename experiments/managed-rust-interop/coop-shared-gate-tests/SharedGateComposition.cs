@@ -6,12 +6,22 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
+    private static CoopNativeRuntime? _coopNativeRuntime;
     private static object? _runtimeV2Pending;
     private static TestGameplaySupport? _runtimeV3Gameplay;
     private static bool _runtimeV4Pending;
     private static bool _seededPending;
 
+    internal static bool HasPendingCoopMutation => _coopNativeRuntime?.HasPendingMutation ?? false;
+
     private static bool HasPendingRuntimeV4ExpertMutation() => _runtimeV4Pending;
+
+    internal static void ConfigureCoopNative(ICoopNativeHostPort port, Func<bool>? canDispatch = null)
+    {
+        _coopNativeRuntime = new CoopNativeRuntime(port,
+            canDispatch ?? (() => !HasPendingNonCoopMutation() && !SeededRunStandardHost.HasPendingMutation));
+        NativeCoopSessionController.StartIfConfigured();
+    }
 
     internal static void SetPendingProfiles(
         bool runtimeV2, bool runtimeV3, bool runtimeV4, bool seeded = false)

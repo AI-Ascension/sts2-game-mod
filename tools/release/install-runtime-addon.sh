@@ -157,6 +157,22 @@ def reject_duplicate_properties(pairs):
     return result
 
 manifest = json.loads(manifest_path.read_text(), object_pairs_hook=reject_duplicate_properties)
+canonical_identity = {
+    "schema_version": "sts2-workshop-manifest-v1",
+    "package_id": "ai-ascension.sts2-game-mod",
+    "loader_contract": "sts2-managed-loader-v1",
+    "content_kind": "first_party_executable",
+    "entrypoint": "AIAscensionSTS2GameMod.json",
+}
+for key, expected_value in canonical_identity.items():
+    if manifest.get(key) != expected_value:
+        raise SystemExit(f"manifest does not match canonical first-party {key}")
+if type(manifest.get("consumer_app_id")) is not int or manifest["consumer_app_id"] != 2868840:
+    raise SystemExit("manifest consumer App ID is not the canonical STS2 first-party App ID")
+if type(manifest.get("published_file_id")) is not int or not 0 < manifest["published_file_id"] <= 0xffffffffffffffff:
+    raise SystemExit("manifest published file ID is outside the first-party uint64 policy")
+if not isinstance(manifest.get("game_version"), str) or re.fullmatch(r"[A-Za-z0-9._-]{1,128}", manifest["game_version"]) is None:
+    raise SystemExit("manifest game version is outside the canonical package policy")
 expected = ["AIAscensionSTS2GameMod.dll", "AIAscensionSTS2GameMod.json", native_name]
 if manifest.get("platform") != platform:
     raise SystemExit(f"manifest platform does not match requested platform: {manifest.get('platform')!r}")
