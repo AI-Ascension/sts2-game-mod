@@ -207,6 +207,21 @@ internal sealed partial class InstalledNativeCoopHostPort : ICoopNativeHostPort
     public bool TryResolvePeer(string opaquePeerId, out CoopNativePeerBinding binding) =>
         _bindings.TryGetValue(opaquePeerId, out binding!);
 
+    public bool TryResolveNativePeer(ulong nativePeerId, out CoopNativePeerBinding binding)
+    {
+        foreach (CoopNativePeerBinding candidate in _bindings.Values)
+        {
+            if (candidate.NativePeerId == nativePeerId && candidate.Validate(out _))
+            {
+                binding = candidate;
+                return true;
+            }
+        }
+
+        binding = null!;
+        return false;
+    }
+
     public bool MayDispatchWithUnknownDigest(CoopHostObservation observation)
     {
         if (observation.HostDigestKnown || observation.Role == CoopHostRole.Singleplayer

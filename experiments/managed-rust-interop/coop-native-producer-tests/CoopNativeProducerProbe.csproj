@@ -14,7 +14,9 @@
     <Compile Include="../game-loader/CoopHostContracts.cs" Link="Boundary/CoopHostContracts.cs" />
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="Boundary/CoopHostContracts.Requests.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.cs" Link="Boundary/CoopHostRuntime.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.OpaqueDispatch.cs" Link="Boundary/CoopHostRuntime.OpaqueDispatch.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Helpers.cs" Link="Boundary/CoopHostRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Receipts.cs" Link="Boundary/CoopHostRuntime.Receipts.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Authority.cs" Link="Boundary/CoopHostRuntime.Authority.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Catalog.cs" Link="Boundary/CoopHostRuntime.Catalog.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="Boundary/CoopHostRuntime.Rejoin.cs" />

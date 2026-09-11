@@ -12,7 +12,9 @@
     <Compile Include="../game-loader/CoopHostContracts.Requests.cs" Link="CoopHostContracts.Requests.cs" />
     <Compile Include="../game-loader/CoopNativeLegalCatalog.cs" Link="CoopNativeLegalCatalog.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.cs" Link="CoopHostRuntime.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.OpaqueDispatch.cs" Link="CoopHostRuntime.OpaqueDispatch.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Helpers.cs" Link="CoopHostRuntime.Helpers.cs" />
+    <Compile Include="../game-loader/CoopHostRuntime.Receipts.cs" Link="CoopHostRuntime.Receipts.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Authority.cs" Link="CoopHostRuntime.Authority.cs" />
     <Compile Include="../game-loader/CoopHostRuntime.Rejoin.cs" Link="CoopHostRuntime.Rejoin.cs" />
     <Compile Include="../game-loader/CoopNativeEncoding.cs" Link="CoopNativeEncoding.cs" />

@@ -19,7 +19,7 @@ internal sealed partial class InstalledNativeCoopHostPort
 {
     public CoopNativeDispatchResult DispatchLocalAction(CoopLocalActionRequest request)
     {
-        if (!TryGetLocalPlayer(request.ActorPeerId, out RunManager manager,
+        if (!TryGetBoundPlayer(request.ActorPeerId, out RunManager manager,
                 out INetGameService service, out Player player, out string error))
         {
             return CoopNativeDispatchResult.Rejected(error);

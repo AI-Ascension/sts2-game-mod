@@ -387,6 +387,38 @@ per operation and reports `unknown` when the native effect or peer convergence c
 Every co-op mutation checks the v2, v3, v4, and seeded pending-operation fences in the serialized
 game-thread path.
 
+The concrete opaque native carrier never executes a host mutation from its message callback. It
+copies the bounded request, binds the transport-authenticated native sender ID to the adapter's
+session-scoped opaque peer on the next Godot frame, and then invokes the same host-owned action or
+map-vote path. Initial and later replies are causal receipt states (`queued`, `accepted`, `unknown`,
+or terminal); only an effect- and convergence-backed host receipt yields `settled`. A mismatched
+native sender, stale generation, non-converged peer, or unsupported remote vote domain is rejected
+before an action producer is called. Rejoin remains an origin-client game-thread operation: a host
+carrier cannot claim to reconnect a remote process, while the existing rejoin receipt/reconciliation
+path retains its authority-epoch fence.
+
+The host dispatcher and native-message adapter validate malformed payloads before reserving an
+operation record. Once an operation reaches admitted/pending state, its original ID is retained for
+the lifetime of that native service/session, including terminal outcomes: a delayed retry therefore
+replays rather than becomes a second host mutation. A service/session replacement is the explicit
+replay-window epoch boundary. The 4,096-record limit applies only to admitted work; malformed and
+immediately rejected payloads consume no record and cannot exhaust that table.
+
+Message callbacks validate the bounded carrier shape before reserving one of 128 owned ingress
+slots, then copy and enqueue it. Saturated ingress is dropped without issuing a reply or settlement
+witness, so the peer must retry after a later frame. The Godot-frame pump processes at most sixteen
+inbound messages, sixteen pending reconciliations, and sixteen outbound replies per frame. This
+keeps callback memory and game-thread work bounded while preserving same-peer retry and host-only
+settlement authority.
+
+On a native client, the same carrier accepts only the already gateway-admitted closed v1 local-action
+or map-vote envelope. It checks the current local, canonical opaque peer and exact session/lease/
+generation context before retaining and sending the original operation bytes. There is one pending
+client carrier operation; a duplicate, foreign actor, disconnected, loading, divergent, stale, or
+unavailable client path fails closed. The client can report only `unknown` while awaiting a reply;
+terminal state is derived solely from a reply accepted from the current native host, with the original
+operation ID retained. Route credentials never enter a carrier message or a v1-visible value.
+
 `coop-native-v1` is still an unadmitted protocol candidate. Its schema/artifact and cross-target
 consumers are not copied into this target, so no gateway, MCP, harness, or live multiplayer claim
 follows from this source wiring. The exact-host build and source-linked probes establish managed

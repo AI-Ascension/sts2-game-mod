@@ -20,7 +20,7 @@ internal sealed partial class InstalledNativeCoopHostPort
     private bool CanRetainPending(string operationId) =>
         _pending.ContainsKey(operationId) || _pending.Count < MaxPendingOperations;
 
-    private bool TryGetLocalPlayer(string actorPeerId, out RunManager manager,
+    private bool TryGetBoundPlayer(string actorPeerId, out RunManager manager,
         out INetGameService service, out Player player, out string error)
     {
         manager = RunManager.Instance!;
@@ -42,7 +42,7 @@ internal sealed partial class InstalledNativeCoopHostPort
         if (!TryResolvePeer(actorPeerId, out CoopNativePeerBinding binding)
             || !binding.Validate(out _)
             || !string.Equals(binding.OpaquePeerId, actorPeerId, StringComparison.Ordinal)
-            || binding.NativePeerId != service.NetId)
+            || service.Type != NetGameType.Host && binding.NativePeerId != service.NetId)
         {
             error = "unknown_or_stale_peer_identity";
             return false;
@@ -59,8 +59,7 @@ internal sealed partial class InstalledNativeCoopHostPort
             error = "native_run_state_unavailable";
             return false;
         }
-        ulong localNetId = service.NetId;
-        player = run.Players.FirstOrDefault(candidate => candidate.NetId == localNetId)!;
+        player = run.Players.FirstOrDefault(candidate => candidate.NetId == binding.NativePeerId)!;
         if (player is null)
         {
             error = "native_local_player_unavailable";

@@ -52,6 +52,7 @@ internal static partial class NativeCoopSessionController
     private static SceneTree? _tree;
 
     internal static INetGameService? ActiveService { get; private set; }
+    internal static event Action<INetGameService?>? ActiveServiceChanged;
     internal static string Status { get; private set; } = "disabled";
 
     internal static void StartIfConfigured()
@@ -90,17 +91,16 @@ internal static partial class NativeCoopSessionController
             FailBeforeStart(autoAdmitError);
             return;
         }
-        if (role == "client" && !TryReadHostId(out hostId))
-        {
-            FailBeforeStart($"{HostIdVariable} is required for the client role");
-            return;
-        }
+        // StartENetHost assigns the native host ID only after the host process starts. An
+        // optional supplied ID pins the expected peer; otherwise JoinFlow discovers it from its
+        // connected native service before the client lobby is admitted.
+        _ = TryReadHostId(out hostId);
         if (role == "client" && !TryReadClientId(out clientId))
         {
             FailBeforeStart($"{ClientIdVariable} is required for the client role");
             return;
         }
-        if (role == "client" && clientId == hostId)
+        if (role == "client" && hostId != 0 && clientId == hostId)
         {
             FailBeforeStart($"{ClientIdVariable} must differ from {HostIdVariable}");
             return;
@@ -174,7 +174,7 @@ internal static partial class NativeCoopSessionController
             }
 
             state.HostService = service;
-            ActiveService = service;
+            SetActiveService(service);
             NCharacterSelectScreen screen = stack.GetSubmenuType<NCharacterSelectScreen>();
             screen.InitializeMultiplayerAsHost(service, state.MaxPlayers);
             stack.Push(screen);
@@ -214,6 +214,12 @@ internal static partial class NativeCoopSessionController
             Status = hostScreen.Lobby.IsAboutToBeginGame()
                 ? "host_attempting_run_admission"
                 : "host_waiting_for_all_ready";
+    }
+
+    private static void SetActiveService(INetGameService? service)
+    {
+        ActiveService = service;
+        ActiveServiceChanged?.Invoke(service);
     }
 
 }

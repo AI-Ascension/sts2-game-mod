@@ -18,7 +18,7 @@ make_payload() {
 stage_package() {
     local platform=$1 payload=$2 output=$3 item_id=$4
     bash "$repo_root/tools/workshop/package-platform-item.sh" \
-        "$platform" "$payload" "$output" 480 "$item_id" 0.107.1 "$item_id" "commit-$item_id" \
+        "$platform" "$payload" "$output" 2868840 "$item_id" 0.107.1 "$item_id" "commit-$item_id" \
         "$temp_dir/preview.jpg" --legacy-unbound >/dev/null
 }
 
@@ -35,6 +35,48 @@ bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
     "$temp_dir/package-v1" "$install_dir" "$temp_dir/backup-v1" >/dev/null
 [[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
 [[ -f "$install_dir/user-notes.txt" ]]
+
+cp -a -- "$temp_dir/package-v2" "$temp_dir/wrong-app-id-package"
+python3 - "$temp_dir/wrong-app-id-package/sts2-workshop-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+manifest = json.loads(path.read_text(encoding="utf-8"))
+manifest["consumer_app_id"] = 480
+path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+PY
+manifest_digest=$(sha256sum "$temp_dir/wrong-app-id-package/sts2-workshop-manifest.json" | awk '{print $1}')
+sed -i "s/^[0-9a-f]*  sts2-workshop-manifest.json$/$manifest_digest  sts2-workshop-manifest.json/" \
+    "$temp_dir/wrong-app-id-package/SHA256SUMS"
+if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
+    "$temp_dir/wrong-app-id-package" "$install_dir" "$temp_dir/backup-wrong-app-id" >/dev/null 2>&1; then
+    printf '%s\n' 'wrong App-ID package was installed' >&2
+    exit 1
+fi
+[[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
+[[ ! -e "$temp_dir/backup-wrong-app-id" ]]
+
+cp -a -- "$temp_dir/package-v2" "$temp_dir/wrong-package-id-package"
+python3 - "$temp_dir/wrong-package-id-package/sts2-workshop-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+manifest = json.loads(path.read_text(encoding="utf-8"))
+manifest["package_id"] = "untrusted.third-party-addon"
+path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+PY
+manifest_digest=$(sha256sum "$temp_dir/wrong-package-id-package/sts2-workshop-manifest.json" | awk '{print $1}')
+sed -i "s/^[0-9a-f]*  sts2-workshop-manifest.json$/$manifest_digest  sts2-workshop-manifest.json/" \
+    "$temp_dir/wrong-package-id-package/SHA256SUMS"
+if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \
+    "$temp_dir/wrong-package-id-package" "$install_dir" "$temp_dir/backup-wrong-package-id" >/dev/null 2>&1; then
+    printf '%s\n' 'wrong package-identity package was installed' >&2
+    exit 1
+fi
+[[ $(< "$install_dir/AIAscensionSTS2GameMod.dll") == 'managed v1' ]]
+[[ ! -e "$temp_dir/backup-wrong-package-id" ]]
 
 ln -s -- "$temp_dir/package-v2" "$temp_dir/package-link"
 if bash "$script_dir/install-runtime-addon.sh" install windows-x86_64 \

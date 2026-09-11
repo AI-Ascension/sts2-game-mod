@@ -119,12 +119,19 @@ repository:
 
 ~~~text
 dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
-  -p:STS2GameDataDir="<operator-supplied-host-data>"
+  -p:STS2GameDataDir="<operator-supplied-host-data>" \
+  -p:ManagedBuildRoot="/tmp/sts2-game-mod-build/game-loader"
 dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj --configuration Release \
-  -p:STS2GameDataDir="<operator-supplied-host-data>" --no-restore
+  -p:STS2GameDataDir="<operator-supplied-host-data>" \
+  -p:ManagedBuildRoot="/tmp/sts2-game-mod-build/game-loader" --no-restore
 bash experiments/managed-rust-interop/package-runtime-addon.sh \
   "<operator-supplied-host-data>" /tmp/sts2-runtime-v2-addon
 ~~~
+
+When several managed probes build in one session, each project must receive a distinct
+`ManagedBuildRoot`. It sets that project's output, intermediate, and MSBuild project-extension
+paths before SDK imports, preventing generated assembly attributes from one project being compiled
+by another. This is a build-layout requirement, not an SDK or host-runtime result.
 
 For the recorded v0.107.1 host, the candidate builds with zero warnings and errors and the native
 crate passes six tests, including exact bearer-token matching at the native HTTP boundary. Exact
@@ -529,6 +536,31 @@ dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRu
 dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
 ~~~
 
+The host-runtime probe also covers transport-bound native-peer identity: an authenticated remote
+native ID can use only its mapped opaque peer, and a different native ID cannot reuse that peer.
+The opaque-operation composition probe also exhausts both 4,096-entry carrier record tables with
+invalid payloads, pumps each rejection to terminal state, and verifies a later valid request is
+admitted and settled. Pending, accepted, and unknown operations are deliberately not evicted by
+that recovery path.
+It also invokes the registered message callback concurrently with more than 128 valid requests,
+verifies that excess ingress is dropped without a reply or settlement, drains only sixteen messages
+per frame, and then admits a later request after recovery.
+The opaque carrier's Godot-frame pump and concrete message registration compile only with the exact
+host assembly. Build it with the same external root for restore and build:
+
+~~~text
+dotnet restore experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  -p:STS2GameDataDir=/path/to/Slay\ the\ Spire\ 2/data_sts2_windows_x86_64 \
+  -p:ManagedBuildRoot=/tmp/sts2-game-mod-build/game-loader
+dotnet build experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj --configuration Release \
+  -p:STS2GameDataDir=/path/to/Slay\ the\ Spire\ 2/data_sts2_windows_x86_64 \
+  -p:ManagedBuildRoot=/tmp/sts2-game-mod-build/game-loader --no-restore
+~~~
+
+That is assembly compatibility evidence only. It does not prove the host dispatches mod-defined
+messages on the expected thread, performs a remote action/vote, settles a receipt, or recovers a
+two-peer rejoin.
+
 The checkpoint and installed-synchronizer probe requires an operator-supplied exact host assembly:
 
 ~~~text
@@ -540,3 +572,7 @@ not launch the game. The `coop-native-v1` schema/artifact is an unadmitted proto
 candidate, so this target has no cross-language co-op conformance fixture. None of these checks
 establishes a live two-peer session, native effect settlement, disconnect/rejoin behavior, or
 multiplayer compatibility.
+
+The proposed package receipt and disposable two-peer trace procedure is documented in
+[`COOP_TWO_PEER_SETUP.md`](COOP_TWO_PEER_SETUP.md). It is deliberately an operator procedure,
+not a runtime claim or authorization to alter an installation.

@@ -104,6 +104,23 @@ internal static partial class Program
             "a rejected rejoin receipt prevents a duplicate native call");
     }
 
+    private static void AuthenticatedNativePeerMayActOnlyThroughItsBoundOpaqueIdentity()
+    {
+        FakePort port = new();
+        CoopHostRuntime runtime = new(port);
+        CoopOperationReceipt accepted = runtime.DispatchAuthenticatedLocalAction(new(
+            "op:remote-bound", 1, "peer:client1", "end_turn", null, null), 202);
+        Check(accepted.Outcome == CoopOutcome.Settled && port.DispatchCount == 1,
+            "a transport-authenticated native peer may dispatch only its bound opaque identity");
+
+        CoopOperationReceipt rejected = runtime.DispatchAuthenticatedLocalAction(new(
+            "op:remote-mismatch", 2, "peer:client1", "end_turn", null, null), 101);
+        Check(rejected.Outcome == CoopOutcome.Rejected
+            && rejected.ErrorCode == "native_peer_identity_mismatch"
+            && port.DispatchCount == 1,
+            "a host or another peer cannot reuse a remote opaque identity");
+    }
+
     private sealed class FakePort : ICoopNativeHostPort
     {
         private readonly Dictionary<string, CoopNativePeerBinding> _bindings = new(StringComparer.Ordinal)

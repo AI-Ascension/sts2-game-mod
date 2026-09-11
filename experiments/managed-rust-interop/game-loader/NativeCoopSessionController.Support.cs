@@ -123,7 +123,7 @@ internal static partial class NativeCoopSessionController
         Status = "failed:" + reason;
         if (state.IsRejoin)
             RejoinStatus = Status;
-        ActiveService = null;
+        SetActiveService(null);
         DetachProcessFrame();
         state.Dispose();
         GD.PrintErr($"[AI-ASCENSION COOP LOBBY] {Status}");
@@ -157,7 +157,9 @@ internal static partial class NativeCoopSessionController
         internal ushort Port { get; }
         internal string Address { get; }
         internal int MaxPlayers { get; }
+        /// <summary>Optional operator-pinned host identity; zero means discover through JoinFlow.</summary>
         internal ulong HostId { get; }
+        internal ulong ObservedHostId { get; set; }
         internal ulong ClientId { get; }
         internal bool AutoAdmitRun { get; }
         private NativeCoopAttemptWindow AttemptWindow { get; }

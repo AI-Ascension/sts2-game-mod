@@ -18,7 +18,7 @@ internal sealed partial class InstalledNativeCoopHostPort
 {
     public CoopNativeDispatchResult SubmitSharedVote(CoopSharedVoteRequest request)
     {
-        if (!TryGetLocalPlayer(request.VoterPeerId, out RunManager manager,
+        if (!TryGetBoundPlayer(request.VoterPeerId, out RunManager manager,
                 out INetGameService service, out Player player, out string error))
         {
             return CoopNativeDispatchResult.Rejected(error);
@@ -43,6 +43,12 @@ internal sealed partial class InstalledNativeCoopHostPort
         ulong[] participantNativeIds = ConnectedNativePeerIds(service, service.NetId);
         if (participantNativeIds.Length < 2)
             return CoopNativeDispatchResult.Rejected("native_peer_roster_unavailable");
+
+        // Only the map synchronizer exposes a first-party host-side method that takes the
+        // authenticated voter explicitly. The other producers are intentionally local-only;
+        // never reinterpret a remote carrier request as the host's own vote.
+        if (player.NetId != service.NetId && vote.Domain != CoopVoteDomain.Map)
+            return CoopNativeDispatchResult.Rejected("native_remote_vote_domain_unsupported");
 
         try
         {
