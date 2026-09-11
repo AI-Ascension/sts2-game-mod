@@ -1,17 +1,37 @@
-# Isolated visible combat demo
+# Isolated visible campaign and historical combat fixture
 
-This opt-in host adapter runs one real single-player Ironclad combat against the first
-alphabetically ordered weak encounter. It uses a fixed visible seed and runtime-v3 gameplay.
-It is a combat demonstration, not full-run navigation or a release compatibility claim.
+The production session launcher runs a real single-player campaign through runtime-v3 gameplay.
+Production launches use normal model-selected character and map progression. The source supports
+standard host-generated seeds and explicit practice seeds; neither mode is a release compatibility
+claim by itself. The session guardian defaults to 3600 seconds for a campaign and accepts a bounded
+`--max-runtime-seconds` override.
+
+## Production campaign session
+
+Build the default `GameLoaderProbe.csproj` without `EnableCombatDemoProbe`. The production
+live launch requires `STS2_LIVE_CAMPAIGN=1` and retains normal model-selected character and map
+progression. Use `--run-kind campaign --campaign-mode standard` for a saving-enabled host run,
+or `--run-kind campaign --campaign-mode practice --seed VALUE` for a deterministic run and its
+fresh-process replay. The guardian duration is bounded to 60 through 3600 seconds for campaigns.
+
+## Historical diagnostic room fixture
+
+The old room-entry combat fixture is a separate privileged diagnostic. It is excluded from the
+default assembly and may only be compiled explicitly with `-p:EnableCombatDemoProbe=true`; do not
+publish that addon or describe its result as campaign evidence. To run that historical fixture,
+use `--run-kind demo` with the explicitly built probe and an optional seed (default
+`AIASCENSIONREPLAY1`). Its guardian duration defaults to 900 seconds and is bounded to 60 through
+900 seconds. The fixture retains the older forced weak-encounter behavior and is useful only for
+focused room-entry/replay diagnostics.
 
 The operator must supply a disposable Windows host directory with its own `override.cfg`
 and Godot user directory. Keep proprietary files, logs, saves, and generated addons outside
 this repository. The original Steam installation is not the demo install target.
 
 `experiments/managed-rust-interop/live-combat-demo.ps1` accepts `HostDirectory`,
-`UserDirectory`, `LogPath`, `StopFile`, `Seed`, and `Port`. A fresh runtime credential is
-read from stdin. The launcher owns only its spawned process and stops it on stop-file,
-exit, or the 15-minute deadline.
+`UserDirectory`, `LogPath`, `StopFile`, `RunKind`, `CampaignMode`, `Seed`, `MaxRuntimeSeconds`,
+and `Port`. A fresh runtime credential is read from stdin. The launcher owns only its spawned
+process and stops it on stop-file, exit, or the configured bounded deadline.
 
 Before launch, select `-Display -1 -Width 1280 -Height 720 -WindowMode windowed`.
 Display indexes are zero-based Godot screen indexes; -1 (default) selects the primary display.
@@ -42,7 +62,7 @@ For an authorized disposable-host menu check, build `GameLoaderProbe.csproj` wit
 native menu instead of starting combat, checks each display's resolution choices, emits the
 actual controls' selection/apply signals, checks persisted and observed window settings, and
 saves `user://video-menu-probe.png`. Normal builds exclude this probe. Rebuild without the
-property before the combat/relaunch check; retain external logs and compare the actual window
+property and enable `EnableCombatDemoProbe` before the combat/relaunch check; retain external logs and compare the actual window
 report with the preferences saved by the menu. Source-only preference tests do not prove
 native menu behavior or monitor compatibility.
 Set `STS2_VIDEO_PROBE_VERIFY_SAVED=1` for a subsequent probe launch to verify the previously
@@ -70,12 +90,78 @@ Borderless 1024x768 on display 1 and maximized 1920x1009 on display 0 were also 
 Use `bash experiments/managed-rust-interop/live-combat-session.sh --help` for the complete
 repeatable operator entrypoint. Supply explicit host/user/artifact directories and gateway,
 MCP, harness and provider executable paths. It creates fresh role-separated credentials,
-launches the visible host, runs the configured model through the harness, and retains bounded
-external logs. Use `--display`, `--width`, `--height`, and `--window-mode` before launching.
-`--replay-trajectory` replays a completed model trajectory without inference; use the same seed.
+launches the visible host, runs the configured model through the episode harness, and retains
+bounded external logs. Use `--run-kind campaign --campaign-mode standard` for a normal
+saving-enabled host run. Use `--run-kind campaign --campaign-mode practice --seed VALUE` for a
+deterministic run and its fresh-process replay. Use `--run-kind demo` only with the explicit
+historical fixture build. `--max-runtime-seconds N` is bounded per run kind (60-3600 for campaign,
+60-900 for demo) and is passed to the PowerShell guardian. Use `--display`, `--width`,
+`--height`, and `--window-mode` before launching.
+`--replay-trajectory` replays a completed deterministic trajectory without inference; use the
+same seed.
 The selected semantic action must exist in the fresh catalog and visible game content must
 match. Live observation generation numbers are deliberately not compared across processes.
 `--hold-seconds` keeps the result visible after completion (default 300; maximum 600).
+
+For a bounded standard campaign/map handoff, add `--campaign-map` together with a pinned
+`--map-renderer-binary` and its lowercase `--map-renderer-sha256`. This mode requires the OpenAI
+Astra provider, starts a host-generated standard run, requests the complete current map graph and
+verified PNG, and admits exactly one `start_run` followed by exactly one current legal
+`select_map_node`. The managed host guard withholds every later gameplay mutation, and the
+launcher requires a zero harness exit and an ordered trace containing one settled setup action,
+one settled map action, and no other action kind. The runner allows two
+model decision steps, one read-only recovery attempt, and a 90-second provider deadline. The
+option does not resume a save, accepts no seed or replay trajectory, and is preparation for an
+authorized live run; it does not claim campaign completion or a played combat.
+
+The launcher also enables `STS2_CAMPAIGN_MAP_BOUND=true` in the harness. That policy rejects a
+different action kind before dispatch and advances only after runner-verified settlement. Before
+lease cleanup it records a fresh read-only observation without a third model decision. A map
+outside the current map-decision stage is explicitly unavailable in that final capture; the
+earlier image remains historical. The durable `trajectory.jsonl` contains bounded decisions,
+rationales, receipts, and bundle links, while `map-artifacts/` holds immutable bundles and the feed.
+Run `bash experiments/managed-rust-interop/live-campaign-trace.test.sh` to exercise trace rejection
+and both synchronous and waited settlement records without a host or provider. Trace checks bind
+the image, bundle, action receipt, and fresh observation to their execution and generation, and
+reject reused operation IDs or records placed before their prerequisites.
+
+Campaign/map mode also verifies the disposable host before starting anything. Its
+`data_sts2_windows_x86_64/sts2.dll` must be the supported v0.107.1 release `59260271` with
+SHA-256 `a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`; the matching
+`GodotSharp.dll` hash is `0e4897ecdfb31456a97c7d8028dfb8d7dbdc632e2f73fc9b438d7b266a139289`.
+The accepted addon directory defaults to `<host-dir>/mods` and must contain regular files named
+`AIAscensionSTS2GameMod.dll`, `AIAscensionSTS2GameModNative.dll`, and
+`AIAscensionSTS2GameMod.json`; pass `--addon-dir` when the staged addon is kept elsewhere.
+The launcher records the host, executable, override, and addon hashes under the external run
+artifact directory as `baseline.sha256` and `addon.sha256`, and verifies that baseline after the
+owned host stops. The user directory must be an explicit absolute Windows path outside the host,
+repository, addon, and artifact directories; a pre-existing directory is allowed only when it is
+already a disposable copy whose baseline is retained by the operator.
+
+Prepare the run by copying the supported installation to a disposable host directory, hashing the
+original host and addon files, retaining the copy's baseline, and placing a separate disposable
+Godot user directory at the path passed to `--user-dir`. Stage and hash the three addon files
+outside this repository, then run the bounded handoff with explicit binaries:
+
+~~~text
+bash experiments/managed-rust-interop/live-combat-session.sh \
+  --host-dir /path/to/disposable-sts2 \
+  --user-dir 'C:\Temp\sts2-map-user-20260907' \
+  --addon-dir /path/to/disposable-sts2/mods \
+  --artifacts-dir /tmp/sts2-map-artifacts \
+  --gateway-binary /path/to/sts2-gateway-runtime \
+  --mcp-binary /path/to/sts2-mcp-server \
+  --harness-binary /path/to/sts2-harness-runtime \
+  --provider-binary /path/to/sts2-astra-bridge \
+  --map-renderer-binary /path/to/map-visualizer \
+  --map-renderer-sha256 LOWERCASE_SHA256 \
+  --powershell-binary /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
+  --campaign-map
+~~~
+
+Do not use `dev-cycle.sh` or the active Steam installation for this handoff. The campaign/map
+launcher does not install an addon, copy a save, or select a game screen; it only accepts an
+already prepared disposable host and records the hashes needed for post-run restoration.
 
 Select the harness's `sts2-astra-bridge` as `--provider-binary` to play with OpenAI
 `gpt-6-astra` using an existing Codex login. The launcher reads `--describe` before launch,

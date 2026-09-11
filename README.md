@@ -26,6 +26,38 @@ have also been exercised in authorized disposable profiles. Current native evide
 STS2 v0.107.1 on the tested Windows and Linux guests; it records model-controlled setup-to-Defeat
 campaigns and fresh replays, plus separate forced terminal-observation fixtures.
 
+The native standard `seeded-run-v1` adapter is present at source/component level at current mod main
+[`caae865986d2274736d92b4f9be2bbda24bab83d`](https://github.com/AI-Ascension/sts2-game-mod/commit/caae865986d2274736d92b4f9be2bbda24bab83d).
+It exposes authenticated start and read-only reconciliation routes, accepts only the bounded
+standard Ironclad context, binds a fresh profile baseline and ordered native acts, and requires
+canonical seed readback plus a `run_started` witness before settlement. Its copied protocol artifact
+is `seeded-run-v1` at schema digest `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`,
+from protocol main `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build and synthetic probes do
+not prove a live seeded run; independent disposable-host verification, save isolation, and broader
+compatibility remain unverified. See [ADR 0031](docs/decisions/0031-native-standard-seeded-run-adapter.md).
+
+The additive Runtime-v4 expert state/action bridge is present at source/component level at current
+mod main
+[`caae865986d2274736d92b4f9be2bbda24bab83d`](https://github.com/AI-Ascension/sts2-game-mod/commit/caae865986d2274736d92b4f9be2bbda24bab83d).
+Its copied protocol artifacts are checksum-verified against current protocol main
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`; the expert-state and expert-action schema digests are
+`0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
+`393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. Rust/managed source and
+synthetic route/admission checks cover the bounded expert surface. Live expert gameplay, potion
+settlement, exact-host/package builds, and broader compatibility remain `unverified`.
+
+The additive `runtime-map-v1` read profile is present at source/component level. It serves
+authenticated `GET /api/map/v1/snapshot`, copies only bounded player-visible topology and current
+legal bindings, and rechecks the gameplay generation before returning owned values. The copied
+artifact and source probes pass; live map extraction, provider delivery, and settled navigation
+remain `unverified` (see [ADR 0035](docs/decisions/0035-runtime-map-projection.md)).
+
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds native rest-option actions and
+generation-fenced Smith/Mend selector follow-ups with option-specific completion witnesses and
+same-operation recovery. Its protocol manifest remains `candidate` / `none_admitted`; gateway,
+MCP, harness, live rest settlement, exact-host/package, and release evidence remain `unverified`
+(see [ADR 0036](docs/decisions/0036-runtime-v4-rest-option-action.md)).
+
 ## Responsibility and consumers
 
 The mod owner maintains the managed loader, host translation, main-thread boundary, authoritative
@@ -55,6 +87,21 @@ artifact as inert data; it does not link a protocol implementation or a sibling 
   artifact for the bounded Runtime-v2 fake seam; it is pinned to schema digest
   `f7963b19c8ed5bbdc02c08e83c7a2e16c4771ed5eb798b29a8208d7a917a86c2` and has no sibling checkout
   dependency.
+- [protocol-artifact/runtime-v4-expert/](protocol-artifact/runtime-v4-expert/) and
+  [protocol-artifact/runtime-v4-expert-action/](protocol-artifact/runtime-v4-expert-action/) are
+  inert copied artifacts for the additive expert state/action bridge. Their schema digests are
+  `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
+  `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`.
+- [protocol-artifact/seeded-run-v1/](protocol-artifact/seeded-run-v1/) is the copied explicit
+  seeded-launch contract at schema digest
+  `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`.
+- [protocol-artifact/runtime-map-v1/](protocol-artifact/runtime-map-v1/) is the inert copied map
+  read artifact, pinned to schema digest
+  `ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b`.
+- [protocol-artifact/runtime-v4-expert-rest-action/](protocol-artifact/runtime-v4-expert-rest-action/)
+  is the inert copied rest-action candidate, pinned to schema digest
+  `bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd` and not admitted to any
+  external consumer.
 - `crates/game-mod/src/poc/` maps state reads and one typed `use_budget` action through a narrow
   `PocCorePort`, records correlation/instance/generation metadata, and emits one settled-effect
   witness for an accepted action.
@@ -78,6 +125,16 @@ The managed loader, packaging, authenticated runtime routes, and runtime-v3 game
 are implemented for the reviewed bounded path. The Rust POC core port remains a fake seam. Native
 evidence confirms the exact v0.107.1 Windows/Linux campaign and replay paths recorded by the harness;
 it does not establish every character, seed, branch, host patch, or multiplayer behavior.
+
+The native co-op source candidate is now wired through the managed game-thread callback path and
+native listener routes 16 through 20. It binds host actions, shared votes, peer rejoin, and
+same-operation recovery to the first-party multiplayer service and shares the pending-mutation gate
+with the seeded and gameplay profiles. `coop-native-v1` remains an unadmitted candidate contract:
+its protocol schema/artifact and gateway/MCP/harness consumers are owned by separate targets and
+are not present in this target. Source probes and an exact-host compile cover the managed boundary;
+they do not establish a live two-peer session, native effect settlement, disconnect/rejoin behavior,
+or multiplayer compatibility. The admitted `coop-synchronization-v1` profile remains a separate
+read-only gateway/MCP coordinator-report contract.
 
 ## Steam Workshop package
 

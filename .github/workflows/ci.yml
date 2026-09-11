@@ -46,6 +46,16 @@ jobs:
         working-directory: protocol-artifact/runtime-v3-gameplay
         run: sha256sum -c SHA256SUMS
 
+      - name: Verify every copied protocol artifact inventory
+        # Discovers every SHA256SUMS under protocol-artifact/ so a profile copied later
+        # (for example runtime-v4-expert or runtime-v4-expert-action) cannot be missed.
+        run: |
+          inventories=$(find protocol-artifact -mindepth 2 -name SHA256SUMS -type f | LC_ALL=C sort)
+          test -n "$inventories"
+          for inventory in $inventories; do
+            (cd "$(dirname "$inventory")" && sha256sum -c SHA256SUMS)
+          done
+
       - name: Validate copied POC JSON fixtures
         run: |
           cmp protocol-artifact/poc-v1/schema.json schemas/poc-v1.schema.json
@@ -89,6 +99,7 @@ jobs:
           bash experiments/managed-rust-interop/provider-build.test.sh
           bash experiments/managed-rust-interop/session-install.test.sh
           bash experiments/managed-rust-interop/live-authorization.test.sh
+          bash experiments/managed-rust-interop/live-campaign-trace.test.sh
           bash experiments/managed-rust-interop/package-runtime-addon.test.sh
           bash experiments/managed-rust-interop/dev-cycle.test.sh
           bash experiments/managed-rust-interop/session-launcher.sh --self-test
@@ -125,6 +136,15 @@ jobs:
       - name: Run managed Workshop validation probe
         run: dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
 
+      - name: Run managed seeded-run context digest probe
+        run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release
+
+      - name: Run managed seeded-run serializer generation probe
+        run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
+
+      - name: Run managed seeded-run profile baseline inventory probe
+        run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
+
       - name: Run managed profile settings validation probe
         run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
 
@@ -134,6 +154,16 @@ jobs:
 
       - name: Run managed runtime-v1 contract regressions
         run: dotnet run --project experiments/managed-rust-interop/contract-tests/RuntimeContractProbe.csproj --configuration Release
+
+      - name: Run managed Runtime-v4 expert rest action regressions
+        # This source-only probe covers the additive rest selector boundary and its recovery
+        # semantics without loading proprietary host assemblies.
+        run: dotnet run --project experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj --configuration Release
+
+      - name: Run managed Runtime-map-v1 projection regressions
+        # This source-only probe covers bounded map projection, identity fencing, and artifact
+        # provenance without loading proprietary host assemblies.
+        run: dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
 
       - name: Run source-linked replay controller regressions
         # These fakes exercise controller logic, not host compatibility.
@@ -150,6 +180,12 @@ jobs:
 
       - name: Run managed Runtime-v3 request and settlement probe
         run: dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
+
+      - name: Run managed native co-op source probes
+        run: |
+          dotnet run --project experiments/managed-rust-interop/coop-admission-tests/CoopAdmissionProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRuntimeProbe.csproj --configuration Release
+          dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
 
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

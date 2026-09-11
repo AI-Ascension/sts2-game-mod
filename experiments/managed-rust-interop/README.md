@@ -257,7 +257,11 @@ saved-off UI toggle cannot silently prevent the session readiness check.
 `STS2_RUNTIME_PORT` and `STS2_RUNTIME_BIND_ADDRESS` override the saved values when present. The
 listener exposes the v1 probe routes and the frozen Runtime-v2 routes
 `/api/v2/runtime/state`, `/api/v2/runtime/action`, and
-`/api/v2/runtime/operations/{operation_id}` with bearer authentication. Requests are copied into a
+`/api/v2/runtime/operations/{operation_id}` plus the additive read-only map snapshot route
+`/api/map/v1/snapshot` with bearer authentication. Map snapshots use the frozen
+`sts2-protocol/runtime-map-v1` schema digest and are served from the host thread only while the
+campaign map is observable; closed or unsupported map surfaces return an explicit unavailable
+snapshot. Requests are copied into a
 bounded managed queue and processed on the Godot main thread. Runtime-v1 retains the
 `show_runtime_probe` integration action. Runtime-v2 admits only argument-free `end_turn` and reports `unknown` after dispatch until an
 independent host completion binding is implemented. `STS2_RUNTIME_QUEUE_CAPACITY` may set a bounded mod-side queue from `1`
@@ -267,11 +271,53 @@ receipt store is full. A request that reaches the five-second boundary is cancel
 been claimed by the main-thread pump; a request already claimed is reported as timeout/uncertain
 and must be reconciled rather than retried.
 
+The additive Runtime-v4 expert profile exposes the authenticated routes
+`/api/v4/runtime/expert-state`, `/api/v4/runtime/expert-action`, and
+`/api/v4/runtime/expert-actions/{operation_id}`. The state route projects only ordinary
+player-visible run, map, combat, reward, event, rest, selection, shop, victory, defeat, and
+recovery data, together with the host-generated legal-action catalog. The action route currently
+admits only a host-generated `use_potion` action. It binds the request to the session lease,
+generation, state, correlation, and operation identities; a queued mutation remains `unknown`
+until the exact host action finishes, the addressed potion instance is gone, and a fresh expert
+observation proves the generation transition. Lost responses are reconciled with the same
+operation identity. These routes are source/build evidence; live expert-state gameplay and
+gateway/MCP/harness integration remain unverified.
+
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds
+`/api/v4/runtime/expert-rest-action` and
+`/api/v4/runtime/expert-rest-actions/{operation_id}` with callback kind 15. It projects only
+unique visible enabled native rest options, retains typed Smith/Mend selector catalogs, and
+requires option-specific completion witnesses before settlement. The copied candidate artifact
+remains unadmitted; protocol, gateway/MCP/harness, live rest, exact-host/package, and release
+support remain unverified.
+
 The exact STS2 v0.107.1 Windows x86-64 host probe is recorded in the target evidence report. The
 Runtime-v2 host-adapter candidate builds are recorded separately; their live
 gameplay execution, settlement, restart behavior, and gateway/MCP/harness integration remain
 unverified. The runtime token, host assemblies, game files, saves, and logs are not stored or
 packaged.
+
+### Native co-op source candidate
+
+The managed loader wires the source candidate `coop-native-v1` to the game-thread callback path.
+The native listener reserves callback kinds 16 through 20 for observation, local action, shared
+vote, rejoin, and recovery; seeded callbacks 9 and 10 remain unchanged. Mutations are admitted
+only for an authenticated local peer on a connected native multiplayer service, and settlement
+requires a fresh native checkpoint, an operation-bound witness, and convergence from every
+participant retained in the run roster. The v2, v3, v4, and seeded profiles share the same
+serialized pending-mutation exclusion.
+
+The optional first-party lobby bootstrap is controlled by
+`STS2_NATIVE_COOP_AUTOSTART_ROLE=host` or `client`, with the client also requiring distinct
+`STS2_NATIVE_COOP_HOST_ID` and `STS2_NATIVE_COOP_CLIENT_ID` values. It uses loopback ENet by
+default, does not automate character selection unless
+`STS2_NATIVE_COOP_AUTO_ADMIT_RUN=1` is explicitly set, and supports the bounded running-session
+rejoin path. These environment variables are for an authorized disposable host only.
+
+This is a source/component candidate. The protocol schema/artifact remains unadmitted and is owned
+by the protocol target; gateway, MCP, and harness consumers are not supplied here. The source
+probes and exact-host compilation do not prove a live two-peer run, native effect settlement,
+checksum semantics, disconnect/rejoin recovery, or package compatibility.
 
 ## Review correction (2026-09-04)
 

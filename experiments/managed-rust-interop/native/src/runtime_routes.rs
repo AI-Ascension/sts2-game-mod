@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    CALLBACK_ACTION, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, RuntimeRequestCallback, dispatch as dispatch_callback,
-    dispatch_with_body, http,
+    CALLBACK_ACTION, CALLBACK_COOP_ACTION, CALLBACK_COOP_LEGAL_CATALOG, CALLBACK_COOP_OBSERVATION,
+    CALLBACK_COOP_RECOVER, CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE, CALLBACK_RUNTIME_MAP,
+    CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION, CALLBACK_RUNTIME_V2_STATE,
+    CALLBACK_RUNTIME_V4_EXPERT, CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+    CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION, CALLBACK_SEEDED_OPERATION, CALLBACK_SEEDED_RUN,
+    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
 };
+
+pub(super) const CALLBACK_GAMEPLAY: u32 = super::CALLBACK_GAMEPLAY;
 
 pub(super) fn dispatch(
     callback: RuntimeRequestCallback,
@@ -29,6 +34,19 @@ pub(super) fn dispatch(
         ("POST", "/api/v2/runtime/action") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_RUNTIME_V2_ACTION, request, stream)
         }
+        ("POST", "/v2/seeded-run") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_SEEDED_RUN, request, stream)
+        }
+        ("GET", path) if request.body.is_empty() && path.starts_with("/v2/seeded-operations/") => {
+            let operation_id = &path["/v2/seeded-operations/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_SEEDED_OPERATION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
         ("GET", path)
             if request.body.is_empty() && path.starts_with("/api/v2/runtime/operations/") =>
         {
@@ -40,6 +58,66 @@ pub(super) fn dispatch(
                 operation_id,
                 stream,
             )
+        }
+        ("GET", "/api/v4/runtime/expert-state") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT, request, stream)
+        }
+        ("POST", "/api/v4/runtime/expert-action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_V4_EXPERT_ACTION, request, stream)
+        }
+        ("GET", path)
+            if request.body.is_empty() && path.starts_with("/api/v4/runtime/expert-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_ACTION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
+        ("POST", "/api/v4/runtime/expert-rest-action") if request.content_type_is_json() => {
+            dispatch_callback(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+                request,
+                stream,
+            )
+        }
+        ("GET", path)
+            if request.body.is_empty()
+                && path.starts_with("/api/v4/runtime/expert-rest-actions/") =>
+        {
+            let operation_id = &path["/api/v4/runtime/expert-rest-actions/".len()..];
+            dispatch_operation(
+                callback,
+                CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+                request,
+                operation_id,
+                stream,
+            )
+        }
+        ("GET", "/api/v1/coop/native/observation") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_COOP_OBSERVATION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/action") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_ACTION, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/vote") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_VOTE, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/rejoin") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_REJOIN, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/recover") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_RECOVER, request, stream)
+        }
+        ("POST", "/api/v1/coop/native/legal-catalog") if request.content_type_is_json() => {
+            dispatch_callback(callback, CALLBACK_COOP_LEGAL_CATALOG, request, stream)
+        }
+        ("GET", "/api/map/v1/snapshot") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_RUNTIME_MAP, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }
@@ -58,7 +136,7 @@ fn dispatch_gameplay(
     if !super::gameplay_route::body_matches(&request.body, expected) {
         return http::write_response(stream, 400, b"{\"error_code\":\"invalid_route_message\"}");
     }
-    dispatch_callback(callback, super::CALLBACK_GAMEPLAY, request, stream)
+    dispatch_callback(callback, CALLBACK_GAMEPLAY, request, stream)
 }
 
 fn dispatch_operation(

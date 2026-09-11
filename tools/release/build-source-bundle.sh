@@ -8,6 +8,11 @@ usage() {
     exit 2
 }
 
+fail() {
+    printf 'source bundle: %s\n' "$1" >&2
+    exit 1
+}
+
 [[ $# -ge 3 && $# -le 4 ]] || usage
 version=$1
 platform=$2
@@ -49,11 +54,50 @@ cleanup() {
 trap cleanup EXIT
 archive_root="$work_dir/$artifact_name"
 mkdir -p -- "$archive_root"
+policy_path="tools/release/source-distribution-policy-v1.json"
+source_paths_file="$work_dir/source-paths"
+allowed_paths_file="$work_dir/allowed-paths"
+excluded_paths_file="$work_dir/excluded-paths"
+required_paths_file="$work_dir/required-paths"
 
 # Preserve the executable bits from Git independently of the caller's umask. Directory modes are
 # normalized below because Git does not store them as tree metadata.
 git archive --format=tar "$source_commit" | tar --extract --same-permissions --no-same-owner -f - -C "$archive_root"
 find "$archive_root" -type d -exec chmod 0755 {} +
+
+# The policy is an exact path inventory for the source commit. This makes a newly tracked file
+# fail closed until the policy is reviewed and updated in the same source change.
+git ls-tree -r --name-only "$source_commit" > "$source_paths_file"
+policy_file="$archive_root/$policy_path"
+[[ -f "$policy_file" && ! -L "$policy_file" ]] || fail "source policy is missing from the resolved commit: $policy_path"
+excluded_json=$(
+    cd -- "$repo_root"
+    cargo +1.97.1 run --quiet --locked --offline --manifest-path "$repo_root/Cargo.toml" \
+        --package sts2-release-tool -- validate-source-policy \
+        "$policy_file" "$source_paths_file" "$allowed_paths_file" "$excluded_paths_file" \
+        "$required_paths_file"
+)
+mapfile -t allowed_paths < "$allowed_paths_file"
+mapfile -t excluded_paths < "$excluded_paths_file"
+mapfile -t required_paths < "$required_paths_file"
+
+for relative in "${excluded_paths[@]}"; do
+    excluded_file="$archive_root/$relative"
+    [[ -f "$excluded_file" && ! -L "$excluded_file" ]] \
+        || fail "policy exclusion is not a regular source file: $relative"
+    rm -- "$excluded_file"
+done
+
+for relative in "${allowed_paths[@]}"; do
+    allowed_file="$archive_root/$relative"
+    [[ -f "$allowed_file" && ! -L "$allowed_file" ]] \
+        || fail "policy allowlist path is not a regular source file: $relative"
+done
+for relative in "${required_paths[@]}"; do
+    required_file="$archive_root/$relative"
+    [[ -f "$required_file" && ! -L "$required_file" ]] \
+        || fail "required production source path is missing: $relative"
+done
 
 # A source bundle must never silently acquire a host binary, profile, save, or build tree.
 while IFS= read -r -d '' path; do
@@ -71,16 +115,34 @@ while IFS= read -r -d '' path; do
     esac
 done < <(find "$archive_root" -type f -print0)
 
+policy_sha256=$(sha256sum -- "$policy_file" | cut -d ' ' -f1)
+included_inventory_file="$work_dir/included-content.sha256"
+(
+    cd -- "$archive_root"
+    while IFS= read -r relative; do
+        sha256sum -- "$relative"
+    done < <(find . -type f ! -path './RELEASE-MANIFEST.json' ! -path './SHA256SUMS' \
+        -printf '%P\n' | LC_ALL=C sort)
+) > "$included_inventory_file"
+included_path_count=$(wc -l < "$included_inventory_file" | tr -d '[:space:]')
+included_content_digest=$(sha256sum -- "$included_inventory_file" | cut -d ' ' -f1)
+
 cat > "$archive_root/RELEASE-MANIFEST.json" <<EOF
 {
   "schema_version": "ai-ascension-release-manifest-v1",
   "artifact_kind": "source_bundle",
-  "artifact_scope": "source_only",
+  "artifact_scope": "production_source_only",
   "component": "${component}",
   "version": "${version}",
   "platform": "${platform}",
   "source_commit": "${source_commit}",
   "source_tree": "${source_tree}",
+  "source_tree_scope": "original_full_git_tree",
+  "source_policy_id": "source-distribution-v1",
+  "source_policy_sha256": "${policy_sha256}",
+  "included_path_count": ${included_path_count},
+  "included_content_digest": "${included_content_digest}",
+  "excluded_paths": ${excluded_json},
   "source_date_epoch": ${SOURCE_DATE_EPOCH:-0},
   "checksum_inventory": "SHA256SUMS",
   "proprietary_files_included": false,
@@ -95,7 +157,7 @@ chmod 0644 "$archive_root/RELEASE-MANIFEST.json"
     : > SHA256SUMS
     while IFS= read -r relative; do
         sha256sum -- "$relative"
-    done < <(find . -type f ! -name SHA256SUMS -printf '%P\n' | LC_ALL=C sort)
+    done < <(find . -type f ! -path './SHA256SUMS' -printf '%P\n' | LC_ALL=C sort)
 ) > "$archive_root/SHA256SUMS"
 chmod 0644 "$archive_root/SHA256SUMS"
 

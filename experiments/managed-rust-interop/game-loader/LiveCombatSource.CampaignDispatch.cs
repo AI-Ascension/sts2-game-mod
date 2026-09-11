@@ -30,13 +30,18 @@ internal sealed partial class LiveCombatSource
         RuntimeV3GameplayObservation before)
     {
         if (_campaignPending.ContainsKey(operation) || _campaignPending.Count >= 4096) return false;
+        if (LiveCombatDemo.CampaignMapBound
+            && action.Kind is not ("start_run" or "select_map_node")) return false;
         Func<Task> invoke;
         Func<bool> postcondition;
         string effect;
         Func<string>? diagnostics = null;
-        if (action.Kind == "start_run" && action.Value == "ironclad")
+        if (action.Kind == "start_run" && IsCampaignCharacter(action.Value))
         {
-            invoke = async () => { await LiveCombatDemo.StartCampaignAsync(); };
+            if (LiveCombatDemo.CampaignMapBound && _campaignStartDispatched) return false;
+            _campaignStartDispatched = true;
+            string characterId = action.Value!;
+            invoke = async () => { await LiveCombatDemo.StartCampaignAsync(characterId); };
             postcondition = () => CurrentPlayer() != null
                 && (LiveCombatDemo.RunOptions.Practice
                     ? RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed == before.VisibleSeed
@@ -49,6 +54,8 @@ internal sealed partial class LiveCombatSource
             var point = TravelablePoints().SingleOrDefault(candidate => MapId(candidate, run) == action.Value);
             if (point == null || NMapScreen.Instance is not { IsTravelEnabled: true, IsTraveling: false } map)
                 return false;
+            if (LiveCombatDemo.CampaignMapBound && _campaignMapSelectionDispatched) return false;
+            _campaignMapSelectionDispatched = true;
             var destination = point.Point.coord;
             var previousRoom = run.CurrentRoom;
             var queued = new MoveToMapCoordAction(CurrentPlayer()!, destination);
@@ -88,6 +95,10 @@ internal sealed partial class LiveCombatSource
         pending.Work = invoke();
         return true;
     }
+
+    private static bool IsCampaignCharacter(string? characterId) =>
+        characterId is not null
+        && CampaignCharacters().Contains(characterId, StringComparer.Ordinal);
 
     private RuntimeV3HostCompletion? CampaignCompletion(RuntimeV3OperationKey operation,
         LegalActionReference action)

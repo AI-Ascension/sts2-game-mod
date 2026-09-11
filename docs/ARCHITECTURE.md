@@ -67,6 +67,22 @@ The adapter uses only symbols present in the recorded v0.107.1 host: `IsInProgre
 `IsPlayPhase`, but the adapter does not depend on that release-specific property. The candidate is
 source/build evidence only until exercised in an explicitly authorized disposable host profile.
 
+### Seeded-run native adapter
+
+The additive `seeded-run-v1` adapter keeps standard seeded launch authority in the native host. The
+listener maps `POST /v2/seeded-run` to callback kind 9 and bodyless
+`GET /v2/seeded-operations/{operation_id}` to callback kind 10. The managed boundary accepts only
+the concrete standard Ironclad context with ascension 0, no modifiers, ordered native acts, enabled
+saving, a fresh profile baseline, and matching game/mod compatibility identities. It computes and
+binds the selected-context digest before admission and clears the temporary native seed override in
+`finally` after the lobby consumes it.
+
+An accepted response is admission only. Settlement requires the same native run state through the
+host pump, canonical seed and context readback, a fresh actionable Runtime-v3 generation, and the
+`run_started` effect witness. A timeout or host exception remains unknown and can only be reconciled
+read-only by the original operation identity. The adapter and its source-only probes prove boundary
+behavior; they do not establish live host settlement, save/profile safety, or release compatibility.
+
 ### Ephemeral session orchestration
 
 `experiments/managed-rust-interop/session-launcher.sh` is a development/test orchestrator owned by
@@ -310,6 +326,47 @@ operation in either profile therefore excludes a fresh mutation through the othe
 replay retained receipts before fresh admission; observations and read-only reconciliation remain
 available while the outcome is uncertain.
 
+## Runtime-v4 expert bridge
+
+The additive `runtime-v4-expert` state profile and `runtime-v4-expert-action` transport reuse the
+Runtime-v3 host source and host-thread queue. The native adapter maps `GET /api/v4/runtime/expert-state`
+(empty body) to callback kind 7 and `POST /api/v4/runtime/expert-action` (JSON) plus
+`GET /api/v4/runtime/expert-actions/{operation_id}` to callback kind 8; the operation suffix must be a
+bounded identity without `..`, and every other v4 path falls through to the existing 404. Kinds 3–6
+are unchanged. `RuntimeV4ExpertSupport` authorizes the bound host identity first, requires the exact
+eighteen-field request envelope, admits only a host-generated `use_potion` action that is still legal
+at the requested state and generation on the host thread, retains one receipt per operation
+identity, and settles only after the exact queued host action finished, the addressed potion instance
+left the belt, and a fresh observation advanced the generation. A queue or host exception leaves the
+receipt `unknown` for same-identity reconciliation and blocks further mutations. The expert
+projection reads public host properties by name and the rendered `NIntent` presentation fields named
+in ADR 0030; unavailable or out-of-bound values fail closed to `null` or `Unknown`. This is source and
+build evidence; live expert gameplay and settlement remain unverified.
+
+At current mod main
+`caae865986d2274736d92b4f9be2bbda24bab83d`, the source/component boundary is checked against the
+copied expert artifacts from current protocol main
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The expert-state and expert-action schema digests are
+`0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42` and
+`393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`. This identity and checksum
+evidence does not establish licensed-host extraction, live expert action settlement, package
+compatibility, or release support.
+
+The source-only `runtime-v4-expert-rest-action-v1` candidate adds callback kind 15 and authenticated
+rest-option and operation-reconciliation routes. `LiveCombatSource` projects only unique visible,
+enabled native rest options; Smith and Mend selectors retain their native catalogs and use separate
+generation-fenced follow-up operations. Receipts preserve the original action and settle only with
+option-specific host completion evidence (or remain `unknown` for same-operation recovery). The
+copied candidate artifact is not admitted to protocol, gateway, MCP, or harness consumers, so live
+rest effects, exact-host/package compatibility, and release support remain unverified.
+
+The independent `runtime-map-v1` read profile serves `GET /api/map/v1/snapshot`. It copies bounded
+player-visible map topology and the exact current legal bindings on the host thread, assigns stable
+map-scoped identities, and reobserves the gameplay generation before returning owned values. Closed,
+unsupported, or changed surfaces return explicit unavailable results; the route never opens or
+navigates the map UI. Its copied artifact and managed/native probes establish source/component
+evidence only, not live extraction, provider delivery, or settled navigation.
+
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 
@@ -321,9 +378,21 @@ completion evidence; a generation increase alone cannot settle an action. The ma
 component probe exercises this production handler without a licensed host.
 
 `FairPlayProjection` and `PrivilegedFieldGuard` serialize only the bounded player-visible profile.
-The separate co-op helper validates peer identity and synchronization metadata, and
-reports whether mutation would be allowed. It is not wired into the gameplay host,
-wire observation, or mutation admission; this PR does not implement co-op enforcement.
+The native co-op candidate adds a game-thread `CoopNativeRuntime` over
+`InstalledNativeCoopHostPort`. The listener maps observation, local action, shared vote, rejoin, and
+recovery routes to callback kinds 16 through 20, leaving seeded callbacks 9 and 10 unchanged. The
+host adapter owns peer identity, authority epochs, native checksum checkpoints, action/vote
+dispatch, rejoin loading, and the all-peer postcondition; the managed runtime retains one receipt
+per operation and reports `unknown` when the native effect or peer convergence cannot be proved.
+Every co-op mutation checks the v2, v3, v4, and seeded pending-operation fences in the serialized
+game-thread path.
+
+`coop-native-v1` is still an unadmitted protocol candidate. Its schema/artifact and cross-target
+consumers are not copied into this target, so no gateway, MCP, harness, or live multiplayer claim
+follows from this source wiring. The exact-host build and source-linked probes establish managed
+boundary evidence only. The older `CoopProjection`/`CoopSynchronization` helper remains an
+independent read-only source component, and `coop-synchronization-v1` remains the separate admitted
+gateway/MCP coordinator-report contract.
 No
 provider policy, raw input, host object, save, executable, or future random state is represented.
 The bridge is source/build evidence only until the exact licensed host assemblies are available.

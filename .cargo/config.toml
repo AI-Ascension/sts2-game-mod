@@ -1,0 +1,3 @@
+# PE build timestamps otherwise change the Windows addon on every link.
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "link-arg=-Wl,--no-insert-timestamp"]

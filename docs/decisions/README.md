@@ -26,6 +26,12 @@ decision body and do not reserve another identifier. Local link validation check
 | 0016 | [Runtime-v2 host adapter candidate](0016-runtime-v2-host-adapter-candidate.md) |
 | 0018 | [Neutral Runtime-v3 host-thread bridge, source-only](0018-runtime-v3-gameplay-bridge.md) |
 | 0019 | [Repeat-seed practice replay](0019-repeat-seed-practice-replay.md) |
+| 0030 | [Visible combat intent projection](0030-visible-combat-intent-projection.md) |
+| 0031 | [Native standard seeded-run adapter](0031-native-standard-seeded-run-adapter.md) |
+| 0032 | [Native co-op source candidate](0032-native-coop-source-candidate.md) |
+| 0034 | [Rust release provenance tooling boundary](0034-rust-release-provenance-tooling.md) |
+| 0035 | [Additive permitted map projection](0035-runtime-map-projection.md) |
+| 0036 | [Additive Runtime-v4 rest-option action transport](0036-runtime-v4-rest-option-action.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

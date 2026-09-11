@@ -1,0 +1,15 @@
+[package]
+name = "sts2-release-tool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "=0.11.0"
+
+[lints]
+workspace = true

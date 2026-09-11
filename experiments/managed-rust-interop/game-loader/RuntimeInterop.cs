@@ -18,6 +18,11 @@ public static partial class ModEntry
     private const int RuntimeRequestKindRuntimeV2State = 3;
     private const int RuntimeRequestKindRuntimeV2Action = 4;
     private const int RuntimeRequestKindRuntimeV2Operation = 5;
+    private const int RuntimeRequestKindSeededRun = 9;
+    private const int RuntimeRequestKindSeededOperation = 10;
+    private const int RuntimeRequestKindExpertAction = 8;
+    private const int RuntimeRequestKindExpertRestAction = 15;
+    private const int RuntimeRequestKindMap = 14;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
@@ -190,6 +195,7 @@ public static partial class ModEntry
         for (int index = 0; index < 16 && RuntimeQueue.ProcessOne(ExecuteRuntimeWork); index++)
         {
         }
+        SeededRunStandardHost.Pump();
         TryFinalizePendingRuntimeV2();
     }
 
@@ -225,7 +231,7 @@ public static partial class ModEntry
     private static int WriteNativeResponse(int status, string response, nint output, nuint outputCapacity, out nuint outputLength)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(response);
-        if (bytes.Length > (long)outputCapacity || bytes.Length > 128 * 1024)
+        if (bytes.Length > (long)outputCapacity || bytes.Length > RuntimeMapV1Contract.MaxMessageBytes)
         {
             outputLength = 0;
             return RuntimeUnavailable;

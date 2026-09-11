@@ -17,7 +17,7 @@ printf 'preview\n' > "$temp_dir/preview.jpg"
 package="$temp_dir/package"
 bash "$repo_root/tools/workshop/package-platform-item.sh" \
     linux-x86_64 "$payload" "$package" 2868840 1001001 0.107.1 0.4.1 \
-    recovery-test "$temp_dir/preview.jpg" >/dev/null
+    recovery-test "$temp_dir/preview.jpg" --legacy-unbound >/dev/null
 
 operator="$script_dir/workshop_operator"
 

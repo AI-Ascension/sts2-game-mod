@@ -86,7 +86,9 @@ public static partial class ModEntry
             return (RuntimeRejected, RuntimeV2OperationResponse(context, rejected));
         }
 
-        if (_runtimeV2Pending != null || (_runtimeV3Gameplay?.HasPendingMutation ?? false))
+        if (_runtimeV2Pending != null || (_runtimeV3Gameplay?.HasPendingMutation ?? false)
+            || HasPendingRuntimeV4ExpertMutation() || HasPendingRuntimeV4ExpertRestMutation()
+            || HasPendingCoopMutation || SeededRunStandardHost.HasPendingMutation)
         {
             RuntimeV2Operation rejected = RetainRuntimeV2Operation(
                 parsedRequest,

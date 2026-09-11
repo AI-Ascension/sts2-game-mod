@@ -148,6 +148,10 @@ Windows host reconfiguration and unload remain separately unverified.
 | --- | --- | --- | --- |
 | `AIAscensionSTS2GameMod` plus native runtime listener (runtime evidence predates rename) | `sts2-protocol/runtime-v1` | Rust/managed gates plus authorized disposable-host request/action trace | Focused runtime confirmed for the recorded pre-rename package on STS2 v0.107.1 Windows x86-64; gameplay and broader compatibility unverified |
 | `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v2` | Rust/managed gates plus controlled disposable-host `end_turn` trace | Build/package candidate confirmed; host mutation, settlement, and cross-target runtime remain unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert` and `runtime-v4-expert-action` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; copied artifacts and synthetic route/admission checks | Source/component evidence only; live expert gameplay, potion settlement, exact-host/package builds, and broader compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/seeded-run-v1` | Current source/component head `caae865986d2274736d92b4f9be2bbda24bab83d`; callback/route, selected-context, profile-baseline, canonical-seed, and `run_started` witness probes | Source/component evidence only; live seeded-run settlement, save isolation, exact-host/package compatibility, gameplay, and release unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-map-v1` candidate | Copied artifact, native route checks, managed projection/identity probes | Source/component evidence only; live map extraction, provider delivery, settled navigation, and package compatibility unverified |
+| `AIAscensionSTS2GameMod` plus native runtime listener | `sts2-protocol/runtime-v4-expert-rest-action-v1` candidate | Copied candidate artifact, native route checks, managed selector/witness/recovery probes | Candidate source/component evidence only; protocol admission, gateway/MCP/harness adoption, live rest settlement, exact-host/package compatibility, and release unverified |
 
 The profile's `show_runtime_probe` action proves only a host-visible status-overlay witness when
 reproduced in an authorized disposable host. It is not a support claim for gameplay mutation,
@@ -159,23 +163,74 @@ typed catalog checks, host-thread adapter, separate co-op helpers, and postcondi
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
+The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
+and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
+copies under `protocol-artifact/` are byte-identical to current `sts2-protocol` main
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The v4 routes
+add native callback kinds 7 and 8 without changing the ABI structure, version, or kinds 3–6. The
+only admitted expert mutation is `use_potion`; it shares the v2/v3 host identity fence and the
+pending-mutation exclusion in all directions. The Runtime-v3 combat observation now projects one
+visible intent per enemy under ADR 0030 and `start_run` accepts any character the native profile
+unlock state reports; neither changes the v3 digest. All of this is source/build and synthetic-probe
+evidence: live expert gameplay, potion settlement, intent accuracy against the licensed host, and
+the Windows/Linux package builds named in PR #52 remain `unverified`.
+
+## Seeded-run native adapter
+
+The native standard `seeded-run-v1` adapter uses callback kinds 9 and 10 for
+`POST /v2/seeded-run` and bodyless `GET /v2/seeded-operations/{operation_id}`. It accepts only a
+concrete standard Ironclad, ascension-0, no-modifier context with the configured profile baseline,
+ordered acts, enabled saving, and matching game/mod compatibility identities. Admission retains the
+operation identity; an uncertain result is reconciled read-only with that same identity.
+
+Settlement requires the host to read back the requested context and canonical seed, observe the
+same run state through the host pump, advance the Runtime-v3 generation, expose an actionable
+non-empty catalog, and emit the `run_started` witness. The copied artifact is schema digest
+`5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`, aligned with protocol main
+`d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. The route, context, baseline, and source-only host
+probes are source/component evidence. A live disposable-host seeded run, save/profile isolation,
+and broader compatibility remain unverified; ADR 0031 is proposed pending that evidence.
+
+## Runtime-map-v1 read profile
+
+The additive map profile is an authenticated read-only route with schema digest
+`ceab0d2dfc471d1ec36d12edaf4654b8c7fdced06548bf47265e11c63f98115b`. The host projection copies
+bounded player-visible nodes, edges, categories, and current legal bindings, assigns map-lifetime
+identities, and reobserves the gameplay generation before returning the snapshot. Closed,
+unsupported, or changed surfaces return explicit unavailable results; no UI navigation is performed.
+The artifact and source probes do not establish live extraction or gameplay navigation.
+
+## Runtime-v4 expert rest-action candidate
+
+The separate rest-action transport is pinned to schema digest
+`bb3555fae28eb1f79d08a15e9884696a579e4c20836f5016509f17e0f4c36fbd`, uses callback kind 15, and
+retains the original operation through accepted, uncertain, and selector follow-up receipts. Smith
+and Mend selectors bind their native catalogs, identities, counts, selected IDs, and cancellation
+actions; settlement requires option-specific completion evidence. This candidate remains unadmitted
+and source/component-only until protocol and all consumers agree on one artifact revision.
+
 Runtime-v3 method/route and body-kind matching is enforced before entering the native callback.
 Mismatches and malformed JSON receive HTTP 400; unsupported methods/routes retain HTTP 404.
-This corrects admission without changing the protocol digest. The unmerged semantic callback
-now uses kind 6 to preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
+This corrects admission without changing the protocol digest. The semantic callback uses kind 6 to
+preserve v2 callback IDs 3–5; the ABI structure/version remain unchanged.
 It does not permit a GET observation route to dispatch a mutation merely because its body names
 an action request. Both profiles share host identity and pending-operation admission fences.
 
 The internal Runtime-v3 host-source interface receives scoped operation identities
 and must supply independent completion evidence. The internal completion correction
-leaves message shapes unchanged. Separately, the unmerged protocol revision tightens
-schema shape validation, explicit nullable fields, and closed tagged variants.
+leaves message shapes unchanged. The checked-in protocol revision tightens schema shape validation,
+explicit nullable fields, and closed tagged variants.
 Consumers must update together to the new digest above; old-digest requests fail closed.
 Host implementations must implement the completion port;
 an unavailable witness preserves an unknown outcome. Managed handler tests use
 synthetic completion events and do not promote the licensed-host compatibility row.
-The co-op helpers are not connected to the managed gameplay request path; their
-source-only validation does not establish multiplayer mutation fencing.
+The `coop-native-v1` source candidate is connected to the managed callback path with callback kinds
+16 through 20 and fences mutations against v2, v3, v4, and seeded pending operations. The candidate
+schema/artifact remains outside this target because the protocol owner has not admitted it and no
+gateway, MCP, or harness consumer has passed cross-boundary conformance. Source-linked probes and
+an exact-host compile do not establish a live two-peer session, native effect settlement, checksum
+semantics, disconnect/rejoin recovery, or Windows/Linux package support. The older co-op helpers and
+the admitted `coop-synchronization-v1` profile remain separate read-only components.
 
 ## Workshop package profile
 

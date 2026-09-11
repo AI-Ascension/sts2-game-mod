@@ -14,7 +14,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static class LiveCampaignStart
 {
-    internal static async Task<RunState> StandardAsync()
+    internal static async Task<RunState> StandardAsync(CharacterModel? requestedCharacter = null)
     {
         LoadProgress();
         if (SaveManager.Instance.HasRunSave)
@@ -26,7 +26,12 @@ internal static class LiveCampaignStart
         stack.PushSubmenuType<NCharacterSelectScreen>();
         if (screen.Lobby.GameMode != GameMode.Standard)
             throw new InvalidOperationException("host character lobby is not standard mode");
-        screen.Lobby.SetLocalCharacter(ModelDb.Character<Ironclad>());
+        CharacterModel character = requestedCharacter ?? ModelDb.Character<Ironclad>();
+        if (!LiveCombatSource.IsCampaignCharacterUnlocked(character))
+            throw new InvalidOperationException("requested character is not unlocked in the native profile");
+        screen.Lobby.SetLocalCharacter(character);
+        if (screen.Lobby.LocalPlayer.character?.Id.Entry != character.Id.Entry)
+            throw new InvalidOperationException("native character lobby did not retain the requested character");
         // The host lobby owns random seed, act selection, and the normal saving-enabled start.
         screen.Lobby.SetReady(true);
         for (int frame = 0; frame < 1800; frame++)
@@ -54,7 +59,7 @@ internal static class LiveCampaignStart
         GD.Print("[AI-ASCENSION LIVE] standard campaign resumed through host save APIs");
     }
 
-    private static void LoadProgress()
+    internal static void LoadProgress()
     {
         // Model registration must finish before progress can resolve character identities.
         var progress = SaveManager.Instance.InitProgressData();

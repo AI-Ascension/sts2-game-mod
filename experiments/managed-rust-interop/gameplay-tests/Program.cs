@@ -17,12 +17,15 @@ internal static class Program
             return;
         }
         ReadsDiscoverNewGenerations();
+        GameplayReadinessChecks.Run();
         FingerprintChecks.Run();
         CombatSettlementChecks.Run();
+        RewardSkipChecks.Run();
         ContinuationChecks.Run();
         RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();
+        AdmissionChecks.Run();
         UnrelatedTransitionDoesNotSettle();
         MismatchedCompletionDoesNotSettle();
         QueuedActionRechecksGeneration();

@@ -13,7 +13,7 @@ internal static class Wire
     internal static JsonDocument Call(RuntimeV3GameplaySupport support, string kind, ulong generation,
         out int status, string stateId = "combat-1", string actionKind = "end_turn",
         string session = "session-1", ulong epoch = 1, Func<string, string>? transform = null,
-        string recoveryKind = "reobserve")
+        string recoveryKind = "reobserve", string operationId = "operation-1")
     {
         var body = new Dictionary<string, object?>
         {
@@ -25,7 +25,7 @@ internal static class Wire
             ["session_id"] = session, ["lease_id"] = "lease-1", ["lease_epoch"] = epoch,
             ["generation"] = generation, ["kind"] = kind,
             ["state_id"] = kind is "dispatch_action_request" or "legal_actions_request" ? stateId : null,
-            ["operation_id"] = kind is "dispatch_action_request" or "wait_request" ? "operation-1" : null,
+            ["operation_id"] = kind is "dispatch_action_request" or "wait_request" ? operationId : null,
             ["observation"] = null, ["legal_actions"] = null,
             ["action"] = kind == "dispatch_action_request"
                 ? new { action_id = "combat.end-turn", action = new { kind = actionKind } } : null,
@@ -33,7 +33,7 @@ internal static class Wire
             ["wait_for_millis"] = kind == "wait_request" ? (int?)1 : null,
             ["wait_outcome"] = null,
             ["recovery"] = kind == "recover_request" ? new { kind = recoveryKind,
-                operation_id = recoveryKind == "reconcile" ? "operation-1" : null } : null
+                operation_id = recoveryKind == "reconcile" ? operationId : null } : null
         };
         string json = JsonSerializer.Serialize(body);
         return JsonDocument.Parse(support.Handle("instance-1", session, "lease-1", "request-1",

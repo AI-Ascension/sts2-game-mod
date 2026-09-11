@@ -6,6 +6,30 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
+  read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
+  readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest
+  `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`, aligned with protocol main
+  `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build evidence does not establish a live seeded
+  run, save isolation, gameplay, or release compatibility; ADR 0031 remains proposed pending host
+  verification.
+
+- Added the source-only `runtime-map-v1` read profile with bounded player-visible topology,
+  stable map-scoped identities, exact current legal bindings, generation fencing, and an
+  authenticated `GET /api/map/v1/snapshot` route. Copied map artifacts, native route checks, and
+  managed projection probes pass; live extraction, provider delivery, and navigation remain
+  unverified. See ADR 0035.
+
+- Added the source-only `runtime-v4-expert-rest-action-v1` candidate with authenticated rest-option
+  and selector follow-up routes, typed Smith/Mend catalogs, option-specific completion witnesses,
+  and same-operation unknown reconciliation. Its copied candidate artifact remains unadmitted;
+  protocol consumers, live rest settlement, exact-host/package builds, and release compatibility
+  remain unverified. See ADR 0036.
+
+- Added locked Rust release-provenance tooling for runtime receipts, platform artifact manifests,
+  Workshop staging, and source-distribution policy validation. The tooling and fixture gates pass;
+  publication, installation, and host/runtime compatibility remain separately gated. See ADR 0034.
+
 - Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
   managed native-library validation, and a checksum-gated install/update/rollback tool with
   synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
@@ -31,6 +55,19 @@ do not establish release support.
 - Translate merchant purchases, card removal and shop exit through native controls;
   verified Windows Astra relic purchase and shop exit. Reject potion reward claims when
   native potion storage is full. See native shop evidence for unverified paths.
+
+- Add the additive Runtime-v4 expert profile as a source/build candidate: native routes
+  `GET /api/v4/runtime/expert-state`, `POST /api/v4/runtime/expert-action` and
+  `GET /api/v4/runtime/expert-actions/{operation_id}` with ABI callback kinds 7 and 8, a
+  managed player-visible expert projection with host-generated legal actions, and one admitted
+  mutation (`use_potion`) fenced by lease, epoch, session, correlation, generation, state and
+  operation identity. Pending v2, v3 and v4 mutations exclude one another. Copies of the
+  `runtime-v4-expert` and `runtime-v4-expert-action` artifacts match merged protocol main
+  `b3d3034f32e68d70c9e681f906ee37d74db153c4`. Runtime-v3 combat observations now project a visible
+  single intent (ADR 0030)
+  instead of `Unknown`, and `start_run` accepts any profile-unlocked character instead of only
+  Ironclad. Source, build and synthetic-probe evidence only; live expert gameplay, potion
+  settlement, exact-host builds and package builds remain `unverified`.
 
 - Expose native treasure chest and relic choices through reward actions, with verified
   Windows Astra chest opening, Gorget acquisition and map continuation.

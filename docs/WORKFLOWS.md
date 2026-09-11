@@ -4,6 +4,9 @@ For an already prepared disposable host, `live-combat-session.sh --help` under
 `experiments/managed-rust-interop` describes the repeatable visible model/replay launcher.
 It requires explicit executable paths and external artifact storage; it does not install game files.
 See [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md) before using that exact-host experiment.
+The optional `--campaign-map` mode is separately bounded to one standard `start_run` and one
+current legal map selection plus a verified graph image; its expected guard exit is accepted only
+after trace and image validation.
 
 ## Lifecycle
 
@@ -14,8 +17,8 @@ verification. A green check is not a merge, release, install, deployment, or com
 ## Foundation workflows
 
 - policy.yml checks the target policy tool and strict policy from pull requests and main pushes.
-- ci.yml runs Rust format, Clippy, tests, the source-only native interop probe, and the synthetic
-  ephemeral-session launcher checks.
+- ci.yml runs Rust format, Clippy, tests, the source-only native interop and co-op probes, and the
+  synthetic ephemeral-session launcher checks.
 - The managed runtime-addon build is intentionally not a CI lane because it needs an
   operator-owned proprietary `sts2.dll` and `GodotSharp.dll`.
 - The authorized host load-smoke is a manual lane using

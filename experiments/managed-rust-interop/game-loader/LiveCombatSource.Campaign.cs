@@ -10,19 +10,58 @@ using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
 internal sealed partial class LiveCombatSource
 {
-    private static readonly string[] CampaignCharacters = { "ironclad" };
+    private static string[] CampaignCharacters()
+    {
+        try
+        {
+            // The native character-select screen constructs each button from AllCharacters,
+            // then locks it from SaveManager.GenerateUnlockStateFromProgress().Characters.
+            // Use that same profile-derived set here; IsPlayable alone also includes globally
+            // playable characters whose native lobby button is still locked.
+            string[] characters = SaveManager.Instance.GenerateUnlockStateFromProgress().Characters
+                .Where(character => character.IsPlayable
+                    && RuntimeV3GameplayContract.IsIdentity(character.Id.Entry))
+                .Select(character => character.Id.Entry)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            return characters;
+        }
+        catch (Exception)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    internal static bool IsCampaignCharacterUnlocked(CharacterModel character)
+    {
+        if (!character.IsPlayable || !RuntimeV3GameplayContract.IsIdentity(character.Id.Entry))
+            return false;
+        try
+        {
+            return SaveManager.Instance.GenerateUnlockStateFromProgress().Characters.Any(
+                candidate => string.Equals(candidate.Id.Entry, character.Id.Entry,
+                    StringComparison.Ordinal));
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     private RuntimeV3GameplayObservation ProjectCampaign(RuntimeV3GameplayObservation observation)
     {
         RunState? run = RunManager.Instance.DebugOnlyGetState();
         if (!RunManager.Instance.IsInProgress && !RunManager.Instance.IsGameOver)
-            return Surface(observation, RuntimeV3GameplayState.Setup, CampaignCharacters, LiveCombatDemo.Ready)
+            return Surface(observation, RuntimeV3GameplayState.Setup, CampaignCharacters(), LiveCombatDemo.Ready)
                 with { VisibleSeed = LiveCombatDemo.RunOptions.Seed };
         if (run == null || CurrentPlayer() == null) return observation;
         observation = observation with { NodeId = CurrentNodeId(run) };
@@ -59,7 +98,7 @@ internal sealed partial class LiveCombatSource
     };
 
     private static string? CurrentNodeId(RunState run) => run.CurrentMapCoord is { } coord
-        ? $"map:{run.CurrentActIndex}:{coord.row}:{coord.col}" : null;
+        ? MapNodeId(run.CurrentActIndex, coord) : null;
 
     private static IEnumerable<Node> Descendants(Node node)
     {
@@ -75,7 +114,10 @@ internal sealed partial class LiveCombatSource
             && point.State == MapPointState.Travelable).ToArray() : Array.Empty<NMapPoint>();
 
     private static string MapId(NMapPoint point, RunState run) =>
-        $"map:{run.CurrentActIndex}:{point.Point.coord.row}:{point.Point.coord.col}:{point.Point.PointType}";
+        MapNodeId(run.CurrentActIndex, point.Point.coord);
+
+    private static string MapId(MapPoint point, RunState run) =>
+        $"map:{run.CurrentActIndex}:{point.coord.row}:{point.coord.col}:{point.PointType}";
 
     private static NEventOptionButton[] EventButtons() => NEventRoom.Instance?.Layout is { } layout
         ? layout.OptionButtons.Where(button => button.IsVisibleInTree() && button.IsEnabled
@@ -87,6 +129,13 @@ internal sealed partial class LiveCombatSource
     private LegalActionReference[] CampaignActions(RuntimeV3GameplayObservation observation)
     {
         if (!observation.InputEnabled) return Array.Empty<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && (observation.State == RuntimeV3GameplayState.Setup && _campaignStartDispatched
+                || observation.State == RuntimeV3GameplayState.Map
+                    && _campaignMapSelectionDispatched))
+        {
+            return Array.Empty<LegalActionReference>();
+        }
         if (observation.State == RuntimeV3GameplayState.Shop && CurrentShop() is { } shop)
             return ShopActions(observation, shop);
         if (observation.State == RuntimeV3GameplayState.Rest) return RestActions(observation);
@@ -102,7 +151,9 @@ internal sealed partial class LiveCombatSource
             _ => null
         };
         return kind == null ? Array.Empty<LegalActionReference>() : observation.StateValues.Select(value =>
-            new LegalActionReference($"{kind}:{observation.Generation}:{value}", kind, value, null,
-                observation.Generation)).ToArray();
+            new LegalActionReference(kind == "select_map_node"
+                    ? MapHostActionId(observation.Generation, value)
+                    : $"{kind}:{observation.Generation}:{value}",
+                kind, value, null, observation.Generation)).ToArray();
     }
 }

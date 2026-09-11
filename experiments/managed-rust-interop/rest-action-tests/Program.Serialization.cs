@@ -1,0 +1,233 @@
+// SPDX-License-Identifier: MIT
+
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using AiAscension.Sts2GameMod.Runtime;
+
+namespace AiAscension.Sts2GameMod.RestActionTests;
+
+internal static partial class Program
+{
+    private static void NativeWitnessChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:native-witness");
+        RuntimeV4ExpertRestOperation kindleOperation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-op:native:kindle");
+        RuntimeV4ExpertRestActionReference kindleAction = new(
+            "rest-option:9:kindle", new RuntimeV4ExpertRestAction("rest_option", "kindle"));
+        var kindleWitness = new RuntimeV4ExpertRestEffectWitness(
+            "kindle_applied", kindleOperation, "kindle", 10,
+            new RuntimeV4ExpertRestNativeEvidence(kindleOperation.OperationId, "live:10"));
+        var kindleTransition = new RuntimeV4ExpertRestCompletedTransition(
+            "kindle", 9, 10, kindleWitness);
+        var kindleResponse = new RuntimeV4ExpertRestResponse(
+            context, "live:10", 10, kindleOperation, kindleAction, "settled",
+            Observation(10, "rest"), kindleTransition, kindleWitness, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(kindleResponse,
+                out string kindleJson, out string error),
+            "Kindle callback witness failed to serialize: " + error);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(kindleJson, context,
+                out error), "Kindle callback witness failed consumer validation: " + error);
+
+        RuntimeV4ExpertRestOperation liftOperation = kindleOperation with
+        {
+            OperationId = "rest-op:native:lift"
+        };
+        RuntimeV4ExpertRestActionReference liftAction = new(
+            "rest-option:10:lift", new RuntimeV4ExpertRestAction("rest_option", "lift"));
+        var liftWitness = new RuntimeV4ExpertRestEffectWitness(
+            "lift_applied", liftOperation, "lift", 11,
+            new RuntimeV4ExpertRestStatEvidence("times_lifted", 1, 2));
+        var liftTransition = new RuntimeV4ExpertRestCompletedTransition(
+            "lift", 10, 11, liftWitness);
+        var liftResponse = new RuntimeV4ExpertRestResponse(
+            context, "live:11", 11, liftOperation, liftAction, "settled",
+            Observation(11, "rest"), liftTransition, liftWitness, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(liftResponse,
+                out string liftJson, out error),
+            "Lift callback witness failed to serialize: " + error);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(liftJson, context,
+                out error), "Lift callback witness failed consumer validation: " + error);
+    }
+
+    private static void SerializedResponseChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:serialized");
+        RuntimeV4ExpertRestOperation selectionOperation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-select:serialized:smith:card:2");
+        RuntimeV4ExpertRestActionReference secondPick = new(
+            "select_card:11:smith:card:2",
+            new RuntimeV4ExpertRestAction("select_card", "smith", "selection:10:smith", "card:2"));
+        RuntimeV4ExpertRestSelector progressedSelector = new(
+            "selection:10:smith", "card", 2, SecondSelected, 0,
+            new[]
+            {
+                new RuntimeV4ExpertRestActionReference("confirm_selection:12:smith",
+                    new RuntimeV4ExpertRestAction("confirm_selection", "smith",
+                        "selection:10:smith")),
+                new RuntimeV4ExpertRestActionReference("cancel_selection:11:smith",
+                    new RuntimeV4ExpertRestAction("cancel_selection", "smith", "selection:10:smith"))
+            });
+        var progressed = new RuntimeV4ExpertRestResponse(
+            context, "live:12", 12, selectionOperation, secondPick, "settled", Observation(12),
+            new RuntimeV4ExpertRestSelectionProgressedTransition("smith", 11, 12,
+                progressedSelector), null, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(progressed, out string progressedJson,
+                out string progressedError), "typed progressed producer failed: " + progressedError);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(progressedJson, context,
+                out progressedError), "typed progressed consumer rejected: " + progressedError);
+
+        RuntimeV4ExpertRestOperation confirmationOperation = selectionOperation with
+        {
+            OperationId = "rest-select:serialized:smith:confirm"
+        };
+        RuntimeV4ExpertRestActionReference confirmation = new(
+            "confirm_selection:12:smith",
+            new RuntimeV4ExpertRestAction("confirm_selection", "smith", "selection:10:smith"));
+        var witness = new RuntimeV4ExpertRestEffectWitness(
+            "smith_applied", confirmationOperation, "smith", 13,
+            new RuntimeV4ExpertRestCardEvidence(Array.Empty<string>(), Array.Empty<string>(),
+                SecondSelected));
+        var completed = new RuntimeV4ExpertRestResponse(
+            context, "live:13", 13, confirmationOperation, confirmation, "settled", Observation(13, "rest"),
+            new RuntimeV4ExpertRestSelectionCompletedTransition("smith", 12, 13,
+                "selection:10:smith", "card", 2, SecondSelected, witness), witness, null);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeResponse(completed, out string completedJson,
+                out string completedError), "typed completion producer failed: " + completedError);
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(completedJson, context,
+                out completedError), "typed completion consumer rejected: " + completedError);
+    }
+
+    private static RuntimeV4ExpertGameplayObservation Observation(
+        ulong generation, string stateKind = "selection") =>
+        new("live:" + generation, generation, "synthetic-visible-seed",
+            new RuntimeV4ExpertGameplayRun("ironclad", 1, "rest:1"),
+            new RuntimeV4ExpertGameplayPlayer(64, 80, null, 0, 99)
+            {
+                Hand = Array.Empty<RuntimeV4ExpertGameplayCard>(),
+                Deck = Array.Empty<RuntimeV4ExpertGameplayCard>(),
+                Discard = Array.Empty<RuntimeV4ExpertGameplayCard>(),
+                Exhaust = Array.Empty<RuntimeV4ExpertGameplayCard>(),
+                Powers = Array.Empty<RuntimeV4ExpertGameplayStatus>(),
+                Statuses = Array.Empty<RuntimeV4ExpertGameplayStatus>(),
+                Relics = Array.Empty<RuntimeV4ExpertGameplayRelic>(),
+                Potions = Array.Empty<RuntimeV4ExpertGameplayPotion>()
+            },
+        new RuntimeV4ExpertGameplayState(stateKind)
+            {
+                Choices = stateKind == "selection"
+                    ? new[]
+                    {
+                        new RuntimeV4ExpertGameplayChoice("card:1", "Strike", "selection", null),
+                        new RuntimeV4ExpertGameplayChoice("card:2", "Bash", "selection", null)
+                    }
+                    : Array.Empty<RuntimeV4ExpertGameplayChoice>()
+            },
+            stateKind == "selection"
+                ? new[]
+                {
+                    new RuntimeV4ExpertGameplayAction(
+                        $"select_card:{generation}:card:1", "select_card", "card:1", null,
+                        $"selection:{generation}"),
+                    new RuntimeV4ExpertGameplayAction(
+                        $"cancel_selection:{generation}", "cancel_selection", null, null,
+                        $"selection:{generation}")
+                }
+                : Array.Empty<RuntimeV4ExpertGameplayAction>());
+
+    private static void ProducerConsumerSupportChecks()
+    {
+        RuntimeV4ExpertRestContext context = new("instance:1", "session:1", "lease:1", 4,
+            "corr:rest:support");
+        RuntimeV4ExpertRestOperation operation = new(
+            context.InstanceId, context.SessionId, context.LeaseId, context.LeaseEpoch,
+            "rest-op:support:heal");
+        RuntimeV4ExpertRestActionReference action = new(
+            "rest-option:9:heal", new RuntimeV4ExpertRestAction("rest_option", "heal"));
+        RuntimeV4ExpertRestRequest request = new(context, operation, action, "live:9", 9);
+        Check(RuntimeV4ExpertRestActionCodec.TrySerializeRequest(request, out string body,
+                out string error), "support request failed to serialize: " + error);
+
+        var host = new FakeRestHost(request);
+        RuntimeV4ExpertRestActionSupport support =
+            RuntimeV4ExpertRestActionSupport.WithHost(host, work => work());
+        (int Status, string Response) accepted = support.Handle(context, body, out int status);
+        Check(status == 200 && accepted.Status == 200, "support request was not accepted");
+        using (JsonDocument acceptedDocument = JsonDocument.Parse(accepted.Response))
+            Check(acceptedDocument.RootElement.GetProperty("status").GetString() == "accepted",
+                "support request did not return accepted receipt");
+
+        (int Status, string Response) replay = support.Handle(context, body, out status);
+        Check(status == 200 && replay.Response == accepted.Response,
+            "support idempotency replay changed the accepted receipt");
+
+        (int Status, string Response) settled = support.Handle(context, operation.OperationId,
+            out status);
+        Check(status == 200, "support reconciliation did not settle");
+        Check(RuntimeV4ExpertRestActionCodec.TryValidateResponse(settled.Response, context,
+                out error), "support serialized response failed consumer validation: " + error);
+        using (JsonDocument settledDocument = JsonDocument.Parse(settled.Response))
+        {
+            Check(settledDocument.RootElement.GetProperty("status").GetString() == "settled",
+                "support reconciliation did not return settled");
+            Check(settledDocument.RootElement.GetProperty("transition")
+                .GetProperty("kind").GetString() == "rest_option_completed",
+                "support reconciliation returned the wrong transition");
+        }
+        Check(host.DispatchCount == 1 && host.CompletionCount == 1,
+            "support dispatched or completed the operation more than once");
+    }
+
+    private sealed class FakeRestHost : IRuntimeV4ExpertRestHostSource
+    {
+        private readonly RuntimeV4ExpertRestRequest _request;
+        private bool _dispatched;
+
+        internal FakeRestHost(RuntimeV4ExpertRestRequest request) => _request = request;
+
+        internal bool ThrowDispatch { get; set; }
+        internal bool MissingCompletion { get; set; }
+        internal int DispatchCount { get; private set; }
+        internal int CompletionCount { get; private set; }
+
+        public RuntimeV4ExpertRestHostProjection ObserveRest() =>
+            new(Observation(_request.Generation, "rest"), new[] { _request.Action });
+
+        public bool DispatchRest(RuntimeV4ExpertRestOperation operation,
+            RuntimeV4ExpertRestActionReference action, RuntimeV4ExpertRestHostProjection current)
+        {
+            if (_dispatched || operation != _request.Operation || action != _request.Action)
+                return false;
+            _dispatched = true;
+            DispatchCount++;
+            if (ThrowDispatch) throw new InvalidOperationException("synthetic host uncertainty");
+            return true;
+        }
+
+        public RuntimeV4ExpertRestHostCompletion? CompleteRest(
+            RuntimeV4ExpertRestOperation operation, RuntimeV4ExpertRestActionReference action)
+        {
+            if (!_dispatched || operation != _request.Operation || action != _request.Action)
+                return null;
+            CompletionCount++;
+            if (MissingCompletion) return null;
+            RuntimeV4ExpertGameplayObservation before = Observation(9, "rest");
+            RuntimeV4ExpertGameplayObservation after = Observation(10, "rest") with
+            {
+                Player = before.Player with { Hp = 70 }
+            };
+            var witness = new RuntimeV4ExpertRestEffectWitness(
+                "heal_applied", operation, "heal", 10,
+                new RuntimeV4ExpertRestHpEvidence(64, 70, 80, 80));
+            var transition = new RuntimeV4ExpertRestCompletedTransition(
+                "heal", 9, 10, witness);
+            return new RuntimeV4ExpertRestHostCompletion(
+                "settled", after, transition, witness, null);
+        }
+    }
+}

@@ -10,13 +10,25 @@ sts2-game-mod/
 ├── crates/game-mod                   target-local composition root
 ├── protocol-artifact/poc-v1           offline copy consumed by the POC mapping
 ├── protocol-artifact/runtime-v2       offline copy consumed by the Runtime-v2 fake seam
+├── protocol-artifact/runtime-map-v1   offline copy consumed by the bounded map-read source seam
+├── protocol-artifact/runtime-v4-expert-rest-action
+│                                      offline copy of the rest-action protocol candidate
 ├── schemas/poc-v1.schema.json         copied protocol source for artifact checksums
 ├── schemas/runtime-v2.schema.json     copied Runtime-v2 source schema for artifact checksums
+├── schemas/runtime-map-v1.schema.json  copied map-read source schema for artifact checksums
+├── schemas/runtime-v4-expert-rest-action-v1.schema.json
+│                                      copied rest-action candidate schema
 ├── conformance/cases/poc-v1.json      copied protocol conformance evidence
 ├── conformance/cases/runtime-v2.json  copied Runtime-v2 conformance evidence
+├── conformance/cases/runtime-map-v1.json
+│                                      copied map-read conformance evidence
+├── conformance/cases/runtime-v4-expert-rest-action-v1.json
+│                                      copied rest-action conformance evidence
+├── conformance/mutations/runtime-v4-expert-rest-action-v1
+│                                      copied rest-action negative fixtures
 ├── schemas/game-http-v1              future owner-local HTTP schema
 ├── tests                             future component and host-test seams
-├── experiments/managed-rust-interop/ managed load-smoke package and Rust companion source
+├── experiments/managed-rust-interop/ managed load-smoke package, native companion, and source probes
 ├── tools/workshop/                  deterministic Workshop staging and fixture checks
 ├── tools/repo-policy/                target-local governance checker
 ├── docs/                             architecture, policy, testing, and decisions
@@ -46,10 +58,16 @@ the existing experiment directory and is packaged only by the explicit load-smok
 | crates/game-mod | mod | target-local composition and admission boundary |
 | protocol-artifact/poc-v1 | protocol release consumer | inert copied POC artifact and fixtures |
 | protocol-artifact/runtime-v2 | protocol release consumer | inert copied Runtime-v2 artifact and fixtures |
+| protocol-artifact/runtime-map-v1 | protocol release candidate consumer | exact copied map-read artifact; live map acceptance remains unverified |
+| protocol-artifact/runtime-v4-expert-rest-action | protocol release candidate consumer | exact copied candidate artifact for the local rest-action source seam; no protocol consumers admitted |
 | schemas/poc-v1.schema.json | protocol release consumer | inert copied source schema for checksums |
 | schemas/runtime-v2.schema.json | protocol release consumer | inert copied Runtime-v2 source schema for checksums |
+| schemas/runtime-map-v1.schema.json | protocol release candidate consumer | copied map-read source schema and checksum inventory |
+| schemas/runtime-v4-expert-rest-action-v1.schema.json | protocol release candidate consumer | copied candidate schema used by the managed rest-action codec and checksum inventory |
 | conformance/cases/poc-v1.json | protocol release consumer | inert copied conformance evidence |
 | conformance/cases/runtime-v2.json | protocol release consumer | inert copied Runtime-v2 conformance evidence |
+| conformance/cases/runtime-map-v1.json | protocol release candidate consumer | copied map-read conformance evidence |
+| conformance/cases/runtime-v4-expert-rest-action-v1.json and conformance/mutations/runtime-v4-expert-rest-action-v1 | protocol release candidate consumer | rest-action positive and negative protocol fixtures |
 | schemas/game-http-v1 | mod | HTTP adapter and conformance |
 | tools/repo-policy | repository maintainers | local and CI policy gates |
 | tools/mod-loading | mod launch maintainers | offline intended-addon consent preparation |

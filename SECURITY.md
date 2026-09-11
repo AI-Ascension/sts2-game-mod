@@ -2,6 +2,12 @@
 
 ## Scope
 
+`runtime-map-v1` is an authenticated read profile. It cannot open, scroll, or select the map,
+and its snapshot is never a gameplay settlement witness. Closed, unsupported, ambiguous, or
+changed map surfaces fail explicitly. Gateway/MCP retain caller, instance, session, and lease
+fencing; the visualizer has no direct host credentials. See
+[the map projection decision](docs/decisions/0035-runtime-map-projection.md).
+
 The optional live-combat session uses separate ephemeral gateway and game credentials.
 Its host receives the game credential through stdin. Logs and trajectories belong in external
 operator storage. A disposable game copy alone does not isolate Steam cache writes before
@@ -61,6 +67,14 @@ The native HTTP listener bounds each accepted connection's socket I/O with one a
 10-second deadline and checks listener shutdown between short socket waits. This is a transport
 resource bound, not a host callback cancellation mechanism or a guarantee of real-time shutdown.
 Only loopback synthetic connections are used in the regression suite.
+
+The native co-op candidate adds five authenticated loopback routes. They require the existing
+instance, caller, session, lease, epoch, and correlation headers, and the managed host adapter
+accepts mutations only for the authenticated local native peer. Client-side callers cannot supply
+an effect witness, peer identity binding, authority epoch, or checksum; unknown native outcomes
+remain pending for same-operation recovery. The optional ENet bootstrap accepts loopback addresses
+only and is disabled unless its explicit role variable is set. The protocol remains unadmitted and
+the candidate has no external consumer or live network evidence.
 
 ## Workshop package boundary
 

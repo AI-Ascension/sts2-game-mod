@@ -9,5 +9,7 @@
     <Compile Include="../game-loader/RuntimeInterop.Network.cs" Link="RuntimeInterop.Network.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Queue.cs" Link="RuntimeInterop.Queue.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Contract.cs" Link="RuntimeMapV1Contract.cs" />
+    <Compile Include="../game-loader/RuntimeMapV1Model.cs" Link="RuntimeMapV1Model.cs" />
   </ItemGroup>
 </Project>

@@ -43,6 +43,10 @@ cargo metadata --locked --no-deps --format-version 1
 cargo test --locked --package sts2-game-mod --test poc
 cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/runtime-v2 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/seeded-run-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/runtime-v4-expert-rest-action && sha256sum -c SHA256SUMS)
+cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
@@ -51,14 +55,19 @@ cargo test --locked --offline --workspace --all-targets --all-features
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
 `poc-v1` mapping seams. The commands prove source-level structure, queue/ABI/adapter composition,
-artifact identity, Runtime-v1 compatibility, and the Runtime-v2 deterministic fake lifecycle. The
-managed host-adapter build is a separate compiler/package oracle; these ordinary commands still do
-not launch the game or prove gameplay or Runtime-v2 host settlement.
+artifact identity, Runtime-v1 compatibility, Runtime-map-v1 projection boundaries, and the
+Runtime-v2 deterministic fake lifecycle. The managed host-adapter build is a separate
+compiler/package oracle; these ordinary commands still do not launch the game or prove gameplay,
+map extraction, or Runtime-v2 host settlement.
 
 ## Runtime-v2 deterministic seam
 
 CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
-the POC, Runtime-v1, and Runtime-v3 checksum gates. A checksum failure fails the Rust CI job.
+the POC, Runtime-v1, and Runtime-v3 checksum gates, then discovers every `SHA256SUMS` under
+`protocol-artifact/`. The discovery step includes the `runtime-v4-expert` and
+`runtime-v4-expert-action` copies, so a newly copied profile cannot be omitted from CI. The
+copies are also checked locally and compared byte-for-byte against merged `sts2-protocol` main;
+a self-consistent inventory cannot detect a stale copy.
 
 The `runtime_v2_admission` regressions also invoke public action-only APIs directly with state
 and reconciliation requests, verifying rejection before queue/receipt insertion. The fake host
@@ -71,6 +80,37 @@ post-write disconnect reconciliation, and pre-dispatch timeout removal. `sha256s
 copied release-like artifact from repository-relative paths. No Rust test invokes STS2 or any
 persistent profile/save/provider path; the managed build resolves concrete host symbols without
 executing them.
+
+## Seeded-run source checks
+
+The copied `seeded-run-v1` artifact is checked with `sha256sum -c SHA256SUMS`. The source-only
+managed probes cover the selected-context canonical digest, fixed standard host context, profile
+baseline inventory, protocol serialization, callback route/method mapping, and bounded unknown or
+identity failures:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
+~~~
+
+These probes do not load a proprietary host, start a native run, access a real profile/save, or
+establish seed settlement. The host-dependent adapter remains unverified until a disposable exact
+host test records canonical seed readback, the `run_started` witness, profile isolation, and cleanup.
+
+## Runtime-map-v1 projection checks
+
+The copied `runtime-map-v1` artifact is checked with `sha256sum -c SHA256SUMS` and the managed
+source-only probe covers bounded graph projection, canonical ordering, map-scoped identity churn,
+current legal-action binding, unavailable/changed surfaces, and the final-generation fence:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/map-tests/RuntimeMapV1Probe.csproj --configuration Release
+~~~
+
+The native loopback suite also checks `GET /api/map/v1/snapshot` reaches callback kind 14 while
+reversed methods and non-empty bodies stop at HTTP admission. These tests do not prove map loading,
+off-screen visibility, provider image delivery, or settled navigation in a licensed host.
 
 ## Runtime-v2 host-adapter build
 
@@ -419,6 +459,24 @@ delayed queue admission, uncertainty, exact retries, read-only reconciliation an
 independent completion. It compiles production routing and handler sources against owned fakes.
 These checks do not load a host, touch a profile/save, or contact a provider.
 
+Three further probe cases cover the Runtime-v4 expert gate: a pending expert mutation rejects
+semantic and v2 dispatch without a host call, and releasing it admits the next semantic dispatch.
+The native `runtime_endpoint_tests` also assert that the expert and rest routes reach callback kinds
+7, 8, and 15 while v2/v3 kinds are unchanged. The managed expert admission, potion dispatch and settlement code
+compiles only against the host assembly and has no source-only probe; its behavior is `unverified`.
+
+The rest-action source-only probe exercises the candidate serializer, strict response validator,
+host-thread support, typed Smith/Mend selector sequences, option-specific witnesses, stale and early
+confirmation rejection, and same-operation unknown reconciliation:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj --configuration Release
+~~~
+
+It does not establish protocol adoption, gateway/MCP/harness conformance, licensed-host API
+compatibility, live rest effects, or package/release support. The native loopback suite asserts
+callback kind 15 for both rest admission and operation lookup while retaining callback kinds 7 and 8.
+
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 
 ~~~text
@@ -460,8 +518,25 @@ or managed/live-host mutation evidence; the existing auth and absolute-deadline 
 
 Source-level tests cover the Runtime-v3 contract mirror, generation-bound action catalog, duplicate
 operation identities, stale observations, host-thread queueing, settlement witnesses, projection
-redaction, and explicit unknown outcomes. Co-op checks cover two-to-four peer bounds, one local
-identity, generation disagreement, missing peers, disconnect, ally targeting, and mutation
-suspension in the isolated helper. The gameplay host does not consume the co-op
-helper, so these tests do not establish integrated co-op admission, a licensed
-target build, or live multiplayer compatibility.
+redaction, and explicit unknown outcomes. The source-linked co-op probes cover closed-envelope
+parsing, two-to-four peer bounds, one local identity, generation disagreement, missing peers,
+disconnect, ally targeting, action/rejoin receipts, and cross-profile mutation fencing. The
+source-only checks are:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/coop-admission-tests/CoopAdmissionProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/coop-host-tests/CoopHostRuntimeProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/coop-shared-gate-tests/CoopSharedGateProbe.csproj --configuration Release
+~~~
+
+The checkpoint and installed-synchronizer probe requires an operator-supplied exact host assembly:
+
+~~~text
+dotnet run --project experiments/managed-rust-interop/coop-checkpoint-tests/CoopCheckpointProbe.csproj --configuration Release --property:STS2GameDataDir=/path/to/Slay\ the\ Spire\ 2/data_sts2_windows_x86_64
+~~~
+
+It checks native service and checksum-hook composition against the supplied assemblies, but does
+not launch the game. The `coop-native-v1` schema/artifact is an unadmitted protocol-owner
+candidate, so this target has no cross-language co-op conformance fixture. None of these checks
+establishes a live two-peer session, native effect settlement, disconnect/rejoin behavior, or
+multiplayer compatibility.

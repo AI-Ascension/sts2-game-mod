@@ -14,13 +14,74 @@ using MegaCrit.Sts2.Core.Runs;
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>Opt-in single-player combat projection from the installed host.</summary>
-internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread
+internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV3HostThread,
+    IRuntimeMapV1HostSource
 {
-    private readonly int _threadId = Environment.CurrentManagedThreadId;
+    private static LiveCombatSource? _active;
+    private readonly int _threadId = System.Environment.CurrentManagedThreadId;
     private readonly Dictionary<CardModel, string> _cardIds = new();
     private string? _fingerprint;
     private ulong _generation;
     private int _nextCardId;
+    private bool _campaignStartDispatched;
+    private bool _campaignMapSelectionDispatched;
+
+    internal LiveCombatSource()
+    {
+        _active = this;
+    }
+
+    /// <summary>Returns the generation from the same visible host projection used by Runtime-v3.</summary>
+    internal static bool TryReadCurrentGeneration(out ulong generation)
+    {
+        generation = 0;
+        LiveCombatSource? source = _active;
+        if (source is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            generation = source.Observe().Generation;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Reads a generation only after the visible gameplay surface and its host-generated catalog
+    /// are ready. Native run creation can precede that surface by several host frames.
+    /// </summary>
+    internal static bool TryReadReadyGeneration(out ulong generation)
+    {
+        generation = 0;
+        LiveCombatSource? source = _active;
+        if (source is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            RuntimeV3GameplayObservation observation = source.Observe();
+            IReadOnlyList<LegalActionReference> actions = source.LegalActions(observation);
+            if (!RuntimeV3GameplayReadiness.IsReady(observation, actions))
+            {
+                return false;
+            }
+
+            generation = observation.Generation;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     public void Enqueue(Action work)
     {
@@ -30,7 +91,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private void RequireThread()
     {
-        if (Environment.CurrentManagedThreadId != _threadId)
+        if (System.Environment.CurrentManagedThreadId != _threadId)
             throw new InvalidOperationException("live combat requires the host thread");
     }
 
@@ -53,7 +114,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         CombatState? hostCombat = manager.DebugOnlyGetState();
         bool active = combat != null && hostCombat != null && manager.IsInProgress;
         RuntimeV3GameplayPlayer projection = ProjectPlayer(player, combat);
-        var enemies = active && hostCombat != null ? hostCombat.Enemies.Select(ProjectEnemy).ToArray()
+        var enemies = active && hostCombat != null ? ProjectEnemiesSafely((CombatState)hostCombat)
             : Array.Empty<RuntimeV3GameplayEnemy>();
         bool modal = MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal != null;
         bool enabled = active && combat?.Phase == PlayerTurnPhase.Play && !modal
@@ -63,19 +124,24 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         var state = player?.Creature.IsDead == true ? RuntimeV3GameplayState.Defeat
             : rewards ? RuntimeV3GameplayState.Reward
             : active ? RuntimeV3GameplayState.Combat : RuntimeV3GameplayState.Recovery;
-        string[] values = state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
+        string[] values = state == RuntimeV3GameplayState.Defeat ? new[] { "player_dead" }
+            : state == RuntimeV3GameplayState.Recovery ? new[] { "outside_combat" }
             : Array.Empty<string>();
         string? seed = player == null ? null : RunManager.Instance.DebugOnlyGetState()?.Rng.StringSeed;
         var result = new RuntimeV3GameplayObservation("live", 0, seed, projection, state, values, enemies)
         {
             TurnIndex = (ushort)Math.Clamp(combat?.TurnNumber ?? 0, 0, 1024),
-            IsActionable = enabled, InputEnabled = enabled, ModalBlocking = !enabled
+            IsActionable = enabled,
+            InputEnabled = enabled,
+            ModalBlocking = !enabled
         };
         if (LiveCombatDemo.Campaign) result = ProjectCampaign(result);
         result = ProjectVictory(result);
         // Host legality can change after animation/queue completion without changing the
         // visible player projection. Fence that catalog change with a fresh generation too.
-        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result));
+        string fingerprint = RuntimeV3GameplayFingerprint.Create(result, LegalActions(result))
+            + "|" + MapSurfaceFingerprint()
+            + "|" + RestSelectionFingerprint();
         if (_fingerprint != fingerprint) { _generation++; _fingerprint = fingerprint; }
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
@@ -103,14 +169,17 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private static ushort U16(int value) => (ushort)Math.Clamp(value, 0, ushort.MaxValue);
     private static string EnemyId(Creature enemy) => $"enemy:{enemy.CombatId}";
-    private static RuntimeV3GameplayEnemy ProjectEnemy(Creature enemy) => new(
-        EnemyId(enemy), enemy.Name, U16(enemy.CurrentHp), U16(enemy.MaxHp),
-        RuntimeV3GameplayIntent.Unknown, 0, 0);
 
     public IReadOnlyList<LegalActionReference> LegalActions(RuntimeV3GameplayObservation observation)
     {
         RequireThread();
         var actions = new List<LegalActionReference>();
+        if (LiveCombatDemo.CampaignMapBound
+            && observation.State is not RuntimeV3GameplayState.Setup
+                and not RuntimeV3GameplayState.Map)
+        {
+            return actions;
+        }
         Player? player = CurrentPlayer();
         if (LiveCombatDemo.Campaign && observation.State != RuntimeV3GameplayState.Combat)
             return CampaignActions(observation);
@@ -136,7 +205,7 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
 
     private void AddPlay(List<LegalActionReference> actions, CardModel card, Creature? target, ulong generation)
     {
-        string? targetId = target?.IsEnemy == true ? EnemyId(target) : null;
+        string? targetId = target?.IsEnemy == true ? EnemyId((Creature)target) : null;
         string cardId = CardId(card);
         actions.Add(new($"play:{generation}:{cardId}:{targetId ?? "none"}",
             "play_card", cardId, targetId, generation));
