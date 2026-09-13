@@ -166,6 +166,19 @@ The fake and host-adapter candidate are deterministic/source-build evidence, not
 evidence. The candidate's host mutation and settlement remain unverified until a controlled-host
 trace is recorded.
 
+### Checkpoint capture owner boundary
+
+The target-owned `CheckpointCapturePort` in `crates/game-mod` is the future native checkpoint
+producer seam. It binds each request to the live instance/session/lease/epoch/run/profile and
+logical operation, classifies the complete boundary matrix, and returns only owned receipt values.
+`UnavailableCheckpointCapture` currently rejects every phase: candidate map/combat boundaries need
+exact-host evidence, offer/event/shop/rest coverage is incomplete, and enemy/animation/transition/
+unknown phases are unsafe. The receipt wrapper consumes protocol-validated canonical bytes only to
+apply the bounded state/blob identity domains and computes the checkpoint ID from the complete
+manifest envelope (compatibility, coverage, restore, boundary, origin, and parent references); it
+is not a canonicalizer, route, persistence layer, or restore implementation. See
+[ADR 0043](decisions/0043-native-checkpoint-capture-port.md).
+
 ## Repeat-seed practice replay
 
 `SeedReplayController` and the standalone settings partials own the narrow repeat-seed feature in

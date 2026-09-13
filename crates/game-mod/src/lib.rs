@@ -6,6 +6,7 @@ use sts2_game_mod_host::{
 };
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
+mod checkpoint;
 mod content_manifest;
 mod field_availability;
 mod poc;
@@ -15,6 +16,16 @@ mod runtime_v2;
 mod runtime_v3_gameplay;
 mod workshop;
 
+pub use checkpoint::{
+    CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
+    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
+    CHECKPOINT_MANIFEST_SCHEMA, CHECKPOINT_STATE_DOMAIN, CheckpointArtifactDescriptor,
+    CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity,
+    CheckpointCapturePort, CheckpointCaptureReceipt, CheckpointCaptureRejection,
+    CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
+    CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
+    CheckpointUnavailableReason, UnavailableCheckpointCapture,
+};
 pub use content_manifest::{
     CONTENT_MANIFEST_MAX_IDENTITY_BYTES, CONTENT_MANIFEST_MAX_SEMANTIC_BYTES,
     CONTENT_MANIFEST_MAX_TEXT_BYTES, CONTENT_MANIFEST_PRODUCER_VERSION, ContentCatalogSnapshot,

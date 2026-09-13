@@ -38,6 +38,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0040 | [Seeded-run RNG and entropy audit boundary](0040-seeded-run-rng-and-entropy-audit.md) |
 | 0041 | [Save-profile selection and disposable boundary](0041-save-profile-selection-and-disposable-boundary.md) |
 | 0042 | [Native checkpoint restore boundary](0042-native-checkpoint-restore-boundary.md) |
+| 0043 | [Native checkpoint capture port](0043-native-checkpoint-capture-port.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
