@@ -30,6 +30,11 @@ evidence against synthetic manifest-bound snapshots. Their owner/source identiti
 duration/decay rules, visibility states, and epoch fences do not extend the native host matrix or
 claim that an installed build exposes these fields.
 
+The owner-local mechanics glossary currently has only Rust source/build/test evidence against
+synthetic manifest- and locale-bound records. Its native-tooltip and owner-documentation
+provenance types do not establish a native registry extractor, live rendered-text coverage,
+shared protocol adoption, or compatibility with any installed game build.
+
 The initial game baseline is recorded in
 [decision 0002](decisions/0002-initial-game-compatibility-baseline.md). It is a source-derived
 planning target, not runtime proof from this target.

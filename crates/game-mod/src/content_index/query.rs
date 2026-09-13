@@ -5,6 +5,7 @@ use std::sync::Arc;
 use crate::ContentCursorBinding;
 
 use super::errors::validate_text;
+use super::helpers::validate_term_references;
 use super::model::{
     CONTENT_INDEX_MAX_ALIAS_COUNT, ContentDefinitionSummary, ContentDetailCapabilities,
     ContentIndexInputError, ContentQueryLocale, ContentRarity, ContentUnlockState,
@@ -231,6 +232,7 @@ impl ContentIndexDefinitionInput {
                 return Err(ContentIndexError::DuplicateAlias);
             }
         }
+        validate_term_references(&self.term_references)?;
         if let Some(description) = &self.rendered_description {
             validate_text(description)?;
         }

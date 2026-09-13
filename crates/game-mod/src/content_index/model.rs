@@ -15,6 +15,8 @@ pub const CONTENT_INDEX_MAX_TEXT_BYTES: usize = 64 * 1024;
 pub const CONTENT_INDEX_MAX_ALIAS_COUNT: usize = 64;
 /// Maximum aggregate bytes returned by one exact definition lookup.
 pub const CONTENT_INDEX_MAX_DEFINITION_BYTES: usize = 64 * 1024;
+/// Maximum stable glossary term IDs attached to one content definition.
+pub const CONTENT_INDEX_MAX_TERM_REFERENCES: usize = 64;
 
 /// A caller-selected locale for a local query.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -133,6 +135,11 @@ pub struct ContentIndexDefinitionInput {
     pub rarity: Option<ContentRarity>,
     /// Explicit unlock state, without mutating profile state.
     pub unlock_state: ContentUnlockState,
+    /// Stable glossary term IDs attached to this definition or its rendered text.
+    ///
+    /// The glossary producer resolves these IDs against its own immutable catalog. Keeping the
+    /// IDs here links vocabulary without importing a transport or recursively expanding terms.
+    pub term_references: Vec<String>,
 }
 
 impl ContentIndexDefinitionInput {
@@ -148,6 +155,7 @@ impl ContentIndexDefinitionInput {
             character_or_pool: None,
             rarity: None,
             unlock_state: ContentUnlockState::Unknown,
+            term_references: Vec::new(),
         }
     }
 }
@@ -223,6 +231,8 @@ pub struct ContentDefinitionSummary {
     pub unlock_state: ContentUnlockState,
     /// Fields recoverable through exact lookup.
     pub detail_capabilities: ContentDetailCapabilities,
+    /// Stable glossary term IDs attached to this definition.
+    pub term_references: Vec<String>,
 }
 
 /// Full typed definition returned by exact lookup.
@@ -252,6 +262,8 @@ pub struct ContentDefinition {
     pub unlock_state: ContentUnlockState,
     /// Detail fields the adapter can expose.
     pub detail_capabilities: ContentDetailCapabilities,
+    /// Stable glossary term IDs attached to this definition.
+    pub term_references: Vec<String>,
 }
 
 /// One family in the immutable index, including unsupported families.

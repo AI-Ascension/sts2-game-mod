@@ -91,6 +91,7 @@ impl ContentIndexProducer {
                 character_or_pool: input.character_or_pool,
                 rarity: input.rarity,
                 unlock_state: input.unlock_state,
+                term_references: input.term_references,
                 detail_capabilities: adapter.detail_capabilities.clone(),
             };
             definitions.insert(key, definition);

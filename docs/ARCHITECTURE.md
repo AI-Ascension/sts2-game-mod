@@ -283,6 +283,14 @@ unhandled families explicitly, and exposes only bounded list/search/exact-read o
 manifest, locale, query, and visibility bindings. It is source-only evidence: no public route,
 shared wire shape, native registry reflection, or profile/unlock mutation is implied.
 
+The owner-local `glossary` producer binds localized mechanic terms to that same manifest witness.
+Terms carry stable IDs, aliases, parameter placeholders, evidence provenance, rule IDs, and
+bounded direct links to other terms and content definitions. Missing links remain explicit
+unresolved coverage records; the reader does not recursively walk related terms, so cycles cannot
+expand without bound. Literal search, exact detail, visibility scopes, and single-use cursors are
+manifest/locale/query-bound. This is source-only evidence: no native tooltip compatibility,
+live-instance projection, public route, or shared wire shape is implied.
+
 The owner-local `card_definitions` producer composes that same manifest witness with typed card
 costs, effect parameters, targeting, acquisition/unlock rules, and explicitly identified variants
 and upgrade paths. Its comparison operation is immutable and definition-bound; dynamic formulas
