@@ -7,6 +7,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 internal static class StandardAdmissionProbe
 {
     private static readonly string[] Acts = { "act_1", "act_2", "act_3", "act_4" };
+    private static readonly string[] Modifier = { "modifier" };
 
     private const string Digest =
         "4581aaf95348126550cdf3b73ec46b39d447523cf7cb35aec71c2842d1945031";
@@ -26,7 +27,7 @@ internal static class StandardAdmissionProbe
             "non-standard selection policy is rejected before host access");
         Check(Rejected(supported with { Ascension = 1 }),
             "nonzero ascension is rejected before host access");
-        Check(Rejected(supported with { Modifiers = new[] { "modifier" } }),
+        Check(Rejected(supported with { Modifiers = Modifier }),
             "modifier-bearing context is rejected before host access");
         Console.WriteLine("seeded standard admission checks passed");
     }
