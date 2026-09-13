@@ -10,6 +10,7 @@ mod checkpoint;
 mod content_index;
 mod content_manifest;
 mod field_availability;
+mod live_card_state;
 mod poc;
 mod protocol_artifact;
 mod rng_audit;
@@ -38,6 +39,7 @@ pub use content_manifest::{
     ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
 };
 pub use field_availability::*;
+pub use live_card_state::*;
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
     PocCoreError, PocCorePort, PocCoreState, PocMessage, PocMessageKind, PocMod, PocModError,
