@@ -218,25 +218,25 @@ The game-mod availability fixture is a host- and transport-independent contract 
 cargo test --locked --offline --package sts2-game-mod --test field_availability
 ~~~
 
-It keeps zero and empty values available, records distinct not-applicable/not-observed/unsupported/
-denied/unknown/failed outcomes, fences detail recovery by manifest/snapshot/epoch, rejects unknown
-or protected field paths, reports count-known and required-field coverage, traverses bounded
-collections with opaque continuations, and returns a typed oversized-detail error. The synthetic
-fixture is not a protocol artifact, gateway route, MCP tool, or native host compatibility claim;
-those remain separately negotiated and verified.
+It keeps zero and empty values available, records distinct not-applicable/not-observed/unsupported/denied/unknown/failed outcomes, fences detail recovery by manifest/snapshot/epoch, rejects unknown or protected field paths, reports count-known and required-field coverage, traverses bounded collections with opaque continuations, and returns a typed oversized-detail error.
+The synthetic fixture is not a protocol artifact, gateway route, MCP tool, or native host compatibility claim; those remain separately negotiated and verified.
 
 ## Owner-local content index fixture
 
-The source-only content-index producer binds typed names, aliases, descriptions, package provenance,
-filters, unlock observations, and exact-detail capabilities to one manifest. Its synthetic fixture covers unsupported-family registry rebasing,
-bounded pagination/detail payloads, source identity/alias validation, literal non-ASCII search ranking,
-duplicate names, capability/source consistency, exact lookup errors, locked-reference scope, stale cursors, locale fencing, and source failures:
+The source-only content-index producer binds typed names, aliases, descriptions, package provenance, filters, unlock observations, and exact-detail capabilities to one manifest; its fixture covers unsupported-family registry rebasing, bounded pagination/detail payloads, source identity/alias validation, literal non-ASCII search ranking, duplicate names, capability/source consistency, exact lookup errors, locked-reference scope, stale cursors, locale fencing, and source failures (run `cargo test --locked --offline --package sts2-game-mod --test content_index --test content_index_regressions`).
+The index is immutable after production; only opaque reader cursors are mutable. Unknown or unsupported source data fails closed; no fixture constructs playable objects, mutates profile state, or asserts native compatibility. Names/errors are game-mod-local pending the separately owned versioned contract.
+
+## Owner-local seeded RNG audit fixture
 
 ~~~text
-cargo test --locked --offline --package sts2-game-mod --test content_index --test content_index_regressions
+cargo test --locked --offline --package sts2-game-mod --test rng_audit
 ~~~
 
-The index is immutable after production; only opaque reader cursors are mutable. Unknown or unsupported source data fails closed; no fixture constructs playable objects, mutates profile state, or asserts native compatibility. Names/errors are game-mod-local pending the separately owned versioned game-information contract.
+It binds a synthetic build, adapter/profile compatibility, canonical seed, and seeded lifecycle boundary;
+rejects incomplete coverage, duplicate identities, malformed/missing gameplay state, uncontrolled inputs, and
+over-limit inventories; keeps cursor/state digests out of its projection; changes its deterministic
+fingerprint when a private cursor changes; and repeats reads without drawing randomness. This host-independent
+fixture does not inspect proprietary assemblies, certify a native build, or claim that the game exposes the listed stream categories.
 
 ## Required future behavior
 
