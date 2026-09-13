@@ -199,8 +199,19 @@ pub(super) fn detail_bytes(term: &GlossaryTerm) -> Result<usize, GlossaryCatalog
     }
     for related in &term.related_terms {
         add(&related.term_id)?;
-        if let GlossaryRelatedTermResolution::Unresolved(reason) = related.resolution {
-            add(&format!("{reason:?}"))?;
+        match &related.resolution {
+            GlossaryRelatedTermResolution::Resolved(reference) => {
+                add(&reference.catalog.manifest.adapter_compatibility)?;
+                add(&reference.catalog.manifest.content_set_revision)?;
+                add(&reference.catalog.manifest.localized_text_revision)?;
+                add(&reference.catalog.manifest.inventory_revision)?;
+                add(&reference.catalog.locale)?;
+                add(&reference.catalog.producer_version)?;
+                add(&reference.term_id)?;
+            }
+            GlossaryRelatedTermResolution::Unresolved(reason) => {
+                add(&format!("{reason:?}"))?;
+            }
         }
     }
     for rule_reference in &term.rule_references {
@@ -209,9 +220,18 @@ pub(super) fn detail_bytes(term: &GlossaryTerm) -> Result<usize, GlossaryCatalog
     for content_reference in &term.content_references {
         add(&content_reference.entity_kind)?;
         add(&content_reference.namespaced_id)?;
-        if let GlossaryContentReferenceResolution::Unresolved(reason) = content_reference.resolution
-        {
-            add(&format!("{reason:?}"))?;
+        match &content_reference.resolution {
+            GlossaryContentReferenceResolution::Resolved(reference) => {
+                add(&reference.manifest.adapter_compatibility)?;
+                add(&reference.manifest.content_set_revision)?;
+                add(&reference.manifest.localized_text_revision)?;
+                add(&reference.manifest.inventory_revision)?;
+                add(&reference.entity_kind)?;
+                add(&reference.namespaced_id)?;
+            }
+            GlossaryContentReferenceResolution::Unresolved(reason) => {
+                add(&format!("{reason:?}"))?;
+            }
         }
     }
     match &term.evidence {

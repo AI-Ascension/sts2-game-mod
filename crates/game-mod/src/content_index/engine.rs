@@ -58,6 +58,15 @@ impl ContentIndex {
         &self.families
     }
 
+    /// Returns every immutable definition in deterministic family/identity order.
+    ///
+    /// The records are the same source-owned values used by list and exact lookup. This
+    /// accessor is intentionally read-only so another source-only projection can compose
+    /// bounded cross-reference metadata without reconstructing or mutating content objects.
+    pub fn definitions(&self) -> impl Iterator<Item = &ContentDefinition> {
+        self.definitions.values()
+    }
+
     /// Creates a cursor-owning reader over this immutable index.
     #[must_use]
     pub fn reader(&self) -> super::reader::ContentIndexReader {

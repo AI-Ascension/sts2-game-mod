@@ -14,7 +14,14 @@ use sts2_game_mod::{
 
 #[test]
 fn search_ranking_and_pagination_are_locale_and_scope_bound() {
-    let catalog = catalog();
+    let raw_catalog = catalog();
+    assert_eq!(
+        raw_catalog.coverage().status,
+        sts2_game_mod::GlossaryCoverageStatus::Unverified
+    );
+    let catalog = raw_catalog
+        .with_content_index(&content_index())
+        .expect("composed glossary coverage");
     assert_eq!(
         catalog.coverage().status,
         sts2_game_mod::GlossaryCoverageStatus::Partial
@@ -22,14 +29,22 @@ fn search_ranking_and_pagination_are_locale_and_scope_bound() {
     assert_eq!(catalog.coverage().term_count, 5);
     assert_eq!(catalog.coverage().related_reference_count, 3);
     assert_eq!(catalog.coverage().content_reference_count, 2);
+    assert_eq!(catalog.coverage().definition_reference_count, 3);
     assert_eq!(catalog.coverage().unresolved_related_count, 1);
     assert_eq!(catalog.coverage().unresolved_content_reference_count, 1);
+    assert_eq!(catalog.coverage().unresolved_definition_reference_count, 1);
     assert_eq!(catalog.coverage().unresolved_related_terms.len(), 1);
     assert_eq!(
         catalog.coverage().unresolved_related_terms[0].target_term_id,
         "status:missing"
     );
     assert_eq!(catalog.coverage().unresolved_content_references.len(), 1);
+    assert_eq!(catalog.coverage().unresolved_definition_references.len(), 1);
+    assert_eq!(
+        catalog.coverage().unresolved_definition_references[0].term_id,
+        "status:missing"
+    );
+    assert_eq!(catalog.definition_references().len(), 3);
 
     let mut reader = catalog.reader();
     let locale = ContentQueryLocale::new("en-US").expect("locale");

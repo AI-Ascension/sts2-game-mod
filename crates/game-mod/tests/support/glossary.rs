@@ -3,8 +3,11 @@
 #![allow(dead_code)]
 
 use sts2_game_mod::{
-    ContentCatalogSnapshot, ContentCatalogSource, ContentDefinitionInput, ContentManifest,
-    ContentManifestProducer, ContentOriginInput, ContentPackageInput, GLOSSARY_PRODUCER_VERSION,
+    ContentCatalogSnapshot, ContentCatalogSource, ContentDefinitionInput,
+    ContentDetailCapabilities, ContentIndexDefinitionInput, ContentIndexProducer,
+    ContentIndexSnapshot, ContentIndexSource, ContentIndexSourceError, ContentKindAdapter,
+    ContentKindAdapterRegistry, ContentManifest, ContentManifestProducer, ContentOriginInput,
+    ContentPackageInput, ContentReferenceVisibilityPolicy, GLOSSARY_PRODUCER_VERSION,
     GlossaryContentReferenceInput, GlossaryContentReferenceSurface, GlossaryDefinitionText,
     GlossaryEvidence, GlossaryProducer, GlossaryQueryScope, GlossaryReferenceVisibilityPolicy,
     GlossarySnapshot, GlossarySource, GlossaryTermInput, GlossaryTermVisibility,
@@ -32,6 +35,20 @@ impl GlossarySource for GlossaryFixtureSource {
         &self,
         _manifest: &ContentManifest,
     ) -> Result<GlossarySnapshot, sts2_game_mod::GlossarySourceError> {
+        self.snapshot.clone()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentIndexFixtureSource {
+    pub snapshot: Result<ContentIndexSnapshot, ContentIndexSourceError>,
+}
+
+impl ContentIndexSource for ContentIndexFixtureSource {
+    fn read_index(
+        &self,
+        _manifest: &ContentManifest,
+    ) -> Result<ContentIndexSnapshot, ContentIndexSourceError> {
         self.snapshot.clone()
     }
 }
@@ -153,6 +170,39 @@ pub fn catalog() -> sts2_game_mod::GlossaryCatalog {
             },
         )
         .expect("valid glossary")
+}
+
+pub fn content_index() -> sts2_game_mod::ContentIndex {
+    let manifest = manifest();
+    let registry = ContentKindAdapterRegistry::new(
+        &manifest,
+        [
+            ContentKindAdapter::supported("card", [], ContentDetailCapabilities::none())
+                .expect("card adapter"),
+            ContentKindAdapter::supported("status", [], ContentDetailCapabilities::none())
+                .expect("status adapter"),
+        ],
+    )
+    .expect("content registry");
+    let mut strike = ContentIndexDefinitionInput::new("card", "base:ironclad:strike");
+    strike.term_references = vec!["status:strength".to_owned(), "status:missing".to_owned()];
+    let mut strength = ContentIndexDefinitionInput::new("status", "base:status:strength");
+    strength.term_references = vec!["status:strength".to_owned()];
+    ContentIndexProducer::new(
+        registry,
+        ContentReferenceVisibilityPolicy::AllowLockedReferences,
+    )
+    .produce(
+        &manifest,
+        &ContentIndexFixtureSource {
+            snapshot: Ok(ContentIndexSnapshot {
+                manifest: manifest.cursor_binding(),
+                locale: manifest.locale.clone(),
+                definitions: vec![strike, strength],
+            }),
+        },
+    )
+    .expect("valid content index")
 }
 
 pub fn public_scope() -> GlossaryQueryScope {

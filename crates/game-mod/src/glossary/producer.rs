@@ -2,16 +2,16 @@
 
 use std::collections::BTreeMap;
 
-use crate::ContentManifest;
+use crate::{ContentIndex, ContentManifest};
 
 use super::catalog::GlossaryContentReferenceResolution;
+use super::coverage::GlossaryCoverage;
 use super::error::map_source_error;
-use super::model::{GlossaryReferenceVisibilityPolicy, GlossaryUnresolvedReason};
+use super::model::GlossaryReferenceVisibilityPolicy;
 use super::validation::{manifest_definitions, validate_input};
 use super::{
-    GLOSSARY_MAX_COVERAGE_REFERENCES, GLOSSARY_MAX_TERM_COUNT, GLOSSARY_PRODUCER_VERSION,
-    GlossaryCatalog, GlossaryCatalogBinding, GlossaryCatalogError, GlossarySourceError,
-    GlossaryTerm, GlossaryTermInput,
+    GLOSSARY_MAX_TERM_COUNT, GLOSSARY_PRODUCER_VERSION, GlossaryCatalog, GlossaryCatalogBinding,
+    GlossaryCatalogError, GlossarySourceError, GlossaryTerm, GlossaryTermInput,
 };
 
 /// One coherent source snapshot of glossary terms for one manifest and locale.
@@ -35,114 +35,6 @@ pub trait GlossarySource {
         &self,
         manifest: &ContentManifest,
     ) -> Result<GlossarySnapshot, GlossarySourceError>;
-}
-
-/// Completeness of cross-reference coverage.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum GlossaryCoverageStatus {
-    /// Every bounded reference resolves against this glossary and manifest.
-    Complete,
-    /// One or more references remain explicit unavailable records.
-    Partial,
-}
-
-/// One unresolved term edge retained in bounded coverage diagnostics.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GlossaryUnresolvedTermReference {
-    /// Source term carrying the edge.
-    pub term_id: String,
-    /// Missing target term ID.
-    pub target_term_id: String,
-    /// Explicit reason retained by the producer.
-    pub reason: GlossaryUnresolvedReason,
-}
-
-/// One unresolved content definition edge retained in bounded coverage diagnostics.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GlossaryUnresolvedContentReference {
-    /// Source term carrying the edge.
-    pub term_id: String,
-    /// Target family.
-    pub entity_kind: String,
-    /// Target namespaced definition ID.
-    pub namespaced_id: String,
-    /// Explicit reason retained by the producer.
-    pub reason: GlossaryUnresolvedReason,
-}
-
-/// Cross-reference coverage for one immutable glossary.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GlossaryCoverage {
-    /// Complete or partial reference coverage.
-    pub status: GlossaryCoverageStatus,
-    /// Number of terms retained.
-    pub term_count: usize,
-    /// Number of related-term edges.
-    pub related_reference_count: usize,
-    /// Number of content definition edges.
-    pub content_reference_count: usize,
-    /// Total unresolved related-term edges before diagnostic truncation.
-    pub unresolved_related_count: usize,
-    /// Total unresolved content edges before diagnostic truncation.
-    pub unresolved_content_reference_count: usize,
-    /// Unresolved related-term edges, bounded and deterministic.
-    pub unresolved_related_terms: Vec<GlossaryUnresolvedTermReference>,
-    /// Unresolved content edges, bounded and deterministic.
-    pub unresolved_content_references: Vec<GlossaryUnresolvedContentReference>,
-}
-
-impl GlossaryCoverage {
-    fn new(term_count: usize) -> Self {
-        Self {
-            status: GlossaryCoverageStatus::Complete,
-            term_count,
-            related_reference_count: 0,
-            content_reference_count: 0,
-            unresolved_related_count: 0,
-            unresolved_content_reference_count: 0,
-            unresolved_related_terms: Vec::new(),
-            unresolved_content_references: Vec::new(),
-        }
-    }
-
-    fn record_related(
-        &mut self,
-        term_id: &str,
-        target_term_id: &str,
-        reason: GlossaryUnresolvedReason,
-    ) {
-        self.status = GlossaryCoverageStatus::Partial;
-        self.unresolved_related_count = self.unresolved_related_count.saturating_add(1);
-        if self.unresolved_related_terms.len() < GLOSSARY_MAX_COVERAGE_REFERENCES {
-            self.unresolved_related_terms
-                .push(GlossaryUnresolvedTermReference {
-                    term_id: term_id.to_owned(),
-                    target_term_id: target_term_id.to_owned(),
-                    reason,
-                });
-        }
-    }
-
-    fn record_content(
-        &mut self,
-        term_id: &str,
-        entity_kind: &str,
-        namespaced_id: &str,
-        reason: GlossaryUnresolvedReason,
-    ) {
-        self.status = GlossaryCoverageStatus::Partial;
-        self.unresolved_content_reference_count =
-            self.unresolved_content_reference_count.saturating_add(1);
-        if self.unresolved_content_references.len() < GLOSSARY_MAX_COVERAGE_REFERENCES {
-            self.unresolved_content_references
-                .push(GlossaryUnresolvedContentReference {
-                    term_id: term_id.to_owned(),
-                    entity_kind: entity_kind.to_owned(),
-                    namespaced_id: namespaced_id.to_owned(),
-                    reason,
-                });
-        }
-    }
 }
 
 /// Producer that binds terms and cross-references to one content manifest.
@@ -265,7 +157,21 @@ impl GlossaryProducer {
             self.locked_visibility,
             terms,
             coverage,
+            Vec::new(),
         ))
+    }
+
+    /// Produces a glossary and composes every content-index term reference before reporting
+    /// coverage. This is the only producer path that can transition coverage from `Unverified`
+    /// to `Complete` or `Partial`.
+    pub fn produce_with_content_index<S: GlossarySource>(
+        &self,
+        manifest: &ContentManifest,
+        source: &S,
+        content_index: &ContentIndex,
+    ) -> Result<GlossaryCatalog, GlossaryCatalogError> {
+        self.produce(manifest, source)?
+            .with_content_index(content_index)
     }
 }
 

@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::ContentDefinitionReference;
+use crate::{ContentDefinitionReference, ContentIndex};
 
 use super::model::GlossaryCatalogBinding;
 use super::{
@@ -36,6 +36,26 @@ pub struct GlossaryRelatedTerm {
     pub term_id: String,
     /// Resolution status; no recursive expansion is performed.
     pub resolution: GlossaryRelatedTermResolution,
+}
+
+/// Resolution state for a content-definition-to-term edge.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum GlossaryDefinitionTermResolution {
+    /// The target term exists and is visible under this catalog's reference policy.
+    Resolved(GlossaryTermReference),
+    /// The target term remains visible as an explicit unavailable record.
+    Unresolved(GlossaryUnresolvedReason),
+}
+
+/// One bounded term reference copied from a content-index definition.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GlossaryDefinitionTermReference {
+    /// Content definition carrying the source term ID.
+    pub definition: ContentDefinitionReference,
+    /// Stable glossary term ID supplied by the content index.
+    pub term_id: String,
+    /// Resolution against this immutable glossary.
+    pub resolution: GlossaryDefinitionTermResolution,
 }
 
 /// Resolution state for a content definition cross-reference.
@@ -120,6 +140,7 @@ pub struct GlossaryCatalog {
     pub(super) locked_visibility: GlossaryReferenceVisibilityPolicy,
     pub(super) terms: BTreeMap<String, GlossaryTerm>,
     pub(super) coverage: super::GlossaryCoverage,
+    pub(super) definition_references: Vec<GlossaryDefinitionTermReference>,
 }
 
 impl GlossaryCatalog {
@@ -128,12 +149,14 @@ impl GlossaryCatalog {
         locked_visibility: GlossaryReferenceVisibilityPolicy,
         terms: BTreeMap<String, GlossaryTerm>,
         coverage: super::GlossaryCoverage,
+        definition_references: Vec<GlossaryDefinitionTermReference>,
     ) -> Self {
         Self {
             binding,
             locked_visibility,
             terms,
             coverage,
+            definition_references,
         }
     }
 
@@ -153,6 +176,95 @@ impl GlossaryCatalog {
     #[must_use]
     pub fn coverage(&self) -> &super::GlossaryCoverage {
         &self.coverage
+    }
+
+    /// Returns every content-definition-to-term edge composed from a content index.
+    ///
+    /// An empty slice means that composition has not run; check [`Self::coverage`] before
+    /// treating the glossary as complete. Unresolved records are retained rather than dropped.
+    #[must_use]
+    pub fn definition_references(&self) -> &[GlossaryDefinitionTermReference] {
+        &self.definition_references
+    }
+
+    /// Composes content-index term references into a new immutable catalog.
+    ///
+    /// The content index must share this catalog's manifest and locale. Every source edge is
+    /// retained, including missing or visibility-excluded terms, so coverage cannot silently
+    /// claim completeness from a glossary snapshot alone.
+    pub fn with_content_index(
+        &self,
+        content_index: &ContentIndex,
+    ) -> Result<Self, GlossaryCatalogError> {
+        if content_index.manifest_binding() != &self.binding.manifest {
+            return Err(GlossaryCatalogError::ManifestMismatch);
+        }
+        if content_index.locale() != self.locale() {
+            return Err(GlossaryCatalogError::LocaleMismatch);
+        }
+
+        let mut definition_references = Vec::new();
+        for definition in content_index.definitions() {
+            for term_id in &definition.term_references {
+                if definition_references.len() >= super::GLOSSARY_MAX_DEFINITION_REFERENCES {
+                    return Err(GlossaryCatalogError::CollectionTooLarge {
+                        field: "definition_references",
+                        limit: super::GLOSSARY_MAX_DEFINITION_REFERENCES,
+                        actual: definition_references.len().saturating_add(1),
+                    });
+                }
+                let resolution = match self.terms.get(term_id) {
+                    Some(term) if self.visible(term, GlossaryQueryScope::Reference) => {
+                        GlossaryDefinitionTermResolution::Resolved(GlossaryTermReference {
+                            catalog: self.binding.clone(),
+                            term_id: term_id.clone(),
+                        })
+                    }
+                    Some(_) => GlossaryDefinitionTermResolution::Unresolved(
+                        GlossaryUnresolvedReason::ExcludedByScope,
+                    ),
+                    None => GlossaryDefinitionTermResolution::Unresolved(
+                        GlossaryUnresolvedReason::Missing,
+                    ),
+                };
+                definition_references.push(GlossaryDefinitionTermReference {
+                    definition: definition.reference.clone(),
+                    term_id: term_id.clone(),
+                    resolution,
+                });
+            }
+        }
+        definition_references.sort_by(|left, right| {
+            (
+                &left.definition.entity_kind,
+                &left.definition.namespaced_id,
+                &left.term_id,
+            )
+                .cmp(&(
+                    &right.definition.entity_kind,
+                    &right.definition.namespaced_id,
+                    &right.term_id,
+                ))
+        });
+
+        let mut coverage = self.coverage.clone();
+        coverage.definition_reference_count = definition_references.len();
+        coverage.unresolved_definition_reference_count = 0;
+        coverage.unresolved_definition_references.clear();
+        for reference in &definition_references {
+            if let GlossaryDefinitionTermResolution::Unresolved(reason) = reference.resolution {
+                coverage.record_definition(&reference.definition, &reference.term_id, reason);
+            }
+        }
+        coverage.finalize();
+
+        Ok(Self {
+            binding: self.binding.clone(),
+            locked_visibility: self.locked_visibility,
+            terms: self.terms.clone(),
+            coverage,
+            definition_references,
+        })
     }
 
     /// Returns a cursor-owning reader with independent single-use continuations.

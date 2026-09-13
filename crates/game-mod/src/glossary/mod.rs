@@ -8,6 +8,7 @@
 //! define a wire contract, a native registry adapter, or a live-host claim.
 
 mod catalog;
+mod coverage;
 mod error;
 mod model;
 mod producer;
@@ -18,8 +19,13 @@ mod validation;
 
 pub use catalog::{
     GlossaryCatalog, GlossaryContentReference, GlossaryContentReferenceResolution,
-    GlossaryRelatedTerm, GlossaryRelatedTermResolution, GlossaryTerm, GlossaryTermDetail,
-    GlossaryTermReference, GlossaryTermSummary,
+    GlossaryDefinitionTermReference, GlossaryDefinitionTermResolution, GlossaryRelatedTerm,
+    GlossaryRelatedTermResolution, GlossaryTerm, GlossaryTermDetail, GlossaryTermReference,
+    GlossaryTermSummary,
+};
+pub use coverage::{
+    GlossaryCoverage, GlossaryCoverageStatus, GlossaryUnresolvedContentReference,
+    GlossaryUnresolvedDefinitionReference, GlossaryUnresolvedTermReference,
 };
 pub use error::{GlossaryCatalogError, GlossarySourceError};
 pub use model::{
@@ -28,10 +34,7 @@ pub use model::{
     GlossaryReferenceVisibilityPolicy, GlossaryTermInput, GlossaryTermVisibility,
     GlossaryUnresolvedReason,
 };
-pub use producer::{
-    GlossaryCoverage, GlossaryCoverageStatus, GlossaryProducer, GlossarySnapshot, GlossarySource,
-    GlossaryUnresolvedContentReference, GlossaryUnresolvedTermReference,
-};
+pub use producer::{GlossaryProducer, GlossarySnapshot, GlossarySource};
 pub use query::{
     GlossaryCompleteness, GlossaryContinuation, GlossaryListPage, GlossaryListQuery,
     GlossaryQueryBinding, GlossaryQueryOperation, GlossarySearchPage, GlossarySearchQuery,
@@ -65,3 +68,5 @@ pub const GLOSSARY_MAX_PAGE_ITEMS: usize = 64;
 pub const GLOSSARY_MAX_DETAIL_BYTES: usize = 64 * 1024;
 /// Maximum unresolved references retained in coverage diagnostics.
 pub const GLOSSARY_MAX_COVERAGE_REFERENCES: usize = 4096;
+/// Maximum content-definition-to-term edges composed into one immutable glossary.
+pub const GLOSSARY_MAX_DEFINITION_REFERENCES: usize = 4096;

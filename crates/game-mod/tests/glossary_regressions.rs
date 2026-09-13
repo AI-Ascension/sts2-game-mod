@@ -8,9 +8,9 @@ mod fixture;
 use fixture::*;
 use sts2_game_mod::{
     ContentQueryLocale, GLOSSARY_MAX_ALIAS_COUNT, GLOSSARY_MAX_DETAIL_BYTES,
-    GLOSSARY_MAX_TEXT_BYTES, GlossaryCatalogError, GlossaryProducer, GlossaryQueryScope,
-    GlossaryReferenceVisibilityPolicy, GlossarySearchQuery, GlossarySnapshot, GlossarySourceError,
-    GlossaryTermReference,
+    GLOSSARY_MAX_RELATED_TERM_COUNT, GLOSSARY_MAX_TEXT_BYTES, GlossaryCatalogError,
+    GlossaryProducer, GlossaryQueryScope, GlossaryReferenceVisibilityPolicy, GlossarySearchQuery,
+    GlossarySnapshot, GlossarySourceError, GlossaryTermInput, GlossaryTermReference,
 };
 
 fn source_with(snapshot: GlossarySnapshot) -> GlossaryFixtureSource {
@@ -120,6 +120,90 @@ fn duplicate_aliases_controls_and_oversized_detail_are_rejected() {
             actual,
         }) if actual > GLOSSARY_MAX_DETAIL_BYTES
     ));
+}
+
+#[test]
+fn nested_resolved_reference_payloads_count_toward_detail_limit() {
+    let manifest = manifest();
+    let producer = GlossaryProducer::new(GlossaryReferenceVisibilityPolicy::AllowReferenceTerms);
+    let mut unresolved = snapshot(&manifest);
+    unresolved.terms[0].aliases = (0..3)
+        .map(|index| format!("{index}-{}", "x".repeat(GLOSSARY_MAX_TEXT_BYTES - 4096)))
+        .collect();
+    unresolved.terms[0].related_terms = (0..GLOSSARY_MAX_RELATED_TERM_COUNT)
+        .map(|index| format!("keyword:t{index}-{}", "y".repeat(238)))
+        .collect();
+    let catalog = producer
+        .produce(&manifest, &source_with(unresolved.clone()))
+        .expect("unresolved references remain bounded");
+    let reference = GlossaryTermReference {
+        catalog: catalog.binding().clone(),
+        term_id: "status:strength".to_owned(),
+    };
+    assert!(
+        catalog
+            .get(&reference, GlossaryQueryScope::Reference)
+            .is_ok(),
+        "outer unresolved IDs fit below the detail bound"
+    );
+
+    let mut resolved = unresolved;
+    resolved
+        .terms
+        .extend((0..GLOSSARY_MAX_RELATED_TERM_COUNT).map(|index| {
+            GlossaryTermInput::new(
+                format!("keyword:t{index}-{}", "y".repeat(238)),
+                format!("Target {index}"),
+            )
+        }));
+    let catalog = producer
+        .produce(&manifest, &source_with(resolved))
+        .expect("resolved references remain source-valid");
+    let reference = GlossaryTermReference {
+        catalog: catalog.binding().clone(),
+        term_id: "status:strength".to_owned(),
+    };
+    assert!(matches!(
+        catalog.get(&reference, GlossaryQueryScope::Reference),
+        Err(GlossaryCatalogError::DetailTooLarge {
+            limit: GLOSSARY_MAX_DETAIL_BYTES,
+            actual,
+        }) if actual > GLOSSARY_MAX_DETAIL_BYTES
+    ));
+}
+
+#[test]
+fn coverage_composition_requires_matching_manifest_and_locale() {
+    let producer = GlossaryProducer::new(GlossaryReferenceVisibilityPolicy::AllowReferenceTerms);
+    let manifest = manifest();
+    let content_index = content_index();
+    let catalog = producer
+        .produce_with_content_index(&manifest, &source_with(snapshot(&manifest)), &content_index)
+        .expect("matching composition");
+    assert_eq!(
+        catalog.coverage().status,
+        sts2_game_mod::GlossaryCoverageStatus::Partial
+    );
+
+    let mut stale_manifest = manifest.clone();
+    stale_manifest.catalog_generation = stale_manifest.catalog_generation.saturating_add(1);
+    let stale_catalog = producer
+        .produce(&stale_manifest, &source_with(snapshot(&stale_manifest)))
+        .expect("stale glossary snapshot");
+    assert_eq!(
+        stale_catalog.with_content_index(&content_index),
+        Err(GlossaryCatalogError::ManifestMismatch)
+    );
+
+    let mut wrong_locale = manifest;
+    wrong_locale.locale = "fr-FR".to_owned();
+    let wrong_locale_catalog = producer
+        .produce(&wrong_locale, &source_with(snapshot(&wrong_locale)))
+        .expect("locale-bound glossary snapshot");
+    assert_eq!(
+        wrong_locale_catalog.with_content_index(&content_index),
+        Err(GlossaryCatalogError::LocaleMismatch)
+    );
 }
 
 #[test]
