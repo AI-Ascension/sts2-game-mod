@@ -184,7 +184,6 @@ pub(super) fn validate_independent_seed_links(
         }) {
             return Err(RngAuditError::IndependentSeedNotLinked {
                 stream_id: stream.stream_id.clone(),
-                source: source.clone(),
             });
         }
     }

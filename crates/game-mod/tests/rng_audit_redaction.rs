@@ -88,7 +88,6 @@ fn independent_gameplay_seed_requires_audited_controlled_input() {
         ),
         Err(RngAuditError::IndependentSeedNotLinked {
             stream_id: "encounter/main".to_owned(),
-            source: "wall_clock".to_owned(),
         })
     );
 
@@ -115,5 +114,24 @@ fn independent_gameplay_seed_requires_audited_controlled_input() {
         )
         .is_ok(),
         "a controlled wall-clock binding should satisfy the independent seed link"
+    );
+}
+
+#[test]
+fn independent_seed_error_redacts_private_source() {
+    const SENTINEL: &str = "PRIVATE_SEED_SOURCE_SENTINEL";
+
+    let mut stream = independent_gameplay_stream();
+    stream.seed_origin = RngSeedOrigin::Independent {
+        source: SENTINEL.to_owned(),
+    };
+    let mut binding = binding();
+    binding.external_input_declaration = ExternalInputDeclaration::NoneObserved;
+    let error = RngAuditWitness::new(binding, RngCoverageStatus::Complete, vec![stream], vec![])
+        .expect_err("an unlinked independent source should fail closed");
+    let rendered = format!("{error:?}\n{error}");
+    assert!(
+        !rendered.contains(SENTINEL),
+        "private independent seed source leaked through the error: {rendered}"
     );
 }
