@@ -26,11 +26,11 @@ pub use engine::ContentIndex;
 pub use errors::ContentIndexError;
 pub use model::{
     CONTENT_INDEX_MAX_ALIAS_COUNT, CONTENT_INDEX_MAX_DEFINITION_BYTES,
-    CONTENT_INDEX_MAX_IDENTITY_BYTES, CONTENT_INDEX_MAX_PAGE_ITEMS, CONTENT_INDEX_MAX_TEXT_BYTES,
-    ContentDefinition, ContentDefinitionReference, ContentDefinitionSummary,
-    ContentDetailCapabilities, ContentIndexFamily, ContentIndexInputError, ContentIndexSnapshot,
-    ContentIndexSource, ContentIndexSourceError, ContentQueryLocale, ContentRarity,
-    ContentUnlockState,
+    CONTENT_INDEX_MAX_IDENTITY_BYTES, CONTENT_INDEX_MAX_PAGE_ITEMS,
+    CONTENT_INDEX_MAX_TERM_REFERENCES, CONTENT_INDEX_MAX_TEXT_BYTES, ContentDefinition,
+    ContentDefinitionReference, ContentDefinitionSummary, ContentDetailCapabilities,
+    ContentIndexFamily, ContentIndexInputError, ContentIndexSnapshot, ContentIndexSource,
+    ContentIndexSourceError, ContentQueryLocale, ContentRarity, ContentUnlockState,
 };
 pub use query::{
     ContentCompleteness, ContentContinuation, ContentFilterKind, ContentIndexDefinitionInput,

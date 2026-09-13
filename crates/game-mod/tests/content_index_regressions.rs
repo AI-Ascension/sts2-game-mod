@@ -9,8 +9,8 @@ use fixture::*;
 use sts2_game_mod::{
     CONTENT_INDEX_MAX_ALIAS_COUNT, CONTENT_INDEX_MAX_DEFINITION_BYTES,
     CONTENT_INDEX_MAX_TEXT_BYTES, ContentIndexDefinitionInput, ContentIndexError,
-    ContentIndexProducer, ContentListQuery, ContentManifestProducer, ContentQueryScope,
-    ContentReferenceVisibilityPolicy,
+    ContentIndexProducer, ContentListQuery, ContentManifestProducer, ContentQueryFilters,
+    ContentQueryScope, ContentReferenceVisibilityPolicy,
 };
 
 fn producer(registry_manifest: &sts2_game_mod::ContentManifest) -> ContentIndexProducer {
@@ -191,5 +191,71 @@ fn advertised_capabilities_must_match_source_field_availability() {
             },
         ),
         Err(ContentIndexError::CapabilityMismatch("display_name"))
+    );
+}
+
+#[test]
+fn glossary_term_references_are_bounded_and_retained_on_definition_detail() {
+    let manifest = manifest();
+    let mut source = source_snapshot(&manifest);
+    source.definitions[0].term_references =
+        vec!["status:strength".to_owned(), "keyword:damage".to_owned()];
+    let index = producer(&manifest)
+        .produce(
+            &manifest,
+            &IndexSource {
+                snapshot: Ok(source.clone()),
+            },
+        )
+        .expect("term references");
+    let mut reader = index.reader();
+    let page = reader
+        .list(&ContentListQuery {
+            locale: fixture::locale(),
+            scope: ContentQueryScope::Reference,
+            filters: ContentQueryFilters {
+                entity_kind: Some("card".to_owned()),
+                ..Default::default()
+            },
+            limit: 8,
+            continuation: None,
+        })
+        .expect("card list");
+    assert_eq!(
+        page.entries[0].term_references,
+        vec!["status:strength".to_owned(), "keyword:damage".to_owned()]
+    );
+    let reference = page.entries[0].reference.clone();
+    let detail = reader
+        .get(&reference, ContentQueryScope::Reference)
+        .expect("detail");
+    assert_eq!(
+        detail.term_references,
+        vec!["status:strength".to_owned(), "keyword:damage".to_owned()]
+    );
+
+    let mut duplicate = source;
+    duplicate.definitions[0].term_references =
+        vec!["status:strength".to_owned(), "status:strength".to_owned()];
+    assert_eq!(
+        producer(&manifest).produce(
+            &manifest,
+            &IndexSource {
+                snapshot: Ok(duplicate),
+            },
+        ),
+        Err(ContentIndexError::DuplicateTermReference)
+    );
+
+    let mut malformed = source_snapshot(&manifest);
+    malformed.definitions[0].term_references = vec!["bad\nterm".to_owned()];
+    assert_eq!(
+        producer(&manifest).produce(
+            &manifest,
+            &IndexSource {
+                snapshot: Ok(malformed),
+            },
+        ),
+        Err(ContentIndexError::InvalidIdentity("term_reference"))
     );
 }

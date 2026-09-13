@@ -226,6 +226,8 @@ The synthetic fixture is not a protocol artifact, gateway route, MCP tool, or na
 The source-only content-index producer binds typed names, aliases, descriptions, package provenance, filters, unlock observations, and exact-detail capabilities to one manifest; its fixture covers unsupported-family registry rebasing, bounded pagination/detail payloads, source identity/alias validation, literal non-ASCII search ranking, duplicate names, capability/source consistency, exact lookup errors, locked-reference scope, stale cursors, locale fencing, and source failures (run `cargo test --locked --offline --package sts2-game-mod --test content_index --test content_index_regressions`).
 The index is immutable after production; only opaque reader cursors are mutable. Unknown or unsupported source data fails closed; no fixture constructs playable objects, mutates profile state, or asserts native compatibility. Names/errors are game-mod-local pending the separately owned versioned contract.
 
+Owner-local mechanics glossary fixture: the source-only glossary binds localized terms, evidence, rule IDs, and bounded cross-references; fixtures cover deterministic ranking, scope/locale/manifest cursor fences, unresolved/cyclic references, nested-reference detail limits, invalid inputs, and detail limits (`cargo test --locked --offline --package sts2-game-mod --test glossary --test glossary_regressions`). Content-index definitions retain stable term IDs for composition; composition preserves unresolved definition-to-term edges and keeps an uncomposed snapshot unverified. This is synthetic source/build evidence only, with no native, live, shared-protocol, MCP, or gateway claim.
+
 ## Owner-local seeded RNG audit fixture
 
 ~~~text

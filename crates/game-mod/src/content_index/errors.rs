@@ -68,6 +68,15 @@ pub enum ContentIndexError {
         /// Supplied alias count.
         actual: usize,
     },
+    /// A definition carries more glossary IDs than the local bound.
+    CollectionTooLarge {
+        /// Collection identity.
+        field: &'static str,
+        /// Maximum accepted entries.
+        limit: usize,
+        /// Supplied entry count.
+        actual: usize,
+    },
     /// Adapter capabilities claim a field that the source did not provide.
     CapabilityMismatch(&'static str),
     /// An identity or locale field is empty, oversized, or contains controls.
@@ -76,6 +85,8 @@ pub enum ContentIndexError {
     InvalidText,
     /// An alias is repeated within one definition.
     DuplicateAlias,
+    /// A glossary term ID is repeated within one definition.
+    DuplicateTermReference,
     /// Adapter configuration names an unknown manifest family.
     AdapterForUnknownKind,
     /// Adapter configuration repeats one family.

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    CONTENT_INDEX_MAX_DEFINITION_BYTES, ContentDefinition, ContentDefinitionSummary,
-    ContentIndexError, ContentQueryFilters,
+    CONTENT_INDEX_MAX_DEFINITION_BYTES, CONTENT_INDEX_MAX_TERM_REFERENCES, ContentDefinition,
+    ContentDefinitionSummary, ContentIndexError, ContentQueryFilters,
 };
 
 pub(super) fn summary(definition: &ContentDefinition) -> ContentDefinitionSummary {
@@ -16,6 +16,7 @@ pub(super) fn summary(definition: &ContentDefinition) -> ContentDefinitionSummar
         rarity: definition.rarity.clone(),
         unlock_state: definition.unlock_state,
         detail_capabilities: definition.detail_capabilities.clone(),
+        term_references: definition.term_references.clone(),
     }
 }
 
@@ -113,6 +114,32 @@ pub(super) fn validate_optional_identity(
     Ok(())
 }
 
+pub(super) fn validate_term_references(
+    term_references: &[String],
+) -> Result<(), ContentIndexError> {
+    if term_references.len() > CONTENT_INDEX_MAX_TERM_REFERENCES {
+        return Err(ContentIndexError::CollectionTooLarge {
+            field: "term_references",
+            limit: CONTENT_INDEX_MAX_TERM_REFERENCES,
+            actual: term_references.len(),
+        });
+    }
+    let mut unique = std::collections::BTreeSet::new();
+    for term_reference in term_references {
+        super::model::validate_identity(term_reference, "term_reference").map_err(|error| {
+            match error {
+                super::model::ContentIndexInputError::InvalidIdentity(field) => {
+                    ContentIndexError::InvalidIdentity(field)
+                }
+            }
+        })?;
+        if !unique.insert(term_reference) {
+            return Err(ContentIndexError::DuplicateTermReference);
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn definition_bytes(definition: &ContentDefinition) -> Result<usize, ContentIndexError> {
     let mut actual = 0usize;
     let mut add = |value: &str| {
@@ -145,6 +172,9 @@ pub(super) fn definition_bytes(definition: &ContentDefinition) -> Result<usize, 
     }
     for reference in &definition.override_chain {
         add(reference)?;
+    }
+    for term_reference in &definition.term_references {
+        add(term_reference)?;
     }
     add(&definition.semantic_revision)?;
     add(&definition.localized_text_revision)?;

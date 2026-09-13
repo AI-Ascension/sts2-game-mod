@@ -11,6 +11,7 @@ mod checkpoint;
 mod content_index;
 mod content_manifest;
 mod field_availability;
+mod glossary;
 pub mod live_card_state;
 mod poc;
 mod potions;
@@ -44,6 +45,7 @@ pub use content_manifest::{
     ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
 };
 pub use field_availability::*;
+pub use glossary::*;
 pub use live_card_state::{
     CardCostAmount, CardCostContributor, CardCostSemantics, CardCostUnknownReason,
     CardDefinitionLink, CardDefinitionReference, CardExpiration, CardFlags, CardInstanceReference,
