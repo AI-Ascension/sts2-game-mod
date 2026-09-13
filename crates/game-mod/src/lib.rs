@@ -14,6 +14,7 @@ mod field_availability;
 pub mod live_card_state;
 mod poc;
 mod potions;
+mod powers;
 mod protocol_artifact;
 mod relics;
 mod rng_audit;
@@ -64,6 +65,7 @@ pub use poc::{
     PocObservation, PocProvenance, PocRoute, PocStatus, PocValidationError,
 };
 pub use potions::*;
+pub use powers::*;
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,

@@ -290,6 +290,14 @@ carry an owner rule reference and unresolved inputs rather than an invented numb
 does not duplicate content-index enumeration, define a transport schema, construct or upgrade live
 cards, consume RNG, mutate profiles, or claim native registry compatibility.
 
+The owner-local `powers` producer composes the manifest witness with localized power/status
+definitions and typed stacking, caps, duration/decay/reset rules, and effect/keyword/rule links.
+Its live reader keeps amountless, scalar, decimal, text, and multi-counter values distinct and
+binds each player, ally, enemy, or secondary-entity instance to a source, run, snapshot, and
+monotonic epoch. Explicit field availability preserves hidden, denied, unsupported, and
+not-observed values; this slice has no native extractor, transport route, profile mutation, or
+exact-host compatibility claim.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
