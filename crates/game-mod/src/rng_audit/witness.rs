@@ -10,7 +10,7 @@ use super::{
 ///
 /// The raw cursor and state evidence stay inside this value and are intentionally
 /// absent from [`super::projection::RngAuditProjection`].
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct RngAuditWitness {
     pub(super) binding: RngAuditBinding,
     pub(super) coverage: RngCoverageStatus,
@@ -47,6 +47,7 @@ impl RngAuditWitness {
 
         validation::validate_streams(&mut streams)?;
         validation::validate_external_inputs(&binding, &mut external_inputs)?;
+        validation::validate_independent_seed_links(&streams, &external_inputs)?;
 
         let private_size_bytes =
             fingerprint::canonical_private_bytes(&binding, coverage, &streams, &external_inputs)

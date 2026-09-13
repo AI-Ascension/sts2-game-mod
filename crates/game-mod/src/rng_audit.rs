@@ -6,6 +6,7 @@
 //! evidence an authorized host-thread producer would have to return; they do not
 //! inspect host objects, draw randomness, or advertise exact-host support.
 
+mod debug;
 mod error;
 mod fingerprint;
 mod model;

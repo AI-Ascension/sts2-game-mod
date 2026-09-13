@@ -164,6 +164,33 @@ pub(super) fn validate_external_inputs(
     Ok(())
 }
 
+pub(super) fn validate_independent_seed_links(
+    streams: &[RngStreamEvidence],
+    inputs: &[ExternalInputEvidence],
+) -> Result<(), RngAuditError> {
+    for stream in streams {
+        let RngSeedOrigin::Independent { source } = &stream.seed_origin else {
+            continue;
+        };
+        if stream.gameplay != GameplayImpact::AffectsGameplay {
+            continue;
+        }
+        let linked = inputs
+            .iter()
+            .find(|input| input.kind.code() == source.as_str());
+        if linked.is_none_or(|input| {
+            input.gameplay != GameplayImpact::AffectsGameplay
+                || input.control != ExternalInputControl::Controlled
+        }) {
+            return Err(RngAuditError::IndependentSeedNotLinked {
+                stream_id: stream.stream_id.clone(),
+                source: source.clone(),
+            });
+        }
+    }
+    Ok(())
+}
+
 fn required_text(field: &'static str, value: &str) -> Result<(), RngAuditError> {
     if value.is_empty() {
         return Err(RngAuditError::Empty { field });

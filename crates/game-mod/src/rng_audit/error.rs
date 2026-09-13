@@ -39,6 +39,8 @@ pub enum RngAuditError {
     MissingCosmeticEvidence { source: String },
     /// A gameplay-affecting external input is not controlled.
     UncontrolledExternalInput { kind: ExternalInputKind },
+    /// An independently seeded gameplay stream is not linked to a controlled input.
+    IndependentSeedNotLinked { stream_id: String, source: String },
     /// The external-input declaration does not match the entries.
     InvalidExternalDeclaration,
     /// The private witness exceeds the local size bound.
@@ -91,6 +93,12 @@ impl std::fmt::Display for RngAuditError {
             }
             Self::UncontrolledExternalInput { kind } => {
                 write!(formatter, "uncontrolled gameplay input: {}", kind.code())
+            }
+            Self::IndependentSeedNotLinked { stream_id, source } => {
+                write!(
+                    formatter,
+                    "independent gameplay seed for {stream_id} is not linked to controlled input {source}"
+                )
             }
             Self::InvalidExternalDeclaration => {
                 formatter.write_str("external-input declaration does not match entries")

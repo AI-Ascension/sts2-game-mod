@@ -62,7 +62,7 @@ impl RngCoverageStatus {
 }
 
 /// Whether a stream's state can be represented without exposing its raw bytes.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum RngCursorEvidence {
     /// A non-zero or otherwise non-canonical state with an opaque digest and cursor.
     Known {
@@ -81,7 +81,7 @@ pub enum RngCursorEvidence {
 }
 
 /// How a stream obtains its initial seed.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum RngSeedOrigin {
     /// The stream is derived from the canonical run seed.
     MasterDerived {
@@ -156,7 +156,7 @@ impl GameplayImpact {
 }
 
 /// One discovered future-affecting or cosmetic-only entropy source.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct RngStreamEvidence {
     /// Stable identity assigned by the host owner, not an array index.
     pub stream_id: String,
@@ -275,7 +275,7 @@ impl ExternalInputDeclaration {
 }
 
 /// One bounded external-input inventory entry.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct ExternalInputEvidence {
     /// Stable input category.
     pub kind: ExternalInputKind,
@@ -290,7 +290,7 @@ pub struct ExternalInputEvidence {
 }
 
 /// Build, mode, profile, seed, and external-input binding for one witness.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct RngAuditBinding {
     /// Exact host build identity supplied by the authorized producer.
     pub game_build: String,
