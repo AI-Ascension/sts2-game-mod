@@ -42,21 +42,21 @@ pub struct CombatSnapshotInput {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CombatBookkeepingSnapshot {
     /// Identity fence shared by every nested value.
-    pub binding: CombatBookkeepingBinding,
+    binding: CombatBookkeepingBinding,
     /// Current round/player-turn identity.
-    pub turn: CombatField<CombatTurnIdentity>,
+    turn: CombatField<CombatTurnIdentity>,
     /// Supported zones keyed by kind.
-    pub zones: BTreeMap<CombatZoneKind, CombatZone>,
+    zones: BTreeMap<CombatZoneKind, CombatZone>,
     /// Explicit zone inventory.
-    pub zone_inventory: CombatZoneInventory,
+    zone_inventory: CombatZoneInventory,
     /// Permanent/temporary reconciliation counts.
-    pub deck: CombatDeckReconciliation,
+    deck: CombatDeckReconciliation,
     /// Named public counters.
-    pub counters: CombatCounters,
+    counters: CombatCounters,
     /// Host resolving state.
-    pub resolution: CombatField<CombatResolutionState>,
+    resolution: CombatField<CombatResolutionState>,
     /// Pending public selection/effect.
-    pub pending: CombatField<CombatPending>,
+    pending: CombatField<CombatPending>,
 }
 
 impl CombatBookkeepingSnapshot {
@@ -66,7 +66,20 @@ impl CombatBookkeepingSnapshot {
         let zones = input
             .zones
             .into_iter()
-            .map(|zone| (zone.kind, zone))
+            .map(|mut zone| {
+                if zone.ordering != CombatOrder::Public
+                    && let CombatField::Available(cards) = &mut zone.composition
+                {
+                    cards.sort_unstable_by(|left, right| {
+                        left.card
+                            .instance_id
+                            .cmp(&right.card.instance_id)
+                            .then_with(|| left.card.definition_id.cmp(&right.card.definition_id))
+                            .then_with(|| left.card.owner_id.cmp(&right.card.owner_id))
+                    });
+                }
+                (zone.kind, zone)
+            })
             .collect();
         Ok(Self {
             binding: input.binding,
@@ -80,15 +93,57 @@ impl CombatBookkeepingSnapshot {
         })
     }
 
+    /// Returns the identity fence of this validated snapshot.
+    #[must_use]
+    pub fn binding(&self) -> &CombatBookkeepingBinding {
+        &self.binding
+    }
+
+    /// Returns the turn identity field without allowing mutation.
+    #[must_use]
+    pub fn turn(&self) -> &CombatField<CombatTurnIdentity> {
+        &self.turn
+    }
+
+    /// Returns explicit inventory statuses without allowing mutation.
+    #[must_use]
+    pub fn zone_inventory(&self) -> &CombatZoneInventory {
+        &self.zone_inventory
+    }
+
+    /// Returns permanent/combat/temporary reconciliation fields.
+    #[must_use]
+    pub fn deck(&self) -> &CombatDeckReconciliation {
+        &self.deck
+    }
+
     /// Returns the current zone by exact kind.
     #[must_use]
     pub fn zone(&self, kind: CombatZoneKind) -> Option<&CombatZone> {
         self.zones.get(&kind)
     }
 
+    /// Returns all named typed counters without allowing mutation.
+    #[must_use]
+    pub fn counters(&self) -> &CombatCounters {
+        &self.counters
+    }
+
     /// Returns one typed counter without allowing an arbitrary counter bag.
     #[must_use]
     pub fn counter(&self, kind: CombatCounterKind) -> &CombatCounter {
         self.counters.get(kind)
+    }
+
+    /// Returns the host resolution field without allowing mutation.
+    #[must_use]
+    pub fn resolution(&self) -> &CombatField<CombatResolutionState> {
+        &self.resolution
+    }
+
+    /// Returns pending public effects/selections without allowing mutation.
+    #[must_use]
+    pub fn pending(&self) -> &CombatField<CombatPending> {
+        &self.pending
     }
 }

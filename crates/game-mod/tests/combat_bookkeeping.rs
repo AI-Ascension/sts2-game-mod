@@ -2,159 +2,18 @@
 
 #![allow(clippy::expect_used)]
 
+#[path = "support/combat_bookkeeping.rs"]
+mod support;
+
 use sts2_game_mod::{
     CombatBookkeepingBinding, CombatBookkeepingCapability, CombatBookkeepingError,
     CombatBookkeepingReader, CombatBookkeepingSnapshot, CombatBookkeepingSource,
-    CombatCardInstanceReference, CombatCardMembership, CombatCardPosition,
-    CombatCompositionCompleteness, CombatCounter, CombatCounterKind, CombatCounterProvenance,
-    CombatCounterReset, CombatCounters, CombatDeckReconciliation, CombatField, CombatOrder,
-    CombatPending, CombatResolutionState, CombatSnapshotInput, CombatSourceError,
-    CombatTurnIdentity, CombatTurnOwner, CombatVisibilityScope, CombatZoneInput,
-    CombatZoneInventory, CombatZoneKind, CombatZoneStatus, FixtureCombatBookkeepingSource,
-    UnavailableCombatBookkeepingSource,
+    CombatCardPosition, CombatCompositionCompleteness, CombatCounterKind, CombatCounterProvenance,
+    CombatCounterReset, CombatField, CombatOrder, CombatPending, CombatSnapshotInput,
+    CombatSourceError, CombatVisibilityScope, CombatZoneKind, CombatZoneStatus,
+    FixtureCombatBookkeepingSource, UnavailableCombatBookkeepingSource,
 };
-
-fn binding(epoch: u64) -> CombatBookkeepingBinding {
-    CombatBookkeepingBinding::new(
-        "manifest-1",
-        "game-1",
-        "run-1",
-        "combat-1",
-        format!("snapshot-{epoch}"),
-        epoch,
-    )
-    .expect("binding")
-}
-
-fn card(
-    read: &CombatBookkeepingBinding,
-    instance_id: &str,
-    definition_id: &str,
-) -> CombatCardInstanceReference {
-    CombatCardInstanceReference::new(read.clone(), instance_id, definition_id, "player-1")
-        .expect("card reference")
-}
-
-fn member(
-    read: &CombatBookkeepingBinding,
-    instance_id: &str,
-    definition_id: &str,
-    position: CombatCardPosition,
-) -> CombatCardMembership {
-    CombatCardMembership {
-        card: card(read, instance_id, definition_id),
-        position,
-    }
-}
-
-fn counter(
-    kind: CombatCounterKind,
-    value: CombatField<u64>,
-    provenance: CombatCounterProvenance,
-) -> CombatCounter {
-    CombatCounter {
-        kind,
-        value,
-        reset: CombatCounterReset::Combat,
-        provenance,
-    }
-}
-
-fn counters() -> CombatCounters {
-    CombatCounters {
-        cards_played: counter(
-            CombatCounterKind::CardsPlayed,
-            CombatField::Available(2),
-            CombatCounterProvenance::HostReported,
-        ),
-        damage_taken: counter(
-            CombatCounterKind::DamageTaken,
-            CombatField::Available(4),
-            CombatCounterProvenance::SemanticHistory {
-                history_id: "history-1".to_owned(),
-                event_count: 3,
-            },
-        ),
-        damage_dealt: counter(
-            CombatCounterKind::DamageDealt,
-            CombatField::Unknown,
-            CombatCounterProvenance::Unknown,
-        ),
-        enemies_defeated: counter(
-            CombatCounterKind::EnemiesDefeated,
-            CombatField::NotObserved,
-            CombatCounterProvenance::NotObserved,
-        ),
-    }
-}
-
-fn base_input(epoch: u64) -> CombatSnapshotInput {
-    let read = binding(epoch);
-    let draw_cards = vec![
-        member(
-            &read,
-            "card-a",
-            "base:strike",
-            CombatCardPosition::NotObserved,
-        ),
-        member(
-            &read,
-            "card-b",
-            "base:strike",
-            CombatCardPosition::NotObserved,
-        ),
-    ];
-    let temporary_cards = vec![member(
-        &read,
-        "generated-a",
-        "generated:shiv",
-        CombatCardPosition::NotApplicable,
-    )];
-    let zones = vec![
-        CombatZoneInput {
-            kind: CombatZoneKind::Draw,
-            total: CombatField::Available(2),
-            composition: CombatField::Available(draw_cards),
-            completeness: CombatCompositionCompleteness::Complete,
-            ordering: CombatOrder::Unordered,
-        },
-        CombatZoneInput {
-            kind: CombatZoneKind::Temporary,
-            total: CombatField::Available(1),
-            composition: CombatField::Available(temporary_cards),
-            completeness: CombatCompositionCompleteness::Complete,
-            ordering: CombatOrder::NotApplicable,
-        },
-    ];
-    let mut inventory = CombatZoneInventory::new();
-    inventory.set(CombatZoneKind::Draw, CombatZoneStatus::Available);
-    inventory.set(CombatZoneKind::Temporary, CombatZoneStatus::Available);
-    CombatSnapshotInput {
-        binding: read,
-        turn: CombatField::Available(CombatTurnIdentity {
-            round_id: "round-2".to_owned(),
-            player_turn_id: "turn-4".to_owned(),
-            owner: CombatTurnOwner::Player,
-        }),
-        zones,
-        zone_inventory: inventory,
-        deck: CombatDeckReconciliation {
-            permanent_deck_count: CombatField::Available(2),
-            combat_card_count: CombatField::Available(3),
-            temporary_card_count: CombatField::Available(1),
-        },
-        counters: counters(),
-        resolution: CombatField::Available(CombatResolutionState::Idle),
-        pending: CombatField::Available(CombatPending::None),
-    }
-}
-
-fn reader(epoch: u64) -> CombatBookkeepingReader {
-    CombatBookkeepingReader::new(
-        CombatBookkeepingSnapshot::from_input(base_input(epoch)).expect("snapshot"),
-    )
-    .expect("reader")
-}
+use support::*;
 
 #[test]
 fn public_draw_composition_is_unordered_and_permanent_deck_reconciles() {
@@ -189,6 +48,30 @@ fn public_draw_composition_is_unordered_and_permanent_deck_reconciles() {
             .card
             .definition_id,
         "base:strike"
+    );
+}
+
+#[test]
+fn hidden_composition_is_canonicalized_independent_of_source_order() {
+    let mut input = base_input(7);
+    let draw = zone_mut(&mut input, CombatZoneKind::Draw);
+    assert!(matches!(draw.composition, CombatField::Available(_)));
+    if let CombatField::Available(cards) = &mut draw.composition {
+        cards.reverse();
+    }
+    let snapshot = CombatBookkeepingSnapshot::from_input(input).expect("snapshot");
+    let cards = snapshot
+        .zone(CombatZoneKind::Draw)
+        .expect("draw")
+        .composition
+        .value()
+        .expect("composition");
+    assert_eq!(
+        cards
+            .iter()
+            .map(|card| card.card.instance_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["card-a", "card-b"]
     );
 }
 
@@ -236,6 +119,39 @@ fn pending_public_selection_preserves_instance_identity() {
 }
 
 #[test]
+fn pending_selection_validates_definition_and_owner_identity() {
+    let mut input = base_input(7);
+    let read = input.binding.clone();
+    let mut choice = card(&read, "card-a", "base:strike");
+    choice.definition_id = "invalid definition".to_owned();
+    input.pending = CombatField::Available(CombatPending::Selection {
+        selection_id: "selection-1".to_owned(),
+        kind: "discard".to_owned(),
+        choices: vec![choice],
+    });
+    assert_eq!(
+        CombatBookkeepingSnapshot::from_input(input),
+        Err(CombatBookkeepingError::InvalidBinding(
+            "choice_definition_id"
+        ))
+    );
+}
+
+#[test]
+fn pending_effect_references_count_toward_snapshot_bound() {
+    let mut input = base_input(7);
+    input.pending = CombatField::Available(CombatPending::Effect {
+        effect_id: "effect-1".to_owned(),
+        kind: "damage".to_owned(),
+        target_ids: (0..512).map(|index| format!("target-{index}")).collect(),
+    });
+    assert_eq!(
+        CombatBookkeepingSnapshot::from_input(input),
+        Err(CombatBookkeepingError::InvalidInput("snapshot too large"))
+    );
+}
+
+#[test]
 fn replacement_epoch_fences_moved_cards_and_wrong_combat() {
     let mut reader = reader(7);
     let old = reader
@@ -246,26 +162,35 @@ fn replacement_epoch_fences_moved_cards_and_wrong_combat() {
         .card
         .clone();
     let mut next = base_input(8);
-    next.zones[0].kind = CombatZoneKind::Discard;
-    next.zones[0].ordering = CombatOrder::Public;
-    next.zones[0].composition = CombatField::Available(vec![
+    let next_binding = next.binding.clone();
+    let moved_cards = if let CombatField::Available(cards) =
+        &mut zone_mut(&mut next, CombatZoneKind::Draw).composition
+    {
+        std::mem::take(cards)
+    } else {
+        Vec::new()
+    };
+    let draw = zone_mut(&mut next, CombatZoneKind::Draw);
+    draw.total = CombatField::Available(0);
+    draw.ordering = CombatOrder::NotApplicable;
+    let discard = zone_mut(&mut next, CombatZoneKind::Discard);
+    discard.total = CombatField::Available(2);
+    discard.ordering = CombatOrder::Public;
+    discard.composition = CombatField::Available(vec![
         member(
-            &next.binding,
+            &next_binding,
             "card-a",
             "base:strike",
             CombatCardPosition::Known(0),
         ),
         member(
-            &next.binding,
+            &next_binding,
             "card-b",
             "base:strike",
             CombatCardPosition::Known(1),
         ),
     ]);
-    next.zone_inventory
-        .set(CombatZoneKind::Draw, CombatZoneStatus::NotObserved);
-    next.zone_inventory
-        .set(CombatZoneKind::Discard, CombatZoneStatus::Available);
+    assert_eq!(moved_cards.len(), 2);
     let next_snapshot = CombatBookkeepingSnapshot::from_input(next).expect("next snapshot");
     reader.replace_snapshot(next_snapshot).expect("replacement");
     assert_eq!(
@@ -300,22 +225,26 @@ fn replacement_epoch_fences_moved_cards_and_wrong_combat() {
 #[test]
 fn secret_draw_order_and_count_mismatch_fail_closed() {
     let mut input = base_input(7);
-    input.zones[0].composition = CombatField::Available(vec![member(
-        &input.binding,
+    let read = input.binding.clone();
+    let draw = zone_mut(&mut input, CombatZoneKind::Draw);
+    draw.composition = CombatField::Available(vec![member(
+        &read,
         "card-a",
         "base:strike",
         CombatCardPosition::Known(0),
     )]);
-    input.zones[0].completeness = CombatCompositionCompleteness::Partial;
+    draw.completeness = CombatCompositionCompleteness::Partial;
     assert_eq!(
         CombatBookkeepingSnapshot::from_input(input),
         Err(CombatBookkeepingError::SecretOrderExposed)
     );
 
     let mut input = base_input(7);
-    input.zones[0].ordering = CombatOrder::Public;
-    input.zones[0].composition = CombatField::Available(vec![member(
-        &input.binding,
+    let read = input.binding.clone();
+    let draw = zone_mut(&mut input, CombatZoneKind::Draw);
+    draw.ordering = CombatOrder::Public;
+    draw.composition = CombatField::Available(vec![member(
+        &read,
         "card-a",
         "base:strike",
         CombatCardPosition::Known(0),
@@ -348,6 +277,23 @@ fn unsupported_zone_and_owner_only_fields_are_not_empty_successes() {
     assert_eq!(
         reader.pending(),
         Err(CombatBookkeepingError::VisibilityDenied("pending"))
+    );
+}
+
+#[test]
+fn unobserved_zone_cannot_be_treated_as_an_empty_reconciliation_zone() {
+    let mut input = base_input(7);
+    input
+        .zone_inventory
+        .set(CombatZoneKind::Discard, CombatZoneStatus::NotObserved);
+    input
+        .zones
+        .retain(|zone| zone.kind != CombatZoneKind::Discard);
+    assert_eq!(
+        CombatBookkeepingSnapshot::from_input(input),
+        Err(CombatBookkeepingError::InvalidInput(
+            "combat total requires complete zone inventory"
+        ))
     );
 }
 
@@ -391,13 +337,15 @@ fn source_busy_stale_and_unavailable_states_are_typed() {
 #[test]
 fn duplicate_live_instances_are_rejected_across_zones() {
     let mut input = base_input(7);
+    let read = input.binding.clone();
     let duplicate = member(
-        &input.binding,
+        &read,
         "card-a",
         "base:strike",
         CombatCardPosition::NotApplicable,
     );
-    input.zones[1].composition = CombatField::Available(vec![duplicate]);
+    zone_mut(&mut input, CombatZoneKind::Temporary).composition =
+        CombatField::Available(vec![duplicate]);
     assert_eq!(
         CombatBookkeepingSnapshot::from_input(input),
         Err(CombatBookkeepingError::DuplicateCard("card-a".to_owned()))

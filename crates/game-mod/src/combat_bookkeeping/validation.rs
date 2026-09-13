@@ -8,11 +8,12 @@ use super::{
     CombatCounterKind, CombatZoneInventory,
     model::{
         CombatBookkeepingBinding, CombatCardPosition, CombatCompositionCompleteness, CombatCounter,
-        CombatCounterProvenance, CombatField, CombatFieldStatus, CombatPending,
-        CombatResolutionState, CombatSnapshotInput, CombatZoneInput, CombatZoneKind,
-        CombatZoneStatus, validate_identity, validate_text,
+        CombatCounterProvenance, CombatField, CombatPending, CombatResolutionState,
+        CombatSnapshotInput, CombatZoneInput, CombatZoneKind, CombatZoneStatus, validate_identity,
+        validate_text,
     },
 };
+use super::{measurement, reconciliation};
 
 pub(super) fn validate_snapshot(input: &CombatSnapshotInput) -> Result<(), CombatBookkeepingError> {
     validate_binding(&input.binding)?;
@@ -55,11 +56,17 @@ pub(super) fn validate_snapshot(input: &CombatSnapshotInput) -> Result<(), Comba
             ));
         }
     }
-    validate_deck_totals(&input.deck, zone_total, temporary_total, &input.zones)?;
+    reconciliation::validate_deck_totals(
+        &input.deck,
+        zone_total,
+        temporary_total,
+        &input.zone_inventory,
+        &input.zones,
+    )?;
     validate_counters(&input.counters)?;
     validate_resolution(&input.resolution)?;
     validate_pending(&input.binding, &input.pending)?;
-    if measured_snapshot_bytes(input) > COMBAT_BOOKKEEPING_MAX_SNAPSHOT_BYTES {
+    if measurement::snapshot_bytes(input) > COMBAT_BOOKKEEPING_MAX_SNAPSHOT_BYTES {
         return Err(CombatBookkeepingError::InvalidInput("snapshot too large"));
     }
     Ok(())
@@ -146,55 +153,6 @@ fn validate_zone(
     Ok(())
 }
 
-fn validate_deck_totals(
-    deck: &super::CombatDeckReconciliation,
-    known_zone_total: u32,
-    known_temporary_total: u32,
-    zones: &[CombatZoneInput],
-) -> Result<(), CombatBookkeepingError> {
-    validate_count_field(&deck.permanent_deck_count, "permanent deck count")?;
-    validate_count_field(&deck.combat_card_count, "combat card count")?;
-    validate_count_field(&deck.temporary_card_count, "temporary card count")?;
-    let all_totals_known = zones
-        .iter()
-        .all(|zone| matches!(zone.total, CombatField::Available(_)));
-    if all_totals_known
-        && let CombatField::Available(total) = deck.combat_card_count
-        && total != known_zone_total
-    {
-        return Err(CombatBookkeepingError::CombatTotalMismatch);
-    }
-    if zones
-        .iter()
-        .any(|zone| zone.kind == CombatZoneKind::Temporary)
-        && let CombatField::Available(total) = deck.temporary_card_count
-        && let Some(zone) = zones
-            .iter()
-            .find(|zone| zone.kind == CombatZoneKind::Temporary)
-        && matches!(zone.total, CombatField::Available(_))
-        && total != known_temporary_total
-    {
-        return Err(CombatBookkeepingError::TemporaryTotalMismatch);
-    }
-    Ok(())
-}
-
-fn validate_count_field<T>(
-    field: &CombatField<T>,
-    name: &'static str,
-) -> Result<(), CombatBookkeepingError> {
-    if let CombatField::Available(_) = field {
-        return Ok(());
-    }
-    if matches!(
-        field.status(),
-        CombatFieldStatus::Busy | CombatFieldStatus::Stale
-    ) {
-        return Err(CombatBookkeepingError::InvalidInput(name));
-    }
-    Ok(())
-}
-
 fn validate_counters(counters: &super::CombatCounters) -> Result<(), CombatBookkeepingError> {
     for (expected, counter) in [
         (CombatCounterKind::CardsPlayed, &counters.cards_played),
@@ -262,6 +220,8 @@ fn validate_pending(
                     return Err(CombatBookkeepingError::StaleReference);
                 }
                 validate_identity(&card.instance_id, "choice_instance_id")?;
+                validate_identity(&card.definition_id, "choice_definition_id")?;
+                validate_identity(&card.owner_id, "choice_owner_id")?;
                 if !seen.insert(card.instance_id.as_str()) {
                     return Err(CombatBookkeepingError::DuplicateCard(
                         card.instance_id.clone(),
@@ -285,21 +245,4 @@ fn validate_pending(
         }
     }
     Ok(())
-}
-
-fn measured_snapshot_bytes(input: &CombatSnapshotInput) -> usize {
-    let mut bytes = input.binding.content_manifest.len()
-        + input.binding.game_instance_id.len()
-        + input.binding.run_id.len()
-        + input.binding.combat_id.len()
-        + input.binding.snapshot_id.len();
-    for zone in &input.zones {
-        if let CombatField::Available(cards) = &zone.composition {
-            bytes = bytes.saturating_add(cards.len().saturating_mul(128));
-        }
-    }
-    if let CombatField::Available(CombatPending::Selection { choices, .. }) = &input.pending {
-        bytes = bytes.saturating_add(choices.len().saturating_mul(128));
-    }
-    bytes
 }

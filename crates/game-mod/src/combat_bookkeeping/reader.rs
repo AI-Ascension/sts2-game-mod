@@ -59,7 +59,7 @@ impl CombatBookkeepingReader {
     /// Returns the current identity fence.
     #[must_use]
     pub fn binding(&self) -> &CombatBookkeepingBinding {
-        &self.snapshot.binding
+        self.snapshot.binding()
     }
 
     /// Returns the selected visibility scope.
@@ -70,13 +70,13 @@ impl CombatBookkeepingReader {
 
     /// Returns the current turn identity field after scope checking.
     pub fn turn(&self) -> Result<&CombatField<CombatTurnIdentity>, CombatBookkeepingError> {
-        self.visible(&self.snapshot.turn, "turn")
+        self.visible(self.snapshot.turn(), "turn")
     }
 
     /// Returns the explicit status for one zone.
     #[must_use]
     pub fn zone_status(&self, kind: CombatZoneKind) -> CombatZoneStatus {
-        self.snapshot.zone_inventory.status(kind)
+        self.snapshot.zone_inventory().status(kind)
     }
 
     /// Returns one available zone without inventing an empty unsupported zone.
@@ -108,19 +108,25 @@ impl CombatBookkeepingReader {
     /// Returns one named typed counter.
     #[must_use]
     pub fn counter(&self, kind: CombatCounterKind) -> &CombatCounter {
-        self.snapshot.counters.get(kind)
+        self.snapshot.counter(kind)
+    }
+
+    /// Returns permanent/combat/temporary reconciliation fields.
+    #[must_use]
+    pub fn deck(&self) -> &super::CombatDeckReconciliation {
+        self.snapshot.deck()
     }
 
     /// Returns the current resolving state.
     pub fn resolution(
         &self,
     ) -> Result<&CombatField<super::CombatResolutionState>, CombatBookkeepingError> {
-        self.visible(&self.snapshot.resolution, "resolution")
+        self.visible(self.snapshot.resolution(), "resolution")
     }
 
     /// Returns pending public selections/effects.
     pub fn pending(&self) -> Result<&CombatField<CombatPending>, CombatBookkeepingError> {
-        self.visible(&self.snapshot.pending, "pending")
+        self.visible(self.snapshot.pending(), "pending")
     }
 
     /// Looks up a live card by an identity reference from this exact snapshot.
@@ -128,10 +134,13 @@ impl CombatBookkeepingReader {
         &self,
         reference: &CombatCardInstanceReference,
     ) -> Result<&CombatCardMembership, CombatBookkeepingError> {
-        if reference.binding != self.snapshot.binding {
+        if reference.binding != *self.snapshot.binding() {
             return Err(CombatBookkeepingError::StaleReference);
         }
-        for zone in self.snapshot.zones.values() {
+        for kind in CombatZoneKind::all() {
+            let Some(zone) = self.snapshot.zone(*kind) else {
+                continue;
+            };
             let Some(cards) = zone.composition.value() else {
                 continue;
             };
@@ -155,22 +164,22 @@ impl CombatBookkeepingReader {
         &mut self,
         next: CombatBookkeepingSnapshot,
     ) -> Result<(), CombatBookkeepingError> {
-        if next.binding.content_manifest != self.snapshot.binding.content_manifest {
+        if next.binding().content_manifest != self.snapshot.binding().content_manifest {
             return Err(CombatBookkeepingError::InvalidBinding("content_manifest"));
         }
-        if next.binding.game_instance_id != self.snapshot.binding.game_instance_id {
+        if next.binding().game_instance_id != self.snapshot.binding().game_instance_id {
             return Err(CombatBookkeepingError::GameInstanceMismatch);
         }
-        if next.binding.run_id != self.snapshot.binding.run_id {
+        if next.binding().run_id != self.snapshot.binding().run_id {
             return Err(CombatBookkeepingError::RunMismatch);
         }
-        if next.binding.combat_id != self.snapshot.binding.combat_id {
+        if next.binding().combat_id != self.snapshot.binding().combat_id {
             return Err(CombatBookkeepingError::CombatMismatch);
         }
-        if next.binding.epoch <= self.snapshot.binding.epoch {
+        if next.binding().epoch <= self.snapshot.binding().epoch {
             return Err(CombatBookkeepingError::NonMonotonicEpoch {
-                current: self.snapshot.binding.epoch,
-                supplied: next.binding.epoch,
+                current: self.snapshot.binding().epoch,
+                supplied: next.binding().epoch,
             });
         }
         self.snapshot = next;

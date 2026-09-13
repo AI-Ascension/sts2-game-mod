@@ -52,6 +52,12 @@ denied, owner-only, busy, stale, and unknown states.  Source errors map to typed
 `SourceStale` outcomes.  Replacing a snapshot requires the same manifest, game, run, and combat
 identity plus a strictly larger epoch; old card references then return `StaleReference`.
 
+Adoption validates the complete supported-zone inventory before reconciling an available combat
+total; an unobserved zone is never treated as an empty zone.  Hidden and unordered compositions
+are canonically sorted by card identity while public order is retained.  The adopted snapshot is
+private and read-only, and its size bound measures nested turn, card-reference, history,
+resolution, selection, and pending-effect strings rather than trusting a partial estimate.
+
 `FixtureCombatBookkeepingSource` and deterministic tests are the only available implementation.
 `UnavailableCombatBookkeepingSource` reports `exact_host_evidence_required`.  No native extractor,
 managed route, wire schema, gateway/MCP adapter, semantic-history adapter, or gameplay mutation is
@@ -60,10 +66,11 @@ claimed by this decision.
 ## Evidence and limits
 
 The source-only tests cover unordered draw composition and count reconciliation, generated
-temporary cards, duplicate-definition instances, public pending selections, named counter
-provenance and explicit unknown values, stale epoch replacement, wrong-combat rejection, secret
-order and count-mismatch failures, unsupported zones, owner-only visibility, transient busy/stale
-source errors, unavailable capability, and duplicate live instances.  These tests prove only
-owned in-memory validation and read-only projection behavior.  Exact host field availability,
+temporary cards, duplicate-definition instances, public pending selections, pending identity and
+effect-size validation, canonicalized hidden composition, named counter provenance and explicit
+unknown values, stale epoch replacement, wrong-combat rejection, secret order and count-mismatch
+failures, incomplete inventory reconciliation, unsupported zones, owner-only visibility, transient
+busy/stale source errors, unavailable capability, and duplicate live instances.  These tests prove
+only owned in-memory validation and read-only projection behavior.  Exact host field availability,
 thread affinity, native delivery, shared-contract negotiation, and runtime compatibility remain
 unverified.
