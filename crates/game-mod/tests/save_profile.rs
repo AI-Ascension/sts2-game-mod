@@ -42,6 +42,19 @@ fn fixture(statuses: &[(&str, SaveProfileStatus)]) -> FakeSaveProfileHost {
     FakeSaveProfileHost::new(fence, slots, None).expect("fixture")
 }
 
+fn selected_fixture(status: SaveProfileStatus) -> FakeSaveProfileHost {
+    let fence = fence("sha256:baseline-a");
+    let slots = vec![
+        slot("selected", status, fence.baseline()),
+        slot(
+            "destination",
+            SaveProfileStatus::Available,
+            fence.baseline(),
+        ),
+    ];
+    FakeSaveProfileHost::new(fence, slots, Some(identity("selected"))).expect("selected fixture")
+}
+
 fn request(fence: BaselineFence, slot: &str, key: &str) -> ProfileSelectionRequest {
     ProfileSelectionRequest::new(
         fence,
@@ -164,6 +177,44 @@ fn failed_requests_never_mutate_selection() {
         Err(ProfileSelectionRejection::ConcurrentSelection)
     );
     assert_eq!(store.mutation_count(), 0);
+}
+
+#[test]
+fn switching_away_from_an_unsettled_current_slot_never_mutates() {
+    let cases = [
+        (
+            SaveProfileStatus::ActiveRun,
+            ProfileSelectionRejection::ActiveRun,
+        ),
+        (SaveProfileStatus::InUse, ProfileSelectionRejection::InUse),
+        (
+            SaveProfileStatus::PendingSave,
+            ProfileSelectionRejection::PendingSave,
+        ),
+        (
+            SaveProfileStatus::FailedSave,
+            ProfileSelectionRejection::FailedSave,
+        ),
+    ];
+    for (status, expected) in cases {
+        let mut store = selected_fixture(status);
+        assert_eq!(
+            store.select(request(
+                store.fence().expect("fence"),
+                "destination",
+                "switch-operation"
+            )),
+            Err(expected)
+        );
+        let readback = store
+            .discover(&ProfileDiscoveryRequest::new(store.fence().expect("fence")))
+            .expect("readback");
+        assert_eq!(
+            readback.current_selection().map(SaveSlotId::as_str),
+            Some("selected")
+        );
+        assert_eq!(store.mutation_count(), 0);
+    }
 }
 
 #[test]

@@ -188,6 +188,15 @@ impl ProfileSelectionPort for FakeSaveProfileHost {
         if self.selection_busy {
             return Err(ProfileSelectionRejection::ConcurrentSelection);
         }
+        if self.current_selection.as_ref() != Some(request.expected_slot())
+            && let Some(current) = self.current_selection.as_ref()
+            && let Some(rejection) = self
+                .slots
+                .get(current)
+                .and_then(|slot| Self::status_rejection(slot.status()))
+        {
+            return Err(rejection);
+        }
         let slot = self
             .slots
             .get(request.expected_slot())
