@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, sync::Arc};
 use super::{
     definition::{RelicDefinition, RelicFamilyCoverage, RelicFamilyState, RelicVisibilityScope},
     error::RelicCatalogError,
-    model::{RelicCatalogBinding, RelicDefinitionReference},
+    model::{RelicCatalogBinding, RelicDefinitionReference, RelicVisibility},
 };
 
 /// Immutable relic definitions keyed by namespaced definition ID.
@@ -232,6 +232,9 @@ impl RelicCatalogReader {
         if !visible(definition, scope) {
             return Err(RelicCatalogError::ExcludedByScope);
         }
+        if !definition_fields_visible(definition, scope) {
+            return Err(RelicCatalogError::ExcludedByScope);
+        }
         Ok(definition.clone())
     }
 
@@ -259,7 +262,35 @@ impl RelicCatalogReader {
 fn visible(definition: &RelicDefinition, scope: RelicVisibilityScope) -> bool {
     match definition.acquisition.unlock.state {
         crate::ContentUnlockState::Unlocked => true,
-        crate::ContentUnlockState::Locked => matches!(scope, RelicVisibilityScope::Reference),
+        crate::ContentUnlockState::Locked => {
+            matches!(
+                scope,
+                RelicVisibilityScope::Reference | RelicVisibilityScope::Owner
+            )
+        }
         crate::ContentUnlockState::Unknown => false,
+    }
+}
+
+fn definition_fields_visible(definition: &RelicDefinition, scope: RelicVisibilityScope) -> bool {
+    definition
+        .parameters
+        .iter()
+        .all(|parameter| visibility_allowed(parameter.visibility, scope))
+        && definition
+            .counters
+            .iter()
+            .all(|counter| visibility_allowed(counter.visibility, scope))
+        && definition
+            .triggers
+            .iter()
+            .all(|trigger| visibility_allowed(trigger.visibility, scope))
+}
+
+fn visibility_allowed(visibility: RelicVisibility, scope: RelicVisibilityScope) -> bool {
+    match visibility {
+        RelicVisibility::Visible => true,
+        RelicVisibility::OwnerOnly => matches!(scope, RelicVisibilityScope::Owner),
+        RelicVisibility::Hidden | RelicVisibility::Unknown => false,
     }
 }

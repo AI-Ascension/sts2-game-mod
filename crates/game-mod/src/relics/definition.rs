@@ -187,4 +187,6 @@ pub enum RelicFamilyState {
 pub enum RelicVisibilityScope {
     Public,
     Reference,
+    /// Explicit owner-authorized scope for owner-only fields.
+    Owner,
 }

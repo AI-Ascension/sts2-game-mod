@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use super::{
     catalog_reader::RelicCatalog,
-    definition::{RelicCounterState, RelicResolvedParameter},
+    definition::{RelicCounterState, RelicResolvedParameter, RelicVisibilityScope},
     error::{RelicLiveError, RelicSourceError, map_live_source_error},
     live_model::{
         RelicAccumulatedValue, RelicActivationState, RelicInstanceInput, RelicLiveSnapshotInput,
@@ -112,6 +112,7 @@ pub struct RelicInstance {
 pub struct RelicLiveReader {
     catalog: RelicCatalog,
     snapshot: RelicLiveSnapshot,
+    scope: RelicVisibilityScope,
 }
 
 impl RelicLiveReader {
@@ -121,17 +122,36 @@ impl RelicLiveReader {
         expected: &RelicLiveBinding,
         source: &S,
     ) -> Result<Self, RelicLiveError> {
+        Self::from_source_with_scope(catalog, expected, source, RelicVisibilityScope::Public)
+    }
+
+    /// Reads one source snapshot with an explicit visibility authorization.
+    pub fn from_source_with_scope<S: RelicLiveSource>(
+        catalog: &RelicCatalog,
+        expected: &RelicLiveBinding,
+        source: &S,
+        scope: RelicVisibilityScope,
+    ) -> Result<Self, RelicLiveError> {
         let input = source.read_live(expected).map_err(map_live_source_error)?;
         if input.binding != *expected {
             return Err(RelicLiveError::StaleReference);
         }
-        Self::new(catalog, RelicLiveSnapshot::from_input(input)?)
+        Self::new_with_scope(catalog, RelicLiveSnapshot::from_input(input)?, scope)
     }
 
     /// Joins a live snapshot to the exact static catalog it references.
     pub fn new(
         catalog: &RelicCatalog,
         snapshot: RelicLiveSnapshot,
+    ) -> Result<Self, RelicLiveError> {
+        Self::new_with_scope(catalog, snapshot, RelicVisibilityScope::Public)
+    }
+
+    /// Joins a live snapshot with an explicit visibility authorization.
+    pub fn new_with_scope(
+        catalog: &RelicCatalog,
+        snapshot: RelicLiveSnapshot,
+        scope: RelicVisibilityScope,
     ) -> Result<Self, RelicLiveError> {
         if snapshot.binding.catalog != *catalog.binding() {
             return Err(RelicLiveError::CatalogMismatch);
@@ -140,11 +160,12 @@ impl RelicLiveReader {
             return Err(RelicLiveError::ProducerVersionMismatch);
         }
         for instance in snapshot.instances.values() {
-            validate_against_catalog(catalog, instance)?;
+            validate_against_catalog(catalog, instance, scope)?;
         }
         Ok(Self {
             catalog: catalog.clone(),
             snapshot,
+            scope,
         })
     }
 
@@ -154,13 +175,19 @@ impl RelicLiveReader {
         self.snapshot.binding()
     }
 
+    /// Returns the authorization scope used for live values.
+    #[must_use]
+    pub fn scope(&self) -> RelicVisibilityScope {
+        self.scope
+    }
+
     /// Replaces the snapshot only when it names the same catalog identity.
     pub fn replace_snapshot(&mut self, snapshot: RelicLiveSnapshot) -> Result<(), RelicLiveError> {
         if snapshot.binding.catalog != *self.catalog.binding() {
             return Err(RelicLiveError::CatalogMismatch);
         }
         for instance in snapshot.instances.values() {
-            validate_against_catalog(&self.catalog, instance)?;
+            validate_against_catalog(&self.catalog, instance, self.scope)?;
         }
         self.snapshot = snapshot;
         Ok(())

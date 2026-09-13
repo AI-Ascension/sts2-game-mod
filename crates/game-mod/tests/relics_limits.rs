@@ -10,10 +10,12 @@ mod fixture;
 use fixture::*;
 use sts2_game_mod::{
     ContentUnlockState, RELIC_MAX_DEFINITION_BYTES, RELIC_MAX_LIVE_DETAIL_BYTES,
-    RELIC_PRODUCER_VERSION, RelicAccumulatedValue, RelicCatalogError, RelicCatalogProducer,
-    RelicCatalogSnapshot, RelicCounterReset, RelicFamilyCoverage, RelicFamilyState, RelicField,
+    RELIC_MAX_TEXT_BYTES, RELIC_PRODUCER_VERSION, RelicAccumulatedValue, RelicActivationState,
+    RelicCatalogError, RelicCatalogProducer, RelicCatalogSnapshot, RelicCondition,
+    RelicCounterReset, RelicCounterState, RelicFamilyCoverage, RelicFamilyState, RelicField,
     RelicLiveError, RelicLiveReader, RelicLiveSnapshot, RelicLiveSnapshotInput,
-    RelicSemanticReference, RelicSemanticReferenceKind,
+    RelicParameterValue, RelicPendingTrigger, RelicResolvedParameter, RelicTriggerDefinition,
+    RelicVisibility, RelicVisibilityScope,
 };
 
 #[test]
@@ -60,11 +62,15 @@ fn oversized_static_and_live_payloads_fail_closed() {
             ],
         ),
     ];
-    definitions[0].references = (0..5)
-        .map(|index| RelicSemanticReference {
-            kind: RelicSemanticReferenceKind::Effect,
-            id: format!("effect:oversized:{index}"),
-            label: "x".repeat(16_000),
+    definitions[0].triggers = (0..5)
+        .map(|index| RelicTriggerDefinition {
+            id: format!("trigger:oversized:{index}"),
+            label: "fixture".to_owned(),
+            condition: Some(RelicCondition {
+                id: format!("condition:oversized:{index}"),
+                label: "x".repeat(16_000),
+            }),
+            visibility: RelicVisibility::Visible,
         })
         .collect();
     let source = CatalogSource {
@@ -120,4 +126,181 @@ fn oversized_static_and_live_payloads_fail_closed() {
             ..
         })
     ));
+}
+
+#[test]
+fn nested_live_strings_are_validated_and_counted() {
+    let catalog = catalog();
+    let mut text_instance = instance(
+        "instance:text",
+        "mod:synthetic:charged",
+        RelicField::Available(vec![RelicCounterState {
+            id: "charge".to_owned(),
+            value: RelicField::Available(1),
+        }]),
+        RelicField::Available(RelicActivationState {
+            active: RelicField::Available(true),
+            used: RelicField::Available(false),
+        }),
+    );
+    text_instance.resolved_parameters = RelicField::Available(vec![RelicResolvedParameter {
+        id: "amount".to_owned(),
+        unit: unit("count"),
+        value: RelicParameterValue::Text("x".repeat(RELIC_MAX_TEXT_BYTES)),
+    }]);
+    let text_snapshot = RelicLiveSnapshot::from_input(RelicLiveSnapshotInput {
+        binding: binding(&catalog, 20),
+        instances: vec![text_instance],
+    })
+    .expect("text snapshot");
+    assert!(matches!(
+        RelicLiveReader::new(&catalog, text_snapshot),
+        Err(RelicLiveError::DetailTooLarge { .. })
+    ));
+
+    let mut trigger_instance = instance(
+        "instance:trigger",
+        "mod:synthetic:multiple",
+        RelicField::Available(vec![
+            RelicCounterState {
+                id: "first".to_owned(),
+                value: RelicField::Available(1),
+            },
+            RelicCounterState {
+                id: "second".to_owned(),
+                value: RelicField::Available(1),
+            },
+        ]),
+        RelicField::Available(RelicActivationState {
+            active: RelicField::Available(true),
+            used: RelicField::Available(false),
+        }),
+    );
+    trigger_instance.pending_triggers = RelicField::Available(vec![RelicPendingTrigger {
+        id: "trigger:fixture".to_owned(),
+        label: "Fixture trigger".to_owned(),
+        condition: Some(RelicCondition {
+            id: "condition:fixture".to_owned(),
+            label: "invalid\ncondition".to_owned(),
+        }),
+        parameters: Vec::new(),
+    }]);
+    let trigger_snapshot = RelicLiveSnapshot::from_input(RelicLiveSnapshotInput {
+        binding: binding(&catalog, 21),
+        instances: vec![trigger_instance],
+    })
+    .expect("trigger snapshot");
+    assert!(matches!(
+        RelicLiveReader::new(&catalog, trigger_snapshot),
+        Err(RelicLiveError::InvalidInput("trigger_condition_label"))
+    ));
+}
+
+#[test]
+fn hidden_fields_are_rejected_and_owner_only_fields_require_scope() {
+    let owner_catalog = catalog_with_parameter_visibility(RelicVisibility::OwnerOnly);
+    let owner_reference = owner_catalog
+        .reader()
+        .list(&sts2_game_mod::RelicListQuery {
+            scope: RelicVisibilityScope::Public,
+            limit: 8,
+            continuation: None,
+        })
+        .expect("summary")
+        .entries
+        .into_iter()
+        .find(|entry| entry.reference.relic_id == "mod:synthetic:charged")
+        .expect("charged summary")
+        .reference;
+    assert_eq!(
+        owner_catalog.get(&owner_reference, RelicVisibilityScope::Public),
+        Err(RelicCatalogError::ExcludedByScope)
+    );
+    assert!(
+        owner_catalog
+            .get(&owner_reference, RelicVisibilityScope::Owner)
+            .is_ok()
+    );
+
+    let mut live_instance = instance(
+        "instance:owner",
+        "mod:synthetic:charged",
+        RelicField::Available(vec![RelicCounterState {
+            id: "charge".to_owned(),
+            value: RelicField::Available(1),
+        }]),
+        RelicField::Available(RelicActivationState {
+            active: RelicField::Available(true),
+            used: RelicField::Available(false),
+        }),
+    );
+    live_instance.resolved_parameters = RelicField::Available(vec![RelicResolvedParameter {
+        id: "amount".to_owned(),
+        unit: unit("count"),
+        value: RelicParameterValue::Integer(3),
+    }]);
+    let snapshot = RelicLiveSnapshot::from_input(RelicLiveSnapshotInput {
+        binding: binding(&owner_catalog, 22),
+        instances: vec![live_instance],
+    })
+    .expect("owner snapshot");
+    let owner_snapshot = snapshot.clone();
+    assert!(matches!(
+        RelicLiveReader::new(&owner_catalog, snapshot),
+        Err(RelicLiveError::InvalidState("parameter_visibility"))
+    ));
+    assert!(
+        RelicLiveReader::new_with_scope(
+            &owner_catalog,
+            owner_snapshot,
+            RelicVisibilityScope::Owner
+        )
+        .is_ok()
+    );
+
+    let hidden_catalog = catalog_with_parameter_visibility(RelicVisibility::Hidden);
+    let hidden_reference = hidden_catalog
+        .reader()
+        .list(&sts2_game_mod::RelicListQuery {
+            scope: RelicVisibilityScope::Public,
+            limit: 8,
+            continuation: None,
+        })
+        .expect("hidden summary")
+        .entries
+        .into_iter()
+        .find(|entry| entry.reference.relic_id == "mod:synthetic:charged")
+        .expect("hidden charged summary")
+        .reference;
+    assert_eq!(
+        hidden_catalog.get(&hidden_reference, RelicVisibilityScope::Owner),
+        Err(RelicCatalogError::ExcludedByScope)
+    );
+}
+
+fn catalog_with_parameter_visibility(visibility: RelicVisibility) -> sts2_game_mod::RelicCatalog {
+    let manifest = manifest();
+    let mut definitions = definitions();
+    definitions
+        .iter_mut()
+        .find(|definition| definition.relic_id == "mod:synthetic:charged")
+        .expect("charged definition")
+        .parameters[0]
+        .visibility = visibility;
+    let source = CatalogSource {
+        snapshot: Ok(RelicCatalogSnapshot {
+            manifest: manifest.cursor_binding(),
+            locale: manifest.locale.clone(),
+            producer_version: RELIC_PRODUCER_VERSION.to_owned(),
+            family: RelicFamilyCoverage {
+                entity_kind: "relic".to_owned(),
+                state: RelicFamilyState::Handled,
+                definition_count: definitions.len(),
+            },
+            definitions,
+        }),
+    };
+    RelicCatalogProducer::new()
+        .produce(&manifest, &source)
+        .expect("visibility catalog")
 }

@@ -6,12 +6,14 @@ use super::{
     catalog_reader::RelicCatalog,
     definition::{
         RelicActivationKind, RelicDefinition, RelicParameterValue, RelicResolvedParameter,
+        RelicVisibilityScope,
     },
     error::RelicLiveError,
     live_model::{RelicActivationState, RelicInstanceInput, RelicPendingTrigger},
     model::{
         RELIC_MAX_LIVE_DETAIL_BYTES, RELIC_MAX_PENDING_TRIGGERS, RELIC_PRODUCER_VERSION,
-        RelicField, RelicFieldStatus, RelicLiveBinding, validate_identity, validate_text,
+        RelicField, RelicFieldStatus, RelicLiveBinding, RelicVisibility, validate_identity,
+        validate_text,
     },
 };
 
@@ -43,15 +45,16 @@ pub(super) fn validate_instance_identity(
 pub(super) fn validate_against_catalog(
     catalog: &RelicCatalog,
     instance: &RelicInstanceInput,
+    scope: RelicVisibilityScope,
 ) -> Result<(), RelicLiveError> {
     let definition = catalog
         .definition(&instance.definition_id)
         .ok_or_else(|| RelicLiveError::UnknownDefinition(instance.definition_id.clone()))?;
-    validate_counters(definition, instance)?;
+    validate_counters(definition, instance, scope)?;
     validate_activation(definition, instance)?;
-    validate_parameters(definition, &instance.resolved_parameters)?;
+    validate_parameters(definition, &instance.resolved_parameters, scope)?;
     validate_accumulated(instance)?;
-    validate_triggers(definition, &instance.pending_triggers)?;
+    validate_triggers(definition, &instance.pending_triggers, scope)?;
     let detail_bytes = instance_bytes(instance);
     if detail_bytes > RELIC_MAX_LIVE_DETAIL_BYTES {
         return Err(RelicLiveError::DetailTooLarge {
@@ -65,8 +68,14 @@ pub(super) fn validate_against_catalog(
 fn validate_counters(
     definition: &RelicDefinition,
     instance: &RelicInstanceInput,
+    scope: RelicVisibilityScope,
 ) -> Result<(), RelicLiveError> {
     let Some(values) = instance.counters.value() else {
+        if definition.counters.is_empty()
+            && instance.counters.status() != RelicFieldStatus::NotApplicable
+        {
+            return Err(RelicLiveError::InvalidState("counter_not_applicable"));
+        }
         if instance.counters.status() == RelicFieldStatus::NotApplicable
             && !definition.counters.is_empty()
         {
@@ -87,11 +96,16 @@ fn validate_counters(
         .collect::<BTreeSet<_>>();
     let mut seen = BTreeSet::new();
     for counter in values {
-        if !declared.contains(counter.id.as_str()) {
-            return Err(RelicLiveError::UnknownCounter {
+        let declaration = definition
+            .counters
+            .iter()
+            .find(|declaration| declaration.id == counter.id)
+            .ok_or_else(|| RelicLiveError::UnknownCounter {
                 relic_id: definition.reference.relic_id.clone(),
                 counter_id: counter.id.clone(),
-            });
+            })?;
+        if !visibility_allowed(declaration.visibility, scope) {
+            return Err(RelicLiveError::InvalidState("counter_visibility"));
         }
         if !seen.insert(counter.id.as_str()) {
             return Err(RelicLiveError::DuplicateCounter {
@@ -130,6 +144,7 @@ fn validate_activation(
 fn validate_parameters(
     definition: &RelicDefinition,
     values: &RelicField<Vec<RelicResolvedParameter>>,
+    scope: RelicVisibilityScope,
 ) -> Result<(), RelicLiveError> {
     let Some(values) = values.value() else {
         return Ok(());
@@ -148,6 +163,9 @@ fn validate_parameters(
         };
         if declaration.unit != parameter.unit {
             return Err(RelicLiveError::InvalidState("parameter_unit"));
+        }
+        if !visibility_allowed(declaration.visibility, scope) {
+            return Err(RelicLiveError::InvalidState("parameter_visibility"));
         }
         if !seen.insert(parameter.id.as_str()) {
             return Err(RelicLiveError::DuplicateParameter {
@@ -180,6 +198,7 @@ fn validate_accumulated(instance: &RelicInstanceInput) -> Result<(), RelicLiveEr
 fn validate_triggers(
     definition: &RelicDefinition,
     values: &RelicField<Vec<RelicPendingTrigger>>,
+    scope: RelicVisibilityScope,
 ) -> Result<(), RelicLiveError> {
     let Some(values) = values.value() else {
         return Ok(());
@@ -202,15 +221,25 @@ fn validate_triggers(
         if declaration.label != trigger.label {
             return Err(RelicLiveError::InvalidState("trigger_label"));
         }
+        if !visibility_allowed(declaration.visibility, scope) {
+            return Err(RelicLiveError::InvalidState("trigger_visibility"));
+        }
         if !seen.insert(trigger.id.as_str()) {
             return Err(RelicLiveError::DuplicateTrigger {
                 relic_id: definition.reference.relic_id.clone(),
                 trigger_id: trigger.id.clone(),
             });
         }
+        if let Some(condition) = &trigger.condition {
+            validate_identity(&condition.id, "trigger_condition_id")
+                .map_err(RelicLiveError::InvalidInput)?;
+            validate_text(&condition.label, "trigger_condition_label")
+                .map_err(RelicLiveError::InvalidInput)?;
+        }
         validate_parameters(
             definition,
             &RelicField::Available(trigger.parameters.clone()),
+            scope,
         )?;
     }
     Ok(())
@@ -228,13 +257,21 @@ pub(super) fn instance_bytes(instance: &RelicInstanceInput) -> usize {
         trigger.id.len()
             + trigger.label.len()
             + trigger
+                .condition
+                .as_ref()
+                .map_or(0, |condition| condition.id.len() + condition.label.len())
+            + trigger
                 .parameters
                 .iter()
-                .map(|parameter| parameter.id.len() + parameter.unit.as_str().len() + 8)
+                .map(|parameter| {
+                    parameter.id.len()
+                        + parameter.unit.as_str().len()
+                        + parameter_value_bytes(&parameter.value)
+                })
                 .sum::<usize>()
     });
     total += field_bytes(&instance.resolved_parameters, |parameter| {
-        parameter.id.len() + parameter.unit.as_str().len() + 8
+        parameter.id.len() + parameter.unit.as_str().len() + parameter_value_bytes(&parameter.value)
     });
     total
 }
@@ -251,4 +288,20 @@ fn field_bytes<T>(field: &RelicField<Vec<T>>, item: impl Fn(&T) -> usize) -> usi
 
 fn activation_bytes(field: &RelicField<RelicActivationState>) -> usize {
     field.value().map_or(0, |_| 2)
+}
+
+fn parameter_value_bytes(value: &RelicParameterValue) -> usize {
+    match value {
+        RelicParameterValue::Integer(_) => 8,
+        RelicParameterValue::Boolean(_) => 1,
+        RelicParameterValue::Text(value) => value.len(),
+    }
+}
+
+fn visibility_allowed(visibility: RelicVisibility, scope: RelicVisibilityScope) -> bool {
+    match visibility {
+        RelicVisibility::Visible => true,
+        RelicVisibility::OwnerOnly => matches!(scope, RelicVisibilityScope::Owner),
+        RelicVisibility::Hidden | RelicVisibility::Unknown => false,
+    }
 }

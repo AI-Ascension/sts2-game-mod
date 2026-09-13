@@ -14,6 +14,11 @@ pub(super) fn validate_definition(input: &RelicDefinitionInput) -> Result<(), &'
     validate_identity(&input.relic_id, "relic_id")?;
     validate_text(&input.title, "title")?;
     validate_text(&input.description, "description")?;
+    validate_identity(input.rarity.as_str(), "rarity")?;
+    validate_identity(input.tier.as_str(), "tier")?;
+    if let Some(pool) = &input.pool {
+        validate_identity(pool.as_str(), "pool")?;
+    }
     validate_identity(&input.origin.kind, "origin_kind")?;
     if let Some(package_id) = &input.origin.package_id {
         validate_identity(package_id, "package_id")?;
@@ -38,6 +43,15 @@ pub(super) fn validate_definition(input: &RelicDefinitionInput) -> Result<(), &'
     for requirement in &input.acquisition.unlock.requirements {
         validate_identity(requirement, "unlock_requirement")?;
     }
+    ensure_unique_ids(
+        input
+            .acquisition
+            .unlock
+            .requirements
+            .iter()
+            .map(String::as_str),
+        "unlock_requirement",
+    )?;
     if input.references.len() > RELIC_MAX_REFERENCES {
         return Err("references");
     }
@@ -75,6 +89,10 @@ pub(super) fn validate_definition(input: &RelicDefinitionInput) -> Result<(), &'
     for counter_id in &input.activation.counter_ids {
         validate_identity(counter_id, "activation_counter_id")?;
     }
+    ensure_unique_ids(
+        input.activation.counter_ids.iter().map(String::as_str),
+        "activation_counter_id",
+    )?;
     if input.activation.kind == RelicActivationKind::Conditional
         && input.activation.condition.is_none()
     {
@@ -136,16 +154,26 @@ fn ensure_unique_ids<'a>(
 
 /// Measures bounded source-owned static payload bytes conservatively.
 pub(super) fn definition_bytes(input: &RelicDefinitionInput) -> usize {
-    let mut total = input.relic_id.len() + input.title.len() + input.description.len();
-    total += input.origin.kind.len();
+    let mut total = input.relic_id.len()
+        + input.title.len()
+        + input.description.len()
+        + input.rarity.as_str().len()
+        + input.tier.as_str().len()
+        + input.pool.as_ref().map_or(0, |pool| pool.as_str().len())
+        + 1;
+    total += input.origin.kind.len()
+        + usize::from(input.origin.package_id.is_some())
+        + usize::from(input.origin.package_version.is_some());
     total += input.origin.package_id.as_deref().map_or(0, str::len);
     total += input.origin.package_version.as_deref().map_or(0, str::len);
     for rule in &input.acquisition.rules {
         total += rule.kind.len()
             + rule.reference.as_deref().map_or(0, str::len)
-            + rule.requirement.as_deref().map_or(0, str::len);
+            + rule.requirement.as_deref().map_or(0, str::len)
+            + usize::from(rule.reference.is_some())
+            + usize::from(rule.requirement.is_some());
     }
-    total += input
+    total += 1 + input
         .acquisition
         .unlock
         .requirements
@@ -155,7 +183,7 @@ pub(super) fn definition_bytes(input: &RelicDefinitionInput) -> usize {
     total += input
         .references
         .iter()
-        .map(|reference| reference.id.len() + reference.label.len())
+        .map(|reference| reference.id.len() + reference.label.len() + 1)
         .sum::<usize>();
     total += input
         .variants
@@ -164,22 +192,41 @@ pub(super) fn definition_bytes(input: &RelicDefinitionInput) -> usize {
             variant.id.len()
                 + variant.label.len()
                 + variant.description.as_deref().map_or(0, str::len)
+                + usize::from(variant.description.is_some())
+                + 1
         })
         .sum::<usize>();
     total += input
         .parameters
         .iter()
-        .map(|parameter| parameter.id.len() + parameter.label.len() + parameter.unit.as_str().len())
+        .map(|parameter| {
+            parameter.id.len() + parameter.label.len() + parameter.unit.as_str().len() + 1
+        })
         .sum::<usize>();
     total += input
         .counters
         .iter()
-        .map(|counter| counter.id.len() + counter.label.len() + counter.unit.as_str().len())
+        .map(|counter| counter.id.len() + counter.label.len() + counter.unit.as_str().len() + 2)
         .sum::<usize>();
+    total += 1 + input
+        .activation
+        .counter_ids
+        .iter()
+        .map(String::len)
+        .sum::<usize>();
+    total += condition_bytes(input.activation.condition.as_ref());
     total += input
         .triggers
         .iter()
-        .map(|trigger| trigger.id.len() + trigger.label.len())
+        .map(|trigger| {
+            trigger.id.len() + trigger.label.len() + condition_bytes(trigger.condition.as_ref()) + 1
+        })
         .sum::<usize>();
     total
+}
+
+fn condition_bytes(condition: Option<&super::definition::RelicCondition>) -> usize {
+    condition.map_or(1, |condition| {
+        1 + condition.id.len() + condition.label.len()
+    })
 }

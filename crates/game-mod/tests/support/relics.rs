@@ -151,9 +151,8 @@ pub fn input(
     }
 }
 
-pub fn catalog() -> RelicCatalog {
-    let manifest = manifest();
-    let definitions = vec![
+pub fn definitions() -> Vec<RelicDefinitionInput> {
+    vec![
         input(
             "mod:synthetic:badge",
             ContentUnlockState::Unlocked,
@@ -229,7 +228,12 @@ pub fn catalog() -> RelicCatalog {
                 },
             ],
         ),
-    ];
+    ]
+}
+
+pub fn catalog() -> RelicCatalog {
+    let manifest = manifest();
+    let definitions = definitions();
     let source = CatalogSource {
         snapshot: Ok(RelicCatalogSnapshot {
             manifest: manifest.cursor_binding(),
