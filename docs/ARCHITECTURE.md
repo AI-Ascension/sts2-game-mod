@@ -83,6 +83,20 @@ host pump, canonical seed and context readback, a fresh actionable Runtime-v3 ge
 read-only by the original operation identity. The adapter and its source-only probes prove boundary
 behavior; they do not establish live host settlement, save/profile safety, or release compatibility.
 
+### Seeded-run RNG audit boundary
+
+`crates/game-mod/src/rng_audit` is an owner-local, host-independent evidence seam for the
+private initialization witness described by ADR 0040. It binds the build, adapter/profile
+compatibility, canonical seed, seeded lifecycle boundary, stream inventory, and external-input
+declaration. Validation fails closed for unknown coverage, duplicate identities, malformed or
+missing gameplay state, and uncontrolled gameplay inputs. Its deterministic fingerprint includes
+private cursor/state evidence, while the projection intentionally omits those details.
+
+The `RngAuditPort` is read-only and currently has an explicitly unavailable implementation.
+Synthetic tests prove ordering, repeat-read stability, cursor-change detection, and projection
+redaction; they do not inspect proprietary assemblies, extract native RNG state, or certify any
+exact game build.
+
 ### Ephemeral session orchestration
 
 `experiments/managed-rust-interop/session-launcher.sh` is a development/test orchestrator owned by

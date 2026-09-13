@@ -225,6 +225,18 @@ collections with opaque continuations, and returns a typed oversized-detail erro
 fixture is not a protocol artifact, gateway route, MCP tool, or native host compatibility claim;
 those remain separately negotiated and verified.
 
+## Owner-local seeded RNG audit fixture
+
+~~~text
+cargo test --locked --offline --package sts2-game-mod --test rng_audit
+~~~
+
+It binds a synthetic build, adapter/profile compatibility, canonical seed, and seeded lifecycle boundary;
+rejects incomplete coverage, duplicate identities, malformed/missing gameplay state, uncontrolled inputs, and
+over-limit inventories; keeps cursor/state digests out of its projection; changes its deterministic
+fingerprint when a private cursor changes; and repeats reads without drawing randomness. This host-independent
+fixture does not inspect proprietary assemblies, certify a native build, or claim that the game exposes the listed stream categories.
+
 ## Required future behavior
 
 When implemented, tests must cover bounded request and response handling, status and error

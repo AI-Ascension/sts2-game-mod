@@ -1,0 +1,27 @@
+{
+  "schema": "ascension.rng_audit.v1",
+  "profile": "asc-rng-audit-private-v1",
+  "evidence": "synthetic-source-only",
+  "binding": {
+    "game_build": "synthetic-build:0.1",
+    "adapter_compatibility": "adapter-v1",
+    "supported_mode": "practice",
+    "profile_compatibility": "profile-v1",
+    "content_manifest": "manifest:synthetic",
+    "canonical_seed": "ALPHA-123",
+    "seed_derivation_version": "host-seed-v1",
+    "seeded_boundary": "run_initialized",
+    "external_input_declaration": "enumerated"
+  },
+  "expected_fingerprint": "asc-rng-audit:v1:sha256:194e008a4b358b1861c9259c2213320896e23685534b7d2a14d0c315533ea86a",
+  "negative_cases": [
+    "missing_build_binding",
+    "duplicate_stream_identity",
+    "unknown_coverage",
+    "malformed_cursor_evidence",
+    "missing_gameplay_state",
+    "unknown_external_input",
+    "uncontrolled_external_input",
+    "over_limit_witness"
+  ]
+}
