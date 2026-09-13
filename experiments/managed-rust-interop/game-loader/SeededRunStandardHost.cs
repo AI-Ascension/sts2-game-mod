@@ -18,7 +18,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// </summary>
 internal static partial class SeededRunStandardHost
 {
-    internal const string NativeSelectionPolicy = SeededRunSelectionContext.StandardDefaultSelectionPolicy;
+    internal const string NativeSelectionPolicy =
+        SeededRunStandardAdmission.StandardDefaultSelectionPolicy;
     internal const string RunStartedWitness = "run_started";
     internal const string PhaseBefore = "campaign_setup";
     internal const string PhaseAfter = "run_started";

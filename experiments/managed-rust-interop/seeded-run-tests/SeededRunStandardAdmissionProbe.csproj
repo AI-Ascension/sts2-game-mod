@@ -5,11 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputPath>bin/StandardAdmissionProbe/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj/StandardAdmissionProbe/$(Configuration)/</IntermediateOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="ProtocolSerializationProbe.cs" />
-    <Compile Remove="ProfileBaselineProbe.cs" />
-    <Compile Remove="StandardAdmissionProbe.cs" />
+    <Compile Include="StandardAdmissionProbe.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+    <Compile Include="../game-loader/SeededRunStandardAdmission.cs" />
   </ItemGroup>
 </Project>
