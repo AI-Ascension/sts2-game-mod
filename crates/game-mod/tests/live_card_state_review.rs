@@ -4,13 +4,15 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use sts2_game_mod::live_card_state::{CardCost, CardEffectValue};
 use sts2_game_mod::{
-    CardCost, CardCostSemantics, CardDefinitionReference, CardEffectValue, CardExpiration,
-    CardFlags, CardInstanceReference, CardLocation, CardModifier, CardModifierScope, CardOwner,
-    CardOwnerKind, CardPile, CardPosition, CardUpgrade, LIVE_CARD_MAX_COST_CONTRIBUTORS,
-    LIVE_CARD_MAX_EFFECT_LIST_ITEMS, LIVE_CARD_MAX_EFFECT_OVERRIDE_BYTES, LIVE_CARD_MAX_FLAGS,
-    LiveCardCollection, LiveCardCollectionStatus, LiveCardError, LiveCardFixture,
-    LiveCardProjection, LiveCardQuery, LiveCardReadReference, LiveCardSnapshot, LiveCardStore,
+    CardCostSemantics, CardDefinitionReference, CardExpiration, CardFlags, CardInstanceReference,
+    CardLocation, CardModifier, CardModifierScope, CardModifierValue, CardOwner, CardOwnerKind,
+    CardPile, CardPosition, CardUpgrade, LIVE_CARD_MAX_COST_CONTRIBUTORS,
+    LIVE_CARD_MAX_EFFECT_LIST_ITEMS, LIVE_CARD_MAX_EFFECT_OVERRIDE_BYTES,
+    LIVE_CARD_MAX_EFFECT_OVERRIDES, LIVE_CARD_MAX_FLAGS, LiveCardCollection,
+    LiveCardCollectionStatus, LiveCardError, LiveCardFixture, LiveCardProjection, LiveCardQuery,
+    LiveCardReadReference, LiveCardSnapshot, LiveCardStore,
 };
 
 fn reference(epoch: u64) -> LiveCardReadReference {
@@ -303,6 +305,28 @@ fn measured_projection_size_overrides_untrusted_estimate() {
         }) if actual > 512
     ));
 
+    let mut scalar_overrides = projection(&read, "scalar-card");
+    scalar_overrides.effect_parameter_overrides = (0..LIVE_CARD_MAX_EFFECT_OVERRIDES)
+        .map(|index| (format!("v{index}"), CardEffectValue::Integer(i64::MAX)))
+        .collect();
+    let mut scalar_store = LiveCardStore::new(
+        LiveCardSnapshot::new(
+            read.clone(),
+            [LiveCardFixture::new(scalar_overrides, 1)],
+            true,
+        ),
+        1,
+        600,
+    )
+    .expect("scalar fixture");
+    assert!(matches!(
+        scalar_store.read_page(&LiveCardQuery::new(LiveCardCollection::AllVisible, 1)),
+        Err(LiveCardError::DetailTooLarge {
+            limit: 600,
+            actual
+        }) if actual > 600
+    ));
+
     let mut many_modifiers = projection(&read, "modifier-card");
     many_modifiers.modifiers = (0..64)
         .map(|index| CardModifier {
@@ -310,7 +334,7 @@ fn measured_projection_size_overrides_untrusted_estimate() {
             order: index,
             scope: CardModifierScope::Turn,
             amount: None,
-            value: sts2_game_mod::CardModifierValue::Text("temporary".to_owned()),
+            value: CardModifierValue::Integer(i64::MAX),
             expiration: CardExpiration::EndOfTurn,
         })
         .collect();

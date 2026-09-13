@@ -117,12 +117,11 @@ fn measure_modifier_value(
 ) -> Result<(), LiveCardError> {
     add_bytes(total, 4)?;
     match value {
+        CardModifierValue::Integer(_) => add_bytes(total, std::mem::size_of::<i64>())?,
+        CardModifierValue::Boolean(_) => add_bytes(total, std::mem::size_of::<bool>())?,
         CardModifierValue::Text(text) => add_bytes(total, text.len())?,
         CardModifierValue::Cost(cost) => measure_cost(total, cost)?,
-        CardModifierValue::Integer(_)
-        | CardModifierValue::Boolean(_)
-        | CardModifierValue::Marker
-        | CardModifierValue::Unknown => {}
+        CardModifierValue::Marker | CardModifierValue::Unknown => {}
     }
     Ok(())
 }
@@ -130,6 +129,8 @@ fn measure_modifier_value(
 fn measure_effect_value(total: &mut usize, value: &CardEffectValue) -> Result<(), LiveCardError> {
     add_bytes(total, 4)?;
     match value {
+        CardEffectValue::Integer(_) => add_bytes(total, std::mem::size_of::<i64>())?,
+        CardEffectValue::Boolean(_) => add_bytes(total, std::mem::size_of::<bool>())?,
         CardEffectValue::Text(text) => add_bytes(total, text.len())?,
         CardEffectValue::IntegerList(values) => {
             add_bytes(
@@ -141,7 +142,7 @@ fn measure_effect_value(total: &mut usize, value: &CardEffectValue) -> Result<()
                 )?,
             )?;
         }
-        CardEffectValue::Integer(_) | CardEffectValue::Boolean(_) | CardEffectValue::Unknown => {}
+        CardEffectValue::Unknown => {}
     }
     Ok(())
 }
