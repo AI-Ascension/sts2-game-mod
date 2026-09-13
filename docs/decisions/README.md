@@ -36,6 +36,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0038 | [Game-content manifest boundary](0038-game-content-manifest-boundary.md) |
 | 0039 | [Field availability and completeness boundary](0039-field-availability-and-completeness-boundary.md) |
 | 0040 | [Seeded-run RNG and entropy audit boundary](0040-seeded-run-rng-and-entropy-audit.md) |
+| 0041 | [Save-profile selection and disposable boundary](0041-save-profile-selection-and-disposable-boundary.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
