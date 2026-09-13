@@ -32,6 +32,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0034 | [Rust release provenance tooling boundary](0034-rust-release-provenance-tooling.md) |
 | 0035 | [Additive permitted map projection](0035-runtime-map-projection.md) |
 | 0036 | [Additive Runtime-v4 rest-option action transport](0036-runtime-v4-rest-option-action.md) |
+| 0037 | [Native checkpoint coverage inventory](0037-native-checkpoint-coverage-inventory.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
