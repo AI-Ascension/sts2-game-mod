@@ -214,6 +214,8 @@ pub enum ContentManifestError {
     DuplicateDefinition,
     /// A known provenance package is not active.
     UnknownOriginPackage,
+    /// A definition provenance version disagrees with its active package version.
+    OriginPackageVersionMismatch,
     /// A definition override chain repeats a reference.
     DuplicateOverrideReference,
 }

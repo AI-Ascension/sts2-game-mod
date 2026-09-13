@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
     CONTENT_MANIFEST_MAX_SEMANTIC_BYTES, CONTENT_MANIFEST_MAX_TEXT_BYTES, ContentCatalogSnapshot,
@@ -28,6 +28,16 @@ pub(super) fn validate_snapshot(
             return Err(ContentManifestError::InvalidPackageOrder);
         }
     }
+    let package_versions = snapshot
+        .packages
+        .iter()
+        .map(|package| {
+            (
+                package.package_id.as_str(),
+                package.package_version.as_deref(),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
 
     let mut available_kinds = BTreeSet::new();
     for entity_kind in &snapshot.available_entity_kinds {
@@ -61,13 +71,24 @@ pub(super) fn validate_snapshot(
         {
             return Err(ContentManifestError::InvalidLocalizedText);
         }
+        if let Some(package_version) = &definition.origin.package_version {
+            validate_identity(package_version, "origin_package_version")
+                .map_err(|_| ContentManifestError::InvalidPackageVersion)?;
+        }
         if definition.origin.package_id.is_none() && definition.origin.package_version.is_some() {
             return Err(ContentManifestError::UnknownOriginPackage);
         }
-        if let Some(package_id) = &definition.origin.package_id
-            && !package_ids.contains(package_id.as_str())
-        {
-            return Err(ContentManifestError::UnknownOriginPackage);
+        if let Some(package_id) = &definition.origin.package_id {
+            let Some(active_version) = package_versions.get(package_id.as_str()) else {
+                return Err(ContentManifestError::UnknownOriginPackage);
+            };
+            if let (Some(active_version), Some(origin_version)) = (
+                *active_version,
+                definition.origin.package_version.as_deref(),
+            ) && active_version != origin_version
+            {
+                return Err(ContentManifestError::OriginPackageVersionMismatch);
+            }
         }
         let mut override_ids = BTreeSet::new();
         for reference in &definition.override_chain {

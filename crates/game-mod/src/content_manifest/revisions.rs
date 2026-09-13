@@ -147,8 +147,12 @@ fn field(canonical: &mut String, name: &str, value: &str) {
 
 fn optional_field(canonical: &mut String, name: &str, value: Option<&str>) {
     match value {
-        Some(value) => field(canonical, name, value),
-        None => field(canonical, name, "<unknown>"),
+        Some(value) => {
+            field(canonical, name, "present");
+            let value_name = format!("{name}.value");
+            field(canonical, &value_name, value);
+        }
+        None => field(canonical, name, "unknown"),
     }
 }
 
