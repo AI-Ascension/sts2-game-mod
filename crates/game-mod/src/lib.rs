@@ -8,6 +8,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 
 mod card_definitions;
 mod checkpoint;
+pub mod combat_bookkeeping;
 mod content_index;
 mod content_manifest;
 mod field_availability;
@@ -35,6 +36,20 @@ pub use checkpoint::{
     CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
     CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
     CheckpointUnavailableReason, UnavailableCheckpointCapture,
+};
+pub use combat_bookkeeping::{
+    COMBAT_BOOKKEEPING_MAX_IDENTITY_BYTES, COMBAT_BOOKKEEPING_MAX_PENDING_CHOICES,
+    COMBAT_BOOKKEEPING_MAX_SNAPSHOT_BYTES, COMBAT_BOOKKEEPING_MAX_TEXT_BYTES,
+    COMBAT_BOOKKEEPING_MAX_ZONE_CARDS, COMBAT_BOOKKEEPING_MAX_ZONE_TOTAL,
+    COMBAT_BOOKKEEPING_PRODUCER_VERSION, CombatBookkeepingBinding, CombatBookkeepingCapability,
+    CombatBookkeepingError, CombatBookkeepingReader, CombatBookkeepingSnapshot,
+    CombatBookkeepingSource, CombatCardInstanceReference, CombatCardMembership, CombatCardPosition,
+    CombatCompositionCompleteness, CombatCounter, CombatCounterKind, CombatCounterProvenance,
+    CombatCounterReset, CombatCounters, CombatDeckReconciliation, CombatField, CombatFieldStatus,
+    CombatOrder, CombatPending, CombatResolutionState, CombatSnapshotInput, CombatSourceError,
+    CombatTurnIdentity, CombatTurnOwner, CombatUnavailableReason, CombatVisibilityScope,
+    CombatZone, CombatZoneInput, CombatZoneInventory, CombatZoneKind, CombatZoneStatus,
+    FixtureCombatBookkeepingSource, UnavailableCombatBookkeepingSource,
 };
 pub use content_index::*;
 pub use content_manifest::{
