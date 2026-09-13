@@ -6,6 +6,7 @@ use sts2_game_mod_host::{
 };
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
+mod card_definitions;
 mod checkpoint;
 mod content_index;
 mod content_manifest;
@@ -13,6 +14,7 @@ mod field_availability;
 mod live_card_state;
 mod poc;
 mod protocol_artifact;
+mod relics;
 mod rng_audit;
 mod runtime_map;
 mod runtime_v2;
@@ -20,6 +22,7 @@ mod runtime_v3_gameplay;
 mod save_profile;
 mod workshop;
 
+pub use card_definitions::*;
 pub use checkpoint::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
     CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
@@ -49,6 +52,7 @@ pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
 };
+pub use relics::*;
 pub use rng_audit::{
     ExternalInputControl, ExternalInputDeclaration, ExternalInputEvidence, ExternalInputKind,
     GameplayImpact, RNG_AUDIT_FINGERPRINT_DOMAIN, RNG_AUDIT_MAX_CALL_CATEGORIES,

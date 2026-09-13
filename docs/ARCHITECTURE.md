@@ -283,6 +283,13 @@ unhandled families explicitly, and exposes only bounded list/search/exact-read o
 manifest, locale, query, and visibility bindings. It is source-only evidence: no public route,
 shared wire shape, native registry reflection, or profile/unlock mutation is implied.
 
+The owner-local `card_definitions` producer composes that same manifest witness with typed card
+costs, effect parameters, targeting, acquisition/unlock rules, and explicitly identified variants
+and upgrade paths. Its comparison operation is immutable and definition-bound; dynamic formulas
+carry an owner rule reference and unresolved inputs rather than an invented number. This slice
+does not duplicate content-index enumeration, define a transport schema, construct or upgrade live
+cards, consume RNG, mutate profiles, or claim native registry compatibility.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
