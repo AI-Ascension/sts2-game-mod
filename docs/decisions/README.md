@@ -34,6 +34,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0036 | [Additive Runtime-v4 rest-option action transport](0036-runtime-v4-rest-option-action.md) |
 | 0037 | [Native checkpoint coverage inventory](0037-native-checkpoint-coverage-inventory.md) |
 | 0038 | [Game-content manifest boundary](0038-game-content-manifest-boundary.md) |
+| 0039 | [Field availability and completeness boundary](0039-field-availability-and-completeness-boundary.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
