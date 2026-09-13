@@ -25,6 +25,11 @@ The owner-local content-index producer currently has only Rust source/build/test
 synthetic manifest-bound records. It does not establish a host registry adapter, native content
 coverage, shared protocol adoption, or compatibility with any installed game build.
 
+The owner-local power/status producer and live reader likewise have only Rust source/build/test
+evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
+duration/decay rules, visibility states, and epoch fences do not extend the native host matrix or
+claim that an installed build exposes these fields.
+
 The initial game baseline is recorded in
 [decision 0002](decisions/0002-initial-game-compatibility-baseline.md). It is a source-derived
 planning target, not runtime proof from this target.
