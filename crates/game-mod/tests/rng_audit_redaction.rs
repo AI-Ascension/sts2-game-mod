@@ -7,8 +7,8 @@ mod fixture;
 
 use fixture::{binding, controlled_wall_clock, gameplay_stream, independent_gameplay_stream};
 use sts2_game_mod::{
-    ExternalInputControl, ExternalInputDeclaration, RngAuditError, RngAuditWitness,
-    RngCoverageStatus, RngCursorEvidence, RngSeedOrigin,
+    ExternalInputControl, ExternalInputDeclaration, RngAuditError, RngAuditReadError,
+    RngAuditWitness, RngCoverageStatus, RngCursorEvidence, RngSeedOrigin,
 };
 
 #[test]
@@ -129,7 +129,8 @@ fn independent_seed_error_redacts_private_source() {
     binding.external_input_declaration = ExternalInputDeclaration::NoneObserved;
     let error = RngAuditWitness::new(binding, RngCoverageStatus::Complete, vec![stream], vec![])
         .expect_err("an unlinked independent source should fail closed");
-    let rendered = format!("{error:?}\n{error}");
+    let wrapped = RngAuditReadError::Invalid(error.clone());
+    let rendered = format!("{error:?}\n{error}\n{wrapped:?}\n{wrapped}");
     assert!(
         !rendered.contains(SENTINEL),
         "private independent seed source leaked through the error: {rendered}"
