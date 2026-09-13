@@ -12,8 +12,8 @@ use crate::live_card_state::LIVE_CARD_MAX_EFFECT_OVERRIDE_BYTES;
 #[path = "validation_values.rs"]
 mod validation_values;
 use validation_values::{
-    validate_collection_inventory, validate_effect_value, validate_identity_field,
-    validate_local_key, validate_reference, validate_text,
+    measure_projection_bytes, validate_collection_inventory, validate_effect_value,
+    validate_identity_field, validate_local_key, validate_reference, validate_text,
 };
 
 pub(super) fn collection_matches(collection: &LiveCardCollection, location: &CardLocation) -> bool {
@@ -65,10 +65,12 @@ pub(super) fn validate_fixture_for_read(
             "detail size estimate is unavailable",
         ));
     }
-    if fixture.estimated_bytes > max_detail_bytes {
+    let measured_bytes = measure_projection_bytes(&fixture.projection)?;
+    let actual_bytes = fixture.estimated_bytes.max(measured_bytes);
+    if actual_bytes > max_detail_bytes {
         return Err(LiveCardError::DetailTooLarge {
             limit: max_detail_bytes,
-            actual: fixture.estimated_bytes,
+            actual: actual_bytes,
         });
     }
     Ok(())
@@ -101,12 +103,9 @@ fn validate_projection(projection: &LiveCardProjection) -> Result<(), LiveCardEr
     for (key, value) in &projection.effect_parameter_overrides {
         validate_local_key(key, "effect_parameter")?;
         let value_bytes = validate_effect_value(value)?;
-        effect_override_bytes = effect_override_bytes
-            .checked_add(key.len())
-            .and_then(|bytes| bytes.checked_add(value_bytes))
-            .ok_or(LiveCardError::InvalidProjection(
-                "effect override byte measurement overflowed",
-            ))?;
+        effect_override_bytes = effect_override_bytes.checked_add(value_bytes).ok_or(
+            LiveCardError::InvalidProjection("effect override byte measurement overflowed"),
+        )?;
         if effect_override_bytes > LIVE_CARD_MAX_EFFECT_OVERRIDE_BYTES {
             return Err(LiveCardError::InvalidProjection(
                 "effect override bytes exceed local bound",

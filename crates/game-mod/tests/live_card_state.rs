@@ -348,13 +348,10 @@ fn unsupported_field_and_oversize_fail_closed_before_partial_success() {
 
     let oversized = LiveCardStore::new(snapshot(7), 2, 64).expect("bounded store");
     let mut oversized = oversized;
-    assert_eq!(
+    assert!(matches!(
         oversized.read_page(&LiveCardQuery::new(LiveCardCollection::AllVisible, 1)),
-        Err(LiveCardError::DetailTooLarge {
-            limit: 64,
-            actual: 128
-        })
-    );
+        Err(LiveCardError::DetailTooLarge { limit: 64, actual }) if actual >= 128
+    ));
 }
 
 #[test]

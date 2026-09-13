@@ -127,6 +127,12 @@ impl LiveCardStore {
             return Err(LiveCardError::InvalidPageSize);
         }
         validate_collection(&query.collection)?;
+        let matching_indices = self.matching_indices(&query.collection);
+        let matching_ids = matching_indices
+            .iter()
+            .map(|index| self.cards[*index].projection.instance_id().to_owned())
+            .collect::<Vec<_>>();
+        let start = self.cursor_start(query, &matching_ids)?;
         let collection_status = self.collection_inventory.status(&query.collection);
         if collection_status != LiveCardCollectionStatus::Available {
             return Err(LiveCardError::CollectionUnavailable {
@@ -134,12 +140,6 @@ impl LiveCardStore {
                 status: collection_status,
             });
         }
-        let matching_indices = self.matching_indices(&query.collection);
-        let matching_ids = matching_indices
-            .iter()
-            .map(|index| self.cards[*index].projection.instance_id().to_owned())
-            .collect::<Vec<_>>();
-        let start = self.cursor_start(query, &matching_ids)?;
         let end = start
             .saturating_add(query.limit)
             .min(matching_indices.len());
