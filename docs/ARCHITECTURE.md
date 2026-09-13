@@ -300,6 +300,19 @@ carry an owner rule reference and unresolved inputs rather than an invented numb
 does not duplicate content-index enumeration, define a transport schema, construct or upgrade live
 cards, consume RNG, mutate profiles, or claim native registry compatibility.
 
+The owner-local `characters` producer composes the manifest witness with locale-bound character
+names/descriptions, generic starting HP/resources/gold/potion capacity, concrete starting
+deck/relic references, pool and special-mechanic references, and mode/difficulty/loadout
+variants. Unlock requirements are stable progression identifiers kept separate from the observed
+unlock state; read access never mutates profile progress. Starting numeric values may remain
+fixed, formula-backed with unresolved inputs, or explicitly unavailable. Decks, relics, pools,
+mechanics, resources, prerequisites, and unlock records use explicit available/unavailable
+outcomes, so an observed empty collection is not mistaken for a failed read. The reader binds
+list pages and exact references to the manifest, locale, producer identity, visibility scope, and
+non-clonable single-use continuations. This source-only slice does not claim active-run/setup
+projection, settled starting-value verification, a transport schema, native registry reflection,
+or host compatibility.
+
 The owner-local `powers` producer composes the manifest witness with localized power/status
 definitions and typed stacking, caps, duration/decay/reset rules, and effect/keyword/rule links.
 Its live reader keeps amountless, scalar, decimal, text, and multi-counter values distinct and
