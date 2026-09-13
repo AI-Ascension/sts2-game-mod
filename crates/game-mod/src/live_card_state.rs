@@ -23,8 +23,9 @@ pub use model::{
     CardCost, CardCostAmount, CardCostContributor, CardCostSemantics, CardCostUnknownReason,
     CardDefinitionLink, CardEffectValue, CardExpiration, CardFlags, CardLocation, CardModifier,
     CardModifierScope, CardModifierValue, CardOwner, CardOwnerKind, CardPile, CardPosition,
-    CardUpgrade, LiveCardCollection, LiveCardContinuation, LiveCardFixture, LiveCardPage,
-    LiveCardPageCompleteness, LiveCardProjection, LiveCardQuery, LiveCardSnapshot, LiveCardValue,
+    CardUpgrade, LiveCardCollection, LiveCardCollectionInventory, LiveCardCollectionStatus,
+    LiveCardContinuation, LiveCardFixture, LiveCardPage, LiveCardPageCompleteness,
+    LiveCardProjection, LiveCardQuery, LiveCardSnapshot, LiveCardValue,
 };
 pub use port::{
     FixtureLiveCardSource, LiveCardCapability, LiveCardSource, UnavailableLiveCardSource,
@@ -44,5 +45,15 @@ pub const LIVE_CARD_MAX_PAGE_ITEMS: usize = 64;
 pub const LIVE_CARD_MAX_MODIFIERS: usize = 64;
 /// Maximum effect-parameter overrides attached to one card instance.
 pub const LIVE_CARD_MAX_EFFECT_OVERRIDES: usize = 64;
+/// Maximum UTF-8 bytes retained by one card's effect-parameter override map.
+pub const LIVE_CARD_MAX_EFFECT_OVERRIDE_BYTES: usize = 4 * 1024;
+/// Maximum integers retained by one integer-list effect override.
+pub const LIVE_CARD_MAX_EFFECT_LIST_ITEMS: usize = 64;
+/// Maximum flags retained by one card instance.
+pub const LIVE_CARD_MAX_FLAGS: usize = 64;
+/// Maximum visible cost contributors retained by one card instance.
+pub const LIVE_CARD_MAX_COST_CONTRIBUTORS: usize = 64;
+/// Maximum stale continuation tokens retained after a snapshot replacement.
+pub const LIVE_CARD_MAX_STALE_CONTINUATIONS: usize = 256;
 /// Maximum encoded detail bytes accepted for one card instance.
 pub const LIVE_CARD_MAX_DETAIL_BYTES: usize = 16 * 1024;

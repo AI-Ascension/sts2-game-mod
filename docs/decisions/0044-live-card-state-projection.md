@@ -36,10 +36,15 @@ Pages are bounded and source ordered.  Pile and selector queries use single-use 
 continuations bound to the same store, collection, instance set, and read reference.  Complete
 card detail is read through the stable instance reference.  A replacement snapshot must advance
 the epoch; every old page, continuation, and detail reference then returns `stale` rather than
-mixing records from two snapshots.  The store validates duplicate instance IDs, definition
-manifest binding, modifier order, local keys, effect/modifier bounds, and detail byte estimates
-before returning a value.  Unsupported fields, unavailable detail size, oversized payloads, and
-unavailable source capability are typed failures; no successful partial projection is published.
+mixing records from two snapshots.  Issued continuations are explicitly retained as stale
+tokens across replacement (within a bounded local history), rather than becoming generic invalid
+continuations.  A snapshot also carries an explicit collection inventory, so an unobserved or
+unsupported selector/pile cannot be reported as a complete empty page; only an inventory entry
+marked available may return that result.  The store validates duplicate instance IDs, definition
+manifest binding, modifier order, local keys, identity fields, effect value bytes/list bounds,
+flag and contributor counts, and detail byte estimates before returning a value.  Unsupported
+fields, unavailable detail size, oversized payloads, and unavailable source capability are typed
+failures; no successful partial projection is published.
 
 `FixtureLiveCardSource` and the checked-in tests are deterministic source evidence only.
 `UnavailableLiveCardSource` returns `exact_host_evidence_required`.  There is no native extractor,

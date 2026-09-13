@@ -7,7 +7,7 @@ use std::{
 
 use super::{
     CardCostSemantics, CardEffectValue, CardFlags, CardLocation, CardModifier, CardOwner,
-    CardUpgrade,
+    CardUpgrade, LiveCardCollection, LiveCardCollectionInventory, LiveCardCollectionStatus,
 };
 use crate::live_card_state::LiveCardField;
 use crate::live_card_state::identity::{
@@ -114,6 +114,8 @@ pub struct LiveCardSnapshot {
     pub cards: Vec<LiveCardFixture>,
     /// Whether the source can report an exact collection total.
     pub total_known: bool,
+    /// Explicit inventory for empty, unsupported, and not-observed collections.
+    pub collection_inventory: LiveCardCollectionInventory,
 }
 
 impl LiveCardSnapshot {
@@ -124,23 +126,43 @@ impl LiveCardSnapshot {
         cards: impl IntoIterator<Item = LiveCardFixture>,
         total_known: bool,
     ) -> Self {
+        let cards = cards.into_iter().collect::<Vec<_>>();
+        let mut collection_inventory = LiveCardCollectionInventory::new();
+        for fixture in &cards {
+            match &fixture.projection.location {
+                CardLocation::Pile { pile, .. } => {
+                    collection_inventory.set(
+                        LiveCardCollection::Pile(pile.clone()),
+                        LiveCardCollectionStatus::Available,
+                    );
+                }
+                CardLocation::Selector { selector_id, .. } => {
+                    collection_inventory.set(
+                        LiveCardCollection::Selector(selector_id.clone()),
+                        LiveCardCollectionStatus::Available,
+                    );
+                }
+                CardLocation::Unavailable { .. } => {}
+            }
+        }
         Self {
             reference,
-            cards: cards.into_iter().collect(),
+            cards,
             total_known,
+            collection_inventory,
         }
     }
-}
 
-/// Collection scope for a bounded page.
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum LiveCardCollection {
-    /// Every card visible to the owner-local source.
-    AllVisible,
-    /// Cards in one typed pile.
-    Pile(super::CardPile),
-    /// Cards in an explicit selector/reward offer.
-    Selector(String),
+    /// Declares an empty or otherwise non-card-backed collection explicitly.
+    #[must_use]
+    pub fn with_collection_status(
+        mut self,
+        collection: LiveCardCollection,
+        status: LiveCardCollectionStatus,
+    ) -> Self {
+        self.collection_inventory.set(collection, status);
+        self
+    }
 }
 
 /// Bounded page request for pile and selector detail.

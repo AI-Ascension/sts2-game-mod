@@ -4,9 +4,11 @@ use std::collections::BTreeSet;
 
 use super::identity::validate_identity;
 
+mod collection;
 mod cost;
 mod projection;
 
+pub use collection::*;
 pub use cost::*;
 pub use projection::*;
 

@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use super::model::{LiveCardContinuationScope, LiveCardDetail};
 use super::{
     CardCost, CardCostAmount, CardCostContributor, CardExpiration, CardInstanceReference,
-    CardLocation, CardModifier, CardModifierValue, CardPile, LIVE_CARD_MAX_DETAIL_BYTES,
-    LIVE_CARD_MAX_EFFECT_OVERRIDES, LIVE_CARD_MAX_ID_BYTES, LIVE_CARD_MAX_MODIFIERS,
-    LIVE_CARD_MAX_PAGE_ITEMS, LIVE_CARD_MAX_TEXT_BYTES, LiveCardCollection, LiveCardContinuation,
-    LiveCardError, LiveCardField, LiveCardFixture, LiveCardPage, LiveCardPageCompleteness,
-    LiveCardProjection, LiveCardQuery, LiveCardReadReference, LiveCardSnapshot, LiveCardValue,
+    CardLocation, CardModifier, CardModifierValue, CardPile, LIVE_CARD_MAX_COST_CONTRIBUTORS,
+    LIVE_CARD_MAX_DETAIL_BYTES, LIVE_CARD_MAX_EFFECT_OVERRIDES, LIVE_CARD_MAX_FLAGS,
+    LIVE_CARD_MAX_MODIFIERS, LIVE_CARD_MAX_PAGE_ITEMS, LIVE_CARD_MAX_STALE_CONTINUATIONS,
+    LiveCardCollection, LiveCardCollectionInventory, LiveCardCollectionStatus,
+    LiveCardContinuation, LiveCardError, LiveCardField, LiveCardFixture, LiveCardPage,
+    LiveCardPageCompleteness, LiveCardProjection, LiveCardQuery, LiveCardReadReference,
+    LiveCardSnapshot, LiveCardValue,
 };
 mod validation;
 
@@ -35,8 +40,10 @@ pub struct LiveCardStore {
     max_page_items: usize,
     max_detail_bytes: usize,
     cursors: BTreeMap<String, CursorState>,
+    stale_cursors: BTreeSet<String>,
     next_cursor: u64,
     scope: Arc<LiveCardContinuationScope>,
+    collection_inventory: LiveCardCollectionInventory,
 }
 
 impl LiveCardStore {
@@ -63,8 +70,10 @@ impl LiveCardStore {
             max_page_items,
             max_detail_bytes,
             cursors: BTreeMap::new(),
+            stale_cursors: BTreeSet::new(),
             next_cursor: 0,
             scope: Arc::new(LiveCardContinuationScope),
+            collection_inventory: snapshot.collection_inventory,
         })
     }
 
@@ -99,7 +108,16 @@ impl LiveCardStore {
         self.reference = snapshot.reference;
         self.cards = snapshot.cards;
         self.total_known = snapshot.total_known;
+        for token in self.cursors.keys() {
+            if self.stale_cursors.len() >= LIVE_CARD_MAX_STALE_CONTINUATIONS
+                && let Some(oldest) = self.stale_cursors.iter().next().cloned()
+            {
+                self.stale_cursors.remove(&oldest);
+            }
+            self.stale_cursors.insert(token.clone());
+        }
         self.cursors.clear();
+        self.collection_inventory = snapshot.collection_inventory;
         Ok(())
     }
 
@@ -109,6 +127,13 @@ impl LiveCardStore {
             return Err(LiveCardError::InvalidPageSize);
         }
         validate_collection(&query.collection)?;
+        let collection_status = self.collection_inventory.status(&query.collection);
+        if collection_status != LiveCardCollectionStatus::Available {
+            return Err(LiveCardError::CollectionUnavailable {
+                collection: query.collection.clone(),
+                status: collection_status,
+            });
+        }
         let matching_indices = self.matching_indices(&query.collection);
         let matching_ids = matching_indices
             .iter()
@@ -141,6 +166,7 @@ impl LiveCardStore {
                     next_index: end,
                 },
             );
+            self.stale_cursors.remove(&token);
             Some(LiveCardContinuation::scoped(token, Arc::clone(&self.scope)))
         } else {
             None
@@ -243,10 +269,13 @@ impl LiveCardStore {
         if !continuation.scope_matches(&self.scope) {
             return Err(LiveCardError::InvalidContinuation);
         }
-        let cursor = self
-            .cursors
-            .remove(continuation.token())
-            .ok_or(LiveCardError::InvalidContinuation)?;
+        let cursor = self.cursors.remove(continuation.token());
+        let Some(cursor) = cursor else {
+            if self.stale_cursors.remove(continuation.token()) {
+                return Err(LiveCardError::StaleReference);
+            }
+            return Err(LiveCardError::InvalidContinuation);
+        };
         if cursor.reference != self.reference
             || cursor.collection != query.collection
             || cursor.instance_ids != instance_ids

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use super::identity::LiveCardIdentityError;
+use super::model::{LiveCardCollection, LiveCardCollectionStatus};
 
 /// Fields that can be requested from a live card projection.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -130,6 +131,13 @@ pub enum LiveCardError {
     InstanceNotFound,
     /// A pile or selector query has no supported source mapping.
     UnknownCollection,
+    /// A collection was queried without an explicit available inventory entry.
+    CollectionUnavailable {
+        /// Exact pile or selector requested by the owner.
+        collection: LiveCardCollection,
+        /// Source inventory status for this collection.
+        status: LiveCardCollectionStatus,
+    },
     /// The requested field has no extractor for this card source.
     UnsupportedField(LiveCardField),
     /// A bounded card detail payload exceeds the local limit.
@@ -162,6 +170,13 @@ impl std::fmt::Display for LiveCardError {
             Self::StaleReference => formatter.write_str("stale live card reference"),
             Self::InstanceNotFound => formatter.write_str("live card instance not found"),
             Self::UnknownCollection => formatter.write_str("unknown live card collection"),
+            Self::CollectionUnavailable { collection, status } => {
+                write!(
+                    formatter,
+                    "live card collection {collection:?} is {}",
+                    status.code()
+                )
+            }
             Self::UnsupportedField(field) => {
                 write!(formatter, "unsupported live card field {}", field.code())
             }
