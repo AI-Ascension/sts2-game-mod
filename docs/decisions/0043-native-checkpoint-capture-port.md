@@ -41,8 +41,11 @@ identical; a changed request conflicts.
 
 `CheckpointCaptureReceipt` is the trusted artifact channel. It keeps canonical bytes private to
 the owner, records whether the result is `InMemory` or `Durable`, and exposes the exact-state,
-checkpoint, and blob digests separately. The wrapper accepts bytes already validated by the
-protocol owner; it does not implement canonicalization, restore, or a native state extractor.
+checkpoint-manifest, and blob digests separately. The checkpoint ID is computed from the
+canonical `ascension.checkpoint_manifest.v1` envelope, including compatibility and coverage
+references, restore descriptors, boundary, origin, and parent identity; it is not a digest of the
+exact-state payload alone. The wrapper accepts bytes already validated by the protocol owner; it
+does not implement canonicalization, restore, or a native state extractor.
 Ordinary model/browser surfaces must receive only scoped opaque references from a later
 control-plane owner.
 
@@ -52,9 +55,10 @@ control-plane owner.
 `sts2-protocol` revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea`. It covers key ordering,
 tagged `uint64`, signed zero, unchanged public fields with changed hidden health/RNG values, and
 raw duplicate/numeric/trailing-input rejection cases. The test recomputes the recorded
-domain-separated state, checkpoint, and blob digests from the pinned canonical bytes and checks
-equivalence/distinction pairs. The complete canonicalization implementation and conformance
-suite remain protocol-owned; this target deliberately does not duplicate them.
+domain-separated state/blob digests from the pinned canonical bytes, then independently compares
+`golden-manifest.json` and its manifest-derived checkpoint ID. The complete canonicalization
+implementation and conformance suite remain protocol-owned; this target deliberately does not
+duplicate them.
 
 ## Evidence and limits
 

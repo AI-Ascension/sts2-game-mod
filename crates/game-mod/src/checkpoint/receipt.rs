@@ -5,9 +5,9 @@ use sha2::{Digest, Sha256};
 use super::capability::CheckpointBoundary;
 use super::error::CheckpointCaptureRejection;
 use super::identity::{CheckpointCaptureIdentity, CheckpointCaptureRequest};
+use super::manifest::CheckpointManifest;
 use super::{
-    BLOB_DIGEST_PREFIX, CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_ID_DOMAIN, CHECKPOINT_ID_PREFIX,
-    CHECKPOINT_STATE_DOMAIN, STATE_DIGEST_PREFIX,
+    BLOB_DIGEST_PREFIX, CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_STATE_DOMAIN, STATE_DIGEST_PREFIX,
 };
 
 /// Distinguishes an in-memory capture from a durable artifact.
@@ -20,7 +20,7 @@ pub enum CheckpointDurability {
 }
 
 /// A private exact-state artifact returned through the trusted capture port.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct CheckpointCaptureReceipt {
     identity: CheckpointCaptureIdentity,
     boundary: CheckpointBoundary,
@@ -29,6 +29,7 @@ pub struct CheckpointCaptureReceipt {
     state_digest: String,
     checkpoint_id: String,
     blob_digest: String,
+    manifest: CheckpointManifest,
 }
 
 impl CheckpointCaptureReceipt {
@@ -40,6 +41,7 @@ impl CheckpointCaptureReceipt {
         request: &CheckpointCaptureRequest,
         durability: CheckpointDurability,
         canonical_bytes: Vec<u8>,
+        manifest: CheckpointManifest,
     ) -> Result<Self, CheckpointCaptureRejection> {
         if canonical_bytes.is_empty() {
             return Err(CheckpointCaptureRejection::InvalidCanonicalBytes);
@@ -55,8 +57,15 @@ impl CheckpointCaptureReceipt {
             CHECKPOINT_STATE_DOMAIN,
             &canonical_bytes,
         );
-        let checkpoint_id =
-            digest_with_prefix(CHECKPOINT_ID_PREFIX, CHECKPOINT_ID_DOMAIN, &canonical_bytes);
+        if manifest.exact_state_digest() != state_digest
+            || manifest.canonical_payload().digest() != blob_digest
+            || manifest.canonical_payload().size_bytes() != canonical_bytes.len() as u64
+        {
+            return Err(CheckpointCaptureRejection::ManifestMismatch);
+        }
+        let checkpoint_id = manifest
+            .exact_checkpoint_id()
+            .map_err(|_| CheckpointCaptureRejection::InvalidManifest)?;
         Ok(Self {
             identity: request.identity().clone(),
             boundary: request.boundary(),
@@ -65,6 +74,7 @@ impl CheckpointCaptureReceipt {
             state_digest,
             checkpoint_id,
             blob_digest,
+            manifest,
         })
     }
 
@@ -108,6 +118,24 @@ impl CheckpointCaptureReceipt {
     #[must_use]
     pub fn blob_digest(&self) -> &str {
         &self.blob_digest
+    }
+
+    /// Returns the closure manifest whose canonical bytes define the checkpoint ID.
+    #[must_use]
+    pub fn manifest(&self) -> &CheckpointManifest {
+        &self.manifest
+    }
+}
+
+impl std::fmt::Debug for CheckpointCaptureReceipt {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CheckpointCaptureReceipt")
+            .field("identity", &self.identity)
+            .field("boundary", &self.boundary)
+            .field("durability", &self.durability)
+            .field("canonical_bytes_len", &self.canonical_bytes.len())
+            .finish()
     }
 }
 

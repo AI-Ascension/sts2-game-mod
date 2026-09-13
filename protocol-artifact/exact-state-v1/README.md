@@ -4,7 +4,9 @@ This directory pins a small, synthetic subset of the exact-state vectors supplie
 `sts2-protocol` at revision
 `8a2e66f5d2190a0fca7f146dc3508e8d55515ea`. The selected vectors exercise object-key ordering,
 safe and tagged numeric values, signed zero, unchanged public observation with changed hidden
-state, and the identity namespaces used by the capture port.
+state, and exact-state/blob identities. `golden-manifest.json` separately pins the
+`ascension.checkpoint_manifest.v1` envelope and its manifest-derived checkpoint identity,
+including compatibility, coverage, restore, boundary, and origin references.
 
 The fixture is a consumer witness, not a second canonicalization implementation. The protocol
 target owns restricted RFC 8785 canonicalization and its complete conformance suite. This copy

@@ -7,15 +7,19 @@ use std::error::Error;
 
 use sts2_game_mod::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
-    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_STATE_DOMAIN, CheckpointBoundary,
-    CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity, CheckpointCapturePort,
-    CheckpointCaptureRejection, CheckpointCaptureRequest, CheckpointDurability,
-    CheckpointIdentityError, CheckpointUnavailableReason, UnavailableCheckpointCapture,
+    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_STATE_DOMAIN, CheckpointArtifactDescriptor,
+    CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity,
+    CheckpointCapturePort, CheckpointCaptureRejection, CheckpointCaptureRequest,
+    CheckpointDurability, CheckpointIdentityError, CheckpointManifest, CheckpointManifestBoundary,
+    CheckpointManifestParts, CheckpointOrigin, CheckpointUnavailableReason,
+    UnavailableCheckpointCapture,
 };
 
 const MANIFEST: &str = include_str!("../../../protocol-artifact/exact-state-v1/manifest.json");
 const VECTORS: &str =
     include_str!("../../../protocol-artifact/exact-state-v1/selected-vectors.json");
+const GOLDEN_MANIFEST: &str =
+    include_str!("../../../protocol-artifact/exact-state-v1/golden-manifest.json");
 
 fn digest(prefix: &str, domain: &[u8], bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
@@ -81,6 +85,64 @@ fn identity() -> Result<CheckpointCaptureIdentity, Box<dyn Error>> {
     )?)
 }
 
+fn sample_manifest() -> Result<CheckpointManifest, Box<dyn Error>> {
+    Ok(CheckpointManifest::from_parts(CheckpointManifestParts {
+        exact_state_digest:
+            "asc-state:v1:sha256:4fef3232f4c1f205363ff2ebefe0cab072f8ae3081ec36545c6cbebba24b5d83"
+                .to_owned(),
+        canonical_payload: CheckpointArtifactDescriptor::new(
+            "fixture-json",
+            "sha256:43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+            "exact_state_payload",
+            13,
+        )?,
+        restore_artifacts: vec![CheckpointArtifactDescriptor::new(
+            "fixture-json",
+            "sha256:43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+            "fixture_snapshot",
+            13,
+        )?],
+        compatibility_digest:
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111".to_owned(),
+        coverage_contract_digest:
+            "sha256:2222222222222222222222222222222222222222222222222222222222222222".to_owned(),
+        boundary: CheckpointManifestBoundary::new("decision", "STABLE_PLAYER_TURN", Some(7))?,
+        origin: CheckpointOrigin::new("run-1", 7)?,
+        parent_checkpoint_id: None,
+    })?)
+}
+
+fn golden_manifest_parts() -> Result<CheckpointManifestParts, Box<dyn Error>> {
+    Ok(CheckpointManifestParts {
+        exact_state_digest:
+            "asc-state:v1:sha256:41583642ddc819c963b4a9500f58de3d472e3d20dc0dcebd0eef8f4f18f600c8"
+                .to_owned(),
+        canonical_payload: CheckpointArtifactDescriptor::new(
+            "asc-jcs-state-v1",
+            "sha256:4e461e0062187d04dd294296618fc58443e32901fbfcdd271ffc0133d6963ab6",
+            "exact_state_payload",
+            1505,
+        )?,
+        restore_artifacts: vec![CheckpointArtifactDescriptor::new(
+            "fixture-json-illustration",
+            "sha256:55a0f5ad6a56405dc57354886428008c1c9c244e647120dc27d6ab7156ea9d23",
+            "fixture_snapshot",
+            1950,
+        )?],
+        compatibility_digest:
+            "sha256:95c56e287c1e000c70b33fc0180caf7c58f1da0606681e18a67c43bfc6ab8974".to_owned(),
+        coverage_contract_digest:
+            "sha256:2fa9e73895d97193dc0153eae157f93da76c3292a526a4bbe2486e755e93b82b".to_owned(),
+        boundary: CheckpointManifestBoundary::new("decision", "CONTRACT_FIXTURE", None)?,
+        origin: CheckpointOrigin::new("fixture-run", 1)?,
+        parent_checkpoint_id: None,
+    })
+}
+
+fn golden_manifest() -> Result<CheckpointManifest, Box<dyn Error>> {
+    Ok(CheckpointManifest::from_parts(golden_manifest_parts()?)?)
+}
+
 #[test]
 fn selected_protocol_vectors_match_the_pinned_witness() -> Result<(), Box<dyn Error>> {
     let manifest: Value = serde_json::from_str(MANIFEST)?;
@@ -113,12 +175,6 @@ fn selected_protocol_vectors_match_the_pinned_witness() -> Result<(), Box<dyn Er
             "state digest differs for {}",
             string_field(entry, "name")?
         );
-        assert_eq!(
-            digest("asc-checkpoint:v1:sha256:", CHECKPOINT_ID_DOMAIN, &bytes),
-            string_field(entry, "checkpoint_id")?,
-            "checkpoint id differs for {}",
-            string_field(entry, "name")?
-        );
     }
     Ok(())
 }
@@ -141,7 +197,6 @@ fn equivalence_and_hidden_state_distinctions_remain_pinned() -> Result<(), Box<d
             .ok_or("right vector")?;
         assert_eq!(left["canonical_hex"], right["canonical_hex"]);
         assert_eq!(left["state_id"], right["state_id"]);
-        assert_eq!(left["checkpoint_id"], right["checkpoint_id"]);
     }
 
     for pair in fixture["distinct_pairs"]
@@ -157,6 +212,63 @@ fn equivalence_and_hidden_state_distinctions_remain_pinned() -> Result<(), Box<d
         assert_ne!(left["canonical_hex"], right["canonical_hex"]);
         assert_ne!(left["state_id"], right["state_id"]);
     }
+    Ok(())
+}
+
+#[test]
+fn checkpoint_id_uses_the_manifest_closure_not_payload_bytes() -> Result<(), Box<dyn Error>> {
+    let manifest = golden_manifest()?;
+    assert_eq!(
+        manifest.to_canonical_bytes()?,
+        GOLDEN_MANIFEST.trim_end_matches('\n').as_bytes()
+    );
+    assert_eq!(
+        manifest.exact_checkpoint_id()?,
+        "asc-checkpoint:v1:sha256:e64d4b9eb2fd555f50a1fde40454ae1f036484adfe48bd8ccadb46bb7e708b1f"
+    );
+
+    let mut changed_coverage = golden_manifest_parts()?;
+    changed_coverage.coverage_contract_digest =
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_owned();
+    assert_ne!(
+        manifest.exact_checkpoint_id()?,
+        CheckpointManifest::from_parts(changed_coverage)?.exact_checkpoint_id()?
+    );
+
+    let mut changed_compatibility = golden_manifest_parts()?;
+    changed_compatibility.compatibility_digest =
+        "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_owned();
+    assert_ne!(
+        manifest.exact_checkpoint_id()?,
+        CheckpointManifest::from_parts(changed_compatibility)?.exact_checkpoint_id()?
+    );
+
+    let mut changed_restore = golden_manifest_parts()?;
+    let restore_artifact = changed_restore
+        .restore_artifacts
+        .first()
+        .ok_or("golden restore artifact")?
+        .clone();
+    changed_restore.restore_artifacts.push(restore_artifact);
+    assert_ne!(
+        manifest.exact_checkpoint_id()?,
+        CheckpointManifest::from_parts(changed_restore)?.exact_checkpoint_id()?
+    );
+
+    let mut changed_boundary = golden_manifest_parts()?;
+    changed_boundary.boundary =
+        CheckpointManifestBoundary::new("decision", "CONTRACT_FIXTURE_ALT", None)?;
+    assert_ne!(
+        manifest.exact_checkpoint_id()?,
+        CheckpointManifest::from_parts(changed_boundary)?.exact_checkpoint_id()?
+    );
+
+    let mut changed_origin = golden_manifest_parts()?;
+    changed_origin.origin = CheckpointOrigin::new("fixture-run", 2)?;
+    assert_ne!(
+        manifest.exact_checkpoint_id()?,
+        CheckpointManifest::from_parts(changed_origin)?.exact_checkpoint_id()?
+    );
     Ok(())
 }
 
@@ -242,6 +354,7 @@ fn identity_fence_and_private_receipt_are_bounded() -> Result<(), Box<dyn Error>
         &request,
         CheckpointDurability::InMemory,
         b"{\"a\":1,\"b\":2}".to_vec(),
+        sample_manifest()?,
     )?;
     assert_eq!(receipt.identity(), &identity);
     assert_eq!(receipt.boundary(), CheckpointBoundary::LaterTurnCombat);
@@ -253,12 +366,22 @@ fn identity_fence_and_private_receipt_are_bounded() -> Result<(), Box<dyn Error>
     );
     assert_eq!(
         receipt.checkpoint_id(),
+        &receipt.manifest().exact_checkpoint_id()?
+    );
+    assert_ne!(
+        receipt.checkpoint_id(),
         "asc-checkpoint:v1:sha256:1327684c8555d59944c7c7ae1b1fb99eabeba1795ce3f72c6521790500809cfe"
     );
     assert_eq!(
         receipt.blob_digest(),
         "sha256:43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
     );
+    let debug = format!("{receipt:?}");
+    assert!(debug.contains("canonical_bytes_len"));
+    assert!(!debug.contains("{\"a\":1"));
+    assert!(!debug.contains("asc-state:v1:sha256:"));
+    assert!(!debug.contains("asc-checkpoint:v1:sha256:"));
+    assert!(!debug.contains("sha256:43258cff"));
 
     assert_eq!(
         CheckpointCaptureIdentity::new("", "session", "lease", 1, "run", "profile", "op"),
@@ -277,7 +400,8 @@ fn identity_fence_and_private_receipt_are_bounded() -> Result<(), Box<dyn Error>
         sts2_game_mod::CheckpointCaptureReceipt::from_validated_canonical_bytes(
             &request,
             CheckpointDurability::InMemory,
-            Vec::new()
+            Vec::new(),
+            sample_manifest()?
         ),
         Err(CheckpointCaptureRejection::InvalidCanonicalBytes)
     );
@@ -285,7 +409,8 @@ fn identity_fence_and_private_receipt_are_bounded() -> Result<(), Box<dyn Error>
         sts2_game_mod::CheckpointCaptureReceipt::from_validated_canonical_bytes(
             &request,
             CheckpointDurability::InMemory,
-            vec![0; CHECKPOINT_CAPTURE_MAX_BYTES + 1]
+            vec![0; CHECKPOINT_CAPTURE_MAX_BYTES + 1],
+            sample_manifest()?
         ),
         Err(CheckpointCaptureRejection::Oversize {
             bytes: CHECKPOINT_CAPTURE_MAX_BYTES + 1

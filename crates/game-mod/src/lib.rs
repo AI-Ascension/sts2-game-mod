@@ -24,11 +24,13 @@ pub use content_manifest::{
 };
 pub use checkpoint::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
-    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_STATE_DOMAIN, CheckpointBoundary,
-    CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity, CheckpointCapturePort,
-    CheckpointCaptureReceipt, CheckpointCaptureRejection, CheckpointCaptureRequest,
-    CheckpointDurability, CheckpointIdentityError, CheckpointUnavailableReason,
-    UnavailableCheckpointCapture,
+    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
+    CHECKPOINT_MANIFEST_SCHEMA, CHECKPOINT_STATE_DOMAIN, CheckpointArtifactDescriptor,
+    CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity,
+    CheckpointCapturePort, CheckpointCaptureReceipt, CheckpointCaptureRejection,
+    CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
+    CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
+    CheckpointUnavailableReason, UnavailableCheckpointCapture,
 };
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,

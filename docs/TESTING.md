@@ -87,8 +87,10 @@ executing them.
 The game-mod checkpoint test checks the pinned synthetic
 `asc-jcs-state-v1` vectors from `protocol-artifact/exact-state-v1/`, including key-order
 equivalence, hidden health/RNG distinctions, signed-zero and tagged-`uint64` identities, and
-domain-separated state/checkpoint/blob digests. It also checks bounded identity binding, private
-receipt bytes, explicit rejection vectors, and the complete fail-closed capability matrix:
+domain-separated state/blob digests. It separately compares the canonical checkpoint-manifest
+golden, including compatibility/coverage/restore/boundary/origin references, and its
+manifest-derived checkpoint ID. It also checks bounded identity binding, redacted receipt debug
+output, private receipt bytes, explicit rejection vectors, and the complete fail-closed capability matrix:
 
 ~~~text
 cargo test --locked --offline --package sts2-game-mod --test checkpoint

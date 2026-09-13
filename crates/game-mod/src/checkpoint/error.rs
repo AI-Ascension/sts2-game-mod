@@ -29,6 +29,10 @@ pub enum CheckpointCaptureRejection {
         /// Number of bytes supplied.
         bytes: usize,
     },
+    /// The manifest references different state or payload bytes.
+    ManifestMismatch,
+    /// The manifest could not be canonicalized for identity.
+    InvalidManifest,
 }
 
 impl CheckpointCaptureRejection {
@@ -44,6 +48,8 @@ impl CheckpointCaptureRejection {
             Self::OperationConflict => "operation_conflict",
             Self::InvalidCanonicalBytes => "invalid_canonical_bytes",
             Self::Oversize { .. } => "oversize",
+            Self::ManifestMismatch => "manifest_mismatch",
+            Self::InvalidManifest => "invalid_manifest",
         }
     }
 }

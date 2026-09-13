@@ -174,8 +174,10 @@ logical operation, classifies the complete boundary matrix, and returns only own
 `UnavailableCheckpointCapture` currently rejects every phase: candidate map/combat boundaries need
 exact-host evidence, offer/event/shop/rest coverage is incomplete, and enemy/animation/transition/
 unknown phases are unsafe. The receipt wrapper consumes protocol-validated canonical bytes only to
-apply the bounded identity domains; it is not a canonicalizer, route, persistence layer, or restore
-implementation. See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md).
+apply the bounded state/blob identity domains and computes the checkpoint ID from the complete
+manifest envelope (compatibility, coverage, restore, boundary, origin, and parent references); it
+is not a canonicalizer, route, persistence layer, or restore implementation. See
+[ADR 0043](decisions/0043-native-checkpoint-capture-port.md).
 
 ## Repeat-seed practice replay
 

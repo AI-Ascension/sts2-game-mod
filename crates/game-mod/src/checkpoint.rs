@@ -9,6 +9,7 @@
 mod capability;
 mod error;
 mod identity;
+mod manifest;
 mod port;
 mod receipt;
 
@@ -17,6 +18,11 @@ pub use capability::{
 };
 pub use error::CheckpointCaptureRejection;
 pub use identity::{CheckpointCaptureIdentity, CheckpointCaptureRequest, CheckpointIdentityError};
+pub use manifest::{
+    CHECKPOINT_MANIFEST_PROFILE, CHECKPOINT_MANIFEST_SCHEMA, CheckpointArtifactDescriptor,
+    CheckpointManifest, CheckpointManifestBoundary, CheckpointManifestError,
+    CheckpointManifestParts, CheckpointOrigin,
+};
 pub use port::{CheckpointCapturePort, UnavailableCheckpointCapture};
 pub use receipt::{CheckpointCaptureReceipt, CheckpointDurability};
 
