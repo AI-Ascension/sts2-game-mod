@@ -180,6 +180,53 @@ pub(super) fn unavailable(
     }
 }
 
+/// Measures the synthetic `<field>=<payload>\n` detail representation in UTF-8 bytes.
+pub(super) fn measure_detail_bytes(
+    schema: &LocalKindSchema,
+    entity: &LocalEntityFixture,
+    fields: &BTreeSet<String>,
+) -> Result<usize, LocalReadError> {
+    fields.iter().try_fold(0usize, |total, field| {
+        let definition = schema
+            .fields
+            .get(field)
+            .ok_or(LocalReadError::InvalidSchema)?;
+        let payload = if definition.protected {
+            "denied".len()
+        } else if !definition.supported {
+            "unsupported".len()
+        } else {
+            fixture_payload_bytes(entity.values.get(field))
+        };
+        total
+            .checked_add(definition.name.len())
+            .and_then(|size| size.checked_add(2))
+            .and_then(|size| size.checked_add(payload))
+            .ok_or(LocalReadError::DetailSizeUnavailable)
+    })
+}
+
+fn fixture_payload_bytes(fixture: Option<&LocalFixtureValue>) -> usize {
+    match fixture {
+        Some(LocalFixtureValue::Value(value)) => value_bytes(value),
+        Some(LocalFixtureValue::NotApplicable) => "not_applicable".len(),
+        Some(LocalFixtureValue::NotObserved) | None => "not_observed".len(),
+        Some(LocalFixtureValue::Unknown) => "unknown".len(),
+        Some(LocalFixtureValue::Failed) => "failed".len(),
+    }
+}
+
+fn value_bytes(value: &LocalFieldValue) -> usize {
+    match value {
+        LocalFieldValue::Integer(value) => value.to_string().len(),
+        LocalFieldValue::Boolean(value) => value.to_string().len(),
+        LocalFieldValue::Text(value) => value.len(),
+        LocalFieldValue::TextList(values) => 2usize
+            .saturating_add(values.iter().map(String::len).sum::<usize>())
+            .saturating_add(values.len().saturating_sub(1)),
+    }
+}
+
 pub(super) fn field_status(
     definition: &LocalFieldDefinition,
     fixture: Option<&LocalFixtureValue>,

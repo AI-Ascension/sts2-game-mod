@@ -5,7 +5,7 @@ mod fixture;
 
 use std::collections::BTreeMap;
 
-use fixture::{field, reference, schema, store, store_with_detail_bytes};
+use fixture::{field, reference, schema, store, store_with_detail_bytes, store_with_detail_value};
 use sts2_game_mod::{
     LocalBasicQuery, LocalCompleteness, LocalEntityFixture, LocalFieldStatus, LocalFieldValue,
     LocalKindFixture, LocalReadError, LocalReadReference, LocalReasonCode,
@@ -315,6 +315,32 @@ fn detail_size_must_be_present_and_nonzero() -> Result<(), LocalReadError> {
             Err(LocalReadError::DetailSizeUnavailable)
         );
     }
+    Ok(())
+}
+
+#[test]
+fn detail_size_validates_positive_estimates_against_values() -> Result<(), LocalReadError> {
+    let mut store =
+        store_with_detail_value(BTreeMap::from([("details".to_owned(), 1)]), "x".repeat(128))?;
+    let page = store.read_basic(&LocalBasicQuery::new(
+        "synthetic_entity",
+        ["detail_text"],
+        1,
+        None,
+    ))?;
+    let link = page
+        .entries
+        .first()
+        .and_then(|entry| entry.detail_links.first())
+        .ok_or(LocalReadError::UnknownFieldGroup)?
+        .clone();
+    assert_eq!(
+        store.read_detail(&link),
+        Err(LocalReadError::DetailTooLarge {
+            limit: 64,
+            actual: 141,
+        })
+    );
     Ok(())
 }
 

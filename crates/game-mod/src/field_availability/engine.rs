@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use super::helpers::{
-    aggregate_status, build_summary, field_status, result_for_fixture, unavailable,
-    validate_fixture,
+    aggregate_status, build_summary, field_status, measure_detail_bytes, result_for_fixture,
+    unavailable, validate_fixture,
 };
 use super::*;
 use std::{collections::BTreeMap, sync::Arc};
@@ -55,8 +55,6 @@ impl LocalAvailabilityStore {
         })
     }
 
-    /// Returns the identity all current reads must repeat.
-    #[must_use]
     pub fn reference(&self) -> &LocalReadReference {
         &self.reference
     }
@@ -242,12 +240,14 @@ impl LocalAvailabilityStore {
             .iter()
             .find(|entity| entity.entity_id == link.entity_id)
             .ok_or(LocalReadError::EntityNotFound)?;
-        let estimated_bytes = entity
+        let declared_bytes = entity
             .detail_bytes
             .get(&link.field_group)
             .copied()
             .filter(|bytes| *bytes > 0)
             .ok_or(LocalReadError::DetailSizeUnavailable)?;
+        let measured_bytes = measure_detail_bytes(&state.schema, entity, group_fields)?;
+        let estimated_bytes = declared_bytes.max(measured_bytes);
         if estimated_bytes > self.max_detail_bytes {
             return Err(LocalReadError::DetailTooLarge {
                 limit: self.max_detail_bytes,

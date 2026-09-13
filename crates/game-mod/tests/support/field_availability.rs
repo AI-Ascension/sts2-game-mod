@@ -134,13 +134,20 @@ pub fn store(total_known: bool) -> Result<LocalAvailabilityStore, LocalReadError
 pub fn store_with_detail_bytes(
     detail_bytes: BTreeMap<String, usize>,
 ) -> Result<LocalAvailabilityStore, LocalReadError> {
+    store_with_detail_value(detail_bytes, "bounded")
+}
+
+pub fn store_with_detail_value(
+    detail_bytes: BTreeMap<String, usize>,
+    detail_text: impl Into<String>,
+) -> Result<LocalAvailabilityStore, LocalReadError> {
     let fixture = LocalKindFixture::new(
         schema(),
         [entity(
             "entity-a",
             [(
                 "detail_text",
-                LocalFixtureValue::Value(LocalFieldValue::Text("bounded".to_owned())),
+                LocalFixtureValue::Value(LocalFieldValue::Text(detail_text.into())),
             )],
             detail_bytes,
         )],

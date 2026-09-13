@@ -112,7 +112,7 @@ pub struct LocalEntityFixture {
     pub entity_id: String,
     /// Synthetic field outcomes.
     pub values: BTreeMap<String, LocalFixtureValue>,
-    /// Estimated encoded bytes for each allowlisted detail group.
+    /// Declared encoded-size estimate for each allowlisted detail group.
     pub detail_bytes: BTreeMap<String, usize>,
 }
 
@@ -174,7 +174,7 @@ pub struct LocalDetailResponse {
     pub field_group: String,
     /// Returned fields.
     pub fields: BTreeMap<String, LocalFieldResult>,
-    /// Actual synthetic encoded-size estimate.
+    /// Conservative synthetic encoded-size estimate validated against field values.
     pub estimated_bytes: usize,
     /// Identity shared by all fields.
     pub origin: LocalFieldOrigin,
