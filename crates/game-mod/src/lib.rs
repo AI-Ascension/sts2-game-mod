@@ -6,8 +6,8 @@ use sts2_game_mod_host::{
 };
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
-mod content_manifest;
 mod checkpoint;
+mod content_manifest;
 mod poc;
 mod protocol_artifact;
 mod runtime_map;
@@ -15,13 +15,6 @@ mod runtime_v2;
 mod runtime_v3_gameplay;
 mod workshop;
 
-pub use content_manifest::{
-    CONTENT_MANIFEST_MAX_IDENTITY_BYTES, CONTENT_MANIFEST_MAX_SEMANTIC_BYTES,
-    CONTENT_MANIFEST_MAX_TEXT_BYTES, CONTENT_MANIFEST_PRODUCER_VERSION, ContentCatalogSnapshot,
-    ContentCatalogSource, ContentCursorBinding, ContentDefinition, ContentDefinitionInput,
-    ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
-    ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
-};
 pub use checkpoint::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
     CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
@@ -31,6 +24,13 @@ pub use checkpoint::{
     CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
     CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
     CheckpointUnavailableReason, UnavailableCheckpointCapture,
+};
+pub use content_manifest::{
+    CONTENT_MANIFEST_MAX_IDENTITY_BYTES, CONTENT_MANIFEST_MAX_SEMANTIC_BYTES,
+    CONTENT_MANIFEST_MAX_TEXT_BYTES, CONTENT_MANIFEST_PRODUCER_VERSION, ContentCatalogSnapshot,
+    ContentCatalogSource, ContentCursorBinding, ContentDefinition, ContentDefinitionInput,
+    ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
+    ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
 };
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
