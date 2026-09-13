@@ -273,6 +273,16 @@ fn checkpoint_id_uses_the_manifest_closure_not_payload_bytes() -> Result<(), Box
 }
 
 #[test]
+fn manifest_boundary_game_tick_matches_protocol_canonical_order() -> Result<(), Box<dyn Error>> {
+    let boundary = CheckpointManifestBoundary::new("decision", "STABLE_PLAYER_TURN", Some(7))?;
+    assert_eq!(
+        serde_json::to_vec(&boundary)?,
+        br#"{"game_tick":7,"kind":"decision","phase":"STABLE_PLAYER_TURN"}"#
+    );
+    Ok(())
+}
+
+#[test]
 fn rejection_vectors_and_capture_capabilities_are_explicitly_fail_closed()
 -> Result<(), Box<dyn Error>> {
     let fixture: Value = serde_json::from_str(VECTORS)?;

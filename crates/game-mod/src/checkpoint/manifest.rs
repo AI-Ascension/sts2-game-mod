@@ -72,10 +72,10 @@ impl CheckpointArtifactDescriptor {
 /// Boundary metadata included in the checkpoint-manifest identity.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct CheckpointManifestBoundary {
-    kind: String,
-    phase: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     game_tick: Option<u64>,
+    kind: String,
+    phase: String,
 }
 
 impl CheckpointManifestBoundary {
