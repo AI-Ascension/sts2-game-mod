@@ -42,6 +42,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0044 | [Owner-local live card state projection](0044-live-card-state-projection.md) |
 | 0045 | [Owner-local power and status state](0045-power-status-state.md) |
 | 0046 | [Owner-local combat bookkeeping and public draw-pile projection](0046-combat-bookkeeping-projection.md) |
+| 0047 | [Owner-local character resource and secondary-entity state](0047-character-resource-secondary-entity-state.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
