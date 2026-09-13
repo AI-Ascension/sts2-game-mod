@@ -14,6 +14,7 @@ mod protocol_artifact;
 mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
+mod save_profile;
 mod workshop;
 
 pub use checkpoint::{
@@ -75,6 +76,15 @@ pub use runtime_v3_gameplay::{
     RuntimeV3GameplayState, RuntimeV3GameplayStateKind, RuntimeV3GameplayStatus,
     RuntimeV3GameplayTransitionWitness, RuntimeV3GameplayValidationError,
     RuntimeV3GameplayWaitOutcome,
+};
+pub use save_profile::{
+    BaselineFence, DisposableProvisioningAvailability, FakeSaveProfileHost, HostCompatibility,
+    InstanceIdentity, ProfileDiscovery, ProfileDiscoveryError, ProfileDiscoveryRequest,
+    ProfileFixtureError, ProfileIdentityError, ProfileReadPort, ProfileSelectionAvailability,
+    ProfileSelectionPort, ProfileSelectionReceipt, ProfileSelectionRejection,
+    ProfileSelectionRequest, ProviderProfileId, SaveProfileBaseline, SaveProfileStatus, SaveSlotId,
+    SaveSlotSummary, SelectionAuthority, SelectionIdempotencyKey, UnavailableSaveProfileHost,
+    UserDataIdentity, WorkflowProfileId,
 };
 pub use workshop::{
     AllowedWorkshopFile, WORKSHOP_LOADER_CONTRACT, WORKSHOP_MANIFEST_SCHEMA_VERSION,
