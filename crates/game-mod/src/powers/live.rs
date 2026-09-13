@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 
+use super::definition::PowerStatusFamilyState;
 use super::{
     catalog_reader::PowerStatusCatalog,
     error::{PowerStatusLiveError, PowerStatusSourceError, map_live_source_error},
@@ -172,6 +173,15 @@ impl PowerStatusLiveReader {
         }
         if snapshot.binding.catalog.producer_version != POWER_STATUS_PRODUCER_VERSION {
             return Err(PowerStatusLiveError::ProducerVersionMismatch);
+        }
+        match catalog.family().state {
+            PowerStatusFamilyState::Handled => {}
+            PowerStatusFamilyState::Unsupported => {
+                return Err(PowerStatusLiveError::UnsupportedFamily);
+            }
+            PowerStatusFamilyState::Unavailable => {
+                return Err(PowerStatusLiveError::UnavailableFamily);
+            }
         }
         for instance in snapshot.instances.values() {
             validate_against_catalog(catalog, instance, scope)?;

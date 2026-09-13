@@ -219,8 +219,11 @@ pub(super) fn duration_rule_matches(
             PowerStatusDurationRule::Boundary(expected),
             PowerStatusDurationState::Boundary { reset },
         ) => expected == reset,
-        (PowerStatusDurationRule::Condition(_), PowerStatusDurationState::Condition { .. })
-        | (PowerStatusDurationRule::Event(_), PowerStatusDurationState::Unknown) => true,
+        (
+            PowerStatusDurationRule::Condition(expected),
+            PowerStatusDurationState::Condition { id, .. },
+        ) => expected == id,
+        (PowerStatusDurationRule::Event(_), PowerStatusDurationState::Unknown) => true,
         _ => false,
     }
 }

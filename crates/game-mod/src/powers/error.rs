@@ -89,6 +89,10 @@ pub enum PowerStatusLiveError {
     GameInstanceMismatch,
     /// Snapshot run identity disagreed with the reader.
     RunMismatch,
+    /// The selected catalog explicitly does not support this family.
+    UnsupportedFamily,
+    /// The selected catalog reports this family as currently unavailable.
+    UnavailableFamily,
     /// Producer identity was not supported.
     ProducerVersionMismatch,
     /// Live binding identity was malformed.

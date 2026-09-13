@@ -156,8 +156,17 @@ fn validate_decay(
             }
         }
         PowerStatusDecayRule::Unknown => {}
-        PowerStatusDecayRule::By { amount, unit } | PowerStatusDecayRule::To { amount, unit } => {
+        PowerStatusDecayRule::By { amount, unit } => {
             if *amount <= 0 {
+                return Err("decay_amount");
+            }
+            validate_identity(unit.as_str(), "decay_unit")?;
+            if decay.reset == PowerStatusReset::Never {
+                return Err("decay_reset");
+            }
+        }
+        PowerStatusDecayRule::To { amount, unit } => {
+            if *amount < 0 {
                 return Err("decay_amount");
             }
             validate_identity(unit.as_str(), "decay_unit")?;
