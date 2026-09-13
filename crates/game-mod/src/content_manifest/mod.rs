@@ -173,7 +173,7 @@ pub struct ContentManifest {
 ///
 /// This is intentionally not a transport cursor. Protocol-owned query binding must add its own
 /// query, scope, and snapshot fields after the shared contract is accepted.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ContentCursorBinding {
     /// Catalog generation observed by the producer.
     pub catalog_generation: u64,

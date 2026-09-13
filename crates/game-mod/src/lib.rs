@@ -13,6 +13,7 @@ mod content_manifest;
 mod field_availability;
 mod poc;
 mod protocol_artifact;
+mod relics;
 mod rng_audit;
 mod runtime_map;
 mod runtime_v2;
@@ -49,6 +50,7 @@ pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
 };
+pub use relics::*;
 pub use rng_audit::{
     ExternalInputControl, ExternalInputDeclaration, ExternalInputEvidence, ExternalInputKind,
     GameplayImpact, RNG_AUDIT_FINGERPRINT_DOMAIN, RNG_AUDIT_MAX_CALL_CATEGORIES,
