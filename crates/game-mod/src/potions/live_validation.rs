@@ -71,7 +71,7 @@ pub(super) fn validate_inventory(
             return Err(PotionLiveError::InvalidSlot(slot.slot_id.clone()));
         }
         validate_slot(slot)?;
-        if !seen.insert(slot_key(slot)) {
+        if !seen.insert(slot.clone()) {
             return Err(PotionLiveError::DuplicateSlot(slot.slot_id.clone()));
         }
         if let PotionSlotState::Occupied { instance_id, .. } = state {
@@ -102,7 +102,7 @@ pub(super) fn validate_offers(offers: &[PotionOfferInput]) -> Result<(), PotionL
             ));
         }
         validate_slot(&offer.slot)?;
-        if !slots.insert(slot_key(&offer.slot)) {
+        if !slots.insert(offer.slot.clone()) {
             return Err(PotionLiveError::DuplicateSlot(offer.slot.slot_id.clone()));
         }
         match (&offer.kind, &offer.slot.collection) {
@@ -148,10 +148,6 @@ fn validate_slot(slot: &super::model::PotionSlotReference) -> Result<(), PotionL
         }
     }
     Ok(())
-}
-
-fn slot_key(slot: &super::model::PotionSlotReference) -> String {
-    format!("{}:{}:{}", slot.collection.code(), slot.slot_id, slot.index)
 }
 
 fn validate_price(

@@ -13,7 +13,9 @@ pub(super) fn instance_bytes(instance: &PotionInstanceInput) -> usize {
         + instance.owner_id.as_str().len()
         + instance.slot.slot_id.len();
     total += field_bytes(&instance.modifiers, |modifier| {
-        modifier.source_ref.len() + modifier_value_bytes(&modifier.value)
+        modifier.source_ref.len()
+            + modifier_value_bytes(&modifier.value)
+            + expiration_bytes(&modifier.expiration)
     });
     total += field_bytes(&instance.effective_parameters, |parameter| {
         parameter.id.len() + parameter.unit.as_str().len() + parameter_value_bytes(&parameter.value)
@@ -50,6 +52,13 @@ fn parameter_value_bytes(value: &PotionParameterValue) -> usize {
         PotionParameterValue::Text(value) => value.len(),
         PotionParameterValue::IntegerList(values) => 8 * values.len(),
         PotionParameterValue::Unknown => 1,
+    }
+}
+
+fn expiration_bytes(expiration: &super::live_model::PotionExpiration) -> usize {
+    match expiration {
+        super::live_model::PotionExpiration::Condition(value) => value.len(),
+        _ => 1,
     }
 }
 
