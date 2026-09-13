@@ -7,6 +7,7 @@ use sts2_game_mod_host::{
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
 mod content_manifest;
+mod field_availability;
 mod poc;
 mod protocol_artifact;
 mod runtime_map;
@@ -21,6 +22,7 @@ pub use content_manifest::{
     ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
     ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
 };
+pub use field_availability::*;
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
     PocCoreError, PocCorePort, PocCoreState, PocMessage, PocMessageKind, PocMod, PocModError,

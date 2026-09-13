@@ -189,6 +189,21 @@ The existing generic Runtime-v1/v2 duplicate-operation tests are not repeat-seed
 checkpoint or history-browser feature must add a separate owner-local contract and deterministic
 fixtures rather than extending this seed-only action implicitly.
 
+## Owner-local field availability fixture
+
+The game-mod availability fixture is a host- and transport-independent contract check:
+
+~~~text
+cargo test --locked --offline --package sts2-game-mod --test field_availability
+~~~
+
+It keeps zero and empty values available, records distinct not-applicable/not-observed/unsupported/
+denied/unknown/failed outcomes, fences detail recovery by manifest/snapshot/epoch, rejects unknown
+or protected field paths, reports count-known and required-field coverage, traverses bounded
+collections with opaque continuations, and returns a typed oversized-detail error. The synthetic
+fixture is not a protocol artifact, gateway route, MCP tool, or native host compatibility claim;
+those remain separately negotiated and verified.
+
 ## Required future behavior
 
 When implemented, tests must cover bounded request and response handling, status and error
