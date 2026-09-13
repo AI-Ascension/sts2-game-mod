@@ -6,6 +6,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static class StandardAdmissionProbe
 {
+    private static readonly string[] Acts = { "act_1", "act_2", "act_3", "act_4" };
+
     private const string Digest =
         "4581aaf95348126550cdf3b73ec46b39d447523cf7cb35aec71c2842d1945031";
 
@@ -31,7 +33,7 @@ internal static class StandardAdmissionProbe
 
     private static SeededRunSelectionContext Context() => new(
         "standard/ironclad/asc0/fresh", "standard", "ironclad", 0,
-        Array.Empty<string>(), new[] { "act_1", "act_2", "act_3", "act_4" },
+        Array.Empty<string>(), Acts,
         SeededRunStandardAdmission.StandardDefaultSelectionPolicy,
         new SeededRunContextProfileBaseline("fresh", "fresh-profile", Digest),
         "enabled",
