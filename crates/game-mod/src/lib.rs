@@ -7,6 +7,7 @@ use sts2_game_mod_host::{
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
 mod content_manifest;
+mod checkpoint;
 mod poc;
 mod protocol_artifact;
 mod runtime_map;
@@ -20,6 +21,14 @@ pub use content_manifest::{
     ContentCatalogSource, ContentCursorBinding, ContentDefinition, ContentDefinitionInput,
     ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
     ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
+};
+pub use checkpoint::{
+    CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
+    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_STATE_DOMAIN, CheckpointBoundary,
+    CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity, CheckpointCapturePort,
+    CheckpointCaptureReceipt, CheckpointCaptureRejection, CheckpointCaptureRequest,
+    CheckpointDurability, CheckpointIdentityError, CheckpointUnavailableReason,
+    UnavailableCheckpointCapture,
 };
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,

@@ -1,0 +1,12 @@
+{
+  "artifact": "sts2-protocol/exact-state-v1",
+  "profile": "asc-jcs-state-v1",
+  "schema": "ascension.exact_state.v1",
+  "source_revision": "8a2e66f5d2190a0fca7f146dc3508e8d55515ea",
+  "source_vectors": "conformance/fixtures/exact-state-v1/canonical-vectors.json",
+  "source_vectors_sha256": "393dc9bb5bb7fc00672ffba24e78768c242c5d1488e442e5882b68d00e7441fc",
+  "consumer": "sts2-game-mod",
+  "fixture_kind": "selected_synthetic_vectors",
+  "live_runtime": false,
+  "proprietary_data": false
+}
