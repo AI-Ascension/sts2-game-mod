@@ -139,6 +139,9 @@ jobs:
       - name: Run managed seeded-run context digest probe
         run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release
 
+      - name: Run managed seeded standard admission probe
+        run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunStandardAdmissionProbe.csproj --configuration Release
+
       - name: Run managed seeded-run serializer generation probe
         run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
 

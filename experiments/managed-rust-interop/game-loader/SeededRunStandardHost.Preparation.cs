@@ -34,13 +34,8 @@ internal static partial class SeededRunStandardHost
         error = string.Empty;
 
         SeededRunSelectionContext context = request.SelectedContext;
-        if (context.ProfileBaseline.Kind != SeededRunSelectionContext.FreshProfileKind
-            || context.SavePolicy != SeededRunSelectionContext.EnabledSavePolicy
-            || context.SelectionPolicy != NativeSelectionPolicy
-            || context.Ascension != 0
-            || context.Modifiers.Count != 0)
+        if (!SeededRunStandardAdmission.HasSupportedStaticContext(context, out error))
         {
-            error = "unsupported_standard_context";
             return false;
         }
 

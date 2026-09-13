@@ -90,13 +90,16 @@ identity failures:
 
 ~~~text
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunStandardAdmissionProbe.csproj --configuration Release
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
 ~~~
 
 These probes do not load a proprietary host, start a native run, access a real profile/save, or
-establish seed settlement. The host-dependent adapter remains unverified until a disposable exact
-host test records canonical seed readback, the `run_started` witness, profile isolation, and cleanup.
+establish seed settlement. In particular, the standard-admission probe covers only request-owned
+constraints before host access; it cannot verify native lobby setup. The host-dependent adapter
+remains unverified until a disposable exact host test records canonical seed readback, the
+`run_started` witness, profile isolation, and cleanup.
 
 ## Runtime-map-v1 projection checks
 
