@@ -225,6 +225,18 @@ collections with opaque continuations, and returns a typed oversized-detail erro
 fixture is not a protocol artifact, gateway route, MCP tool, or native host compatibility claim;
 those remain separately negotiated and verified.
 
+## Owner-local content index fixture
+
+The source-only content-index producer binds typed names, aliases, descriptions, package provenance,
+filters, unlock observations, and exact-detail capabilities to one manifest. Its synthetic fixture covers unsupported families, bounded pagination, literal non-ASCII search ranking, duplicate names,
+exact lookup errors, locked-reference scope, stale cursors, locale fencing, and source failures:
+
+~~~text
+cargo test --locked --offline --package sts2-game-mod --test content_index
+~~~
+
+The index is immutable after production; only opaque reader cursors are mutable. Unknown or unsupported source data fails closed; no fixture constructs playable objects, mutates profile state, or asserts native compatibility. Names/errors are game-mod-local pending the separately owned versioned game-information contract.
+
 ## Required future behavior
 
 When implemented, tests must cover bounded request and response handling, status and error

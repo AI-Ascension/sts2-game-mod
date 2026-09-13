@@ -263,6 +263,12 @@ ordering, and versioning require a new project-owned profile and fixtures.
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
 
+The owner-local `content_index` producer binds typed definition metadata to the immutable
+`content_manifest` witness. Its adapter registry retains every inventoried family, marks
+unhandled families explicitly, and exposes only bounded list/search/exact-read operations with
+manifest, locale, query, and visibility bindings. It is source-only evidence: no public route,
+shared wire shape, native registry reflection, or profile/unlock mutation is implied.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native

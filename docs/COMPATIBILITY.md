@@ -21,6 +21,10 @@ Compatibility is tracked independently for the owner-local HTTP contract, manage
 native ABI, STS2 host version, operating system and architecture, Rust/.NET runtime, configuration,
 and package contents. A build result never silently broadens another dimension.
 
+The owner-local content-index producer currently has only Rust source/build/test evidence against
+synthetic manifest-bound records. It does not establish a host registry adapter, native content
+coverage, shared protocol adoption, or compatibility with any installed game build.
+
 The initial game baseline is recorded in
 [decision 0002](decisions/0002-initial-game-compatibility-baseline.md). It is a source-derived
 planning target, not runtime proof from this target.

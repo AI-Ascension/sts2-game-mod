@@ -7,6 +7,7 @@ use sts2_game_mod_host::{
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
 mod checkpoint;
+mod content_index;
 mod content_manifest;
 mod field_availability;
 mod poc;
@@ -26,6 +27,7 @@ pub use checkpoint::{
     CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
     CheckpointUnavailableReason, UnavailableCheckpointCapture,
 };
+pub use content_index::*;
 pub use content_manifest::{
     CONTENT_MANIFEST_MAX_IDENTITY_BYTES, CONTENT_MANIFEST_MAX_SEMANTIC_BYTES,
     CONTENT_MANIFEST_MAX_TEXT_BYTES, CONTENT_MANIFEST_PRODUCER_VERSION, ContentCatalogSnapshot,
