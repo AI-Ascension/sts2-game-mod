@@ -6,6 +6,7 @@ use sts2_game_mod_host::{
 };
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
+mod card_definitions;
 mod checkpoint;
 mod content_index;
 mod content_manifest;
@@ -19,6 +20,7 @@ mod runtime_v3_gameplay;
 mod save_profile;
 mod workshop;
 
+pub use card_definitions::*;
 pub use checkpoint::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
     CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
