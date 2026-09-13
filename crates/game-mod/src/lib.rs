@@ -11,6 +11,7 @@ mod content_manifest;
 mod field_availability;
 mod poc;
 mod protocol_artifact;
+mod rng_audit;
 mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
@@ -42,6 +43,16 @@ pub use poc::{
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
+};
+pub use rng_audit::{
+    ExternalInputControl, ExternalInputDeclaration, ExternalInputEvidence, ExternalInputKind,
+    GameplayImpact, RNG_AUDIT_FINGERPRINT_DOMAIN, RNG_AUDIT_MAX_CALL_CATEGORIES,
+    RNG_AUDIT_MAX_EXTERNAL_INPUTS, RNG_AUDIT_MAX_STREAMS, RNG_AUDIT_MAX_TEXT_BYTES,
+    RNG_AUDIT_MAX_WITNESS_BYTES, RNG_AUDIT_PROFILE, RNG_AUDIT_SCHEMA, RngAuditBinding,
+    RngAuditError, RngAuditPort, RngAuditProjection, RngAuditReadError, RngAuditUnavailableReason,
+    RngAuditWitness, RngCoverageStatus, RngCursorEvidence, RngExternalInputProjection,
+    RngSeedOrigin, RngSerialization, RngStateAvailability, RngStreamCategory, RngStreamEvidence,
+    RngStreamProjection, UnavailableRngAudit,
 };
 pub use runtime_map::{
     RUNTIME_MAP_V1_ARTIFACT, RUNTIME_MAP_V1_GENERATOR, RUNTIME_MAP_V1_MAX_BINDINGS,
