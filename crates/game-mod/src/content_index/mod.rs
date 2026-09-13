@@ -25,6 +25,7 @@ mod source;
 pub use engine::ContentIndex;
 pub use errors::ContentIndexError;
 pub use model::{
+    CONTENT_INDEX_MAX_ALIAS_COUNT, CONTENT_INDEX_MAX_DEFINITION_BYTES,
     CONTENT_INDEX_MAX_IDENTITY_BYTES, CONTENT_INDEX_MAX_PAGE_ITEMS, CONTENT_INDEX_MAX_TEXT_BYTES,
     ContentDefinition, ContentDefinitionReference, ContentDefinitionSummary,
     ContentDetailCapabilities, ContentIndexFamily, ContentIndexInputError, ContentIndexSnapshot,

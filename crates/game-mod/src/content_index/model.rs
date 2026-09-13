@@ -11,6 +11,10 @@ pub const CONTENT_INDEX_MAX_IDENTITY_BYTES: usize = 256;
 pub const CONTENT_INDEX_MAX_PAGE_ITEMS: usize = 64;
 /// Maximum UTF-8 bytes accepted for one searchable localized value.
 pub const CONTENT_INDEX_MAX_TEXT_BYTES: usize = 64 * 1024;
+/// Maximum aliases retained for one definition.
+pub const CONTENT_INDEX_MAX_ALIAS_COUNT: usize = 64;
+/// Maximum aggregate bytes returned by one exact definition lookup.
+pub const CONTENT_INDEX_MAX_DEFINITION_BYTES: usize = 64 * 1024;
 
 /// A caller-selected locale for a local query.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

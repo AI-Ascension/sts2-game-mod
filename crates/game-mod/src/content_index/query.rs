@@ -6,8 +6,9 @@ use crate::ContentCursorBinding;
 
 use super::errors::validate_text;
 use super::model::{
-    ContentDefinitionSummary, ContentIndexInputError, ContentQueryLocale, ContentRarity,
-    ContentUnlockState, validate_identity,
+    CONTENT_INDEX_MAX_ALIAS_COUNT, ContentDefinitionSummary, ContentDetailCapabilities,
+    ContentIndexInputError, ContentQueryLocale, ContentRarity, ContentUnlockState,
+    validate_identity,
 };
 
 pub use super::errors::ContentIndexError;
@@ -214,6 +215,12 @@ impl ContentIndexDefinitionInput {
         if let Some(display_name) = &self.display_name {
             validate_text(display_name)?;
         }
+        if self.aliases.len() > CONTENT_INDEX_MAX_ALIAS_COUNT {
+            return Err(ContentIndexError::AliasCountTooLarge {
+                limit: CONTENT_INDEX_MAX_ALIAS_COUNT,
+                actual: self.aliases.len(),
+            });
+        }
         let mut aliases = std::collections::BTreeSet::new();
         for alias in &self.aliases {
             if alias.is_empty() {
@@ -235,6 +242,40 @@ impl ContentIndexDefinitionInput {
                     }
                 },
             )?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn validate_capabilities(
+        &self,
+        capabilities: &ContentDetailCapabilities,
+    ) -> Result<(), ContentIndexError> {
+        if capabilities.full_definition
+            && !(capabilities.display_name
+                && capabilities.aliases
+                && capabilities.rendered_description
+                && capabilities.character_or_pool
+                && capabilities.rarity
+                && capabilities.unlock_state)
+        {
+            return Err(ContentIndexError::CapabilityMismatch("full_definition"));
+        }
+        if capabilities.display_name && self.display_name.is_none() {
+            return Err(ContentIndexError::CapabilityMismatch("display_name"));
+        }
+        if capabilities.rendered_description && self.rendered_description.is_none() {
+            return Err(ContentIndexError::CapabilityMismatch(
+                "rendered_description",
+            ));
+        }
+        if capabilities.character_or_pool && self.character_or_pool.is_none() {
+            return Err(ContentIndexError::CapabilityMismatch("character_or_pool"));
+        }
+        if capabilities.rarity && self.rarity.is_none() {
+            return Err(ContentIndexError::CapabilityMismatch("rarity"));
+        }
+        if capabilities.unlock_state && self.unlock_state == ContentUnlockState::Unknown {
+            return Err(ContentIndexError::CapabilityMismatch("unlock_state"));
         }
         Ok(())
     }

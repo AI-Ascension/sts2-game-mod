@@ -54,6 +54,22 @@ pub enum ContentIndexError {
     InvalidPageSize,
     /// Exact lookup is unavailable for the selected family.
     DetailUnavailable,
+    /// Exact lookup would exceed the aggregate detail byte bound.
+    DetailTooLarge {
+        /// Maximum aggregate bytes allowed.
+        limit: usize,
+        /// Measured aggregate bytes.
+        actual: usize,
+    },
+    /// A source supplied more aliases than the bounded index accepts.
+    AliasCountTooLarge {
+        /// Maximum aliases allowed.
+        limit: usize,
+        /// Supplied alias count.
+        actual: usize,
+    },
+    /// Adapter capabilities claim a field that the source did not provide.
+    CapabilityMismatch(&'static str),
     /// An identity or locale field is empty, oversized, or contains controls.
     InvalidIdentity(&'static str),
     /// A searchable text value is oversized or contains controls.

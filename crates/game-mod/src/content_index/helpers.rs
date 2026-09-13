@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use super::{ContentDefinition, ContentDefinitionSummary, ContentIndexError, ContentQueryFilters};
+use super::{
+    CONTENT_INDEX_MAX_DEFINITION_BYTES, ContentDefinition, ContentDefinitionSummary,
+    ContentIndexError, ContentQueryFilters,
+};
 
 pub(super) fn summary(definition: &ContentDefinition) -> ContentDefinitionSummary {
     ContentDefinitionSummary {
@@ -108,4 +111,57 @@ pub(super) fn validate_optional_identity(
         })?;
     }
     Ok(())
+}
+
+pub(super) fn definition_bytes(definition: &ContentDefinition) -> Result<usize, ContentIndexError> {
+    let mut actual = 0usize;
+    let mut add = |value: &str| {
+        let next = actual
+            .checked_add(value.len())
+            .ok_or(ContentIndexError::DetailTooLarge {
+                limit: CONTENT_INDEX_MAX_DEFINITION_BYTES,
+                actual: usize::MAX,
+            })?;
+        if next > CONTENT_INDEX_MAX_DEFINITION_BYTES {
+            return Err(ContentIndexError::DetailTooLarge {
+                limit: CONTENT_INDEX_MAX_DEFINITION_BYTES,
+                actual: next,
+            });
+        }
+        actual = next;
+        Ok(())
+    };
+    add(&definition.reference.manifest.adapter_compatibility)?;
+    add(&definition.reference.manifest.content_set_revision)?;
+    add(&definition.reference.manifest.localized_text_revision)?;
+    add(&definition.reference.manifest.inventory_revision)?;
+    add(&definition.reference.entity_kind)?;
+    add(&definition.reference.namespaced_id)?;
+    if let Some(value) = &definition.origin.package_id {
+        add(value)?;
+    }
+    if let Some(value) = &definition.origin.package_version {
+        add(value)?;
+    }
+    for reference in &definition.override_chain {
+        add(reference)?;
+    }
+    add(&definition.semantic_revision)?;
+    add(&definition.localized_text_revision)?;
+    if let Some(value) = &definition.display_name {
+        add(value)?;
+    }
+    for alias in &definition.aliases {
+        add(alias)?;
+    }
+    if let Some(value) = &definition.rendered_description {
+        add(value)?;
+    }
+    if let Some(value) = &definition.character_or_pool {
+        add(value)?;
+    }
+    if let Some(value) = &definition.rarity {
+        add(value.as_str())?;
+    }
+    Ok(actual)
 }

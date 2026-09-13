@@ -47,10 +47,11 @@ impl ContentIndexProducer {
         if snapshot.locale != manifest.locale {
             return Err(ContentIndexError::LocaleMismatch);
         }
+        let registry = self.registry.for_manifest(manifest);
         let mut records = collect_records(snapshot.definitions)?;
         let mut definitions = BTreeMap::new();
         for manifest_definition in &manifest.definitions {
-            let Some(adapter) = self.registry.get(&manifest_definition.entity_kind) else {
+            let Some(adapter) = registry.get(&manifest_definition.entity_kind) else {
                 return Err(ContentIndexError::UnsupportedKind);
             };
             let key = (
@@ -72,6 +73,7 @@ impl ContentIndexProducer {
                 });
             };
             input.validate()?;
+            input.validate_capabilities(&adapter.detail_capabilities)?;
             let reference = ContentDefinitionReference {
                 manifest: manifest_binding.clone(),
                 entity_kind: manifest_definition.entity_kind.clone(),
@@ -108,8 +110,7 @@ impl ContentIndexProducer {
             });
         }
 
-        let families = self
-            .registry
+        let families = registry
             .entries()
             .map(|adapter| {
                 let definition_count = manifest
@@ -130,7 +131,7 @@ impl ContentIndexProducer {
         Ok(ContentIndex::from_parts(
             manifest_binding,
             manifest.locale.clone(),
-            self.registry.clone(),
+            registry,
             self.locked_visibility,
             families,
             definitions,
@@ -143,6 +144,7 @@ fn collect_records(
 ) -> Result<BTreeMap<(String, String), ContentIndexDefinitionInput>, ContentIndexError> {
     let mut records = BTreeMap::new();
     for input in inputs {
+        input.validate()?;
         let key = (input.entity_kind.clone(), input.namespaced_id.clone());
         if records.insert(key, input).is_some() {
             return Err(ContentIndexError::DuplicateDefinitionRecord);

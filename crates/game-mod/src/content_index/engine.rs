@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 
 use super::ContentKindAdapterRegistry;
+use super::helpers::definition_bytes;
 use super::{
     ContentDefinition, ContentDefinitionReference, ContentIndexError, ContentIndexFamily,
     ContentQueryScope, ContentReferenceVisibilityPolicy, ContentUnlockState,
@@ -98,6 +99,7 @@ impl ContentIndex {
         if !definition.detail_capabilities.full_definition {
             return Err(ContentIndexError::DetailUnavailable);
         }
+        definition_bytes(definition)?;
         Ok(definition.clone())
     }
 

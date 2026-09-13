@@ -58,6 +58,7 @@ impl ContentKindAdapter {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ContentKindAdapterRegistry {
     adapters: BTreeMap<String, ContentKindAdapter>,
+    declarations: BTreeMap<String, ContentKindAdapter>,
 }
 
 impl ContentKindAdapterRegistry {
@@ -74,29 +75,48 @@ impl ContentKindAdapterRegistry {
             .iter()
             .map(|family| family.entity_kind.as_str())
             .collect::<BTreeSet<_>>();
-        let mut registry = BTreeMap::new();
+        let mut declarations = BTreeMap::new();
         for adapter in adapters {
             if !manifest_kinds.contains(adapter.entity_kind.as_str()) {
                 return Err(ContentIndexError::AdapterForUnknownKind);
             }
-            if registry
+            if declarations
                 .insert(adapter.entity_kind.clone(), adapter)
                 .is_some()
             {
                 return Err(ContentIndexError::DuplicateAdapter);
             }
         }
+        let registry = Self {
+            adapters: BTreeMap::new(),
+            declarations,
+        };
+        Ok(registry.for_manifest(manifest))
+    }
+
+    /// Reconciles declarations with a supplied manifest before producing an index.
+    ///
+    /// Added families receive explicit unsupported entries until an adapter is declared. Removed
+    /// families are omitted so an old registry cannot leak stale definitions into a new index.
+    pub(crate) fn for_manifest(&self, manifest: &ContentManifest) -> Self {
+        let mut adapters = BTreeMap::new();
         for family in &manifest.families {
-            registry
-                .entry(family.entity_kind.clone())
-                .or_insert_with(|| ContentKindAdapter {
+            let adapter = self
+                .declarations
+                .get(&family.entity_kind)
+                .cloned()
+                .unwrap_or_else(|| ContentKindAdapter {
                     entity_kind: family.entity_kind.clone(),
                     handled: false,
                     supported_filters: BTreeSet::new(),
                     detail_capabilities: ContentDetailCapabilities::none(),
                 });
+            adapters.insert(family.entity_kind.clone(), adapter);
         }
-        Ok(Self { adapters: registry })
+        Self {
+            adapters,
+            declarations: self.declarations.clone(),
+        }
     }
 
     /// Returns the adapter for a manifest family, if present.
