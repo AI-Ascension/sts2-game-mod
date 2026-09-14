@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+#![allow(dead_code)]
+
 use sts2_game_mod::{
     CHARACTER_STATE_PRODUCER_VERSION, CharacterMechanicCoverage, CharacterMechanicState,
     CharacterResourceDefinitionInput, CharacterResourceKind, CharacterResourceSlot,

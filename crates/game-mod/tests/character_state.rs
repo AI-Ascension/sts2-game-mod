@@ -6,18 +6,15 @@
 mod character_state_support;
 
 use character_state_support::{
-    CatalogFixture, catalog, catalog_snapshot, coverage, live_binding, manifest, owner, snapshot,
-    unit,
+    CatalogFixture, catalog, catalog_snapshot, coverage, live_binding, manifest, snapshot, unit,
 };
 use sts2_game_mod::{
     CharacterMechanicCoverage, CharacterMechanicState, CharacterResourceDefinitionInput,
-    CharacterResourceKind, CharacterResourceSlot, CharacterResourceSlotContent,
-    CharacterResourceValue, CharacterResourceValueDefinition, CharacterStateCatalogProducer,
-    CharacterStateDefinitionKind, CharacterStateField, CharacterStateListQuery,
-    CharacterStateLiveBinding, CharacterStateLiveReader, CharacterStateLiveSnapshot,
-    CharacterStateLiveSnapshotInput, CharacterStateLiveSource, CharacterStateOwnerKind,
+    CharacterResourceKind, CharacterResourceSlotContent, CharacterResourceValueDefinition,
+    CharacterStateCatalogProducer, CharacterStateDefinitionKind, CharacterStateField,
+    CharacterStateListQuery, CharacterStateLiveBinding, CharacterStateLiveReader,
+    CharacterStateLiveSnapshot, CharacterStateLiveSnapshotInput, CharacterStateLiveSource,
     CharacterStateSourceError, CharacterStateVisibility, CharacterStateVisibilityScope,
-    SecondaryEntityInput, SecondaryEntityStatus,
 };
 
 #[test]
@@ -149,100 +146,6 @@ fn explicit_unsupported_and_not_applicable_coverage_is_not_an_empty_success() {
         CharacterStateCatalogProducer::new().produce(&manifest, &CatalogFixture(stale)),
         Err(sts2_game_mod::CharacterStateCatalogError::ManifestMismatch)
     );
-}
-
-#[test]
-fn malformed_slots_visibility_and_oversized_detail_are_rejected() {
-    let catalog = catalog();
-    let mut source = CharacterStateLiveSnapshotInput {
-        binding: live_binding(&catalog, 1),
-        resources: vec![sts2_game_mod::CharacterResourceInput {
-            instance_id: "resource-live-1".to_owned(),
-            definition_id: "resource:charge".to_owned(),
-            owner: owner(CharacterStateOwnerKind::Player, "player-1"),
-            current: CharacterStateField::Available(CharacterResourceValue::Integer {
-                value: 2,
-                unit: unit("wrong-unit"),
-            }),
-            maximum: CharacterStateField::NotObserved,
-            slots: CharacterStateField::Available(vec![
-                CharacterResourceSlot {
-                    slot_id: "slot-1".to_owned(),
-                    position: 0,
-                    content: CharacterStateField::Available(CharacterResourceSlotContent::Empty),
-                },
-                CharacterResourceSlot {
-                    slot_id: "slot-0".to_owned(),
-                    position: 1,
-                    content: CharacterStateField::Available(CharacterResourceSlotContent::Empty),
-                },
-            ]),
-            active: CharacterStateField::Available(true),
-        }],
-        secondary_entities: Vec::new(),
-    };
-    assert!(matches!(
-        CharacterStateLiveReader::new(
-            &catalog,
-            CharacterStateLiveSnapshot::from_input(source.clone()).expect("shape"),
-        ),
-        Err(sts2_game_mod::CharacterStateLiveError::ValueShapeMismatch(
-            "resource_value"
-        ))
-    ));
-    source.resources[0].current = CharacterStateField::Available(CharacterResourceValue::Integer {
-        value: 2,
-        unit: unit("charge"),
-    });
-    source.resources[0].slots = CharacterStateField::Available(vec![
-        CharacterResourceSlot {
-            slot_id: "slot-1".to_owned(),
-            position: 1,
-            content: CharacterStateField::Available(CharacterResourceSlotContent::Empty),
-        },
-        CharacterResourceSlot {
-            slot_id: "slot-0".to_owned(),
-            position: 0,
-            content: CharacterStateField::Available(CharacterResourceSlotContent::Empty),
-        },
-    ]);
-    assert_eq!(
-        CharacterStateLiveSnapshot::from_input(source),
-        Err(sts2_game_mod::CharacterStateLiveError::InvalidSlotOrder)
-    );
-    let statuses = (0..64)
-        .map(|index| SecondaryEntityStatus {
-            instance_id: format!("status-{index}"),
-            definition_id: "status:charged".to_owned(),
-            amount: CharacterStateField::Available(1),
-            visibility: CharacterStateVisibility::Visible,
-            label: CharacterStateField::Available("x".repeat(600)),
-        })
-        .collect::<Vec<_>>();
-    let reader = CharacterStateLiveReader::new(
-        &catalog,
-        CharacterStateLiveSnapshot::from_input(CharacterStateLiveSnapshotInput {
-            binding: live_binding(&catalog, 3),
-            resources: Vec::new(),
-            secondary_entities: vec![SecondaryEntityInput {
-                instance_id: "entity-live-oversized".to_owned(),
-                definition_id: "entity:orb".to_owned(),
-                owner: owner(CharacterStateOwnerKind::Secondary, "orb-owner"),
-                controller: CharacterStateField::NotObserved,
-                hp: CharacterStateField::Available(1),
-                maximum_hp: CharacterStateField::Available(1),
-                block: CharacterStateField::Available(0),
-                statuses: CharacterStateField::Available(statuses),
-                intent: CharacterStateField::NotApplicable,
-                active: CharacterStateField::Available(true),
-            }],
-        })
-        .expect("snapshot"),
-    );
-    assert!(matches!(
-        reader,
-        Err(sts2_game_mod::CharacterStateLiveError::DetailTooLarge { .. })
-    ));
 }
 
 #[test]

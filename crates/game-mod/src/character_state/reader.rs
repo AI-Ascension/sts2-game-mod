@@ -11,8 +11,9 @@ use super::{
     error::CharacterStateCatalogError,
     model::{
         CHARACTER_STATE_MAX_DEFINITION_BYTES, CHARACTER_STATE_MAX_PAGE_ITEMS,
-        CharacterStateCatalogBinding, CharacterStateVisibility, CharacterStateVisibilityScope,
+        CharacterStateCatalogBinding, CharacterStateVisibilityScope,
     },
+    reader_support,
     sizes::{resource_definition_bytes, secondary_definition_bytes},
 };
 
@@ -132,7 +133,7 @@ impl CharacterStateCatalogReader {
         if query.limit == 0 || query.limit > CHARACTER_STATE_MAX_PAGE_ITEMS {
             return Err(CharacterStateCatalogError::InvalidPageSize);
         }
-        self.ensure_query_coverage(query)?;
+        reader_support::ensure_query_coverage(&self.catalog, query)?;
         let key = CharacterStateListQueryKey {
             kind: query.kind,
             character_id: query.character_id.clone(),
@@ -144,12 +145,12 @@ impl CharacterStateCatalogReader {
         match query.kind {
             CharacterStateDefinitionKind::Resource => {
                 for definition in self.catalog.resources.values() {
-                    if matches_filter(
+                    if reader_support::matches_filter(
                         &definition.character_id,
                         &definition.mode_id,
                         query.character_id.as_deref(),
                         query.mode_id.as_deref(),
-                    ) && visible(definition.visibility, query.scope)
+                    ) && reader_support::visible(definition.visibility, query.scope)
                     {
                         entries.push(CharacterStateDefinitionSummary {
                             kind: query.kind,
@@ -163,12 +164,12 @@ impl CharacterStateCatalogReader {
             }
             CharacterStateDefinitionKind::SecondaryEntity => {
                 for definition in self.catalog.entities.values() {
-                    if matches_filter(
+                    if reader_support::matches_filter(
                         &definition.character_id,
                         &definition.mode_id,
                         query.character_id.as_deref(),
                         query.mode_id.as_deref(),
-                    ) && visible(definition.visibility, query.scope)
+                    ) && reader_support::visible(definition.visibility, query.scope)
                     {
                         entries.push(CharacterStateDefinitionSummary {
                             kind: query.kind,
@@ -209,27 +210,6 @@ impl CharacterStateCatalogReader {
         })
     }
 
-    fn ensure_query_coverage(
-        &self,
-        query: &CharacterStateListQuery,
-    ) -> Result<(), CharacterStateCatalogError> {
-        for coverage in self.catalog.coverage.values() {
-            if matches_filter(
-                &coverage.character_id,
-                &coverage.mode_id,
-                query.character_id.as_deref(),
-                query.mode_id.as_deref(),
-            ) {
-                let state = match query.kind {
-                    CharacterStateDefinitionKind::Resource => coverage.resources,
-                    CharacterStateDefinitionKind::SecondaryEntity => coverage.secondary_entities,
-                };
-                ensure_supported(state)?;
-            }
-        }
-        Ok(())
-    }
-
     /// Performs one exact resource-definition lookup with explicit visibility scope.
     pub fn resource(
         &self,
@@ -244,12 +224,12 @@ impl CharacterStateCatalogReader {
             .resources
             .get(&reference.definition_id)
             .ok_or(CharacterStateCatalogError::NotFound)?;
-        ensure_supported(self.catalog.mechanic_state(
+        reader_support::ensure_supported(self.catalog.mechanic_state(
             &definition.character_id,
             &definition.mode_id,
             CharacterStateDefinitionKind::Resource,
         )?)?;
-        if !visible(definition.visibility, scope) {
+        if !reader_support::visible(definition.visibility, scope) {
             return Err(CharacterStateCatalogError::ExcludedByScope);
         }
         let detail_bytes = resource_definition_bytes(definition);
@@ -276,12 +256,12 @@ impl CharacterStateCatalogReader {
             .entities
             .get(&reference.definition_id)
             .ok_or(CharacterStateCatalogError::NotFound)?;
-        ensure_supported(self.catalog.mechanic_state(
+        reader_support::ensure_supported(self.catalog.mechanic_state(
             &definition.character_id,
             &definition.mode_id,
             CharacterStateDefinitionKind::SecondaryEntity,
         )?)?;
-        if !visible(definition.visibility, scope) {
+        if !reader_support::visible(definition.visibility, scope) {
             return Err(CharacterStateCatalogError::ExcludedByScope);
         }
         let detail_bytes = secondary_definition_bytes(definition);
@@ -314,44 +294,4 @@ impl CharacterStateCatalogReader {
         }
         Ok(cursor.offset)
     }
-}
-
-fn ensure_supported(
-    state: super::model::CharacterMechanicState,
-) -> Result<(), CharacterStateCatalogError> {
-    match state {
-        super::model::CharacterMechanicState::Supported => Ok(()),
-        super::model::CharacterMechanicState::Unsupported => {
-            Err(CharacterStateCatalogError::UnsupportedMechanic)
-        }
-        super::model::CharacterMechanicState::NotApplicable => {
-            Err(CharacterStateCatalogError::NotApplicableMechanic)
-        }
-        super::model::CharacterMechanicState::Unavailable => {
-            Err(CharacterStateCatalogError::UnavailableMechanic)
-        }
-        super::model::CharacterMechanicState::Unknown => {
-            Err(CharacterStateCatalogError::UnknownMechanic)
-        }
-    }
-}
-
-fn visible(visibility: CharacterStateVisibility, scope: CharacterStateVisibilityScope) -> bool {
-    match visibility {
-        CharacterStateVisibility::Visible => true,
-        CharacterStateVisibility::OwnerOnly => {
-            matches!(scope, CharacterStateVisibilityScope::Owner)
-        }
-        CharacterStateVisibility::Hidden | CharacterStateVisibility::Unknown => false,
-    }
-}
-
-fn matches_filter(
-    character_id: &str,
-    mode_id: &str,
-    expected_character: Option<&str>,
-    expected_mode: Option<&str>,
-) -> bool {
-    expected_character.is_none_or(|expected| expected == character_id)
-        && expected_mode.is_none_or(|expected| expected == mode_id)
 }

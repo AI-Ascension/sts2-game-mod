@@ -20,6 +20,7 @@ mod live_snapshot;
 mod live_validation;
 mod model;
 mod reader;
+mod reader_support;
 mod sizes;
 mod validation;
 
@@ -36,9 +37,10 @@ pub use definition::{
 pub use error::{CharacterStateCatalogError, CharacterStateLiveError, CharacterStateSourceError};
 pub use live::CharacterStateLiveReader;
 pub use live_model::{
-    CharacterResource, CharacterResourceInput, CharacterResourceSlot, CharacterResourceSlotContent,
-    CharacterSecondaryEntity, SecondaryEntityControllerReference, SecondaryEntityInput,
-    SecondaryEntityIntent, SecondaryEntityIntentKind, SecondaryEntityStatus, SecondaryEntityTarget,
+    CharacterResourceInput, CharacterResourceSlot, CharacterResourceSlotContent,
+    CharacterResourceState, CharacterSecondaryEntity, SecondaryEntityControllerReference,
+    SecondaryEntityInput, SecondaryEntityIntent, SecondaryEntityIntentKind, SecondaryEntityStatus,
+    SecondaryEntityTarget,
 };
 pub use live_snapshot::{
     CharacterStateLiveSnapshot, CharacterStateLiveSnapshotInput, CharacterStateLiveSource,

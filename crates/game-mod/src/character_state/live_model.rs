@@ -52,7 +52,7 @@ pub struct CharacterResourceInput {
 
 /// Live resource detail joined to its static definition.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CharacterResource {
+pub struct CharacterResourceState {
     /// Exact live resource identity.
     pub reference: super::model::CharacterResourceReference,
     /// Static resource definition.

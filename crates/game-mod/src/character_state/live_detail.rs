@@ -4,7 +4,7 @@ use super::{
     error::CharacterStateLiveError,
     live::CharacterStateLiveReader,
     live_measure::{entity_detail_bytes, resource_detail_bytes},
-    live_model::{CharacterResource, CharacterSecondaryEntity},
+    live_model::{CharacterResourceState, CharacterSecondaryEntity},
     live_snapshot::CharacterStateLiveSnapshot,
     live_validation::validate_snapshot,
     model::{
@@ -18,7 +18,7 @@ impl CharacterStateLiveReader {
     pub fn get_resource(
         &self,
         reference: &CharacterResourceReference,
-    ) -> Result<CharacterResource, CharacterStateLiveError> {
+    ) -> Result<CharacterResourceState, CharacterStateLiveError> {
         if reference.live != self.snapshot.binding {
             return Err(CharacterStateLiveError::StaleReference);
         }
@@ -45,7 +45,7 @@ impl CharacterStateLiveReader {
                 actual: detail_bytes,
             });
         }
-        Ok(CharacterResource {
+        Ok(CharacterResourceState {
             reference: reference.clone(),
             definition: definition.clone(),
             owner: resource.owner.clone(),
