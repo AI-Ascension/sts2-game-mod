@@ -69,8 +69,8 @@ impl RetainedMapReader {
     /// revokes current authority. A rejected read that proves a changed live identity or generation
     /// marks the retained knowledge stale so an old reference can never authorize travel. A
     /// replacement binding is checked against the retained identity before topology validation, so
-    /// malformed new-run topology cannot discard identity-change evidence. Transient failures that
-    /// establish nothing about the live surface leave retained state intact.
+    /// malformed new-run topology cannot discard identity-change evidence; a later failure still
+    /// revokes the replacement. Transient failures that establish nothing leave state intact.
     pub fn observe<S: RetainedMapSource>(
         &mut self,
         source: &S,
@@ -105,7 +105,11 @@ impl RetainedMapReader {
             self.stale_identity();
             return Err(error);
         }
-        let candidate = RetainedMapSnapshot::from_input(input)?;
+        let candidate = RetainedMapSnapshot::from_input(input).inspect_err(|_| {
+            if self.retained.is_some() {
+                self.stale_identity();
+            }
+        })?;
         self.retained = Some(candidate);
         self.observation = RetainedMapObservationState::Observable;
         self.freshness = RetainedMapFreshness::Current;

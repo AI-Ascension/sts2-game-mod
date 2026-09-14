@@ -238,6 +238,55 @@ fn malformed_new_run_topology_still_invalidates_identity() {
 }
 
 #[test]
+fn malformed_newer_generation_topology_revokes_authority() {
+    let source = FixtureRetainedMapSource::new(snapshot(1));
+    let mut reader =
+        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
+            .expect("reader");
+    let travel = reader.travel_references().expect("travel");
+    reader.authorize_travel(&travel[0]).expect("current travel");
+
+    let mut malformed = snapshot(2);
+    malformed.nodes.push(malformed.nodes[0].clone());
+    let replacement = FixtureRetainedMapSource::new(malformed);
+    let replacement_binding = replacement.binding().clone();
+    assert_eq!(
+        reader.observe(&replacement, &replacement_binding),
+        Err(RetainedMapError::DuplicateNode("map:1:0:0".to_owned())),
+        "a malformed newer generation still reports its topology error"
+    );
+    assert_eq!(reader.freshness(), RetainedMapFreshness::Stale);
+    assert_ne!(reader.freshness(), RetainedMapFreshness::Current);
+    assert_eq!(
+        reader.travel_actionability(),
+        RetainedMapTravelActionability::Stale,
+        "a malformed replacement after identity validation revokes current authority"
+    );
+    assert_eq!(
+        reader.authorize_travel(&travel[0]),
+        Err(RetainedMapError::TravelNotActionable(
+            RetainedMapTravelActionability::Stale
+        )),
+        "malformed newer-generation topology must refuse old travel"
+    );
+
+    let mut first_malformed = snapshot(1);
+    first_malformed.nodes.push(first_malformed.nodes[0].clone());
+    let first = FixtureRetainedMapSource::new(first_malformed);
+    let first_binding = first.binding().clone();
+    let mut first_reader = RetainedMapReader::new(RetainedMapVisibilityScope::Public);
+    assert_eq!(
+        first_reader.observe(&first, &first_binding),
+        Err(RetainedMapError::DuplicateNode("map:1:0:0".to_owned()))
+    );
+    assert_eq!(
+        first_reader.freshness(),
+        RetainedMapFreshness::NeverObserved,
+        "a first malformed observation must not invent stale authority"
+    );
+}
+
+#[test]
 fn transient_read_errors_preserve_current_authority() {
     let source = FixtureRetainedMapSource::new(snapshot(1));
     let mut reader =
