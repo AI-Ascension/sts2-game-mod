@@ -7,11 +7,12 @@ use super::binding::{
     RetainedMapFreshness, RetainedMapLiveBinding, RetainedMapObservationState,
     RetainedMapVisibilityScope,
 };
-use super::error::{RetainedMapError, RetainedMapSourceError};
+use super::error::RetainedMapError;
 use super::model::{RETAINED_MAP_MAX_STALE_CONTINUATIONS, RetainedMapNode, RetainedMapSnapshot};
 use super::page::{ContinuationScope, RetainedMapCursorState, RetainedMapNodeSummary};
-use super::source::{RetainedMapCapability, RetainedMapSource, map_error};
+use super::source::RetainedMapSource;
 
+mod observe;
 mod topology;
 
 /// Reader retaining one already-public map snapshot while enforcing live identity and scope.
@@ -63,98 +64,12 @@ impl RetainedMapReader {
         Ok(reader)
     }
 
-    /// Reobserves the map while permitted, recording only already-public topology.
-    ///
-    /// A closed, forbidden, unsupported, or unknown surface fails without opening the UI and
-    /// revokes current authority. A rejected read that proves a changed live identity or generation
-    /// marks the retained knowledge stale so an old reference can never authorize travel. A
-    /// replacement binding is checked against the retained identity before topology validation, so
-    /// malformed new-run topology cannot discard identity-change evidence; a later failure still
-    /// revokes the replacement. Transient failures that establish nothing leave state intact.
-    pub fn observe<S: RetainedMapSource>(
-        &mut self,
-        source: &S,
-        expected: &RetainedMapLiveBinding,
-    ) -> Result<(), RetainedMapError> {
-        if let RetainedMapCapability::Unavailable(reason) = source.capability() {
-            return Err(RetainedMapError::Unavailable(reason));
-        }
-        let observation = source.observation_state();
-        if observation != RetainedMapObservationState::Observable {
-            self.observation = observation;
-            self.screen_open = false;
-            if self.freshness == RetainedMapFreshness::Current {
-                self.freshness = RetainedMapFreshness::Retained;
-            }
-            return Err(RetainedMapError::MapNotObservable(observation));
-        }
-        let input = match source.read_snapshot(expected, self.scope) {
-            Ok(input) => input,
-            Err(error) => {
-                self.apply_read_error(error);
-                return Err(map_error(error));
-            }
-        };
-        if input.binding != *expected {
-            self.stale_identity();
-            return Err(RetainedMapError::StaleSource);
-        }
-        if let Some(current) = &self.retained
-            && let Err(error) = validate_replacement(current.binding(), &input.binding)
-        {
-            self.stale_identity();
-            return Err(error);
-        }
-        let candidate = RetainedMapSnapshot::from_input(input).inspect_err(|_| {
-            if self.retained.is_some() {
-                self.stale_identity();
-            }
-        })?;
-        self.retained = Some(candidate);
-        self.observation = RetainedMapObservationState::Observable;
-        self.freshness = RetainedMapFreshness::Current;
-        self.screen_open = true;
-        Ok(())
-    }
-
-    fn stale_identity(&mut self) {
-        self.freshness = RetainedMapFreshness::Stale;
-        self.screen_open = false;
-    }
-
-    /// Applies the evidence carried by a rejected source read before its error is returned.
-    ///
-    /// A closed source surface establishes closure, and a stale source establishes a changed
-    /// generation; either revokes current authority. Transient failures that establish nothing
-    /// about the live surface (`NoActiveSource`, `AccessDenied`, `Busy`, `Malformed`) leave the
-    /// retained observation and freshness untouched.
-    fn apply_read_error(&mut self, error: RetainedMapSourceError) {
-        match error {
-            RetainedMapSourceError::NotObservable => {
-                self.observation = RetainedMapObservationState::Closed;
-                self.screen_open = false;
-                if self.freshness == RetainedMapFreshness::Current {
-                    self.freshness = RetainedMapFreshness::Retained;
-                }
-            }
-            RetainedMapSourceError::Stale => self.stale_identity(),
-            RetainedMapSourceError::NoActiveSource
-            | RetainedMapSourceError::AccessDenied
-            | RetainedMapSourceError::Busy
-            | RetainedMapSourceError::Malformed => {}
-        }
-    }
-
     /// Marks the map surface closed without discarding retained knowledge.
     ///
     /// Closing only demotes a generation-current observation to `Retained`; it never changes
     /// policy withholding.
     pub fn close_screen(&mut self) {
-        self.observation = RetainedMapObservationState::Closed;
-        self.screen_open = false;
-        if self.freshness == RetainedMapFreshness::Current {
-            self.freshness = RetainedMapFreshness::Retained;
-        }
+        self.apply_closure_evidence(RetainedMapObservationState::Closed);
     }
 
     /// Marks the map surface observable without performing a read.
