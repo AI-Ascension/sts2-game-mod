@@ -7,7 +7,8 @@ use super::{
     EnemyIntentComponent, EnemyIntentComponentReference, EnemyIntentEnemyInput,
     EnemyIntentEnemyReference, EnemyIntentError, EnemyIntentField, EnemyIntentInput,
     EnemyIntentLiveBinding, EnemyIntentSnapshotInput, EnemyIntentSource,
-    EnemyIntentVisibilityScope, source::map_error, validation::validate_snapshot,
+    EnemyIntentVisibilityScope, measure::enemy_bytes, source::map_error,
+    validation::validate_snapshot,
 };
 
 /// Immutable validated coherent live snapshot.
@@ -188,7 +189,7 @@ impl EnemyIntentLiveReader {
         if enemy.enemy_definition_id != reference.enemy_definition_id {
             return Err(EnemyIntentError::StaleReference);
         }
-        let actual = detail_bytes(enemy);
+        let actual = enemy_bytes(enemy);
         if actual > ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES {
             return Err(EnemyIntentError::DetailTooLarge {
                 limit: ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES,
@@ -270,74 +271,4 @@ impl EnemyIntentLiveReader {
             enemy_definition_id: enemy.enemy_definition_id.clone(),
         }
     }
-}
-
-fn detail_bytes(enemy: &EnemyIntentEnemyInput) -> usize {
-    let mut bytes = enemy.enemy_instance_id.len() + enemy.enemy_definition_id.len();
-    if let Some(value) = enemy.name.value() {
-        bytes += value.len();
-    }
-    if let Some(statuses) = enemy.statuses.value() {
-        for status in statuses {
-            bytes += status.definition_id.len();
-            if let Some(value) = status.instance_id.value() {
-                bytes += value.len();
-            }
-            if let Some(value) = status.label.value() {
-                bytes += value.len();
-            }
-        }
-    }
-    if let Some(intent) = enemy.intent.value() {
-        bytes += intent.linkage.intent_id.len();
-        for field in [
-            &intent.linkage.move_id,
-            &intent.linkage.definition_id,
-            &intent.linkage.label,
-        ] {
-            if let Some(value) = field.value() {
-                bytes += value.len();
-            }
-        }
-        for component in &intent.components {
-            bytes += component.component_id.len();
-            if let Some(value) = component.description.value() {
-                bytes += value.len();
-            }
-            if let Some(effects) = component.effects.value() {
-                bytes += effects.iter().map(|effect| effect.id.len()).sum::<usize>();
-            }
-            if let Some(parameters) = component.parameters.value() {
-                for parameter in parameters {
-                    bytes += parameter.id.len();
-                    if let Some(value) = parameter.label.value() {
-                        bytes += value.len();
-                    }
-                    if let super::EnemyIntentParameterValue::Text(value) = &parameter.value {
-                        bytes += value.len();
-                    }
-                }
-            }
-            bytes += target_bytes(&component.targets);
-        }
-        bytes += target_bytes(&intent.targets);
-    }
-    bytes
-}
-
-fn target_bytes(field: &EnemyIntentField<super::EnemyIntentTargetInfo>) -> usize {
-    field
-        .value()
-        .and_then(|info| match &info.targets {
-            super::EnemyIntentTargets::Visible(targets) => Some(
-                targets
-                    .iter()
-                    .map(|target| {
-                        target.target_id.len() + target.label.value().map_or(0, String::len)
-                    })
-                    .sum(),
-            ),
-            _ => Some(0),
-        })
-        .unwrap_or(0)
 }

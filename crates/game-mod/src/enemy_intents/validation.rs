@@ -4,14 +4,17 @@ use std::collections::BTreeSet;
 
 use super::{
     ENEMY_INTENT_MAX_COMPONENTS, ENEMY_INTENT_MAX_EFFECT_REFERENCES, ENEMY_INTENT_MAX_ENEMIES,
-    ENEMY_INTENT_MAX_KIND_BYTES, ENEMY_INTENT_MAX_PARAMETERS, ENEMY_INTENT_MAX_SNAPSHOT_BYTES,
-    ENEMY_INTENT_MAX_STATUSES, ENEMY_INTENT_MAX_TARGETS, ENEMY_INTENT_PRODUCER_VERSION,
+    ENEMY_INTENT_MAX_KIND_BYTES, ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES, ENEMY_INTENT_MAX_PARAMETERS,
+    ENEMY_INTENT_MAX_SNAPSHOT_BYTES, ENEMY_INTENT_MAX_STATUSES, ENEMY_INTENT_PRODUCER_VERSION,
     EnemyIntentAmount, EnemyIntentComponent, EnemyIntentComponentKind, EnemyIntentDamage,
     EnemyIntentEffectReference, EnemyIntentEnemyInput, EnemyIntentError, EnemyIntentField,
     EnemyIntentInput, EnemyIntentLiveBinding, EnemyIntentParameter, EnemyIntentParameterValue,
-    EnemyIntentSnapshotInput, EnemyIntentTargetInfo, EnemyIntentTargetReference,
-    EnemyIntentTargets,
+    EnemyIntentSnapshotInput,
+    measure::enemy_bytes,
     model::{validate_identity, validate_kind, validate_text},
+    validation_fields::{
+        validate_identity_field, validate_target_field, validate_text_field, validate_unit_field,
+    },
 };
 
 pub(super) fn validate_snapshot(input: &EnemyIntentSnapshotInput) -> Result<(), EnemyIntentError> {
@@ -28,8 +31,15 @@ pub(super) fn validate_snapshot(input: &EnemyIntentSnapshotInput) -> Result<(), 
                 enemy.enemy_instance_id.clone(),
             ));
         }
+        let detail_bytes = enemy_bytes(enemy);
+        if detail_bytes > ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES {
+            return Err(EnemyIntentError::DetailTooLarge {
+                limit: ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES,
+                actual: detail_bytes,
+            });
+        }
         snapshot_bytes = snapshot_bytes
-            .checked_add(enemy_bytes(enemy))
+            .checked_add(detail_bytes)
             .ok_or(EnemyIntentError::InvalidInput("snapshot bytes"))?;
         if snapshot_bytes > ENEMY_INTENT_MAX_SNAPSHOT_BYTES {
             return Err(EnemyIntentError::DetailTooLarge {
@@ -276,126 +286,4 @@ fn validate_parameter(parameter: &EnemyIntentParameter) -> Result<(), EnemyInten
     }
     validate_unit_field(&parameter.unit, "parameter_unit")?;
     Ok(())
-}
-
-fn validate_target_field(
-    field: &EnemyIntentField<EnemyIntentTargetInfo>,
-) -> Result<(), EnemyIntentError> {
-    let Some(info) = field.value() else {
-        return Ok(());
-    };
-    let EnemyIntentTargets::Visible(targets) = &info.targets else {
-        if matches!(info.targets, EnemyIntentTargets::None)
-            && !matches!(info.domain, super::EnemyIntentTargetDomain::None)
-        {
-            return Err(EnemyIntentError::InvalidInput("target domain"));
-        }
-        return Ok(());
-    };
-    if targets.len() > ENEMY_INTENT_MAX_TARGETS {
-        return Err(EnemyIntentError::InvalidInput("targets"));
-    }
-    let mut ids = BTreeSet::new();
-    for target in targets {
-        validate_target(target)?;
-        if !ids.insert(target.target_id.as_str()) {
-            return Err(EnemyIntentError::DuplicateTarget(target.target_id.clone()));
-        }
-    }
-    Ok(())
-}
-
-fn validate_target(target: &EnemyIntentTargetReference) -> Result<(), EnemyIntentError> {
-    validate_identity(&target.target_id, "target_id").map_err(EnemyIntentError::InvalidInput)?;
-    validate_text_field(&target.label, "target_label")?;
-    Ok(())
-}
-
-fn validate_identity_field(
-    field: &EnemyIntentField<String>,
-    name: &'static str,
-) -> Result<(), EnemyIntentError> {
-    if let Some(value) = field.value() {
-        validate_identity(value, name).map_err(EnemyIntentError::InvalidInput)?;
-    }
-    Ok(())
-}
-
-fn validate_text_field(
-    field: &EnemyIntentField<String>,
-    name: &'static str,
-) -> Result<(), EnemyIntentError> {
-    if let Some(value) = field.value() {
-        validate_text(value, name).map_err(EnemyIntentError::InvalidInput)?;
-    }
-    Ok(())
-}
-
-fn validate_unit_field(
-    field: &EnemyIntentField<super::EnemyIntentUnit>,
-    name: &'static str,
-) -> Result<(), EnemyIntentError> {
-    if let Some(value) = field.value() {
-        validate_identity(value.as_str(), name).map_err(EnemyIntentError::InvalidInput)?;
-    }
-    Ok(())
-}
-
-fn enemy_bytes(enemy: &EnemyIntentEnemyInput) -> usize {
-    let mut bytes = enemy.enemy_instance_id.len() + enemy.enemy_definition_id.len();
-    add_field_text(&mut bytes, &enemy.name);
-    if let Some(statuses) = enemy.statuses.value() {
-        for status in statuses {
-            bytes += status.definition_id.len();
-            add_field_text(&mut bytes, &status.instance_id);
-            add_field_text(&mut bytes, &status.label);
-        }
-    }
-    if let Some(intent) = enemy.intent.value() {
-        bytes += intent_bytes(intent);
-    }
-    bytes
-}
-
-fn intent_bytes(intent: &EnemyIntentInput) -> usize {
-    let mut bytes = intent.linkage.intent_id.len();
-    add_field_text(&mut bytes, &intent.linkage.move_id);
-    add_field_text(&mut bytes, &intent.linkage.definition_id);
-    add_field_text(&mut bytes, &intent.linkage.label);
-    for component in &intent.components {
-        bytes += component.component_id.len();
-        add_field_text(&mut bytes, &component.description);
-        if let Some(effects) = component.effects.value() {
-            bytes += effects.iter().map(|effect| effect.id.len()).sum::<usize>();
-        }
-        if let Some(parameters) = component.parameters.value() {
-            for parameter in parameters {
-                bytes += parameter.id.len();
-                add_field_text(&mut bytes, &parameter.label);
-                if let EnemyIntentParameterValue::Text(value) = &parameter.value {
-                    bytes += value.len();
-                }
-            }
-        }
-        add_target_bytes(&mut bytes, &component.targets);
-    }
-    add_target_bytes(&mut bytes, &intent.targets);
-    bytes
-}
-
-fn add_target_bytes(bytes: &mut usize, field: &EnemyIntentField<EnemyIntentTargetInfo>) {
-    if let Some(info) = field.value()
-        && let EnemyIntentTargets::Visible(targets) = &info.targets
-    {
-        for target in targets {
-            *bytes += target.target_id.len();
-            add_field_text(bytes, &target.label);
-        }
-    }
-}
-
-fn add_field_text(bytes: &mut usize, field: &EnemyIntentField<String>) {
-    if let Some(value) = field.value() {
-        *bytes += value.len();
-    }
 }

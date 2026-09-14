@@ -165,7 +165,6 @@ fn validation_rejects_oversized_and_ambiguous_input_without_clamping() {
         oversized.enemies[0].statuses = EnemyIntentField::Available(statuses);
     }
     let oversized_result = EnemyIntentLiveSnapshot::from_input(oversized);
-    dbg!(&oversized_result);
     assert!(matches!(
         oversized_result,
         Err(EnemyIntentError::DetailTooLarge {
