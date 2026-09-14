@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExecutablePath,
     [Parameter(Mandatory = $true)][string]$StagePath,
     [Parameter(Mandatory = $true)][string]$BackupPath,
-    [ValidateSet('Inspect', 'AssertStopped', 'Stop', 'AssertNoGame')][string]$Mode = 'AssertStopped',
+    [ValidateSet('Inspect', 'AssertStopped', 'Stop', 'StopAll', 'AssertNoGame')][string]$Mode = 'AssertStopped',
     [ValidateRange(0, 600)][int]$WaitSeconds = 20,
     [Parameter(Mandatory = $true)][long]$DeadlineEpoch
 )
@@ -59,45 +59,45 @@ foreach ($artifact in @('AIAscensionSTS2GameMod.dll', 'AIAscensionSTS2GameModNat
 # executable cannot be inspected is not evidence that the installation is idle.
 # Retain Process objects (and their opened handles), not unverified reusable PIDs.
 $selected = @()
-$anyRunning = 0
+$all = @()
 try {
     foreach ($process in @(Get-Process -ErrorAction Stop)) {
         if ($process.ProcessName -ine 'SlayTheSpire2') { continue }
-        $anyRunning++
         $null = $process.Handle
         $path = $process.MainModule.FileName
         if ([string]::IsNullOrWhiteSpace($path)) {
             throw 'Cannot establish executable identity of a running game process'
         }
+        $all += $process
         if ([string]::Equals([IO.Path]::GetFullPath($path), $target,
                 [StringComparison]::OrdinalIgnoreCase)) {
             $selected += $process
-        } else {
-            $process.Dispose()
         }
     }
     if ($Mode -eq 'Inspect') { return }
-    if ($Mode -eq 'AssertNoGame' -and $anyRunning -gt 0) {
+    if ($Mode -eq 'AssertNoGame' -and $all.Count -gt 0) {
         throw 'A SlayTheSpire2 process is already running; refusing to start another instance'
     }
     if ($Mode -eq 'AssertStopped' -and $selected.Count -gt 0) {
         throw 'The selected game installation is running; refusing to replace its addon'
     }
-    foreach ($process in $selected) {
+    # Stop kills only the selected installation; StopAll (an explicit opt-in) kills
+    # every inspected same-name process, still never by raw image name and never an
+    # uninspected descendant tree. Never ignore a termination failure.
+    $toStop = if ($Mode -eq 'StopAll') { $all } else { $selected }
+    foreach ($process in $toStop) {
         Assert-Deadline
-        # Kill only this inspected process, not all matching image names or an
-        # uninspected descendant tree. Never ignore a termination failure.
         if (-not $process.HasExited) { $process.Kill() }
     }
     $end = [DateTimeOffset]::UtcNow.AddSeconds($WaitSeconds)
-    foreach ($process in $selected) {
+    foreach ($process in $toStop) {
         Assert-Deadline
         $remaining = [Math]::Max(0, ($end - [DateTimeOffset]::UtcNow).TotalMilliseconds)
         $authorized = [Math]::Max(0, ($DeadlineEpoch - [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) * 1000)
         if (-not $process.WaitForExit([int][Math]::Min($remaining, $authorized))) {
-            throw 'Selected game process did not exit within the authorized timeout'
+            throw 'A game process did not exit within the authorized timeout'
         }
     }
 } finally {
-    foreach ($process in $selected) { $process.Dispose() }
+    foreach ($process in $all) { $process.Dispose() }
 }

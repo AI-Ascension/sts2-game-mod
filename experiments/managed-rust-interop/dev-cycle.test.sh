@@ -60,9 +60,15 @@ cycle >/dev/null
 [[ $(<"$STS2_DEV_CYCLE_TEST_LOG") == *Stop* ]] || fail 'selected stop guard not invoked'
 # A game running from another installation path must block a new launch so two
 # instances can never run at once.
+rm -f "$STS2_DEV_CYCLE_TEST_LOG.stopped"
 if STS2_DEV_CYCLE_TEST_OTHER_RUNNING=yes bash "$cycle_dir/dev-cycle.sh" --game-dir "$fixture_root/host" >/dev/null 2>&1; then
     fail 'launch accepted while another game instance was running'
 fi
 bash "$cycle_dir/dev-cycle.sh" --game-dir "$fixture_root/host" >/dev/null
 [[ $(<"$STS2_DEV_CYCLE_TEST_LOG") == *AssertNoGame* ]] || fail 'launch-time no-game guard not invoked'
-printf '%s\n' 'PASS: no-kill refusal, inspection errors, unique backups, symlink refusal, hardlink preservation, launch-time no-second-instance guard'
+# --kill-running stops the running instance instead of refusing.
+rm -f "$STS2_DEV_CYCLE_TEST_LOG.stopped"
+STS2_DEV_CYCLE_TEST_OTHER_RUNNING=yes bash "$cycle_dir/dev-cycle.sh" --game-dir "$fixture_root/host" --kill-running >/dev/null \
+    || fail '--kill-running did not stop the running instance and proceed'
+[[ $(<"$STS2_DEV_CYCLE_TEST_LOG") == *StopAll* ]] || fail '--kill-running did not invoke the all-instance stop'
+printf '%s\n' 'PASS: no-kill refusal, inspection errors, unique backups, symlink refusal, hardlink preservation, launch-time no-second-instance guard, kill-running override'

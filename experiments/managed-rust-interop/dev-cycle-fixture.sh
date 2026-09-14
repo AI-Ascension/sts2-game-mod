@@ -12,10 +12,19 @@ case ${0##*/} in
         done
         printf '%s\n' "$mode" >> "$STS2_DEV_CYCLE_TEST_LOG"
         [[ ${STS2_DEV_CYCLE_TEST_INSPECTION_FAIL:-no} != yes ]] || exit 1
-        if [[ $mode == AssertStopped && ${STS2_DEV_CYCLE_TEST_RUNNING:-no} == yes ]]; then
+        stopped_file="$STS2_DEV_CYCLE_TEST_LOG.stopped"
+        running=no
+        if [[ ${STS2_DEV_CYCLE_TEST_RUNNING:-no} == yes || ${STS2_DEV_CYCLE_TEST_OTHER_RUNNING:-no} == yes ]]; then
+            [[ -e $stopped_file ]] || running=yes
+        fi
+        if [[ $mode == StopAll ]]; then
+            : > "$stopped_file"
+            running=no
+        fi
+        if [[ $mode == AssertStopped && $running == yes ]]; then
             exit 1
         fi
-        if [[ $mode == AssertNoGame && ${STS2_DEV_CYCLE_TEST_OTHER_RUNNING:-no} == yes ]]; then
+        if [[ $mode == AssertNoGame && $running == yes ]]; then
             exit 1
         fi
         ;;
