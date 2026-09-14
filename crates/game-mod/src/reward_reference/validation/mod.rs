@@ -46,11 +46,13 @@ pub(super) fn validate_definition(
         .collect();
     let mut local_modifiers: BTreeMap<&str, RewardVisibility> = BTreeMap::new();
     for rule in &input.generation {
+        let parent = rule.visibility;
         for modifier in &rule.modifiers {
+            let effective = most_restrictive(parent, modifier.visibility);
             local_modifiers
                 .entry(modifier.modifier_id.as_str())
-                .and_modify(|existing| *existing = most_restrictive(*existing, modifier.visibility))
-                .or_insert(modifier.visibility);
+                .and_modify(|existing| *existing = most_restrictive(*existing, effective))
+                .or_insert(effective);
         }
     }
 
@@ -85,7 +87,7 @@ pub(super) fn validate_definition(
                 reward_targets,
                 &local_rules,
                 &local_modifiers,
-                requirement.visibility,
+                most_restrictive(rule.visibility, requirement.visibility),
                 &requirement.references,
             )?;
         }
@@ -95,7 +97,7 @@ pub(super) fn validate_definition(
                 reward_targets,
                 &local_rules,
                 &local_modifiers,
-                modifier.visibility,
+                most_restrictive(rule.visibility, modifier.visibility),
                 &modifier.references,
             )?;
         }

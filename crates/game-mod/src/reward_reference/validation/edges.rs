@@ -293,7 +293,10 @@ fn reward_min_scope(visibility: RewardVisibility, unlock_state: ContentUnlockSta
             ContentUnlockState::Locked => SCOPE_REFERENCE,
             ContentUnlockState::Unknown => SCOPE_NEVER,
         },
-        RewardVisibility::OwnerOnly => SCOPE_OWNER,
+        RewardVisibility::OwnerOnly => match unlock_state {
+            ContentUnlockState::Unknown => SCOPE_NEVER,
+            ContentUnlockState::Unlocked | ContentUnlockState::Locked => SCOPE_OWNER,
+        },
         RewardVisibility::Hidden | RewardVisibility::Unknown => SCOPE_NEVER,
     }
 }
