@@ -15,8 +15,9 @@ mod support;
 
 use sts2_game_mod::{
     ContentManifest, ContentUnlockState, REWARD_REFERENCE_ENTITY_KIND, RewardCatalog,
-    RewardCatalogError, RewardCatalogProducer, RewardOfferDefinitionInput,
-    RewardSemanticReferenceKind, RewardVisibility,
+    RewardCatalogError, RewardCatalogProducer, RewardEvidence, RewardField, RewardFormula,
+    RewardNumericValue, RewardOfferDefinitionInput, RewardProbability, RewardSemanticReferenceKind,
+    RewardVisibility,
 };
 use support::*;
 
@@ -200,5 +201,94 @@ fn hidden_rule_requirement_self_reference_is_not_over_rejected() {
     assert!(
         result.is_ok(),
         "a hidden rule's nested requirement self-reference must not over-reject: {result:?}"
+    );
+}
+
+#[test]
+fn modifier_rule_reference_to_hidden_target_is_rejected() {
+    let manifest = manifest(&[("reward", "reward:card"), ("card", "card:strike")]);
+    let mut visible_rule = rule("rule:one", &["item:card"]);
+    let mut referencing = modifier("mod:refs_rule");
+    referencing.rule_reference = RewardField::Available("rule:hidden".to_owned());
+    visible_rule.modifiers = vec![referencing];
+    let mut hidden_rule = rule("rule:hidden", &[]);
+    hidden_rule.visibility = RewardVisibility::Hidden;
+
+    let mut definition = card_reward_def("reward:card", "item:card", "card:strike");
+    definition.generation = vec![visible_rule, hidden_rule];
+
+    let result = try_catalog(&manifest, vec![definition]);
+    assert!(
+        matches!(result, Err(RewardCatalogError::HiddenReferenceLeak { .. })),
+        "a modifier rule-reference must not disclose a hidden local rule"
+    );
+    assert_no_target_leak(&result, "rule:hidden");
+}
+
+#[test]
+fn probability_rule_reference_to_hidden_target_is_rejected() {
+    let manifest = manifest(&[("reward", "reward:card"), ("card", "card:strike")]);
+    let mut visible_rule = rule("rule:one", &["item:card"]);
+    visible_rule.probability = RewardProbability::Rule {
+        rule_reference: "rule:hidden".to_owned(),
+        evidence: RewardEvidence::SourceDerived,
+    };
+    let mut hidden_rule = rule("rule:hidden", &[]);
+    hidden_rule.visibility = RewardVisibility::Hidden;
+
+    let mut definition = card_reward_def("reward:card", "item:card", "card:strike");
+    definition.generation = vec![visible_rule, hidden_rule];
+
+    let result = try_catalog(&manifest, vec![definition]);
+    assert!(
+        matches!(result, Err(RewardCatalogError::HiddenReferenceLeak { .. })),
+        "a probability rule-reference must not disclose a hidden local rule"
+    );
+    assert_no_target_leak(&result, "rule:hidden");
+}
+
+#[test]
+fn item_formula_rule_reference_to_hidden_target_is_rejected() {
+    let manifest = manifest(&[("reward", "reward:card"), ("card", "card:strike")]);
+    let mut visible_rule = rule("rule:one", &["item:card"]);
+    visible_rule.references = Vec::new();
+    let mut hidden_rule = rule("rule:hidden", &[]);
+    hidden_rule.visibility = RewardVisibility::Hidden;
+
+    let mut definition = card_reward_def("reward:card", "item:card", "card:strike");
+    definition.items[0].quantity.base_amount = RewardNumericValue::Formula(RewardFormula {
+        rule_reference: "rule:hidden".to_owned(),
+        unresolved_inputs: Vec::new(),
+    });
+    definition.generation = vec![visible_rule, hidden_rule];
+
+    let result = try_catalog(&manifest, vec![definition]);
+    assert!(
+        matches!(result, Err(RewardCatalogError::HiddenReferenceLeak { .. })),
+        "a formula rule-reference must not disclose a hidden local rule"
+    );
+    assert_no_target_leak(&result, "rule:hidden");
+}
+
+#[test]
+fn rule_reference_strings_to_visible_local_rule_are_accepted() {
+    let manifest = manifest(&[("reward", "reward:card"), ("card", "card:strike")]);
+    let mut visible_rule = rule("rule:one", &["item:card"]);
+    let mut referencing = modifier("mod:refs_rule");
+    referencing.rule_reference = RewardField::Available("rule:one".to_owned());
+    visible_rule.modifiers = vec![referencing];
+    visible_rule.probability = RewardProbability::Rule {
+        rule_reference: "rule:one".to_owned(),
+        evidence: RewardEvidence::SourceDerived,
+    };
+    visible_rule.references = Vec::new();
+
+    let mut definition = card_reward_def("reward:card", "item:card", "card:strike");
+    definition.generation = vec![visible_rule];
+
+    let result = try_catalog(&manifest, vec![definition]);
+    assert!(
+        result.is_ok(),
+        "references to a visible local rule must build: {result:?}"
     );
 }
