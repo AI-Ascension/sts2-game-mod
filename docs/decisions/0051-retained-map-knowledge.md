@@ -37,10 +37,21 @@ rejects every retained, stale, withheld, unavailable, or unknown reference. A hi
 node cannot carry a public label or public contents, so hidden future room contents are withheld
 rather than fabricated.
 
-Topology pages are bounded and use non-clonable single-use continuations bound to the snapshot,
-limit, and reader. Node detail and total snapshot bytes are bounded by estimates that count every
-nested identity, label, and custom-kind string. Duplicate or ambiguous nodes, edges, and travel
-actions fail before publication.
+Topology pages are bounded and use single-use continuations bound to the snapshot, limit, and
+reader. The continuation value derives `Clone`, but single use is enforced server-side: the reader
+removes the token on first consumption, so a reused clone is rejected as an invalid continuation.
+Node detail and total snapshot bytes are bounded by estimates that count every nested identity,
+label, and custom-kind string. Duplicate or ambiguous nodes, edges, and travel actions fail before
+publication.
+
+Reveal-policy withholding is a separate dimension from generation freshness: it is preserved across
+`observe`, `reconcile`, and `replace_snapshot`, so a current-generation-but-withheld state is
+representable, and only an explicit un-withhold clears it. Withheld `topology`, `node`,
+`travel_references`, and `authorize_travel` reads fail closed with a typed withheld error. Surface
+open/close state is likewise separate from generation freshness: opening the surface never promotes
+`retained` back to `current` or re-arms travel, and travel is actionable only when the generation is
+current and the surface is open. Pre-observation `travel_references` fail closed with the same typed
+never-observed error as the other reads rather than returning an empty success.
 
 ## Evidence and limits
 

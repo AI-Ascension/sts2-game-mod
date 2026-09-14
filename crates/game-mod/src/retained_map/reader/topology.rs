@@ -3,8 +3,7 @@
 use std::sync::Arc;
 
 use super::super::binding::{
-    RetainedMapFreshness, RetainedMapLiveBinding, RetainedMapObservationState,
-    RetainedMapTravelActionability, visible,
+    RetainedMapFreshness, RetainedMapLiveBinding, RetainedMapTravelActionability, visible,
 };
 use super::super::error::{RetainedMapError, RetainedMapUnavailableReason};
 use super::super::model::{
@@ -25,6 +24,11 @@ impl RetainedMapReader {
     ) -> Result<RetainedMapTopologyPage, RetainedMapError> {
         if query.limit == 0 || query.limit > RETAINED_MAP_MAX_PAGE_ITEMS {
             return Err(RetainedMapError::InvalidPageSize);
+        }
+        if self.withheld {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::PolicyWithheld,
+            ));
         }
         let Some(binding) = self
             .retained
@@ -84,6 +88,11 @@ impl RetainedMapReader {
         &self,
         reference: &RetainedMapNodeReference,
     ) -> Result<RetainedMapNode, RetainedMapError> {
+        if self.withheld {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::PolicyWithheld,
+            ));
+        }
         let Some(snapshot) = &self.retained else {
             return Err(RetainedMapError::Unavailable(
                 RetainedMapUnavailableReason::NeverObserved,
@@ -103,13 +112,22 @@ impl RetainedMapReader {
     }
 
     /// Returns retained travel bindings joined to their current actionability.
-    #[must_use]
-    pub fn travel_references(&self) -> Vec<RetainedMapTravelReference> {
+    ///
+    /// Withheld knowledge and pre-observation reads fail closed instead of returning an empty
+    /// success.
+    pub fn travel_references(&self) -> Result<Vec<RetainedMapTravelReference>, RetainedMapError> {
+        if self.withheld {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::PolicyWithheld,
+            ));
+        }
         let Some(snapshot) = &self.retained else {
-            return Vec::new();
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::NeverObserved,
+            ));
         };
         let actionability = self.actionability();
-        snapshot
+        Ok(snapshot
             .travel()
             .values()
             .map(|travel| RetainedMapTravelReference {
@@ -119,7 +137,7 @@ impl RetainedMapReader {
                 action_id: travel.action_id.clone(),
                 actionability,
             })
-            .collect()
+            .collect())
     }
 
     /// Returns whether travel may currently be authorized.
@@ -133,6 +151,11 @@ impl RetainedMapReader {
         &self,
         reference: &RetainedMapTravelReference,
     ) -> Result<(), RetainedMapError> {
+        if self.withheld {
+            return Err(RetainedMapError::TravelNotActionable(
+                RetainedMapTravelActionability::Withheld,
+            ));
+        }
         let Some(snapshot) = &self.retained else {
             return Err(RetainedMapError::Unavailable(
                 RetainedMapUnavailableReason::NeverObserved,
@@ -156,10 +179,11 @@ impl RetainedMapReader {
     }
 
     fn actionability(&self) -> RetainedMapTravelActionability {
+        if self.withheld {
+            return RetainedMapTravelActionability::Withheld;
+        }
         match self.freshness {
-            RetainedMapFreshness::Current
-                if self.observation == RetainedMapObservationState::Observable =>
-            {
+            RetainedMapFreshness::Current if self.screen_open => {
                 RetainedMapTravelActionability::Current
             }
             RetainedMapFreshness::Current | RetainedMapFreshness::Retained => {

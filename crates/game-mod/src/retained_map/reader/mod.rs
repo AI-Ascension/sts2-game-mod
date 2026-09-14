@@ -18,11 +18,17 @@ mod topology;
 ///
 /// A reader is intentionally not clonable: its cursor registry is mutable and continuations are
 /// single-use. Reads serve retained knowledge and never open the map surface.
+///
+/// Generation freshness, reveal-policy withholding, and surface-open state are independent
+/// dimensions: withholding is preserved across `reconcile`, and opening the surface never re-arms
+/// travel without a fresh observation or reconciliation.
 #[derive(Debug)]
 pub struct RetainedMapReader {
     pub(super) retained: Option<RetainedMapSnapshot>,
     pub(super) observation: RetainedMapObservationState,
     pub(super) freshness: RetainedMapFreshness,
+    pub(super) withheld: bool,
+    pub(super) screen_open: bool,
     pub(super) scope: RetainedMapVisibilityScope,
     pub(super) pages: BTreeMap<String, RetainedMapCursorState>,
     pub(super) next_cursor: u64,
@@ -37,6 +43,8 @@ impl RetainedMapReader {
             retained: None,
             observation: RetainedMapObservationState::Closed,
             freshness: RetainedMapFreshness::NeverObserved,
+            withheld: false,
+            screen_open: false,
             scope,
             pages: BTreeMap::new(),
             next_cursor: 0,
@@ -83,31 +91,45 @@ impl RetainedMapReader {
         self.retained = Some(candidate);
         self.observation = RetainedMapObservationState::Observable;
         self.freshness = RetainedMapFreshness::Current;
+        self.screen_open = true;
         Ok(())
     }
 
     /// Marks the map surface closed without discarding retained knowledge.
+    ///
+    /// Closing only demotes a generation-current observation to `Retained`; it never changes
+    /// policy withholding.
     pub fn close_screen(&mut self) {
         self.observation = RetainedMapObservationState::Closed;
+        self.screen_open = false;
         if self.freshness == RetainedMapFreshness::Current {
             self.freshness = RetainedMapFreshness::Retained;
         }
     }
 
     /// Marks the map surface observable without performing a read.
+    ///
+    /// Merely opening the surface never refreshes or re-arms retained knowledge; only a subsequent
+    /// `observe` or `reconcile` can make it current again.
     pub fn open_screen(&mut self) {
         self.observation = RetainedMapObservationState::Observable;
-        if self.freshness == RetainedMapFreshness::Retained {
-            self.freshness = RetainedMapFreshness::Current;
-        }
     }
 
     /// Withholds retained knowledge after a reveal-policy change.
     ///
-    /// The topology stays retained but can no longer be read as current or complete, and travel is
-    /// never authorized from it.
+    /// Withholding is an independent policy dimension that survives `observe`, `reconcile`, and
+    /// `replace_snapshot`. The topology stays retained but every read fails closed until an explicit
+    /// [`RetainedMapReader::unwithhold`].
     pub fn withhold(&mut self) {
-        self.freshness = RetainedMapFreshness::Withheld;
+        self.withheld = true;
+    }
+
+    /// Clears a reveal-policy withholding.
+    ///
+    /// This is the only operation that un-withholds retained knowledge; it never promotes generation
+    /// freshness on its own.
+    pub fn unwithhold(&mut self) {
+        self.withheld = false;
     }
 
     /// Reconciles retained knowledge against the current live binding.
@@ -129,13 +151,31 @@ impl RetainedMapReader {
             }
         };
         self.freshness = freshness;
-        freshness
+        self.screen_open = matches!(freshness, RetainedMapFreshness::Current);
+        self.effective_freshness()
     }
 
     /// Returns the honest freshness of the retained knowledge.
+    ///
+    /// A policy withholding takes precedence over the generation freshness and survives
+    /// [`RetainedMapReader::reconcile`].
     #[must_use]
     pub const fn freshness(&self) -> RetainedMapFreshness {
-        self.freshness
+        self.effective_freshness()
+    }
+
+    /// Returns whether reveal policy currently withholds the retained knowledge.
+    #[must_use]
+    pub const fn is_withheld(&self) -> bool {
+        self.withheld
+    }
+
+    const fn effective_freshness(&self) -> RetainedMapFreshness {
+        if self.withheld {
+            RetainedMapFreshness::Withheld
+        } else {
+            self.freshness
+        }
     }
 
     /// Returns the last known map surface state.
@@ -167,6 +207,7 @@ impl RetainedMapReader {
         } else {
             RetainedMapFreshness::Retained
         };
+        self.screen_open = matches!(self.freshness, RetainedMapFreshness::Current);
         Ok(())
     }
 

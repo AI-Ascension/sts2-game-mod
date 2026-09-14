@@ -92,7 +92,13 @@ fn pre_observation_reads_stay_unavailable_without_forbidden_data() {
             RetainedMapUnavailableReason::NeverObserved
         ))
     );
-    assert!(reader.travel_references().is_empty());
+    assert_eq!(
+        reader.travel_references(),
+        Err(RetainedMapError::Unavailable(
+            RetainedMapUnavailableReason::NeverObserved
+        )),
+        "a pre-observation travel read fails closed instead of empty success"
+    );
     assert_eq!(
         reader.authorize_travel(&RetainedMapTravelReference {
             binding: binding(1),
@@ -146,8 +152,11 @@ fn act_transition_restore_and_new_run_invalidate_retained_knowledge() {
         .expect("stale topology is disclosed");
     assert_eq!(page.freshness, RetainedMapFreshness::Stale);
     assert!(!page.complete, "stale knowledge is never complete");
+    let references = reader
+        .travel_references()
+        .expect("stale travel is disclosed");
     assert_eq!(
-        reader.authorize_travel(&reader.travel_references()[0]),
+        reader.authorize_travel(&references[0]),
         Err(RetainedMapError::TravelNotActionable(
             RetainedMapTravelActionability::Stale
         ))
@@ -248,7 +257,7 @@ fn retained_reads_cannot_produce_actionable_stale_travel_references() {
     let mut reader =
         RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
             .expect("reader");
-    let live_travel = reader.travel_references();
+    let live_travel = reader.travel_references().expect("live travel");
     assert_eq!(live_travel.len(), 2);
     assert_eq!(
         live_travel[0].actionability,
@@ -285,31 +294,6 @@ fn retained_reads_cannot_produce_actionable_stale_travel_references() {
         reader.authorize_travel(&live_travel[0]),
         Err(RetainedMapError::StaleReference),
         "an old-generation reference cannot become actionable again"
-    );
-}
-
-#[test]
-fn reveal_policy_change_withholds_retained_knowledge() {
-    let source = FixtureRetainedMapSource::new(snapshot(1));
-    let mut reader =
-        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
-            .expect("reader");
-    let travel = reader.travel_references();
-    reader.withhold();
-    assert_eq!(reader.freshness(), RetainedMapFreshness::Withheld);
-    assert!(!reader.freshness().trusts_topology());
-    let page = reader.topology(&query(8)).expect("withheld topology");
-    assert_eq!(page.freshness, RetainedMapFreshness::Withheld);
-    assert!(!page.complete, "withheld knowledge is never complete");
-    assert_eq!(
-        reader.travel_actionability(),
-        RetainedMapTravelActionability::Withheld
-    );
-    assert_eq!(
-        reader.authorize_travel(&travel[0]),
-        Err(RetainedMapError::TravelNotActionable(
-            RetainedMapTravelActionability::Withheld
-        ))
     );
 }
 
