@@ -13,6 +13,7 @@ backup_root=${STS2_RUNTIME_ADDON_BACKUP_DIR:-"$repo_root/.sts2-dev/backups"}
 wait_seconds=${STS2_GAME_EXIT_TIMEOUT_SECONDS:-20}
 stop_game=true
 launch_game=true
+kill_running=false
 backup_installed=true
 dry_run=false
 unlock_all_on_launch=false
@@ -31,6 +32,7 @@ usage() {
         '  --stage-dir PATH      ignored staging directory for packaged files' \
         '  --wait-seconds N      wait for selected process exit (default: 20)' \
         '  --no-kill             require the selected installation to be stopped' \
+        '  --kill-running        stop every running SlayTheSpire2 instance (any path) first' \
         '  --no-launch           do not relaunch after installation' \
         '  --no-backup           do not save replaced mod files before copying' \
         '  --unlock-all          pass the opt-in full-unlock flag on game launch' \
@@ -91,6 +93,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-kill)
             stop_game=false
+            shift
+            ;;
+        --kill-running)
+            kill_running=true
             shift
             ;;
         --mod-settings)
@@ -243,6 +249,9 @@ if [[ "$dry_run" == true ]]; then
     if [[ "$stop_game" == true ]]; then
         printf '%s\n' 'dry-run: would stop only the selected installation after the build succeeds.'
     fi
+    if [[ "$kill_running" == true ]]; then
+        printf '%s\n' 'dry-run: would stop every running SlayTheSpire2 instance before install.'
+    fi
     printf '%s\n' 'dry-run: would copy the staged DLLs and manifest into the game mods directory.'
     if [[ -n "$mod_settings_input" ]]; then
         printf '%s\n' 'dry-run: would back up and prepare intended-addon loading in the explicit settings file.'
@@ -306,6 +315,11 @@ for artifact in "${artifacts[@]}"; do
     [[ -f "$stage_dir/$artifact" && ! -L "$stage_dir/$artifact" && -s "$stage_dir/$artifact" ]] \
         || die "expected staged artifact is missing or empty: $stage_dir/$artifact"
 done
+
+if [[ "$kill_running" == true ]]; then
+    printf '%s\n' 'Stopping every running SlayTheSpire2 instance (--kill-running)...'
+    inspect_selected_installation StopAll
+fi
 
 if [[ "$stop_game" == true ]]; then
     printf '%s\n' 'Stopping only processes belonging to the selected installation...'

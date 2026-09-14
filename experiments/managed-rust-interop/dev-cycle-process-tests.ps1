@@ -78,11 +78,20 @@ try {
     Assert-Refused { Invoke-Guard AssertNoGame } 'already running'
     $global:sts2TestProcesses = @()
     Invoke-Guard AssertNoGame
+    # StopAll (explicit opt-in) stops every inspected same-name process, any path,
+    # but never a non-game process.
+    $selected = New-FakeProcess $target
+    $unrelated2 = New-FakeProcess $other
+    $nonGame2 = New-FakeProcess '' 'Unrelated'
+    $global:sts2TestProcesses = @($selected, $unrelated2, $nonGame2)
+    Invoke-Guard StopAll
+    Assert-That ($selected.Killed -and $unrelated2.Killed) 'StopAll did not stop every game instance'
+    Assert-That (-not $nonGame2.Killed) 'StopAll stopped a non-game process'
     Assert-Refused {
         & $helper -ExecutablePath $target -StagePath ([IO.Path]::GetDirectoryName($target)) `
             -BackupPath (Join-Path $root 'backup') -Mode Inspect -DeadlineEpoch ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 60)
     } 'must not overlap'
-    Write-Output 'PASS: selected-installation identity, no-kill, inspection failure, expiry, termination failure, timeout, and launch-time no-second-instance guard'
+    Write-Output 'PASS: selected-installation identity, no-kill, inspection failure, expiry, termination failure, timeout, launch-time no-second-instance guard, and StopAll opt-in'
 } finally {
     Remove-Variable sts2TestProcesses, sts2TestInspectionFails -Scope Global
     Remove-Item -LiteralPath $root -Recurse -Force
