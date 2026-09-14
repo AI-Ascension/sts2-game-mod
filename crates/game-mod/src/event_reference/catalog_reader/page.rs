@@ -120,10 +120,16 @@ pub struct EventOptionSummary {
     pub text: EventText,
     /// Number of visible option requirements.
     pub requirement_count: usize,
+    /// Availability of option requirements after scope withholding.
+    pub requirements_status: EventFieldStatus,
     /// Number of visible option costs.
     pub cost_count: usize,
+    /// Availability of option costs after scope withholding.
+    pub costs_status: EventFieldStatus,
     /// Number of visible option outcomes.
     pub outcome_count: usize,
+    /// Availability of option outcomes after scope withholding.
+    pub outcomes_status: EventFieldStatus,
     /// Visibility of the static option.
     pub visibility: EventVisibility,
 }

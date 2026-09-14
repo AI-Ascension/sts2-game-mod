@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
+mod edges;
 mod values;
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use self::edges::{collect_options, validate_membership, validate_reference_edges};
 use self::values::{
     validate_cost, validate_effects, validate_probability, validate_references,
     validate_requirement, validate_text_value, validate_visibility,
@@ -16,39 +18,47 @@ use super::definition::{
 };
 use super::model::{
     EVENT_MAX_COSTS, EVENT_MAX_OPTIONS, EVENT_MAX_OUTCOMES, EVENT_MAX_PAGES,
-    EVENT_MAX_REQUIREMENTS, EventSemanticReference, EventSemanticReferenceKind, EventVisibility,
-    validate_identity, visibility_rank,
+    EVENT_MAX_REQUIREMENTS, EventVisibility, validate_identity, visibility_rank,
 };
 
 /// Shallow event context shared by scope-aware reference and follow-up checks.
-struct EventScope<'a> {
+pub(super) struct EventScope<'a> {
     event_id: &'a str,
     pages: &'a BTreeMap<&'a str, EventVisibility>,
-    options: &'a BTreeSet<&'a str>,
+    options: &'a BTreeMap<&'a str, EventVisibility>,
 }
 
 /// Validates one source-owned event definition before it enters an immutable catalog.
-pub(super) fn validate_definition(input: &EventDefinitionInput) -> Result<(), EventCatalogError> {
+pub(super) fn validate_definition(
+    input: &EventDefinitionInput,
+    event_visibility: &BTreeMap<String, EventVisibility>,
+) -> Result<(), EventCatalogError> {
     validate_identity(&input.event_id, "event_id")?;
     validate_text_value(&input.title, "title")?;
     validate_event_kind(&input.kind)?;
     validate_visibility(input.visibility)?;
+    let options = collect_options(&input.options)?;
     let pages = validate_pages(&input.pages)?;
-    let options = collect_option_ids(&input.options)?;
+    validate_membership(&input.event_id, &input.pages, &options)?;
     let scope = EventScope {
         event_id: &input.event_id,
         pages: &pages,
         options: &options,
     };
     for page in &input.pages {
-        validate_intra_event_references(&scope, &page.references)?;
+        validate_reference_edges(&scope, event_visibility, page.visibility, &page.references)?;
     }
-    validate_requirements("eligibility", &input.eligibility, &scope)?;
+    validate_requirements("eligibility", &input.eligibility, &scope, event_visibility)?;
     for option in &input.options {
-        validate_option(option, &scope)?;
+        validate_option(option, &scope, event_visibility)?;
     }
     validate_references(&input.references)?;
-    validate_intra_event_references(&scope, &input.references)
+    validate_reference_edges(
+        &scope,
+        event_visibility,
+        input.visibility,
+        &input.references,
+    )
 }
 
 fn validate_event_kind(kind: &EventKind) -> Result<(), EventCatalogError> {
@@ -70,6 +80,16 @@ fn validate_pages(
         validate_text_value(&page.narrative, "narrative")?;
         validate_references(&page.references)?;
         validate_visibility(page.visibility)?;
+        let mut offered = BTreeSet::new();
+        if page.offered_options.len() > EVENT_MAX_OPTIONS {
+            return Err(EventCatalogError::InvalidInput("page_options"));
+        }
+        for option_id in &page.offered_options {
+            validate_identity(option_id, "page_option")?;
+            if !offered.insert(option_id.as_str()) {
+                return Err(EventCatalogError::InvalidInput("duplicate_page_option"));
+            }
+        }
         if map.insert(page.page_id.as_str(), page.visibility).is_some() {
             return Err(EventCatalogError::InvalidInput("duplicate_page"));
         }
@@ -77,24 +97,11 @@ fn validate_pages(
     Ok(map)
 }
 
-fn collect_option_ids(options: &[EventOptionInput]) -> Result<BTreeSet<&str>, EventCatalogError> {
-    if options.len() > EVENT_MAX_OPTIONS {
-        return Err(EventCatalogError::InvalidInput("options"));
-    }
-    let mut ids = BTreeSet::new();
-    for option in options {
-        validate_identity(&option.option_id, "option_id")?;
-        if !ids.insert(option.option_id.as_str()) {
-            return Err(EventCatalogError::InvalidInput("duplicate_option"));
-        }
-    }
-    Ok(ids)
-}
-
 fn validate_requirements(
     field: &'static str,
     requirements: &[EventRequirement],
     scope: &EventScope<'_>,
+    event_visibility: &BTreeMap<String, EventVisibility>,
 ) -> Result<(), EventCatalogError> {
     if requirements.len() > EVENT_MAX_REQUIREMENTS {
         return Err(EventCatalogError::InvalidInput(field));
@@ -102,7 +109,12 @@ fn validate_requirements(
     let mut ids = BTreeSet::new();
     for requirement in requirements {
         validate_requirement(requirement)?;
-        validate_intra_event_references(scope, &requirement.references)?;
+        validate_reference_edges(
+            scope,
+            event_visibility,
+            requirement.visibility,
+            &requirement.references,
+        )?;
         if !ids.insert(requirement.requirement_id.as_str()) {
             return Err(EventCatalogError::InvalidInput("duplicate_requirement"));
         }
@@ -113,25 +125,40 @@ fn validate_requirements(
 fn validate_option(
     option: &EventOptionInput,
     scope: &EventScope<'_>,
+    event_visibility: &BTreeMap<String, EventVisibility>,
 ) -> Result<(), EventCatalogError> {
     validate_identity(&option.option_id, "option_id")?;
     validate_text_value(&option.text, "option_text")?;
     validate_visibility(option.visibility)?;
-    validate_requirements("option_requirements", &option.requirements, scope)?;
-    validate_costs(&option.costs, scope)?;
-    validate_outcomes(&option.outcomes, scope)?;
+    validate_requirements(
+        "option_requirements",
+        &option.requirements,
+        scope,
+        event_visibility,
+    )?;
+    validate_costs(&option.costs, scope, event_visibility)?;
+    validate_outcomes(&option.outcomes, scope, event_visibility)?;
     validate_references(&option.references)?;
-    validate_intra_event_references(scope, &option.references)
+    validate_reference_edges(
+        scope,
+        event_visibility,
+        option.visibility,
+        &option.references,
+    )
 }
 
-fn validate_costs(costs: &[EventCost], scope: &EventScope<'_>) -> Result<(), EventCatalogError> {
+fn validate_costs(
+    costs: &[EventCost],
+    scope: &EventScope<'_>,
+    event_visibility: &BTreeMap<String, EventVisibility>,
+) -> Result<(), EventCatalogError> {
     if costs.len() > EVENT_MAX_COSTS {
         return Err(EventCatalogError::InvalidInput("costs"));
     }
     let mut ids = BTreeSet::new();
     for cost in costs {
         validate_cost(cost)?;
-        validate_intra_event_references(scope, &cost.references)?;
+        validate_reference_edges(scope, event_visibility, cost.visibility, &cost.references)?;
         if !ids.insert(cost.cost_id.as_str()) {
             return Err(EventCatalogError::InvalidInput("duplicate_cost"));
         }
@@ -142,6 +169,7 @@ fn validate_costs(costs: &[EventCost], scope: &EventScope<'_>) -> Result<(), Eve
 fn validate_outcomes(
     outcomes: &[EventOutcomeInput],
     scope: &EventScope<'_>,
+    event_visibility: &BTreeMap<String, EventVisibility>,
 ) -> Result<(), EventCatalogError> {
     if outcomes.len() > EVENT_MAX_OUTCOMES {
         return Err(EventCatalogError::InvalidInput("outcomes"));
@@ -154,11 +182,21 @@ fn validate_outcomes(
         validate_probability(&outcome.probability)?;
         validate_effects(&outcome.effects)?;
         for effect in &outcome.effects {
-            validate_intra_event_references(scope, &effect.references)?;
+            validate_reference_edges(
+                scope,
+                event_visibility,
+                effect.visibility,
+                &effect.references,
+            )?;
         }
         validate_follow_up(scope, outcome)?;
         validate_references(&outcome.references)?;
-        validate_intra_event_references(scope, &outcome.references)?;
+        validate_reference_edges(
+            scope,
+            event_visibility,
+            outcome.visibility,
+            &outcome.references,
+        )?;
         if !ids.insert(outcome.outcome_id.as_str()) {
             return Err(EventCatalogError::InvalidInput("duplicate_outcome"));
         }
@@ -188,29 +226,4 @@ fn validate_follow_up(
         }
         EventFollowUp::End | EventFollowUp::Unavailable(_) => Ok(()),
     }
-}
-
-fn validate_intra_event_references(
-    scope: &EventScope<'_>,
-    references: &[EventSemanticReference],
-) -> Result<(), EventCatalogError> {
-    for reference in references {
-        if matches!(reference.kind, EventSemanticReferenceKind::Page)
-            && !scope.pages.contains_key(reference.id.as_str())
-        {
-            return Err(EventCatalogError::UnknownPageReference {
-                event_id: scope.event_id.to_owned(),
-                page_id: reference.id.clone(),
-            });
-        }
-        if matches!(reference.kind, EventSemanticReferenceKind::Option)
-            && !scope.options.contains(reference.id.as_str())
-        {
-            return Err(EventCatalogError::UnknownOptionReference {
-                event_id: scope.event_id.to_owned(),
-                option_id: reference.id.clone(),
-            });
-        }
-    }
-    Ok(())
 }

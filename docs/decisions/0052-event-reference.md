@@ -31,6 +31,46 @@ follow-up page, an explicit terminal state, or an explicit unavailable state.
 `EventField` keeps an observed empty collection distinct from not-observed, unsupported, denied,
 failed, not-applicable, and unknown data.
 
+### Page-to-option membership
+
+Each narrative page carries an ordered `offered_options` association; options are not a global
+unordered pool. The relation is validated before publication: every offered identity must name an
+option of the same event, no page may offer the same option twice, every option must be offered by
+exactly one page, and no option may remain uncovered. A page must be no more visible than any
+option it offers, so a visible page never advertises an owner-only or hidden choice. This is the
+authoritative static branch connectivity for the slice; a generic `Option` semantic reference stays
+an informational rule/content link and is not membership evidence.
+
+### Visibility on reference edges
+
+Semantic-reference edges (`Page`, `Option`, and cross-event `Event`) are checked against target
+visibility, not only target existence. A referencing record more visible than its target is
+rejected with a typed `HiddenReferenceLeak` that omits the protected identity, so the rejection
+cannot disclose it. `follow_up` page edges retain the stricter `HiddenFutureLeak` check. Exact
+`get`/`get_page`/`get_option` lookups continue to withhold out-of-scope targets as
+`ExcludedByScope`, so a hidden or owner-only page, option, or event can never be disclosed through a
+reference edge.
+
+### Withheld versus observed-empty collections
+
+Projected eligibility, option requirements, costs, outcomes, and outcome effects are never silently
+collapsed into ordinary empty vectors. Each keeps an explicit `EventFieldStatus`: `Available` for a
+fully observed collection (including a genuinely empty one), `Partial` when the scope withheld some
+but not all entries, and `Denied` when every entry was withheld. The visible remainder excludes the
+protected entries, and the same status is reported on list summaries, so a hidden collection is
+distinguishable from an observed-empty one.
+
+### Amount sign convention
+
+Fixed amounts follow one documented rule per kind. Every named cost
+(`HpLoss`, `MaxHpChange`, `Gold`, `CardRemoval`, `PotionRemoval`, `RelicRemoval`, `ItemRemoval`) is a
+non-negative magnitude because the kind already names the direction. Named effect kinds
+(`AddCard`, `RemoveCard`, `ModifyCard`, `GainRelic`, `LoseRelic`, `GainPotion`, `LosePotion`,
+`GainGold`, `LoseGold`, `Heal`, `Damage`) are likewise non-negative magnitudes, while
+`MaxHpChange` alone is a signed delta that may be negative. Owner-defined, rule-backed, follow-up,
+and unknown kinds leave the sign unspecified. A fixed magnitude below zero is rejected with a typed
+`cost_amount` or `effect_amount` error; formula and unavailable amounts are unaffected.
+
 `EventProbability` is `Exact { numerator, denominator, evidence }`, `Rule { rule_reference,
 evidence }`, or `Unavailable(reason)`. It states a reference possibility only: it is never a sampled
 result, never a seed-specific assignment, and an unknown probability is never converted into an
@@ -54,7 +94,12 @@ a selector-producing choice, bounded deterministic pagination with single-use co
 event/page/option lookup, hidden-outcome withholding, locked/owner-only/hidden visibility,
 manifest/locale/producer and stale-reference rejection, unsupported/unavailable families, dangling
 and duplicate identities, hidden-future leakage, malformed and oversized input, invalid
-probabilities/costs/effects, and the nested definition byte limit. These prove deterministic local
-validation and read-only projection only. Native event coverage, live run/instance and transient
-action reads, RNG evaluation, thread affinity, shared transport/gateway/MCP delivery, and exact-host
-compatibility remain unverified.
+probabilities/costs/effects, and the nested definition byte limit. Added regression fixtures prove
+that a visible page, option, or event cannot reference a hidden/owner-only target, that withheld
+collections report `Denied`/`Partial` distinctly from `Available` empty ones, that page-to-option
+membership rejects unknown, uncovered, and duplicate associations, and that invalid fixed-amount
+signs are rejected per kind. These prove deterministic local validation and read-only projection
+only. Cross-event reference visibility covers only event definitions in the same snapshot; manifest
+content families carry no visibility metadata and are existence-checked. Native event coverage, live
+run/instance and transient action reads, RNG evaluation, thread affinity, shared
+transport/gateway/MCP delivery, and exact-host compatibility remain unverified.

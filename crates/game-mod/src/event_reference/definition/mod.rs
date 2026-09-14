@@ -1,16 +1,26 @@
 // SPDX-License-Identifier: MIT
 
+mod cost;
+mod effect;
 mod encoding;
 mod option;
+mod outcome;
+mod requirement;
 
+pub use cost::*;
+pub use effect::*;
 pub use option::*;
+pub use outcome::*;
+pub use requirement::*;
 
 pub(super) use encoding::definition_bytes;
 
 use crate::ContentUnlockState;
 
 use super::EventSemanticReference;
-use super::model::{EventCatalogBinding, EventDefinitionReference, EventText, EventVisibility};
+use super::model::{
+    EventCatalogBinding, EventDefinitionReference, EventFieldStatus, EventText, EventVisibility,
+};
 
 /// Coarse event category copied from the owner source.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -44,6 +54,11 @@ pub struct EventNarrativePage {
     pub narrative: EventText,
     /// Typed rule/content links associated with this page.
     pub references: Vec<EventSemanticReference>,
+    /// Options this page offers to the reader.
+    ///
+    /// This is the authoritative page-to-option membership relation: every option is offered by
+    /// exactly one page, and a page never offers an option more restricted than itself.
+    pub offered_options: Vec<String>,
     /// Visibility of the static page.
     pub visibility: EventVisibility,
 }
@@ -88,6 +103,8 @@ pub struct EventDefinition {
     pub pages: Vec<EventNarrativePage>,
     /// Eligibility predicates for the event itself.
     pub eligibility: Vec<EventRequirement>,
+    /// Availability of eligibility predicates after scope withholding.
+    pub eligibility_status: EventFieldStatus,
     /// Choices with stable option identities.
     pub options: Vec<EventOption>,
     /// Top-level references.
@@ -114,6 +131,7 @@ impl EventDefinition {
             visibility: input.visibility,
             pages: input.pages,
             eligibility: input.eligibility,
+            eligibility_status: EventFieldStatus::Available,
             options,
             references: input.references,
         }

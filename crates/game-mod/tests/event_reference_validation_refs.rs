@@ -7,9 +7,9 @@ mod fixture;
 
 use fixture::*;
 use sts2_game_mod::{
-    EventCatalog, EventCatalogError, EventCatalogProducer, EventDefinitionInput, EventEffectKind,
-    EventEvidence, EventField, EventFollowUp, EventProbability, EventSemanticReferenceKind,
-    EventVisibility,
+    EventCatalog, EventCatalogError, EventCatalogProducer, EventCostKind, EventDefinitionInput,
+    EventEffectKind, EventEvidence, EventField, EventFollowUp, EventNumericValue, EventProbability,
+    EventSemanticReferenceKind, EventVisibility,
 };
 
 fn produce(
@@ -194,4 +194,60 @@ fn invalid_probability_costs_and_effects_are_rejected() {
         produce(&content, bad_visibility),
         Err(EventCatalogError::InvalidInput("visibility"))
     );
+}
+
+#[test]
+fn invalid_amount_signs_are_rejected_per_kind() {
+    let content = full_manifest();
+
+    let mut negative_gold_cost = rich_event("event:one");
+    negative_gold_cost.options[0].costs[0].amount = EventNumericValue::Fixed(-50);
+    assert_eq!(
+        produce(&content, negative_gold_cost),
+        Err(EventCatalogError::InvalidInput("cost_amount"))
+    );
+
+    let mut negative_hp_cost = rich_event("event:one");
+    negative_hp_cost.options[0].costs[0].kind = EventCostKind::HpLoss;
+    negative_hp_cost.options[0].costs[0].amount = EventNumericValue::Fixed(-1);
+    assert_eq!(
+        produce(&content, negative_hp_cost),
+        Err(EventCatalogError::InvalidInput("cost_amount"))
+    );
+
+    let mut negative_gain = rich_event("event:one");
+    negative_gain.options[0].outcomes[0].effects[0].amount = EventNumericValue::Fixed(-1);
+    assert_eq!(
+        produce(&content, negative_gain),
+        Err(EventCatalogError::InvalidInput("effect_amount"))
+    );
+
+    let mut negative_heal = rich_event("event:one");
+    negative_heal.options[0].outcomes[0].effects[0].kind = EventEffectKind::Heal;
+    negative_heal.options[0].outcomes[0].effects[0].amount = EventNumericValue::Fixed(-1);
+    assert_eq!(
+        produce(&content, negative_heal),
+        Err(EventCatalogError::InvalidInput("effect_amount"))
+    );
+}
+
+#[test]
+fn signed_and_unspecified_amounts_accept_negative_values() {
+    let content = full_manifest();
+
+    let mut max_hp = rich_event("event:one");
+    max_hp.options[0].outcomes[0].effects[1].kind = EventEffectKind::MaxHpChange;
+    max_hp.options[0].outcomes[0].effects[1].amount = EventNumericValue::Fixed(-5);
+    assert!(produce(&content, max_hp).is_ok());
+
+    let mut custom_effect = rich_event("event:one");
+    custom_effect.options[0].outcomes[0].effects[0].kind =
+        EventEffectKind::Custom("owner".to_owned());
+    custom_effect.options[0].outcomes[0].effects[0].amount = EventNumericValue::Fixed(-5);
+    assert!(produce(&content, custom_effect).is_ok());
+
+    let mut custom_cost = rich_event("event:one");
+    custom_cost.options[0].costs[0].kind = EventCostKind::Custom("owner".to_owned());
+    custom_cost.options[0].costs[0].amount = EventNumericValue::Fixed(-5);
+    assert!(produce(&content, custom_cost).is_ok());
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use super::EventUnavailableReason;
+use super::{EventSemanticReferenceKind, EventUnavailableReason};
 
 /// Failure before an owned event snapshot was available.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -88,6 +88,29 @@ pub enum EventCatalogError {
         event_id: String,
         /// Hidden page identity that would have leaked.
         page_id: String,
+    },
+    /// A record more visible than its target would disclose a restricted page, option, or event.
+    ///
+    /// The restricted identity is deliberately omitted so the rejection itself cannot disclose it.
+    HiddenReferenceLeak {
+        /// Owning event definition identity.
+        event_id: String,
+        /// Reference family whose target is more restricted.
+        reference_kind: EventSemanticReferenceKind,
+    },
+    /// A defined option is not offered by any narrative page.
+    UncoveredOption {
+        /// Owning event definition identity.
+        event_id: String,
+        /// Option absent from every page's offered set.
+        option_id: String,
+    },
+    /// A defined option is offered by more than one narrative page.
+    DuplicateOptionMembership {
+        /// Owning event definition identity.
+        event_id: String,
+        /// Option offered by multiple pages.
+        option_id: String,
     },
     /// A list page size is zero or exceeds its local bound.
     InvalidPageSize,

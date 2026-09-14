@@ -24,6 +24,10 @@ pub enum EventUnavailableReason {
 pub enum EventFieldStatus {
     /// The source observed the field, including a known empty value.
     Available,
+    /// Some collection entries were withheld by the selected scope.
+    ///
+    /// The visible remainder is still returned, but the collection must not be read as complete.
+    Partial,
     /// The field has no meaning for the selected definition.
     NotApplicable,
     /// The field is supported but was not observed.

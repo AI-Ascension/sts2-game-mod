@@ -140,6 +140,69 @@ pub(super) fn validate_requirement(
     validate_visibility(requirement.visibility)
 }
 
+/// Sign convention for a fixed amount.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AmountRule {
+    /// A non-negative magnitude: the kind already names the direction.
+    Magnitude,
+    /// A signed delta where one kind represents both directions.
+    Signed,
+    /// No sign is defined for owner-defined or rule-backed kinds.
+    Unspecified,
+}
+
+fn cost_amount_rule(kind: &EventCostKind) -> AmountRule {
+    match kind {
+        EventCostKind::HpLoss
+        | EventCostKind::MaxHpChange
+        | EventCostKind::Gold
+        | EventCostKind::CardRemoval
+        | EventCostKind::PotionRemoval
+        | EventCostKind::RelicRemoval
+        | EventCostKind::ItemRemoval => AmountRule::Magnitude,
+        EventCostKind::Rule
+        | EventCostKind::Custom(_)
+        | EventCostKind::Unsupported(_)
+        | EventCostKind::Unknown => AmountRule::Unspecified,
+    }
+}
+
+fn effect_amount_rule(kind: &EventEffectKind) -> AmountRule {
+    match kind {
+        EventEffectKind::AddCard
+        | EventEffectKind::RemoveCard
+        | EventEffectKind::ModifyCard
+        | EventEffectKind::GainRelic
+        | EventEffectKind::LoseRelic
+        | EventEffectKind::GainPotion
+        | EventEffectKind::LosePotion
+        | EventEffectKind::GainGold
+        | EventEffectKind::LoseGold
+        | EventEffectKind::Heal
+        | EventEffectKind::Damage => AmountRule::Magnitude,
+        EventEffectKind::MaxHpChange => AmountRule::Signed,
+        EventEffectKind::FollowUp
+        | EventEffectKind::Rule
+        | EventEffectKind::Custom(_)
+        | EventEffectKind::Unsupported(_)
+        | EventEffectKind::Unknown => AmountRule::Unspecified,
+    }
+}
+
+fn validate_amount_sign(
+    rule: AmountRule,
+    amount: &EventNumericValue,
+    field: &'static str,
+) -> Result<(), EventCatalogError> {
+    if rule == AmountRule::Magnitude
+        && let EventNumericValue::Fixed(value) = amount
+        && *value < 0
+    {
+        return Err(EventCatalogError::InvalidInput(field));
+    }
+    Ok(())
+}
+
 pub(super) fn validate_cost(cost: &EventCost) -> Result<(), EventCatalogError> {
     validate_identity(&cost.cost_id, "cost_id")?;
     if let EventCostKind::Custom(value) | EventCostKind::Unsupported(value) = &cost.kind {
@@ -147,6 +210,7 @@ pub(super) fn validate_cost(cost: &EventCost) -> Result<(), EventCatalogError> {
     }
     validate_text_value(&cost.label, "cost_label")?;
     validate_numeric(&cost.amount)?;
+    validate_amount_sign(cost_amount_rule(&cost.kind), &cost.amount, "cost_amount")?;
     validate_optional_field(&cost.resource, "cost_resource")?;
     validate_optional_field(&cost.rule_reference, "cost_rule")?;
     validate_references(&cost.references)?;
@@ -160,6 +224,11 @@ pub(super) fn validate_effect(effect: &EventEffect) -> Result<(), EventCatalogEr
     }
     validate_text_value(&effect.label, "effect_label")?;
     validate_numeric(&effect.amount)?;
+    validate_amount_sign(
+        effect_amount_rule(&effect.kind),
+        &effect.amount,
+        "effect_amount",
+    )?;
     validate_optional_field(&effect.target, "effect_target")?;
     validate_optional_field(&effect.rule_reference, "effect_rule")?;
     validate_references(&effect.references)?;

@@ -184,8 +184,15 @@ pub fn page(page_id: &str) -> EventNarrativePage {
         page_id: page_id.to_owned(),
         narrative: text(page_id),
         references: Vec::new(),
+        offered_options: Vec::new(),
         visibility: EventVisibility::Visible,
     }
+}
+
+pub fn page_offering(page_id: &str, options: &[&str]) -> EventNarrativePage {
+    let mut result = page(page_id);
+    result.offered_options = options.iter().map(|id| (*id).to_owned()).collect();
+    result
 }
 
 pub fn simple_event(event_id: &str) -> EventDefinitionInput {
@@ -195,7 +202,7 @@ pub fn simple_event(event_id: &str) -> EventDefinitionInput {
         kind: sts2_game_mod::EventKind::Normal,
         unlock_state: ContentUnlockState::Unlocked,
         visibility: EventVisibility::Visible,
-        pages: vec![page("page:start")],
+        pages: vec![page_offering("page:start", &["option:leave"])],
         eligibility: vec![requirement(
             "requirement:act",
             EventRequirementKind::Progression,
@@ -237,7 +244,10 @@ pub fn rich_event(event_id: &str) -> EventDefinitionInput {
         kind: sts2_game_mod::EventKind::Normal,
         unlock_state: ContentUnlockState::Unlocked,
         visibility: EventVisibility::Visible,
-        pages: vec![page("page:start"), page("page:reward")],
+        pages: vec![
+            page_offering("page:start", &["option:offer"]),
+            page_offering("page:reward", &["option:leave"]),
+        ],
         eligibility: vec![requirement(
             "requirement:act",
             EventRequirementKind::Progression,

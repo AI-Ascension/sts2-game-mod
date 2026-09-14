@@ -10,8 +10,8 @@ use sts2_game_mod::{
     ContentUnlockState, EVENT_MAX_DEFINITION_BYTES, EVENT_MAX_IDENTITY_BYTES, EVENT_MAX_OPTIONS,
     EVENT_MAX_REQUIREMENTS, EventCatalog, EventCatalogError, EventCatalogProducer,
     EventDefinitionInput, EventField, EventFieldStatus, EventFollowUp, EventKind, EventProbability,
-    EventRequirementKind, EventSemanticReferenceKind, EventSourceError, EventUnavailableReason,
-    EventVisibility, EventVisibilityScope,
+    EventRequirementKind, EventSourceError, EventUnavailableReason, EventVisibility,
+    EventVisibilityScope,
 };
 
 fn produce(
@@ -85,11 +85,19 @@ fn multi_stage_selector_and_numeric_cost_are_inspectable() {
         option.outcomes[0].follow_up,
         EventFollowUp::Page("page:reward".to_owned())
     );
-    assert!(
-        option
-            .references
-            .iter()
-            .any(|reference| matches!(reference.kind, EventSemanticReferenceKind::Option))
+    assert_eq!(
+        definition.pages[0].offered_options,
+        ["option:offer"],
+        "the start page must offer the branching option"
+    );
+    assert_eq!(
+        definition.pages[1].page_id, "page:reward",
+        "the successful branch must reach a distinct page"
+    );
+    assert_eq!(
+        definition.pages[1].offered_options,
+        ["option:leave"],
+        "the reward page must offer its own follow-up choice"
     );
 }
 
@@ -110,13 +118,17 @@ fn bulk_definition(kind_len: usize) -> EventDefinitionInput {
             choice
         })
         .collect();
+    let mut start = page("page:start");
+    start.offered_options = (0..EVENT_MAX_OPTIONS)
+        .map(|option_index| format!("option:{option_index}"))
+        .collect();
     EventDefinitionInput {
         event_id: "event:bulk".to_owned(),
         title: text("Bulk"),
         kind: EventKind::Normal,
         unlock_state: ContentUnlockState::Unlocked,
         visibility: EventVisibility::Visible,
-        pages: vec![page("page:start")],
+        pages: vec![start],
         eligibility: vec![requirement(
             "requirement:act",
             EventRequirementKind::Progression,

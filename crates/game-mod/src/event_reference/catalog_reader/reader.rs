@@ -5,17 +5,15 @@ use std::{collections::BTreeMap, sync::Arc};
 use super::super::model::EVENT_MAX_PAGE_ITEMS;
 use super::super::{
     EventCatalogBinding, EventCatalogError, EventDefinition, EventDefinitionReference,
-    EventFamilyState, EventFieldStatus, EventVisibilityScope,
+    EventFamilyState, EventVisibilityScope,
 };
 use super::catalog::EventCatalog;
 use super::page::{
-    ContinuationScope, EventContinuation, EventCursorState, EventDefinitionPage,
-    EventDefinitionSummary, EventListQuery, EventOptionContinuation, EventOptionListQuery,
-    EventOptionPage, EventOptionSummary, OptionCursorState,
+    ContinuationScope, EventContinuation, EventCursorState, EventDefinitionPage, EventListQuery,
+    EventOptionContinuation, EventOptionListQuery, EventOptionPage, OptionCursorState,
 };
-use super::{
-    visible_cost, visible_event, visible_option, visible_outcome, visible_page, visible_requirement,
-};
+use super::summary::{event_summary, option_summary};
+use super::{visible_event, visible_option};
 
 /// Reader retaining one catalog while enforcing locale, scope, and cursor fences.
 ///
@@ -234,53 +232,5 @@ impl EventCatalogReader {
         let token = format!("{prefix}-{:08}", self.next_cursor);
         self.next_cursor = self.next_cursor.saturating_add(1);
         token
-    }
-}
-
-fn event_summary(
-    definition: &EventDefinition,
-    scope: EventVisibilityScope,
-) -> EventDefinitionSummary {
-    EventDefinitionSummary {
-        reference: definition.reference.clone(),
-        title: definition.title.clone(),
-        kind: definition.kind.clone(),
-        page_count: definition
-            .pages
-            .iter()
-            .filter(|page| visible_page(page, scope))
-            .count(),
-        option_count: definition
-            .options
-            .iter()
-            .filter(|option| visible_option(option, scope))
-            .count(),
-        eligibility: EventFieldStatus::Available,
-    }
-}
-
-fn option_summary(
-    option: &super::super::EventOption,
-    scope: EventVisibilityScope,
-) -> EventOptionSummary {
-    EventOptionSummary {
-        reference: option.reference.clone(),
-        text: option.text.clone(),
-        requirement_count: option
-            .requirements
-            .iter()
-            .filter(|requirement| visible_requirement(requirement, scope))
-            .count(),
-        cost_count: option
-            .costs
-            .iter()
-            .filter(|cost| visible_cost(cost, scope))
-            .count(),
-        outcome_count: option
-            .outcomes
-            .iter()
-            .filter(|outcome| visible_outcome(outcome, scope))
-            .count(),
-        visibility: option.visibility,
     }
 }

@@ -10,7 +10,7 @@ use super::{
     EVENT_REFERENCE_POTION_KIND, EVENT_REFERENCE_PRODUCER_VERSION, EVENT_REFERENCE_RELIC_KIND,
     EventCatalogBinding, EventCatalogError, EventDefinition, EventDefinitionInput,
     EventFamilyCoverage, EventFamilyState, EventSemanticReference, EventSemanticReferenceKind,
-    EventSourceError, catalog_reader::EventCatalog, definition::definition_bytes,
+    EventSourceError, EventVisibility, catalog_reader::EventCatalog, definition::definition_bytes,
     error::map_source_error, model::EVENT_MAX_DEFINITIONS, validation::validate_definition,
 };
 
@@ -143,9 +143,13 @@ fn coverage(
 fn collect_records(
     inputs: Vec<EventDefinitionInput>,
 ) -> Result<BTreeMap<String, EventDefinitionInput>, EventCatalogError> {
+    let event_visibility: BTreeMap<String, EventVisibility> = inputs
+        .iter()
+        .map(|input| (input.event_id.clone(), input.visibility))
+        .collect();
     let mut records = BTreeMap::new();
     for input in inputs {
-        validate_definition(&input)?;
+        validate_definition(&input, &event_visibility)?;
         let bytes = definition_bytes(&input);
         if bytes > EVENT_MAX_DEFINITION_BYTES {
             return Err(EventCatalogError::DefinitionTooLarge {

@@ -189,6 +189,7 @@ fn page_bytes(page: &EventNarrativePage) -> usize {
     page.page_id.len()
         + text_bytes(&page.narrative)
         + page.references.iter().map(reference_bytes).sum::<usize>()
+        + page.offered_options.iter().map(String::len).sum::<usize>()
         + 2
 }
 
