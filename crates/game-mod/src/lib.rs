@@ -13,6 +13,7 @@ mod checkpoint;
 pub mod combat_bookkeeping;
 mod content_index;
 mod content_manifest;
+mod enemies;
 mod enemy_intents;
 mod field_availability;
 mod glossary;
@@ -64,6 +65,7 @@ pub use content_manifest::{
     ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
     ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
 };
+pub use enemies::*;
 pub use enemy_intents::*;
 pub use field_availability::*;
 pub use glossary::*;
