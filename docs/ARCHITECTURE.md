@@ -476,6 +476,14 @@ unsupported, or changed surfaces return explicit unavailable results; the route 
 navigates the map UI. Its copied artifact and managed/native probes establish source/component
 evidence only, not live extraction, provider delivery, or settled navigation.
 
+The owner-local `retained_map` producer retains only already-public topology copied from a permitted
+map observation and serves it while the map screen is closed. It binds instance/run/act/mode/
+map-instance/snapshot/epoch, exposes explicit freshness, visibility, and field availability, and
+marks stale or unknown knowledge non-current and non-complete. Retained travel is non-actionable
+unless the owning generation is current and the surface is open, hidden future contents stay
+withheld, and pages use bounded single-use continuations. This source-only slice does not alter
+`runtime-map-v1` identities or fences; native closed-map extraction remains unverified.
+
 `InitializeRuntimeV3Gameplay` still installs an unconfigured host source. The source-only
 configuration seam and synthetic probes do not supply a concrete STS2 adapter or host evidence.
 

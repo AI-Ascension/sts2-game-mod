@@ -1,0 +1,197 @@
+// SPDX-License-Identifier: MIT
+
+use std::sync::Arc;
+
+use super::super::binding::{
+    RetainedMapFreshness, RetainedMapLiveBinding, RetainedMapObservationState,
+    RetainedMapTravelActionability, visible,
+};
+use super::super::error::{RetainedMapError, RetainedMapUnavailableReason};
+use super::super::model::{
+    RETAINED_MAP_MAX_PAGE_ITEMS, RetainedMapNode, RetainedMapNodeReference,
+    RetainedMapTravelReference,
+};
+use super::super::page::{
+    RetainedMapContinuation, RetainedMapCursorState, RetainedMapTopologyPage,
+    RetainedMapTopologyQuery,
+};
+use super::{RetainedMapReader, summary};
+
+impl RetainedMapReader {
+    /// Lists visible retained nodes in stable node-ID order while the map may be closed.
+    pub fn topology(
+        &mut self,
+        query: &RetainedMapTopologyQuery,
+    ) -> Result<RetainedMapTopologyPage, RetainedMapError> {
+        if query.limit == 0 || query.limit > RETAINED_MAP_MAX_PAGE_ITEMS {
+            return Err(RetainedMapError::InvalidPageSize);
+        }
+        let Some(binding) = self
+            .retained
+            .as_ref()
+            .map(|snapshot| snapshot.binding().clone())
+        else {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::NeverObserved,
+            ));
+        };
+        let start = self.cursor_start(query, &binding)?;
+        let Some(snapshot) = self.retained.as_ref() else {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::NeverObserved,
+            ));
+        };
+        let entries = snapshot
+            .nodes()
+            .values()
+            .filter(|node| visible(node.visibility, self.scope))
+            .map(|node| summary(node, &binding))
+            .collect::<Vec<_>>();
+        let total = entries.len();
+        let start = start.min(total);
+        let end = start.saturating_add(query.limit).min(total);
+        let page_entries = entries[start..end].to_vec();
+        let continuation = if end < total {
+            let token = self.make_token();
+            self.insert_page(
+                token.clone(),
+                RetainedMapCursorState {
+                    binding: binding.clone(),
+                    limit: query.limit,
+                    offset: end,
+                },
+            );
+            Some(RetainedMapContinuation::new(
+                token,
+                Arc::clone(&self.continuation_scope),
+            ))
+        } else {
+            None
+        };
+        let complete = continuation.is_none() && self.freshness.trusts_topology();
+        Ok(RetainedMapTopologyPage {
+            binding: Some(binding),
+            freshness: self.freshness,
+            entries: page_entries,
+            total,
+            complete,
+            continuation,
+        })
+    }
+
+    /// Reads one retained node by its exact snapshot-bound identity.
+    pub fn node(
+        &self,
+        reference: &RetainedMapNodeReference,
+    ) -> Result<RetainedMapNode, RetainedMapError> {
+        let Some(snapshot) = &self.retained else {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::NeverObserved,
+            ));
+        };
+        if &reference.binding != snapshot.binding() {
+            return Err(RetainedMapError::StaleReference);
+        }
+        let node = snapshot
+            .nodes()
+            .get(&reference.node_id)
+            .ok_or(RetainedMapError::NodeNotFound)?;
+        if !visible(node.visibility, self.scope) {
+            return Err(RetainedMapError::ScopeDenied("node"));
+        }
+        Ok(node.clone())
+    }
+
+    /// Returns retained travel bindings joined to their current actionability.
+    #[must_use]
+    pub fn travel_references(&self) -> Vec<RetainedMapTravelReference> {
+        let Some(snapshot) = &self.retained else {
+            return Vec::new();
+        };
+        let actionability = self.actionability();
+        snapshot
+            .travel()
+            .values()
+            .map(|travel| RetainedMapTravelReference {
+                binding: snapshot.binding().clone(),
+                from_node_id: travel.from_node_id.clone(),
+                to_node_id: travel.to_node_id.clone(),
+                action_id: travel.action_id.clone(),
+                actionability,
+            })
+            .collect()
+    }
+
+    /// Returns whether travel may currently be authorized.
+    #[must_use]
+    pub fn travel_actionability(&self) -> RetainedMapTravelActionability {
+        self.actionability()
+    }
+
+    /// Authorizes navigation only for a current, open, retained binding.
+    pub fn authorize_travel(
+        &self,
+        reference: &RetainedMapTravelReference,
+    ) -> Result<(), RetainedMapError> {
+        let Some(snapshot) = &self.retained else {
+            return Err(RetainedMapError::Unavailable(
+                RetainedMapUnavailableReason::NeverObserved,
+            ));
+        };
+        if &reference.binding != snapshot.binding() {
+            return Err(RetainedMapError::StaleReference);
+        }
+        let expected = self.actionability();
+        if !expected.is_actionable() || !reference.actionability.is_actionable() {
+            return Err(RetainedMapError::TravelNotActionable(expected));
+        }
+        if !snapshot.travel().values().any(|travel| {
+            travel.from_node_id == reference.from_node_id
+                && travel.to_node_id == reference.to_node_id
+                && travel.action_id == reference.action_id
+        }) {
+            return Err(RetainedMapError::StaleReference);
+        }
+        Ok(())
+    }
+
+    fn actionability(&self) -> RetainedMapTravelActionability {
+        match self.freshness {
+            RetainedMapFreshness::Current
+                if self.observation == RetainedMapObservationState::Observable =>
+            {
+                RetainedMapTravelActionability::Current
+            }
+            RetainedMapFreshness::Current | RetainedMapFreshness::Retained => {
+                RetainedMapTravelActionability::Retained
+            }
+            RetainedMapFreshness::Stale => RetainedMapTravelActionability::Stale,
+            RetainedMapFreshness::Withheld => RetainedMapTravelActionability::Withheld,
+            RetainedMapFreshness::Unavailable | RetainedMapFreshness::NeverObserved => {
+                RetainedMapTravelActionability::Unavailable
+            }
+            RetainedMapFreshness::Unknown => RetainedMapTravelActionability::Unknown,
+        }
+    }
+
+    fn cursor_start(
+        &mut self,
+        query: &RetainedMapTopologyQuery,
+        binding: &RetainedMapLiveBinding,
+    ) -> Result<usize, RetainedMapError> {
+        let Some(continuation) = &query.continuation else {
+            return Ok(0);
+        };
+        if !Arc::ptr_eq(&continuation.scope, &self.continuation_scope) {
+            return Err(RetainedMapError::InvalidContinuation);
+        }
+        let state = self
+            .pages
+            .remove(continuation.token())
+            .ok_or(RetainedMapError::InvalidContinuation)?;
+        if &state.binding != binding || state.limit != query.limit {
+            return Err(RetainedMapError::InvalidContinuation);
+        }
+        Ok(state.offset)
+    }
+}
