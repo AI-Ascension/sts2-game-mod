@@ -169,7 +169,9 @@ export STS2_GAME_DIR='/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the
 ```
 
 The script inspects executable paths and stops only game processes from the selected installation;
-an inaccessible identity fails closed before termination or installation. It does not kill by
+an inaccessible identity fails closed before termination or installation. Before relaunching it
+also refuses to start when any `SlayTheSpire2` process is already running, even from a different
+installation path, so two instances never run at once. It does not kill by
 image name or terminate an uninspected descendant tree. Existing installed files are backed up in
 unique directories under the ignored `.sts2-dev/backups/`; linked installation/staging paths are
 refused. Use `--no-launch` for an install-only cycle, `--dry-run` to inspect the actions, or

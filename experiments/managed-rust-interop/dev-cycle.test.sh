@@ -58,4 +58,11 @@ printf 'outside hardlink\n' > "$fixture_root/untouched"
 cycle >/dev/null
 [[ $(<"$fixture_root/untouched") == 'outside hardlink' ]] || fail 'copy modified unrelated hardlink'
 [[ $(<"$STS2_DEV_CYCLE_TEST_LOG") == *Stop* ]] || fail 'selected stop guard not invoked'
-printf '%s\n' 'PASS: no-kill refusal, inspection errors, unique backups, symlink refusal, hardlink preservation'
+# A game running from another installation path must block a new launch so two
+# instances can never run at once.
+if STS2_DEV_CYCLE_TEST_OTHER_RUNNING=yes bash "$cycle_dir/dev-cycle.sh" --game-dir "$fixture_root/host" >/dev/null 2>&1; then
+    fail 'launch accepted while another game instance was running'
+fi
+bash "$cycle_dir/dev-cycle.sh" --game-dir "$fixture_root/host" >/dev/null
+[[ $(<"$STS2_DEV_CYCLE_TEST_LOG") == *AssertNoGame* ]] || fail 'launch-time no-game guard not invoked'
+printf '%s\n' 'PASS: no-kill refusal, inspection errors, unique backups, symlink refusal, hardlink preservation, launch-time no-second-instance guard'

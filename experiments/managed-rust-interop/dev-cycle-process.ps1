@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExecutablePath,
     [Parameter(Mandatory = $true)][string]$StagePath,
     [Parameter(Mandatory = $true)][string]$BackupPath,
-    [ValidateSet('Inspect', 'AssertStopped', 'Stop')][string]$Mode = 'AssertStopped',
+    [ValidateSet('Inspect', 'AssertStopped', 'Stop', 'AssertNoGame')][string]$Mode = 'AssertStopped',
     [ValidateRange(0, 600)][int]$WaitSeconds = 20,
     [Parameter(Mandatory = $true)][long]$DeadlineEpoch
 )
@@ -59,9 +59,11 @@ foreach ($artifact in @('AIAscensionSTS2GameMod.dll', 'AIAscensionSTS2GameModNat
 # executable cannot be inspected is not evidence that the installation is idle.
 # Retain Process objects (and their opened handles), not unverified reusable PIDs.
 $selected = @()
+$anyRunning = 0
 try {
     foreach ($process in @(Get-Process -ErrorAction Stop)) {
         if ($process.ProcessName -ine 'SlayTheSpire2') { continue }
+        $anyRunning++
         $null = $process.Handle
         $path = $process.MainModule.FileName
         if ([string]::IsNullOrWhiteSpace($path)) {
@@ -75,6 +77,9 @@ try {
         }
     }
     if ($Mode -eq 'Inspect') { return }
+    if ($Mode -eq 'AssertNoGame' -and $anyRunning -gt 0) {
+        throw 'A SlayTheSpire2 process is already running; refusing to start another instance'
+    }
     if ($Mode -eq 'AssertStopped' -and $selected.Count -gt 0) {
         throw 'The selected game installation is running; refusing to replace its addon'
     }
