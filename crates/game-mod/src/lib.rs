@@ -24,6 +24,7 @@ mod potions;
 mod powers;
 mod protocol_artifact;
 mod relics;
+mod retained_map;
 mod rng_audit;
 mod runtime_map;
 mod runtime_v2;
@@ -98,6 +99,7 @@ pub use protocol_artifact::{
     POC_SCHEMA_PACKAGE,
 };
 pub use relics::*;
+pub use retained_map::*;
 pub use rng_audit::{
     ExternalInputControl, ExternalInputDeclaration, ExternalInputEvidence, ExternalInputKind,
     GameplayImpact, RNG_AUDIT_FINGERPRINT_DOMAIN, RNG_AUDIT_MAX_CALL_CATEGORIES,
