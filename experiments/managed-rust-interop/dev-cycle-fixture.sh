@@ -15,6 +15,9 @@ case ${0##*/} in
         if [[ $mode == AssertStopped && ${STS2_DEV_CYCLE_TEST_RUNNING:-no} == yes ]]; then
             exit 1
         fi
+        if [[ $mode == AssertNoGame && ${STS2_DEV_CYCLE_TEST_OTHER_RUNNING:-no} == yes ]]; then
+            exit 1
+        fi
         ;;
     *) exit 2 ;;
 esac

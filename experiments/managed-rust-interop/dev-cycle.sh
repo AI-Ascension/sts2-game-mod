@@ -396,6 +396,9 @@ fi
 
 if [[ "$launch_game" == true ]]; then
     inspect_selected_installation AssertStopped
+    # Never start a second instance: a game running from any other installation
+    # path would otherwise be invisible to the selected-installation check.
+    inspect_selected_installation AssertNoGame
     assert_live_authorization_current
     game_exe_windows=$(to_windows_path "$game_exe")
     game_dir_windows=$(to_windows_path "$game_dir")

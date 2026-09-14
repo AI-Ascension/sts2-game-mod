@@ -73,11 +73,16 @@ try {
     Assert-Refused { Invoke-Guard Stop } 'did not exit'
     $global:sts2TestProcesses = @()
     Invoke-Guard AssertStopped
+    # A game running from another installation path must block a new launch.
+    $global:sts2TestProcesses = @((New-FakeProcess $other))
+    Assert-Refused { Invoke-Guard AssertNoGame } 'already running'
+    $global:sts2TestProcesses = @()
+    Invoke-Guard AssertNoGame
     Assert-Refused {
         & $helper -ExecutablePath $target -StagePath ([IO.Path]::GetDirectoryName($target)) `
             -BackupPath (Join-Path $root 'backup') -Mode Inspect -DeadlineEpoch ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 60)
     } 'must not overlap'
-    Write-Output 'PASS: selected-installation identity, no-kill, inspection failure, expiry, termination failure, and timeout'
+    Write-Output 'PASS: selected-installation identity, no-kill, inspection failure, expiry, termination failure, timeout, and launch-time no-second-instance guard'
 } finally {
     Remove-Variable sts2TestProcesses, sts2TestInspectionFails -Scope Global
     Remove-Item -LiteralPath $root -Recurse -Force
