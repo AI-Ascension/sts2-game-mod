@@ -349,6 +349,16 @@ lookups to the manifest, locale, producer identity, visibility scope, and non-cl
 continuations. This is source-only evidence: no transport, native extractor, host ABI, or
 exact-host compatibility is implied.
 
+The owner-local `act_reference` producer composes the same manifest and locale witness with act
+definitions, room/node categories, normal/elite/boss encounter definitions (enemy groups, explicit
+quantities, and variants), eligibility predicates, weighted encounter pools, and map-generation
+constraint/rule references. Definition identities stay distinct from live map-node identities, and
+enumerable pool possibilities stay distinct from a withheld seed-specific assignment. Supported,
+unsupported, unavailable, not-applicable, and unknown coverage stay explicit, and reads fail closed
+rather than returning a successful empty page. This source-only slice defines no transport route,
+native extractor, host ABI, or exact-host compatibility; native act/encounter coverage remains
+unverified.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
