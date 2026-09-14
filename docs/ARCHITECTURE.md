@@ -359,6 +359,8 @@ rather than returning a successful empty page. This source-only slice defines no
 native extractor, host ABI, or exact-host compatibility; native act/encounter coverage remains
 unverified.
 
+The owner-local `event_reference` producer composes the same manifest and locale witness with event definitions, bounded localized narrative pages, event eligibility, and a choice/branch graph whose options carry typed requirements, structured HP/max-HP/gold/item costs, and evidence-qualified reference probabilities; static event/page/option/outcome identities stay distinct from live run/instance and transient action identities, a hidden page is never revealed by a more visible branch, supported/unsupported/unavailable coverage stays explicit, reads fail closed, and no transport route, native extractor, host ABI, or exact-host compatibility is claimed.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
