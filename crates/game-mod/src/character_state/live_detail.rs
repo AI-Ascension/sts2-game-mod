@@ -3,7 +3,7 @@
 use super::{
     error::CharacterStateLiveError,
     live::CharacterStateLiveReader,
-    live_measure::{entity_bytes, resource_bytes},
+    live_measure::{entity_detail_bytes, resource_detail_bytes},
     live_model::{CharacterResource, CharacterSecondaryEntity},
     live_snapshot::CharacterStateLiveSnapshot,
     live_validation::validate_snapshot,
@@ -32,19 +32,19 @@ impl CharacterStateLiveReader {
         {
             return Err(CharacterStateLiveError::StaleReference);
         }
-        let detail_bytes = resource_bytes(resource);
-        if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
-            return Err(CharacterStateLiveError::DetailTooLarge {
-                limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
-                actual: detail_bytes,
-            });
-        }
         let definition = self
             .catalog
             .resource_definition(&resource.definition_id)
             .ok_or_else(|| {
                 CharacterStateLiveError::UnknownResourceDefinition(resource.definition_id.clone())
             })?;
+        let detail_bytes = resource_detail_bytes(resource, definition, &self.snapshot.binding);
+        if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
+            return Err(CharacterStateLiveError::DetailTooLarge {
+                limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
+                actual: detail_bytes,
+            });
+        }
         Ok(CharacterResource {
             reference: reference.clone(),
             definition: definition.clone(),
@@ -73,13 +73,6 @@ impl CharacterStateLiveReader {
         {
             return Err(CharacterStateLiveError::StaleReference);
         }
-        let detail_bytes = entity_bytes(entity);
-        if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
-            return Err(CharacterStateLiveError::DetailTooLarge {
-                limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
-                actual: detail_bytes,
-            });
-        }
         let definition = self
             .catalog
             .secondary_definition(&entity.definition_id)
@@ -88,6 +81,13 @@ impl CharacterStateLiveReader {
                     entity.definition_id.clone(),
                 )
             })?;
+        let detail_bytes = entity_detail_bytes(entity, definition, &self.snapshot.binding);
+        if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
+            return Err(CharacterStateLiveError::DetailTooLarge {
+                limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
+                actual: detail_bytes,
+            });
+        }
         Ok(CharacterSecondaryEntity {
             reference: reference.clone(),
             definition: definition.clone(),

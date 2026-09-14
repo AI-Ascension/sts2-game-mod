@@ -15,6 +15,7 @@ use super::{
         CHARACTER_STATE_MAX_DEFINITIONS, CharacterMechanicCoverage, CharacterMechanicState,
         CharacterStateCatalogBinding,
     },
+    sizes::{resource_definition_bytes, secondary_definition_bytes},
     validation::{
         definition_bytes_entity, definition_bytes_resource, validate_coverage,
         validate_resource_definition, validate_secondary_entity_definition,
@@ -76,6 +77,13 @@ pub(super) fn collect_resources(
             visibility: input.visibility,
             slots_visibility: input.slots_visibility,
         };
+        let detail_bytes = resource_definition_bytes(&definition);
+        if detail_bytes > CHARACTER_STATE_MAX_DEFINITION_BYTES {
+            return Err(CharacterStateCatalogError::DefinitionTooLarge {
+                limit: CHARACTER_STATE_MAX_DEFINITION_BYTES,
+                actual: detail_bytes,
+            });
+        }
         if records.insert(id.clone(), definition).is_some() {
             return Err(CharacterStateCatalogError::DuplicateDefinition(id));
         }
@@ -116,6 +124,13 @@ pub(super) fn collect_entities(
             rule_reference: input.rule_reference,
             visibility: input.visibility,
         };
+        let detail_bytes = secondary_definition_bytes(&definition);
+        if detail_bytes > CHARACTER_STATE_MAX_DEFINITION_BYTES {
+            return Err(CharacterStateCatalogError::DefinitionTooLarge {
+                limit: CHARACTER_STATE_MAX_DEFINITION_BYTES,
+                actual: detail_bytes,
+            });
+        }
         if records.insert(id.clone(), definition).is_some() {
             return Err(CharacterStateCatalogError::DuplicateDefinition(id));
         }

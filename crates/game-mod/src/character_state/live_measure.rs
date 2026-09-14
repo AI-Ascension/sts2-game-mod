@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    definition::CharacterResourceValue,
+    definition::{CharacterResourceDefinition, CharacterResourceValue, SecondaryEntityDefinition},
     live_model::{
         CharacterResourceInput, CharacterResourceSlot, CharacterResourceSlotContent,
         SecondaryEntityControllerReference, SecondaryEntityInput, SecondaryEntityIntent,
         SecondaryEntityStatus, SecondaryEntityTarget,
     },
-    model::CharacterStateOwnerKind,
+    model::{CharacterStateLiveBinding, CharacterStateOwnerKind},
+    sizes::{catalog_binding_bytes, resource_definition_bytes, secondary_definition_bytes},
     validation::field_bytes,
 };
 
 pub(super) fn resource_bytes(resource: &CharacterResourceInput) -> usize {
     resource.instance_id.len()
         + resource.definition_id.len()
+        + owner_kind_bytes(&resource.owner.kind)
         + resource.owner.id.as_str().len()
         + resource.owner.character_id.len()
         + field_bytes(
@@ -36,6 +38,7 @@ pub(super) fn resource_bytes(resource: &CharacterResourceInput) -> usize {
 pub(super) fn entity_bytes(entity: &SecondaryEntityInput) -> usize {
     entity.instance_id.len()
         + entity.definition_id.len()
+        + owner_kind_bytes(&entity.owner.kind)
         + entity.owner.id.as_str().len()
         + entity.owner.character_id.len()
         + field_bytes(
@@ -53,6 +56,55 @@ pub(super) fn entity_bytes(entity: &SecondaryEntityInput) -> usize {
         + field_bytes(&entity.intent, intent_bytes(entity.intent.value()))
         + field_bytes(&entity.active, 1)
         + 8
+}
+
+pub(super) fn resource_detail_bytes(
+    resource: &CharacterResourceInput,
+    definition: &CharacterResourceDefinition,
+    binding: &CharacterStateLiveBinding,
+) -> usize {
+    resource_bytes(resource)
+        + resource_definition_bytes(definition)
+        + resource_reference_bytes(binding, resource)
+}
+
+pub(super) fn entity_detail_bytes(
+    entity: &SecondaryEntityInput,
+    definition: &SecondaryEntityDefinition,
+    binding: &CharacterStateLiveBinding,
+) -> usize {
+    entity_bytes(entity)
+        + secondary_definition_bytes(definition)
+        + secondary_reference_bytes(binding, entity)
+}
+
+fn live_binding_bytes(binding: &CharacterStateLiveBinding) -> usize {
+    catalog_binding_bytes(&binding.catalog)
+        + binding.game_instance_id.len()
+        + binding.run_id.len()
+        + binding.mode_id.len()
+        + binding.snapshot_id.len()
+        + 8
+}
+
+fn resource_reference_bytes(
+    binding: &CharacterStateLiveBinding,
+    resource: &CharacterResourceInput,
+) -> usize {
+    live_binding_bytes(binding)
+        + resource.instance_id.len()
+        + resource.definition_id.len()
+        + resource.owner.id.as_str().len()
+}
+
+fn secondary_reference_bytes(
+    binding: &CharacterStateLiveBinding,
+    entity: &SecondaryEntityInput,
+) -> usize {
+    live_binding_bytes(binding)
+        + entity.instance_id.len()
+        + entity.definition_id.len()
+        + entity.owner.id.as_str().len()
 }
 
 fn resource_value_bytes(value: Option<&CharacterResourceValue>) -> usize {
@@ -81,8 +133,8 @@ fn slot_content_bytes(content: Option<&CharacterResourceSlotContent>) -> usize {
         CharacterResourceSlotContent::Empty => 1,
         CharacterResourceSlotContent::Definition(value)
         | CharacterResourceSlotContent::Instance(value)
-        | CharacterResourceSlotContent::Text(value)
-        | CharacterResourceSlotContent::Custom { value, .. } => value.len(),
+        | CharacterResourceSlotContent::Text(value) => value.len(),
+        CharacterResourceSlotContent::Custom { kind, value } => kind.len() + value.len(),
     })
 }
 
@@ -111,11 +163,19 @@ fn statuses_bytes(statuses: Option<&Vec<SecondaryEntityStatus>>) -> usize {
 
 fn intent_bytes(intent: Option<&SecondaryEntityIntent>) -> usize {
     intent.map_or(1, |intent| {
-        intent.rule_reference.value().map_or(1, String::len)
+        intent_kind_bytes(&intent.kind)
+            + intent.rule_reference.value().map_or(1, String::len)
             + intent.label.value().map_or(1, String::len)
             + intent.target.value().map_or(1, target_bytes)
             + 16
     })
+}
+
+fn intent_kind_bytes(kind: &super::live_model::SecondaryEntityIntentKind) -> usize {
+    match kind {
+        super::live_model::SecondaryEntityIntentKind::Custom(value) => value.len(),
+        _ => 1,
+    }
 }
 
 fn owner_kind_bytes(kind: &CharacterStateOwnerKind) -> usize {

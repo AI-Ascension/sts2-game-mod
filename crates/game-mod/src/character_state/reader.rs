@@ -10,9 +10,10 @@ use super::{
     },
     error::CharacterStateCatalogError,
     model::{
-        CHARACTER_STATE_MAX_PAGE_ITEMS, CharacterStateCatalogBinding, CharacterStateVisibility,
-        CharacterStateVisibilityScope,
+        CHARACTER_STATE_MAX_DEFINITION_BYTES, CHARACTER_STATE_MAX_PAGE_ITEMS,
+        CharacterStateCatalogBinding, CharacterStateVisibility, CharacterStateVisibilityScope,
     },
+    sizes::{resource_definition_bytes, secondary_definition_bytes},
 };
 
 /// Static definition family selected by a bounded list query.
@@ -131,6 +132,7 @@ impl CharacterStateCatalogReader {
         if query.limit == 0 || query.limit > CHARACTER_STATE_MAX_PAGE_ITEMS {
             return Err(CharacterStateCatalogError::InvalidPageSize);
         }
+        self.ensure_query_coverage(query)?;
         let key = CharacterStateListQueryKey {
             kind: query.kind,
             character_id: query.character_id.clone(),
@@ -207,6 +209,27 @@ impl CharacterStateCatalogReader {
         })
     }
 
+    fn ensure_query_coverage(
+        &self,
+        query: &CharacterStateListQuery,
+    ) -> Result<(), CharacterStateCatalogError> {
+        for coverage in self.catalog.coverage.values() {
+            if matches_filter(
+                &coverage.character_id,
+                &coverage.mode_id,
+                query.character_id.as_deref(),
+                query.mode_id.as_deref(),
+            ) {
+                let state = match query.kind {
+                    CharacterStateDefinitionKind::Resource => coverage.resources,
+                    CharacterStateDefinitionKind::SecondaryEntity => coverage.secondary_entities,
+                };
+                ensure_supported(state)?;
+            }
+        }
+        Ok(())
+    }
+
     /// Performs one exact resource-definition lookup with explicit visibility scope.
     pub fn resource(
         &self,
@@ -228,6 +251,13 @@ impl CharacterStateCatalogReader {
         )?)?;
         if !visible(definition.visibility, scope) {
             return Err(CharacterStateCatalogError::ExcludedByScope);
+        }
+        let detail_bytes = resource_definition_bytes(definition);
+        if detail_bytes > CHARACTER_STATE_MAX_DEFINITION_BYTES {
+            return Err(CharacterStateCatalogError::DefinitionTooLarge {
+                limit: CHARACTER_STATE_MAX_DEFINITION_BYTES,
+                actual: detail_bytes,
+            });
         }
         Ok(definition.clone())
     }
@@ -253,6 +283,13 @@ impl CharacterStateCatalogReader {
         )?)?;
         if !visible(definition.visibility, scope) {
             return Err(CharacterStateCatalogError::ExcludedByScope);
+        }
+        let detail_bytes = secondary_definition_bytes(definition);
+        if detail_bytes > CHARACTER_STATE_MAX_DEFINITION_BYTES {
+            return Err(CharacterStateCatalogError::DefinitionTooLarge {
+                limit: CHARACTER_STATE_MAX_DEFINITION_BYTES,
+                actual: detail_bytes,
+            });
         }
         Ok(definition.clone())
     }

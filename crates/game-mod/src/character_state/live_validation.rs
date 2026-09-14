@@ -4,7 +4,7 @@ use super::{
     catalog::CharacterStateCatalog,
     definition::{CharacterResourceValue, CharacterResourceValueDefinition},
     error::CharacterStateLiveError,
-    live_measure::{entity_bytes, resource_bytes},
+    live_measure::{entity_detail_bytes, resource_detail_bytes},
     live_model::{CharacterResourceInput, SecondaryEntityInput},
     live_shape::{
         validate_controller, validate_intent, validate_nonnegative_field, validate_slots,
@@ -45,16 +45,29 @@ pub(super) fn validate_snapshot(
     scope: CharacterStateVisibilityScope,
 ) -> Result<(), CharacterStateLiveError> {
     for resource in snapshot.resources.values() {
-        validate_resource_against_catalog(catalog, &snapshot.binding.mode_id, resource, scope)?;
+        validate_resource_against_catalog(
+            catalog,
+            &snapshot.binding,
+            &snapshot.binding.mode_id,
+            resource,
+            scope,
+        )?;
     }
     for entity in snapshot.secondary_entities.values() {
-        validate_entity_against_catalog(catalog, &snapshot.binding.mode_id, entity, scope)?;
+        validate_entity_against_catalog(
+            catalog,
+            &snapshot.binding,
+            &snapshot.binding.mode_id,
+            entity,
+            scope,
+        )?;
     }
     Ok(())
 }
 
 fn validate_resource_against_catalog(
     catalog: &CharacterStateCatalog,
+    binding: &CharacterStateLiveBinding,
     mode_id: &str,
     resource: &CharacterResourceInput,
     scope: CharacterStateVisibilityScope,
@@ -99,10 +112,11 @@ fn validate_resource_against_catalog(
         return Err(CharacterStateLiveError::ValueOutOfRange("resource_current"));
     }
     validate_slots(resource, definition, scope)?;
-    if resource_bytes(resource) > CHARACTER_STATE_MAX_DETAIL_BYTES {
+    let detail_bytes = resource_detail_bytes(resource, definition, binding);
+    if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
         return Err(CharacterStateLiveError::DetailTooLarge {
             limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
-            actual: resource_bytes(resource),
+            actual: detail_bytes,
         });
     }
     Ok(())
@@ -121,6 +135,7 @@ fn validate_resource_field(
 
 fn validate_entity_against_catalog(
     catalog: &CharacterStateCatalog,
+    binding: &CharacterStateLiveBinding,
     mode_id: &str,
     entity: &SecondaryEntityInput,
     scope: CharacterStateVisibilityScope,
@@ -156,10 +171,11 @@ fn validate_entity_against_catalog(
     }
     validate_statuses(&entity.statuses, scope)?;
     validate_intent(&entity.intent, scope)?;
-    if entity_bytes(entity) > CHARACTER_STATE_MAX_DETAIL_BYTES {
+    let detail_bytes = entity_detail_bytes(entity, definition, binding);
+    if detail_bytes > CHARACTER_STATE_MAX_DETAIL_BYTES {
         return Err(CharacterStateLiveError::DetailTooLarge {
             limit: CHARACTER_STATE_MAX_DETAIL_BYTES,
-            actual: entity_bytes(entity),
+            actual: detail_bytes,
         });
     }
     Ok(())

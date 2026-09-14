@@ -20,6 +20,7 @@ mod live_snapshot;
 mod live_validation;
 mod model;
 mod reader;
+mod sizes;
 mod validation;
 
 pub use catalog::{
