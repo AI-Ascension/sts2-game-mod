@@ -195,9 +195,7 @@ fn validate_reference_list(
     Ok(())
 }
 
-fn manifest_entity_kind<'a>(
-    reference: &'a super::definition::EnemySemanticReference,
-) -> Option<&'a str> {
+fn manifest_entity_kind(reference: &super::definition::EnemySemanticReference) -> Option<&str> {
     match &reference.kind {
         EnemySemanticReferenceKind::Status => Some("power_status"),
         EnemySemanticReferenceKind::Encounter => Some("encounter"),
@@ -247,14 +245,13 @@ fn validate_origin_against_manifest(
         return Err(EnemyCatalogError::OriginMismatch(enemy_id.to_owned()));
     }
     for variant in &input.origin_variants {
-        if let Some(package_id) = &variant.origin.package_id {
-            if !manifest
+        if let Some(package_id) = &variant.origin.package_id
+            && !manifest
                 .packages
                 .iter()
                 .any(|package| package.package_id == *package_id)
-            {
-                return Err(EnemyCatalogError::UnknownOriginPackage(package_id.clone()));
-            }
+        {
+            return Err(EnemyCatalogError::UnknownOriginPackage(package_id.clone()));
         }
     }
     Ok(())

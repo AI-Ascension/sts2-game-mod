@@ -338,6 +338,17 @@ hidden targets fail closed instead of collapsing into a known kind or fake senti
 source-only projection with bounded details and synthetic evidence; it defines no transport, native
 extractor, host ABI, or exact-host compatibility.
 
+The owner-local `enemies` producer composes the manifest and locale witness with complete enemy,
+boss, elite, and minion definitions: localized text, role, origin/package provenance, unlock and
+visibility state, tags, base and difficulty/mode-scaled stats, spawn conditions, encounter and
+status references, origin variants, behavior phases, compound moves with typed effects and
+targeting, cooldowns, repetition rules, conditional transitions, and explicit probabilities.
+Supported, unsupported, unavailable, not-applicable, and unknown coverage stay distinct, and reads
+fail closed rather than returning a successful empty page. The reader binds list pages and exact
+lookups to the manifest, locale, producer identity, visibility scope, and non-clonable single-use
+continuations. This is source-only evidence: no transport, native extractor, host ABI, or
+exact-host compatibility is implied.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native

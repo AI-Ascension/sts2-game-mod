@@ -2,230 +2,18 @@
 
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::ContentUnlockState;
-
-use super::{
+use super::super::{
     ENEMY_MAX_PAGE_ITEMS, EnemyCatalogBinding, EnemyCatalogError, EnemyDefinition,
-    EnemyDefinitionReference, EnemyFamilyCoverage, EnemyFamilyState, EnemyFieldStatus,
-    EnemyMoveDefinition, EnemyMoveReference, EnemyVisibility, EnemyVisibilityScope,
+    EnemyDefinitionReference, EnemyFamilyState, EnemyMoveDefinition, EnemyMoveReference,
+    EnemyVisibilityScope,
 };
-
-/// Immutable enemy definitions keyed by namespaced enemy identity.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnemyCatalog {
-    pub(super) binding: EnemyCatalogBinding,
-    pub(super) family: EnemyFamilyCoverage,
-    pub(super) definitions: BTreeMap<String, EnemyDefinition>,
-}
-
-impl EnemyCatalog {
-    pub(super) fn from_parts(
-        binding: EnemyCatalogBinding,
-        family: EnemyFamilyCoverage,
-        definitions: BTreeMap<String, EnemyDefinition>,
-    ) -> Self {
-        Self {
-            binding,
-            family,
-            definitions,
-        }
-    }
-
-    /// Returns the manifest, locale, and producer identity fence.
-    #[must_use]
-    pub fn binding(&self) -> &EnemyCatalogBinding {
-        &self.binding
-    }
-
-    /// Returns the exact locale used by this catalog.
-    #[must_use]
-    pub fn locale(&self) -> &str {
-        &self.binding.locale
-    }
-
-    /// Returns explicit support coverage for the enemy family.
-    #[must_use]
-    pub fn family(&self) -> &EnemyFamilyCoverage {
-        &self.family
-    }
-
-    /// Returns an immutable catalog reader with independent bounded cursors.
-    #[must_use]
-    pub fn reader(&self) -> EnemyCatalogReader {
-        EnemyCatalogReader::new(self.clone())
-    }
-
-    /// Performs one exact enemy lookup under an explicit visibility scope.
-    pub fn get(
-        &self,
-        reference: &EnemyDefinitionReference,
-        scope: EnemyVisibilityScope,
-    ) -> Result<EnemyDefinition, EnemyCatalogError> {
-        self.reader().get(reference, scope)
-    }
-
-    /// Performs one exact move lookup under an explicit visibility scope.
-    pub fn get_move(
-        &self,
-        reference: &EnemyMoveReference,
-        scope: EnemyVisibilityScope,
-    ) -> Result<EnemyMoveDefinition, EnemyCatalogError> {
-        self.reader().get_move(reference, scope)
-    }
-}
-
-/// Typed summary returned by one bounded enemy definition page.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnemyDefinitionSummary {
-    /// Exact static definition reference.
-    pub reference: EnemyDefinitionReference,
-    /// Localized enemy name or explicit unavailable state.
-    pub name: super::EnemyText,
-    /// Enemy role.
-    pub kind: super::EnemyKind,
-    /// Explicit unlock state.
-    pub unlock_state: ContentUnlockState,
-    /// Number of source-owned moves.
-    pub move_count: usize,
-    /// Number of behavior phases.
-    pub phase_count: usize,
-    /// Number of stable tags.
-    pub tag_count: usize,
-    /// Availability of spawn conditions.
-    pub spawn_conditions: EnemyFieldStatus,
-    /// Availability of encounter references.
-    pub encounters: EnemyFieldStatus,
-}
-
-/// Bounded enemy page request.
-#[derive(Debug, Eq, PartialEq)]
-pub struct EnemyListQuery {
-    /// Locale expected by the caller.
-    pub locale: String,
-    /// Visibility scope.
-    pub scope: EnemyVisibilityScope,
-    /// Maximum entries in one page.
-    pub limit: usize,
-    /// Single-use continuation from a previous page.
-    pub continuation: Option<EnemyContinuation>,
-}
-
-/// Complete or partial enemy definition page.
-#[derive(Debug, Eq, PartialEq)]
-pub struct EnemyDefinitionPage {
-    /// Catalog witness for every entry.
-    pub binding: EnemyCatalogBinding,
-    /// Deterministically ordered summaries.
-    pub entries: Vec<EnemyDefinitionSummary>,
-    /// Number of visible definitions.
-    pub total: usize,
-    /// Whether no continuation remains.
-    pub complete: bool,
-    /// Present only when the page is partial.
-    pub continuation: Option<EnemyContinuation>,
-}
-
-/// Bounded move page request scoped to one exact enemy definition.
-#[derive(Debug, Eq, PartialEq)]
-pub struct EnemyMoveListQuery {
-    /// Exact enemy definition whose moves are listed.
-    pub enemy: EnemyDefinitionReference,
-    /// Visibility scope.
-    pub scope: EnemyVisibilityScope,
-    /// Maximum entries in one page.
-    pub limit: usize,
-    /// Single-use continuation from a previous page.
-    pub continuation: Option<EnemyMoveContinuation>,
-}
-
-/// Summary returned by one bounded move page.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnemyMoveSummary {
-    /// Exact static move reference.
-    pub reference: EnemyMoveReference,
-    /// Localized move name.
-    pub name: super::EnemyText,
-    /// Number of ordered effects.
-    pub effect_count: usize,
-    /// Phase identities in which the move is available.
-    pub phase_ids: Vec<String>,
-    /// Selection probability/weight with explicit evidence.
-    pub probability: super::EnemyProbability,
-}
-
-/// Complete or partial move page.
-#[derive(Debug, Eq, PartialEq)]
-pub struct EnemyMoveDefinitionPage {
-    /// Catalog witness for every entry.
-    pub binding: EnemyCatalogBinding,
-    /// Deterministically ordered move summaries.
-    pub entries: Vec<EnemyMoveSummary>,
-    /// Number of visible moves.
-    pub total: usize,
-    /// Whether no continuation remains.
-    pub complete: bool,
-    /// Present only when the page is partial.
-    pub continuation: Option<EnemyMoveContinuation>,
-}
-
-#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-struct ContinuationScope;
-
-/// Opaque single-use enemy continuation.
-#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct EnemyContinuation {
-    token: String,
-    scope: Arc<ContinuationScope>,
-}
-
-impl EnemyContinuation {
-    fn new(token: String, scope: Arc<ContinuationScope>) -> Self {
-        Self { token, scope }
-    }
-
-    /// Returns the opaque fixture token.
-    #[must_use]
-    pub fn token(&self) -> &str {
-        &self.token
-    }
-}
-
-/// Opaque single-use move continuation.
-#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct EnemyMoveContinuation {
-    token: String,
-    scope: Arc<ContinuationScope>,
-}
-
-impl EnemyMoveContinuation {
-    fn new(token: String, scope: Arc<ContinuationScope>) -> Self {
-        Self { token, scope }
-    }
-
-    /// Returns the opaque fixture token.
-    #[must_use]
-    pub fn token(&self) -> &str {
-        &self.token
-    }
-}
-
-#[derive(Clone, Debug)]
-struct EnemyCursorState {
-    binding: EnemyCatalogBinding,
-    locale: String,
-    scope: EnemyVisibilityScope,
-    limit: usize,
-    offset: usize,
-}
-
-#[derive(Clone, Debug)]
-struct MoveCursorState {
-    binding: EnemyCatalogBinding,
-    enemy_id: String,
-    scope: EnemyVisibilityScope,
-    limit: usize,
-    offset: usize,
-}
+use super::catalog::EnemyCatalog;
+use super::page::{
+    ContinuationScope, EnemyContinuation, EnemyCursorState, EnemyDefinitionPage,
+    EnemyDefinitionSummary, EnemyListQuery, EnemyMoveContinuation, EnemyMoveDefinitionPage,
+    EnemyMoveListQuery, EnemyMoveSummary, MoveCursorState,
+};
+use super::{visible_definition, visible_move};
 
 /// Reader retaining one catalog while enforcing locale, scope, and cursor fences.
 ///
@@ -241,7 +29,7 @@ pub struct EnemyCatalogReader {
 }
 
 impl EnemyCatalogReader {
-    fn new(catalog: EnemyCatalog) -> Self {
+    pub(super) fn new(catalog: EnemyCatalog) -> Self {
         Self {
             catalog,
             enemy_cursors: BTreeMap::new(),
@@ -485,31 +273,5 @@ impl EnemyCatalogReader {
         let token = format!("{prefix}-{:08}", self.next_cursor);
         self.next_cursor = self.next_cursor.saturating_add(1);
         token
-    }
-}
-
-fn visible_definition(definition: &EnemyDefinition, scope: EnemyVisibilityScope) -> bool {
-    let unlocked = match definition.unlock_state {
-        ContentUnlockState::Unlocked => true,
-        ContentUnlockState::Locked => {
-            matches!(
-                scope,
-                EnemyVisibilityScope::Reference | EnemyVisibilityScope::Owner
-            )
-        }
-        ContentUnlockState::Unknown => false,
-    };
-    unlocked && visibility_allowed(definition.visibility, scope)
-}
-
-fn visible_move(movement: &EnemyMoveDefinition, scope: EnemyVisibilityScope) -> bool {
-    visibility_allowed(movement.visibility, scope)
-}
-
-fn visibility_allowed(visibility: EnemyVisibility, scope: EnemyVisibilityScope) -> bool {
-    match visibility {
-        EnemyVisibility::Visible => true,
-        EnemyVisibility::OwnerOnly => matches!(scope, EnemyVisibilityScope::Owner),
-        EnemyVisibility::Hidden | EnemyVisibility::Unknown => false,
     }
 }
