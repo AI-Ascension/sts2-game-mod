@@ -232,13 +232,12 @@ fn source_capability_identity_and_read_errors_are_typed() {
     ));
 }
 
-#[test]
-fn detail_limit_counts_component_kinds_and_units_without_bypass() {
-    let long_unit = "u".repeat(ENEMY_INTENT_MAX_IDENTITY_BYTES);
+fn bulk_input(kind_len: usize, unit_len: usize) -> EnemyIntentInput {
+    let unit_value = "u".repeat(unit_len);
     let components = (0..5)
         .map(|index| EnemyIntentComponent {
             component_id: format!("component:bulk:{index}"),
-            kind: EnemyIntentComponentKind::Custom("k".repeat(ENEMY_INTENT_MAX_KIND_BYTES)),
+            kind: EnemyIntentComponentKind::Custom("k".repeat(kind_len)),
             description: EnemyIntentField::NotObserved,
             damage: EnemyIntentField::NotApplicable,
             amount: EnemyIntentField::NotApplicable,
@@ -249,27 +248,72 @@ fn detail_limit_counts_component_kinds_and_units_without_bypass() {
                         id: format!("parameter:unit:{parameter}"),
                         label: EnemyIntentField::NotObserved,
                         value: EnemyIntentParameterValue::Unknown,
-                        unit: EnemyIntentField::Available(unit(&long_unit)),
+                        unit: EnemyIntentField::Available(unit(&unit_value)),
                     })
                     .collect(),
             ),
             targets: EnemyIntentField::NotApplicable,
         })
         .collect::<Vec<_>>();
-    let mut input = snapshot(11);
-    input.enemies[0].intent = EnemyIntentField::Available(EnemyIntentInput {
+    EnemyIntentInput {
         linkage: fixture::intent().linkage,
         components,
         targets: EnemyIntentField::NotApplicable,
-    });
+    }
+}
+
+fn bulk_actual(kind_len: usize, unit_len: usize) -> usize {
+    let mut input = snapshot(11);
+    input.enemies[0].intent = EnemyIntentField::Available(bulk_input(kind_len, unit_len));
+    match EnemyIntentLiveSnapshot::from_input(input) {
+        Err(EnemyIntentError::DetailTooLarge { actual, .. }) => actual,
+        other => {
+            assert!(matches!(
+                other,
+                Err(EnemyIntentError::DetailTooLarge { .. })
+            ));
+            0
+        }
+    }
+}
+
+#[test]
+fn detail_limit_counts_nested_units_without_bypass() {
+    let long_unit = bulk_actual(1, ENEMY_INTENT_MAX_IDENTITY_BYTES);
+    let short_unit = bulk_actual(1, ENEMY_INTENT_MAX_IDENTITY_BYTES - 6);
     assert!(
-        matches!(
-            EnemyIntentLiveSnapshot::from_input(input),
-            Err(EnemyIntentError::DetailTooLarge {
-                limit: ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES,
-                ..
-            })
-        ),
-        "custom kinds and nested units must count toward the per-enemy detail bound"
+        long_unit > ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES,
+        "long parameter units must push the detail over the bound"
     );
+    assert_eq!(
+        long_unit - short_unit,
+        5 * ENEMY_INTENT_MAX_PARAMETERS * 6,
+        "every nested parameter unit byte must count toward the detail bound"
+    );
+}
+
+#[test]
+fn detail_limit_counts_custom_component_kinds_without_bypass() {
+    let long_kind = bulk_actual(ENEMY_INTENT_MAX_KIND_BYTES, ENEMY_INTENT_MAX_IDENTITY_BYTES);
+    let short_kind = bulk_actual(1, ENEMY_INTENT_MAX_IDENTITY_BYTES);
+    assert_eq!(
+        long_kind - short_kind,
+        5 * (ENEMY_INTENT_MAX_KIND_BYTES - 1),
+        "every custom component kind byte must count toward the detail bound"
+    );
+}
+
+#[test]
+fn duplicate_effect_references_are_rejected_distinctly() {
+    let mut intent = intent();
+    let duplicate = intent.components[1].effects.value().expect("effects")[0].clone();
+    if let EnemyIntentField::Available(effects) = &mut intent.components[1].effects {
+        effects.push(duplicate);
+    }
+    let mut input = snapshot(12);
+    input.enemies[0].intent = EnemyIntentField::Available(intent);
+    assert!(matches!(
+        EnemyIntentLiveSnapshot::from_input(input),
+        Err(EnemyIntentError::DuplicateEffect(id)) if id == "status:vulnerable"
+    ));
 }
