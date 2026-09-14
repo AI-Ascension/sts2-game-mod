@@ -13,9 +13,9 @@ pub use reader::RewardCatalogReader;
 use crate::ContentUnlockState;
 
 use super::{
-    RewardFieldStatus, RewardGenerationRule, RewardItem, RewardLegalAction, RewardModifier,
-    RewardOfferDefinition, RewardRequirement, RewardSelection, RewardVisibility,
-    RewardVisibilityScope,
+    RewardField, RewardFieldStatus, RewardGenerationRule, RewardItem, RewardLegalAction,
+    RewardModifier, RewardOfferDefinition, RewardRequirement, RewardSelection, RewardStatePolicy,
+    RewardText, RewardUnavailableReason, RewardVisibility, RewardVisibilityScope,
 };
 
 fn visible_reward(definition: &RewardOfferDefinition, scope: RewardVisibilityScope) -> bool {
@@ -52,6 +52,17 @@ fn visible_legal_action(action: &RewardLegalAction, scope: RewardVisibilityScope
     visibility_allowed(action.visibility, scope)
 }
 
+pub(super) fn visible_selection(selection: &RewardSelection, scope: RewardVisibilityScope) -> bool {
+    visibility_allowed(selection.visibility, scope)
+}
+
+pub(super) fn visible_state_policy(
+    policy: &RewardStatePolicy,
+    scope: RewardVisibilityScope,
+) -> bool {
+    visibility_allowed(policy.visibility, scope)
+}
+
 fn visibility_allowed(visibility: RewardVisibility, scope: RewardVisibilityScope) -> bool {
     match visibility {
         RewardVisibility::Visible => true,
@@ -69,11 +80,30 @@ fn collection_status<T>(
     scope: RewardVisibilityScope,
     visible: fn(&T, RewardVisibilityScope) -> bool,
 ) -> RewardFieldStatus {
+    scoped_status(RewardFieldStatus::Available, items, scope, visible)
+}
+
+/// Combines a source availability status with scope withholding.
+///
+/// A source status other than `Available` (`Denied`, `NotObserved`, `Unsupported`, `Failed`,
+/// `Unknown`, `NotApplicable`, `Partial`) already states that the source could not safely retain
+/// the whole collection and is preserved verbatim. An `Available` source status is degraded only
+/// by scope: `Denied` when every entry is withheld, `Partial` when some are, and `Available`
+/// otherwise (including a genuinely observed-empty collection).
+fn scoped_status<T>(
+    source: RewardFieldStatus,
+    items: &[T],
+    scope: RewardVisibilityScope,
+    visible: fn(&T, RewardVisibilityScope) -> bool,
+) -> RewardFieldStatus {
+    if source != RewardFieldStatus::Available {
+        return source;
+    }
     let visible_count = items.iter().filter(|item| visible(item, scope)).count();
     if visible_count == items.len() {
         RewardFieldStatus::Available
     } else if visible_count == 0 {
-        RewardFieldStatus::Denied
+        RewardUnavailableReason::Denied.status()
     } else {
         RewardFieldStatus::Partial
     }
@@ -84,13 +114,20 @@ pub(super) fn project_definition(
     definition: &RewardOfferDefinition,
     scope: RewardVisibilityScope,
 ) -> RewardOfferDefinition {
+    let show_selection = visible_selection(&definition.selection, scope);
+    let show_policy = visible_state_policy(&definition.state_policy, scope);
     RewardOfferDefinition {
         reference: definition.reference.clone(),
         label: definition.label.clone(),
         kind: definition.kind.clone(),
         unlock_state: definition.unlock_state,
         visibility: definition.visibility,
-        selection: project_selection(&definition.selection, scope),
+        selection: if show_selection {
+            project_selection(&definition.selection, scope)
+        } else {
+            withheld_selection(&definition.selection)
+        },
+        selection_status: availability(show_selection),
         items: definition
             .items
             .iter()
@@ -105,8 +142,48 @@ pub(super) fn project_definition(
             .map(|rule| project_rule(rule, scope))
             .collect(),
         generation_status: collection_status(&definition.generation, scope, visible_rule),
-        state_policy: definition.state_policy.clone(),
+        state_policy: if show_policy {
+            definition.state_policy.clone()
+        } else {
+            withheld_state_policy(&definition.state_policy)
+        },
+        state_policy_status: availability(show_policy),
         references: definition.references.clone(),
+    }
+}
+
+fn availability(visible: bool) -> RewardFieldStatus {
+    if visible {
+        RewardFieldStatus::Available
+    } else {
+        RewardUnavailableReason::Denied.status()
+    }
+}
+
+/// Replaces a restricted selection group with an explicit, data-free withheld record.
+fn withheld_selection(selection: &RewardSelection) -> RewardSelection {
+    RewardSelection {
+        group_id: String::new(),
+        label: RewardText::Unavailable(RewardUnavailableReason::Denied),
+        choose_min: RewardField::Unavailable(RewardUnavailableReason::Denied),
+        choose_max: RewardField::Unavailable(RewardUnavailableReason::Denied),
+        optional_skip: RewardField::Unavailable(RewardUnavailableReason::Denied),
+        legal_actions: Vec::new(),
+        legal_actions_status: RewardUnavailableReason::Denied.status(),
+        references: Vec::new(),
+        visibility: selection.visibility,
+    }
+}
+
+/// Replaces a restricted state policy with an explicit, data-free withheld record.
+fn withheld_state_policy(policy: &RewardStatePolicy) -> RewardStatePolicy {
+    let denied = RewardUnavailableReason::Denied;
+    RewardStatePolicy {
+        claim_limit: RewardField::Unavailable(denied),
+        capacity: RewardField::Unavailable(denied),
+        replacement: RewardField::Unavailable(denied),
+        multi_stage: RewardField::Unavailable(denied),
+        visibility: policy.visibility,
     }
 }
 
@@ -139,21 +216,31 @@ fn project_rule(rule: &RewardGenerationRule, scope: RewardVisibilityScope) -> Re
         label: rule.label.clone(),
         pool: rule.pool.clone(),
         rarity_weights: rule.rarity_weights.clone(),
-        rarity_status: RewardFieldStatus::Available,
+        rarity_status: rule.rarity_status,
         eligibility: rule
             .eligibility
             .iter()
             .filter(|requirement| visible_requirement(requirement, scope))
             .cloned()
             .collect(),
-        eligibility_status: collection_status(&rule.eligibility, scope, visible_requirement),
+        eligibility_status: scoped_status(
+            rule.eligibility_status,
+            &rule.eligibility,
+            scope,
+            visible_requirement,
+        ),
         modifiers: rule
             .modifiers
             .iter()
             .filter(|modifier| visible_modifier(modifier, scope))
             .cloned()
             .collect(),
-        modifiers_status: collection_status(&rule.modifiers, scope, visible_modifier),
+        modifiers_status: scoped_status(
+            rule.modifiers_status,
+            &rule.modifiers,
+            scope,
+            visible_modifier,
+        ),
         probability: rule.probability.clone(),
         references: rule.references.clone(),
         evidence: rule.evidence,

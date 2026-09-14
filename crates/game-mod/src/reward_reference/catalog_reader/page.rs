@@ -84,8 +84,12 @@ pub struct RewardDefinitionSummary {
     pub rule_count: usize,
     /// Availability of generation rules after scope withholding.
     pub generation_status: RewardFieldStatus,
+    /// Availability of the selection group after scope withholding.
+    pub selection_status: RewardFieldStatus,
     /// Availability of the selection group's legal actions.
     pub legal_actions_status: RewardFieldStatus,
+    /// Availability of the state policy after scope withholding.
+    pub state_policy_status: RewardFieldStatus,
 }
 
 /// Complete or partial reward definition page.
@@ -144,6 +148,8 @@ pub struct RewardItemPage {
     pub entries: Vec<RewardItemSummary>,
     /// Number of visible items.
     pub total: usize,
+    /// Availability of offered items after scope withholding, independent of pagination exhaustion.
+    pub items_status: RewardFieldStatus,
     /// Whether no continuation remains.
     pub complete: bool,
     /// Present only when the page is partial.

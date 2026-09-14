@@ -14,7 +14,7 @@ use super::page::{
     RewardListQuery,
 };
 use super::summary::{item_summary, reward_summary};
-use super::{visible_item, visible_reward};
+use super::{collection_status, visible_item, visible_reward};
 
 /// Reader retaining one catalog while enforcing locale, scope, and cursor fences.
 ///
@@ -113,6 +113,7 @@ impl RewardCatalogReader {
             .filter(|item| visible_item(item, query.scope))
             .map(item_summary)
             .collect::<Vec<_>>();
+        let items_status = collection_status(&definition.items, query.scope, visible_item);
         let total = entries_all.len();
         let end = start.saturating_add(query.limit).min(total);
         let page_entries = entries_all[start..end].to_vec();
@@ -136,6 +137,7 @@ impl RewardCatalogReader {
             binding: self.catalog.binding.clone(),
             entries: page_entries,
             total,
+            items_status,
             complete: continuation.is_none(),
             continuation,
         })

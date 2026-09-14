@@ -2,6 +2,8 @@
 
 use std::collections::BTreeMap;
 
+use crate::ContentUnlockState;
+
 use super::super::RewardCatalogError;
 use super::super::definition::{RewardGenerationRule, RewardItemInput};
 use super::super::model::{
@@ -9,15 +11,34 @@ use super::super::model::{
     RewardSemanticReferenceKind, RewardVisibility, validate_identity, visibility_rank,
 };
 
+/// Resolved visibility and unlock state of a reward-family target.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct RewardTarget {
+    pub(crate) visibility: RewardVisibility,
+    pub(crate) unlock_state: ContentUnlockState,
+}
+
 /// Shallow reward context shared by scope-aware reference and membership checks.
 pub(super) struct RewardScope<'a> {
     reward_id: &'a str,
+    visibility: RewardVisibility,
+    unlock_state: ContentUnlockState,
     items: &'a BTreeMap<&'a str, RewardVisibility>,
 }
 
 impl<'a> RewardScope<'a> {
-    pub(super) fn new(reward_id: &'a str, items: &'a BTreeMap<&'a str, RewardVisibility>) -> Self {
-        Self { reward_id, items }
+    pub(super) fn new(
+        reward_id: &'a str,
+        visibility: RewardVisibility,
+        unlock_state: ContentUnlockState,
+        items: &'a BTreeMap<&'a str, RewardVisibility>,
+    ) -> Self {
+        Self {
+            reward_id,
+            visibility,
+            unlock_state,
+            items,
+        }
     }
 }
 
@@ -94,22 +115,25 @@ pub(super) fn validate_item_membership(
     Ok(())
 }
 
-/// Validates one list of semantic reference edges against target visibility.
+/// Validates one list of semantic reference edges against target effective scope.
 ///
-/// A record more visible than its target is rejected: a visible record must never disclose a
-/// hidden or owner-only target identity or label.
+/// A record observable in a less restrictive scope than its target is rejected: a public record
+/// must never disclose a hidden, owner-only, or locked target identity or label. Reserved-family
+/// alias spellings are normalized to the canonical reward kind first, and every pool, selection,
+/// requirement, modifier, rule, item, and top-level reference uses this same check.
 pub(super) fn validate_reference_edges(
     scope: &RewardScope<'_>,
-    reward_visibility: &BTreeMap<String, RewardVisibility>,
+    reward_targets: &BTreeMap<String, RewardTarget>,
     containing: RewardVisibility,
     references: &[RewardSemanticReference],
 ) -> Result<(), RewardCatalogError> {
+    let containing_scope = containing_min_scope(scope, containing);
     for reference in references {
         if let Some(canonical) = canonical_reserved_family_alias(&reference.kind) {
             reject_more_visible_reward(
-                scope.reward_id,
-                reward_visibility,
-                containing,
+                scope,
+                reward_targets,
+                containing_scope,
                 &reference.id,
                 &canonical,
             )?;
@@ -118,9 +142,9 @@ pub(super) fn validate_reference_edges(
         match &reference.kind {
             RewardSemanticReferenceKind::Reward => {
                 reject_more_visible_reward(
-                    scope.reward_id,
-                    reward_visibility,
-                    containing,
+                    scope,
+                    reward_targets,
+                    containing_scope,
                     &reference.id,
                     &reference.kind,
                 )?;
@@ -132,7 +156,12 @@ pub(super) fn validate_reference_edges(
                         item_id: reference.id.clone(),
                     });
                 };
-                reject_more_visible(scope.reward_id, containing, *target, &reference.kind)?;
+                reject_more_visible(
+                    scope.reward_id,
+                    containing_scope,
+                    label_min_scope(*target),
+                    &reference.kind,
+                )?;
             }
             _ => {}
         }
@@ -159,30 +188,76 @@ fn canonical_reserved_family_alias(
     }
 }
 
+/// Rejects a referencing record observable in a scope where its reward target is not.
 fn reject_more_visible_reward(
-    reward_id: &str,
-    reward_visibility: &BTreeMap<String, RewardVisibility>,
-    containing: RewardVisibility,
+    scope: &RewardScope<'_>,
+    reward_targets: &BTreeMap<String, RewardTarget>,
+    containing_scope: u8,
     target_id: &str,
     kind: &RewardSemanticReferenceKind,
 ) -> Result<(), RewardCatalogError> {
-    if let Some(target) = reward_visibility.get(target_id) {
-        reject_more_visible(reward_id, containing, *target, kind)?;
+    if let Some(target) = reward_targets.get(target_id) {
+        reject_more_visible(
+            scope.reward_id,
+            containing_scope,
+            reward_min_scope(target.visibility, target.unlock_state),
+            kind,
+        )?;
     }
     Ok(())
 }
 
 fn reject_more_visible(
     reward_id: &str,
-    containing: RewardVisibility,
-    target: RewardVisibility,
+    containing_scope: u8,
+    target_scope: u8,
     kind: &RewardSemanticReferenceKind,
 ) -> Result<(), RewardCatalogError> {
-    if visibility_rank(containing) > visibility_rank(target) {
+    if containing_scope < target_scope {
         return Err(RewardCatalogError::HiddenReferenceLeak {
             reward_id: reward_id.to_owned(),
             reference_kind: kind.clone(),
         });
     }
     Ok(())
+}
+
+/// Least restrictive query scope in which a standalone visibility label is observable.
+const SCOPE_PUBLIC: u8 = 0;
+const SCOPE_REFERENCE: u8 = 1;
+const SCOPE_OWNER: u8 = 2;
+const SCOPE_NEVER: u8 = 3;
+
+/// Returns the least restrictive scope in which a nested record visibility is observable.
+fn label_min_scope(visibility: RewardVisibility) -> u8 {
+    match visibility {
+        RewardVisibility::Visible => SCOPE_PUBLIC,
+        RewardVisibility::OwnerOnly => SCOPE_OWNER,
+        RewardVisibility::Hidden | RewardVisibility::Unknown => SCOPE_NEVER,
+    }
+}
+
+/// Returns the least restrictive scope in which a reward target is observable.
+///
+/// This mirrors exact lookup: an unlocked visible reward is public, a locked visible reward is
+/// reachable only from the reference/owner scopes, an owner-only reward is owner-only, and a
+/// hidden or unknown target is observable in no scope.
+fn reward_min_scope(visibility: RewardVisibility, unlock_state: ContentUnlockState) -> u8 {
+    match visibility {
+        RewardVisibility::Visible => match unlock_state {
+            ContentUnlockState::Unlocked => SCOPE_PUBLIC,
+            ContentUnlockState::Locked => SCOPE_REFERENCE,
+            ContentUnlockState::Unknown => SCOPE_NEVER,
+        },
+        RewardVisibility::OwnerOnly => SCOPE_OWNER,
+        RewardVisibility::Hidden | RewardVisibility::Unknown => SCOPE_NEVER,
+    }
+}
+
+/// Returns the least restrictive scope in which a nested record is actually observable.
+///
+/// The containing record is observable only where both its owning reward and the record itself
+/// are observable, so the effective scope is the more restrictive of the two.
+fn containing_min_scope(scope: &RewardScope<'_>, containing: RewardVisibility) -> u8 {
+    reward_min_scope(scope.visibility, scope.unlock_state).max(label_min_scope(containing))
 }

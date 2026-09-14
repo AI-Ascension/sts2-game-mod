@@ -6,6 +6,7 @@ mod values;
 
 use std::collections::{BTreeMap, BTreeSet};
 
+pub(super) use self::edges::RewardTarget;
 use self::edges::{RewardScope, collect_items, validate_item_membership, validate_reference_edges};
 use self::quantities::validate_item_quantity;
 use self::values::{
@@ -15,12 +16,12 @@ use self::values::{
 
 use super::RewardCatalogError;
 use super::definition::{RewardItemInput, RewardKind, RewardOfferDefinitionInput};
-use super::model::{REWARD_MAX_RULES, RewardField, RewardVisibility, validate_identity};
+use super::model::{REWARD_MAX_RULES, RewardField, validate_identity};
 
 /// Validates one source-owned reward definition before it enters an immutable catalog.
 pub(super) fn validate_definition(
     input: &RewardOfferDefinitionInput,
-    reward_visibility: &BTreeMap<String, RewardVisibility>,
+    reward_targets: &BTreeMap<String, RewardTarget>,
 ) -> Result<(), RewardCatalogError> {
     validate_identity(&input.reward_id, "reward_id")?;
     validate_text_value(&input.label, "title")?;
@@ -35,18 +36,26 @@ pub(super) fn validate_definition(
     validate_item_membership(&input.reward_id, &input.generation, &items)?;
     validate_state_policy(&input.state_policy)?;
 
-    let scope = RewardScope::new(&input.reward_id, &items);
+    let scope = RewardScope::new(
+        &input.reward_id,
+        input.visibility,
+        input.unlock_state,
+        &items,
+    );
     validate_reference_edges(
         &scope,
-        reward_visibility,
+        reward_targets,
         input.selection.visibility,
         &input.selection.references,
     )?;
     for rule in &input.generation {
+        if let RewardField::Available(pool) = &rule.pool {
+            validate_reference_edges(&scope, reward_targets, rule.visibility, pool)?;
+        }
         for requirement in &rule.eligibility {
             validate_reference_edges(
                 &scope,
-                reward_visibility,
+                reward_targets,
                 requirement.visibility,
                 &requirement.references,
             )?;
@@ -54,28 +63,23 @@ pub(super) fn validate_definition(
         for modifier in &rule.modifiers {
             validate_reference_edges(
                 &scope,
-                reward_visibility,
+                reward_targets,
                 modifier.visibility,
                 &modifier.references,
             )?;
         }
-        validate_reference_edges(&scope, reward_visibility, rule.visibility, &rule.references)?;
+        validate_reference_edges(&scope, reward_targets, rule.visibility, &rule.references)?;
     }
     for item in &input.items {
         validate_reference_edges(
             &scope,
-            reward_visibility,
+            reward_targets,
             item.visibility,
             std::slice::from_ref(&item.reference),
         )?;
     }
     validate_references(&input.references)?;
-    validate_reference_edges(
-        &scope,
-        reward_visibility,
-        input.visibility,
-        &input.references,
-    )
+    validate_reference_edges(&scope, reward_targets, input.visibility, &input.references)
 }
 
 fn validate_reward_kind(kind: &RewardKind) -> Result<(), RewardCatalogError> {
@@ -108,6 +112,10 @@ fn validate_item(item: &RewardItemInput, kind: &RewardKind) -> Result<(), Reward
     validate_item_quantity(item, kind)?;
     if let RewardField::Available(instance) = &item.instance {
         validate_identity(&instance.item_instance_id, "item_instance")?;
+        validate_identity(&instance.offer.offer_id, "instance_offer")?;
+        validate_identity(&instance.offer.snapshot.run_id, "instance_run")?;
+        validate_identity(&instance.offer.snapshot.room_id, "instance_room")?;
+        validate_identity(&instance.offer.snapshot.snapshot_id, "instance_snapshot")?;
     }
     validate_visibility(item.visibility)
 }

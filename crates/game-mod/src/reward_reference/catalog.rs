@@ -10,9 +10,12 @@ use super::{
     REWARD_REFERENCE_PRODUCER_VERSION, REWARD_REFERENCE_RELIC_KIND, RewardCatalogBinding,
     RewardCatalogError, RewardFamilyCoverage, RewardFamilyState, RewardField,
     RewardOfferDefinition, RewardOfferDefinitionInput, RewardSemanticReference,
-    RewardSemanticReferenceKind, RewardSourceError, RewardVisibility,
-    catalog_reader::RewardCatalog, definition::definition_bytes, error::map_source_error,
-    model::validate_identity, validation::validate_definition,
+    RewardSemanticReferenceKind, RewardSourceError,
+    catalog_reader::RewardCatalog,
+    definition::definition_bytes,
+    error::map_source_error,
+    model::validate_identity,
+    validation::{RewardTarget, validate_definition},
 };
 
 /// Bounded source snapshot used to construct one immutable reward catalog.
@@ -146,14 +149,22 @@ fn coverage(
 fn collect_records(
     inputs: Vec<RewardOfferDefinitionInput>,
 ) -> Result<BTreeMap<String, RewardOfferDefinitionInput>, RewardCatalogError> {
-    let reward_visibility: BTreeMap<String, RewardVisibility> = inputs
+    let reward_targets: BTreeMap<String, RewardTarget> = inputs
         .iter()
-        .map(|input| (input.reward_id.clone(), input.visibility))
+        .map(|input| {
+            (
+                input.reward_id.clone(),
+                RewardTarget {
+                    visibility: input.visibility,
+                    unlock_state: input.unlock_state,
+                },
+            )
+        })
         .collect();
     let mut records = BTreeMap::new();
     for input in inputs {
         validate_identity(&input.reward_id, "reward_id")?;
-        validate_definition(&input, &reward_visibility)?;
+        validate_definition(&input, &reward_targets)?;
         let bytes = definition_bytes(&input);
         if bytes > REWARD_MAX_DEFINITION_BYTES {
             return Err(RewardCatalogError::DefinitionTooLarge {

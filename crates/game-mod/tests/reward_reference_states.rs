@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: MIT
 
+//! State/identity vocabulary representation only.
+//!
+//! These checks assert that the named offer states and categories stay distinct and representable.
+//! They intentionally do not establish producer capacity, replacement, or stage behavior; the
+//! behavioral producer/reader regressions live in `reward_reference_hardening.rs`.
+
 #![allow(clippy::expect_used, dead_code)]
 
 #[path = "support/reward_reference.rs"]

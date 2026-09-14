@@ -10,8 +10,8 @@ use super::super::definition::{
 use super::super::model::{
     REWARD_MAX_LEGAL_ACTIONS, REWARD_MAX_MODIFIERS, REWARD_MAX_PARAMETERS,
     REWARD_MAX_RARITY_WEIGHTS, REWARD_MAX_REFERENCES, REWARD_MAX_REQUIREMENTS, REWARD_MAX_STAGES,
-    RewardField, RewardRarityWeight, RewardSemanticReference, RewardSemanticReferenceKind,
-    RewardText, RewardVisibility, validate_identity, validate_text,
+    RewardField, RewardFieldStatus, RewardRarityWeight, RewardSemanticReference,
+    RewardSemanticReferenceKind, RewardText, RewardVisibility, validate_identity, validate_text,
 };
 use super::quantities::{
     modifier_is_magnitude, validate_numeric, validate_probability, validate_quantity,
@@ -214,11 +214,47 @@ pub(super) fn validate_generation_rule(
         validate_references(pool)?;
     }
     validate_rarity_weights(&rule.rarity_weights)?;
+    validate_collection_status(
+        rule.rarity_status,
+        rule.rarity_weights.len(),
+        "rarity_status",
+    )?;
     validate_requirement_list(&rule.eligibility)?;
+    validate_collection_status(
+        rule.eligibility_status,
+        rule.eligibility.len(),
+        "eligibility_status",
+    )?;
     validate_modifiers(&rule.modifiers)?;
+    validate_collection_status(
+        rule.modifiers_status,
+        rule.modifiers.len(),
+        "modifiers_status",
+    )?;
     validate_probability(&rule.probability)?;
     validate_references(&rule.references)?;
     validate_visibility(rule.visibility)?;
+    Ok(())
+}
+
+/// Rejects an availability status that contradicts a non-empty retained collection.
+///
+/// `Available` and `Partial` may accompany any retained length; every other source status
+/// (`Denied`, `NotObserved`, `Unsupported`, `Failed`, `Unknown`, `NotApplicable`) means no entry
+/// was safely retained, so a non-empty vector is inconsistent and rejected rather than published.
+fn validate_collection_status(
+    status: RewardFieldStatus,
+    retained: usize,
+    field: &'static str,
+) -> Result<(), RewardCatalogError> {
+    if retained != 0
+        && !matches!(
+            status,
+            RewardFieldStatus::Available | RewardFieldStatus::Partial
+        )
+    {
+        return Err(RewardCatalogError::InvalidInput(field));
+    }
     Ok(())
 }
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use super::super::model::{
-    RewardField, RewardNumericValue, RewardProbability, RewardQuantity, RewardRarityWeight,
-    RewardSemanticReference, RewardSemanticReferenceKind, RewardText,
+    RewardField, RewardItemInstanceReference, RewardNumericValue, RewardProbability,
+    RewardQuantity, RewardRarityWeight, RewardSemanticReference, RewardSemanticReferenceKind,
+    RewardText,
 };
 use super::*;
 
@@ -206,8 +207,21 @@ fn item_bytes(item: &RewardItemInput) -> usize {
         + text_bytes(&item.label)
         + reference_bytes(&item.reference)
         + quantity_bytes(&item.quantity)
-        + field_bytes(&item.instance, |_| item.item_id.len() + 1)
+        + field_bytes(&item.instance, instance_bytes)
         + 3
+}
+
+/// Counts every retained string of one live item-instance reference.
+///
+/// Run, room, snapshot, offer, and item-instance identities are all retained, so each counts
+/// toward the aggregate definition bound rather than being collapsed into the static item ID.
+fn instance_bytes(instance: &RewardItemInstanceReference) -> usize {
+    instance.offer.snapshot.run_id.len()
+        + instance.offer.snapshot.room_id.len()
+        + instance.offer.snapshot.snapshot_id.len()
+        + instance.offer.offer_id.len()
+        + instance.item_instance_id.len()
+        + 4
 }
 
 fn replacement_policy_bytes(policy: &RewardReplacementPolicy) -> usize {

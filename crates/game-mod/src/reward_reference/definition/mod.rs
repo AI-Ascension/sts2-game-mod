@@ -79,6 +79,8 @@ pub struct RewardOfferDefinition {
     pub visibility: RewardVisibility,
     /// Selection group with choose/skip constraints and legal actions.
     pub selection: RewardSelection,
+    /// Availability of the selection group after scope withholding.
+    pub selection_status: RewardFieldStatus,
     /// Offered items with typed definition/instance references.
     pub items: Vec<RewardItem>,
     /// Availability of the offered items after scope withholding.
@@ -89,6 +91,8 @@ pub struct RewardOfferDefinition {
     pub generation_status: RewardFieldStatus,
     /// Static support for the distinct offer states.
     pub state_policy: RewardStatePolicy,
+    /// Availability of the state policy after scope withholding.
+    pub state_policy_status: RewardFieldStatus,
     /// Top-level typed references.
     pub references: Vec<RewardSemanticReference>,
 }
@@ -115,11 +119,13 @@ impl RewardOfferDefinition {
             unlock_state: input.unlock_state,
             visibility: input.visibility,
             selection: RewardSelection::from_input(input.selection),
+            selection_status: RewardFieldStatus::Available,
             items,
             items_status: RewardFieldStatus::Available,
             generation: input.generation,
             generation_status: RewardFieldStatus::Available,
             state_policy: input.state_policy,
+            state_policy_status: RewardFieldStatus::Available,
             references: input.references,
         }
     }
