@@ -37,15 +37,14 @@ pub struct RetainedMapLiveBinding {
 }
 
 impl RetainedMapLiveBinding {
-    /// Returns whether two bindings name the same run-level map identity.
+    /// Returns whether two bindings match on the complete snapshot fence.
+    ///
+    /// The fence includes the catalog witness, instance, run, act, mode, map-instance,
+    /// `snapshot_id`, and `epoch`. Reconciliation and replacement compare the whole value, so a
+    /// changed snapshot identity is never mistaken for the same retained generation.
     #[must_use]
-    pub fn same_identity(&self, other: &Self) -> bool {
-        self.catalog == other.catalog
-            && self.game_instance_id == other.game_instance_id
-            && self.run_id == other.run_id
-            && self.act_id == other.act_id
-            && self.mode_id == other.mode_id
-            && self.map_instance_id == other.map_instance_id
+    pub fn same_snapshot_fence(&self, other: &Self) -> bool {
+        self == other
     }
 }
 

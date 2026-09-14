@@ -24,8 +24,11 @@ explicit `observe` reads the source.
 
 Each snapshot binds a static catalog witness (the content-manifest cursor, locale, and an
 owner-local producer version) plus live instance, run, act, mode, map-instance, snapshot, and a
-monotonic epoch. Replacing a snapshot keeps the same run-level identity and requires a newer epoch,
-so an act transition, restore, or new run cannot reuse an old map as current.
+monotonic epoch. Reconciliation compares the complete snapshot fence, including `snapshot_id` and
+`epoch`, so rotating only the live snapshot identity marks the retained knowledge stale even when
+the run, act, and map-instance are unchanged. Replacing a snapshot keeps the same run-level identity
+and requires a newer epoch, so an act transition, restore, or new run cannot reuse an old map as
+current.
 
 A `RetainedMapReader` exposes explicit freshness (current, retained, stale, withheld, unavailable,
 never-observed, unknown), field availability (available, not-applicable, not-observed, unsupported,
@@ -33,12 +36,21 @@ denied, hidden, stale, unknown), and per-node visibility. Stale or unknown knowl
 reported as current or complete, and a reveal-policy change withholds retained knowledge without
 discarding it. Retained travel bindings carry an explicit actionability that is
 `current` only while the owning generation matches and the surface is open; `authorize_travel`
-rejects every retained, stale, withheld, unavailable, or unknown reference. A hidden or unknown
+rejects every retained, stale, withheld, unavailable, or unknown reference. Travel disclosure and
+authorization enforce node visibility: a binding whose `from_node_id` or `to_node_id` is absent or
+not visible under the reader's scope is omitted from `travel_references` and rejected by
+`authorize_travel` with a typed `scope_denied("travel")` error. A hidden or unknown
 node cannot carry a public label or public contents, so hidden future room contents are withheld
 rather than fabricated.
 
 Topology pages are bounded and use single-use continuations bound to the snapshot, limit, and
-reader. The continuation value derives `Clone`, but single use is enforced server-side: the reader
+reader. A page exposes both visibility-filtered node summaries and visibility-filtered directed
+edges ranked deterministically by endpoint identity. An edge is disclosed only when both endpoints
+exist and are visible under the reader's scope, so connectivity beyond immediately available travel
+is surfaced without leaking an owner-only or hidden endpoint. The node and edge windows share the
+requested limit, the continuation carries both offsets, and a page is `complete` only when both
+windows are exhausted and the freshness still trusts topology. The continuation value derives
+`Clone`, but single use is enforced server-side: the reader
 removes the token on first consumption, so a reused clone is rejected as an invalid continuation.
 Node detail and total snapshot bytes are bounded by estimates that count every nested identity,
 label, and custom-kind string. Duplicate or ambiguous nodes, edges, and travel actions fail before
@@ -50,13 +62,19 @@ representable, and only an explicit un-withhold clears it. Withheld `topology`, 
 `travel_references`, and `authorize_travel` reads fail closed with a typed withheld error. Surface
 open/close state is likewise separate from generation freshness: opening the surface never promotes
 `retained` back to `current` or re-arms travel, and travel is actionable only when the generation is
-current and the surface is open. Pre-observation `travel_references` fail closed with the same typed
+current and the surface is open. A rejected observation revokes current authority: a surface now
+reported closed demotes a current observation to `retained`, while a rejected read that proves a
+changed live identity or generation marks the knowledge `stale` and closes the surface, so an old
+travel reference can never authorize after either rejection. Pre-observation `travel_references`
+fail closed with the same typed
 never-observed error as the other reads rather than returning an empty success.
 
 ## Evidence and limits
 
 Synthetic fixtures cover open-map observation, close-map reads with honest retained freshness,
-pre-observation unavailable/withheld reads, act/run/mode/map-instance/epoch invalidation, hidden
+pre-observation unavailable/withheld reads, act/run/mode/map-instance/epoch invalidation, a
+snapshot-identity-only fence change, authority revocation after a rejected observation, owner-only
+travel visibility and authorization, visible-edge exposure with pagination, hidden
 future contents, non-actionable stale travel references, bounded pagination with single-use
 continuations, and nested detail/snapshot byte limits. They also confirm the copied
 `runtime-map-v1` artifact still verifies unchanged. These prove deterministic local validation and

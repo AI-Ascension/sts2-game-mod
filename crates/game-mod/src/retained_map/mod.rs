@@ -34,9 +34,10 @@ pub use model::{
     RETAINED_MAP_MAX_NODES, RETAINED_MAP_MAX_PAGE_ITEMS, RETAINED_MAP_MAX_SNAPSHOT_BYTES,
     RETAINED_MAP_MAX_STALE_CONTINUATIONS, RETAINED_MAP_MAX_TEXT_BYTES,
     RETAINED_MAP_MAX_TRAVEL_BINDINGS, RETAINED_MAP_PRODUCER_VERSION, RetainedMapContents,
-    RetainedMapEdge, RetainedMapEdgeInput, RetainedMapNode, RetainedMapNodeInput,
-    RetainedMapNodeKind, RetainedMapNodeReference, RetainedMapSnapshot, RetainedMapSnapshotInput,
-    RetainedMapTravel, RetainedMapTravelInput, RetainedMapTravelReference,
+    RetainedMapEdge, RetainedMapEdgeInput, RetainedMapEdgeReference, RetainedMapNode,
+    RetainedMapNodeInput, RetainedMapNodeKind, RetainedMapNodeReference, RetainedMapSnapshot,
+    RetainedMapSnapshotInput, RetainedMapTravel, RetainedMapTravelInput,
+    RetainedMapTravelReference,
 };
 pub use page::{
     RetainedMapContinuation, RetainedMapNodeSummary, RetainedMapTopologyPage,

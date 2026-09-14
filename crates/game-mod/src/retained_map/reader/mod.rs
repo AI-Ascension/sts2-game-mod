@@ -65,7 +65,10 @@ impl RetainedMapReader {
 
     /// Reobserves the map while permitted, recording only already-public topology.
     ///
-    /// A closed, forbidden, unsupported, or unknown surface fails without opening the UI.
+    /// A closed, forbidden, unsupported, or unknown surface fails without opening the UI and
+    /// revokes current authority. A rejected read that proves a changed live identity or generation
+    /// marks the retained knowledge stale so an old reference can never authorize travel. Transient
+    /// failures that establish nothing about the live surface leave retained state intact.
     pub fn observe<S: RetainedMapSource>(
         &mut self,
         source: &S,
@@ -76,23 +79,37 @@ impl RetainedMapReader {
         }
         let observation = source.observation_state();
         if observation != RetainedMapObservationState::Observable {
+            self.observation = observation;
+            self.screen_open = false;
+            if self.freshness == RetainedMapFreshness::Current {
+                self.freshness = RetainedMapFreshness::Retained;
+            }
             return Err(RetainedMapError::MapNotObservable(observation));
         }
         let input = source
             .read_snapshot(expected, self.scope)
             .map_err(map_error)?;
         if input.binding != *expected {
+            self.stale_identity();
             return Err(RetainedMapError::StaleSource);
         }
         let candidate = RetainedMapSnapshot::from_input(input)?;
-        if let Some(current) = &self.retained {
-            validate_replacement(current.binding(), candidate.binding())?;
+        if let Some(current) = &self.retained
+            && let Err(error) = validate_replacement(current.binding(), candidate.binding())
+        {
+            self.stale_identity();
+            return Err(error);
         }
         self.retained = Some(candidate);
         self.observation = RetainedMapObservationState::Observable;
         self.freshness = RetainedMapFreshness::Current;
         self.screen_open = true;
         Ok(())
+    }
+
+    fn stale_identity(&mut self) {
+        self.freshness = RetainedMapFreshness::Stale;
+        self.screen_open = false;
     }
 
     /// Marks the map surface closed without discarding retained knowledge.
@@ -132,16 +149,17 @@ impl RetainedMapReader {
         self.withheld = false;
     }
 
-    /// Reconciles retained knowledge against the current live binding.
+    /// Reconciles retained knowledge against the complete current live snapshot fence.
     ///
-    /// An act/run/mode/map-instance or epoch change marks the retained knowledge stale so it can
-    /// never be read as current. The retained topology stays available for honest disclosure.
+    /// Any change to the catalog, instance, run, act, mode, map-instance, snapshot, or epoch marks
+    /// the retained knowledge stale so it can never be read as current and the surface is treated
+    /// as closed. The retained topology stays available for honest disclosure.
     pub fn reconcile(&mut self, live: &RetainedMapLiveBinding) -> RetainedMapFreshness {
         let freshness = match &self.retained {
             None => RetainedMapFreshness::NeverObserved,
             Some(snapshot) => {
                 let current = snapshot.binding();
-                if !current.same_identity(live) || current.epoch != live.epoch {
+                if !current.same_snapshot_fence(live) {
                     RetainedMapFreshness::Stale
                 } else if self.observation == RetainedMapObservationState::Observable {
                     RetainedMapFreshness::Current

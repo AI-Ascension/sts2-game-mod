@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use super::binding::{RetainedMapFreshness, RetainedMapLiveBinding, RetainedMapNodeVisibility};
 use super::field::RetainedMapFieldStatus;
-use super::model::{RetainedMapContents, RetainedMapNodeKind, RetainedMapNodeReference};
+use super::model::{
+    RetainedMapContents, RetainedMapEdgeReference, RetainedMapNodeKind, RetainedMapNodeReference,
+};
 
 #[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub(super) struct ContinuationScope;
@@ -56,6 +58,10 @@ pub struct RetainedMapNodeSummary {
 }
 
 /// Complete or partial retained topology page.
+///
+/// A page carries a bounded window of node summaries and a bounded window of directed edges. Both
+/// windows are visibility-filtered and share the request limit. The page is `complete` only when
+/// node and edge enumeration are both exhausted and the retained knowledge is trustworthy.
 #[derive(Debug, Eq, PartialEq)]
 pub struct RetainedMapTopologyPage {
     /// Retained snapshot fence, or `None` before any permitted observation.
@@ -66,9 +72,13 @@ pub struct RetainedMapTopologyPage {
     pub entries: Vec<RetainedMapNodeSummary>,
     /// Number of visible retained nodes.
     pub total: usize,
-    /// Whether the page is both fully enumerated and trustworthy as current/retained.
+    /// Deterministically ordered retained directed edges with both endpoints visible.
+    pub edges: Vec<RetainedMapEdgeReference>,
+    /// Number of visible retained edges.
+    pub total_edges: usize,
+    /// Whether nodes and edges are fully enumerated and the knowledge is trustworthy.
     pub complete: bool,
-    /// Present only when the page is partial.
+    /// Present only when either window is partial.
     pub continuation: Option<RetainedMapContinuation>,
 }
 
@@ -77,4 +87,5 @@ pub(super) struct RetainedMapCursorState {
     pub(super) binding: RetainedMapLiveBinding,
     pub(super) limit: usize,
     pub(super) offset: usize,
+    pub(super) edge_offset: usize,
 }

@@ -120,6 +120,19 @@ pub struct RetainedMapEdge {
     pub to_node_id: String,
 }
 
+/// Retained directed edge joined to its snapshot fence.
+///
+/// Both endpoints must be visible under the reader's scope before an edge is disclosed.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RetainedMapEdgeReference {
+    /// Snapshot identity fence.
+    pub binding: RetainedMapLiveBinding,
+    /// Edge source node.
+    pub from_node_id: String,
+    /// Edge destination node.
+    pub to_node_id: String,
+}
+
 /// Source-owned generation-bound travel binding before validation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RetainedMapTravelInput {

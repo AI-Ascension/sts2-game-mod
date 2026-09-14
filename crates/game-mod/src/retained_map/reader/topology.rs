@@ -7,8 +7,8 @@ use super::super::binding::{
 };
 use super::super::error::{RetainedMapError, RetainedMapUnavailableReason};
 use super::super::model::{
-    RETAINED_MAP_MAX_PAGE_ITEMS, RetainedMapNode, RetainedMapNodeReference,
-    RetainedMapTravelReference,
+    RETAINED_MAP_MAX_PAGE_ITEMS, RetainedMapEdge, RetainedMapEdgeReference, RetainedMapNode,
+    RetainedMapNodeReference, RetainedMapSnapshot, RetainedMapTravelReference,
 };
 use super::super::page::{
     RetainedMapContinuation, RetainedMapCursorState, RetainedMapTopologyPage,
@@ -17,7 +17,11 @@ use super::super::page::{
 use super::{RetainedMapReader, summary};
 
 impl RetainedMapReader {
-    /// Lists visible retained nodes in stable node-ID order while the map may be closed.
+    /// Lists visible retained nodes and edges in stable identity order while the map may be closed.
+    ///
+    /// Both windows are bounded by the requested limit and visibility-filtered: an edge is disclosed
+    /// only when both endpoint nodes exist and are visible under the reader's scope. A page is
+    /// `complete` only when node and edge enumeration are both exhausted.
     pub fn topology(
         &mut self,
         query: &RetainedMapTopologyQuery,
@@ -39,7 +43,7 @@ impl RetainedMapReader {
                 RetainedMapUnavailableReason::NeverObserved,
             ));
         };
-        let start = self.cursor_start(query, &binding)?;
+        let (node_start, edge_start) = self.cursor_start(query, &binding)?;
         let Some(snapshot) = self.retained.as_ref() else {
             return Err(RetainedMapError::Unavailable(
                 RetainedMapUnavailableReason::NeverObserved,
@@ -52,17 +56,37 @@ impl RetainedMapReader {
             .map(|node| summary(node, &binding))
             .collect::<Vec<_>>();
         let total = entries.len();
-        let start = start.min(total);
-        let end = start.saturating_add(query.limit).min(total);
-        let page_entries = entries[start..end].to_vec();
-        let continuation = if end < total {
+        let node_start = node_start.min(total);
+        let node_end = node_start.saturating_add(query.limit).min(total);
+        let page_entries = entries[node_start..node_end].to_vec();
+
+        let mut edges = snapshot
+            .edges()
+            .iter()
+            .filter(|edge| self.edge_is_visible(snapshot, edge))
+            .map(|edge| RetainedMapEdgeReference {
+                binding: binding.clone(),
+                from_node_id: edge.from_node_id.clone(),
+                to_node_id: edge.to_node_id.clone(),
+            })
+            .collect::<Vec<_>>();
+        edges.sort_by(|left, right| {
+            (&left.from_node_id, &left.to_node_id).cmp(&(&right.from_node_id, &right.to_node_id))
+        });
+        let total_edges = edges.len();
+        let edge_start = edge_start.min(total_edges);
+        let edge_end = edge_start.saturating_add(query.limit).min(total_edges);
+        let page_edges = edges[edge_start..edge_end].to_vec();
+
+        let continuation = if node_end < total || edge_end < total_edges {
             let token = self.make_token();
             self.insert_page(
                 token.clone(),
                 RetainedMapCursorState {
                     binding: binding.clone(),
                     limit: query.limit,
-                    offset: end,
+                    offset: node_end,
+                    edge_offset: edge_end,
                 },
             );
             Some(RetainedMapContinuation::new(
@@ -78,6 +102,8 @@ impl RetainedMapReader {
             freshness: self.freshness,
             entries: page_entries,
             total,
+            edges: page_edges,
+            total_edges,
             complete,
             continuation,
         })
@@ -130,6 +156,10 @@ impl RetainedMapReader {
         Ok(snapshot
             .travel()
             .values()
+            .filter(|travel| {
+                self.endpoint_is_visible(snapshot, &travel.from_node_id)
+                    && self.endpoint_is_visible(snapshot, &travel.to_node_id)
+            })
             .map(|travel| RetainedMapTravelReference {
                 binding: snapshot.binding().clone(),
                 from_node_id: travel.from_node_id.clone(),
@@ -163,6 +193,11 @@ impl RetainedMapReader {
         };
         if &reference.binding != snapshot.binding() {
             return Err(RetainedMapError::StaleReference);
+        }
+        if !self.endpoint_is_visible(snapshot, &reference.from_node_id)
+            || !self.endpoint_is_visible(snapshot, &reference.to_node_id)
+        {
+            return Err(RetainedMapError::ScopeDenied("travel"));
         }
         let expected = self.actionability();
         if !expected.is_actionable() || !reference.actionability.is_actionable() {
@@ -198,13 +233,27 @@ impl RetainedMapReader {
         }
     }
 
+    /// Returns whether one retained node identity is visible under the reader's scope.
+    fn endpoint_is_visible(&self, snapshot: &RetainedMapSnapshot, node_id: &str) -> bool {
+        snapshot
+            .nodes()
+            .get(node_id)
+            .is_some_and(|node| visible(node.visibility, self.scope))
+    }
+
+    /// Returns whether both retained edge endpoints exist and are visible under the reader's scope.
+    fn edge_is_visible(&self, snapshot: &RetainedMapSnapshot, edge: &RetainedMapEdge) -> bool {
+        self.endpoint_is_visible(snapshot, &edge.from_node_id)
+            && self.endpoint_is_visible(snapshot, &edge.to_node_id)
+    }
+
     fn cursor_start(
         &mut self,
         query: &RetainedMapTopologyQuery,
         binding: &RetainedMapLiveBinding,
-    ) -> Result<usize, RetainedMapError> {
+    ) -> Result<(usize, usize), RetainedMapError> {
         let Some(continuation) = &query.continuation else {
-            return Ok(0);
+            return Ok((0, 0));
         };
         if !Arc::ptr_eq(&continuation.scope, &self.continuation_scope) {
             return Err(RetainedMapError::InvalidContinuation);
@@ -216,6 +265,6 @@ impl RetainedMapReader {
         if &state.binding != binding || state.limit != query.limit {
             return Err(RetainedMapError::InvalidContinuation);
         }
-        Ok(state.offset)
+        Ok((state.offset, state.edge_offset))
     }
 }
