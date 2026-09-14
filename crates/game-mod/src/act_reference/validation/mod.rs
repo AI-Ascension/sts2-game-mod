@@ -17,8 +17,8 @@ use super::definition::{
 };
 use super::model::{
     ACT_MAX_CONSTRAINTS, ACT_MAX_ELIGIBILITY, ACT_MAX_ENCOUNTERS, ACT_MAX_ENEMY_GROUPS,
-    ACT_MAX_POOL_ENTRIES, ACT_MAX_POOLS, ACT_MAX_ROOM_CATEGORIES, ACT_MAX_VARIANTS, ActField,
-    validate_identity,
+    ACT_MAX_GROUP_ENEMIES, ACT_MAX_POOL_ENTRIES, ACT_MAX_POOLS, ACT_MAX_ROOM_CATEGORIES,
+    ACT_MAX_VARIANTS, ActField, validate_identity,
 };
 
 /// Validates one source-owned act definition before it enters an immutable catalog.
@@ -84,6 +84,9 @@ fn validate_encounter(
     }
     let mut group_ids = BTreeSet::new();
     for group in &encounter.groups {
+        if group.enemies.len() > ACT_MAX_GROUP_ENEMIES {
+            return Err(ActReferenceError::InvalidInput("enemies"));
+        }
         validate_group(group)?;
         if !group_ids.insert(group.group_id.as_str()) {
             return Err(ActReferenceError::InvalidInput("duplicate_group"));

@@ -326,6 +326,16 @@ fn malformed_identities_and_collection_bounds_are_rejected() {
         produce(&content, too_many_encounters),
         Err(ActReferenceError::InvalidInput("encounters"))
     );
+
+    let mut too_many_enemies = simple_act("act:ok");
+    too_many_enemies.encounters[0].groups[0].enemies = (0..sts2_game_mod::ACT_MAX_GROUP_ENEMIES
+        + 1)
+        .map(|index| enemy(&format!("enemy:{index}"), 1))
+        .collect();
+    assert_eq!(
+        produce(&content, too_many_enemies),
+        Err(ActReferenceError::InvalidInput("enemies"))
+    );
 }
 
 #[test]
@@ -378,4 +388,29 @@ fn dangling_references_are_rejected() {
             category_id: "category:missing".to_owned(),
         })
     );
+
+    let mut dangling_category_reference = rich_act("act:one");
+    dangling_category_reference.references.push(reference(
+        ActSemanticReferenceKind::RoomCategory,
+        "category:missing",
+    ));
+    assert_eq!(
+        produce(&content, dangling_category_reference),
+        Err(ActReferenceError::UnknownRoomCategoryReference {
+            act_id: "act:one".to_owned(),
+            category_id: "category:missing".to_owned(),
+        })
+    );
+}
+
+#[test]
+fn act_scoped_room_category_references_resolve() {
+    let content = full_manifest();
+
+    let mut local_category_reference = rich_act("act:one");
+    local_category_reference.references.push(reference(
+        ActSemanticReferenceKind::RoomCategory,
+        "category:normal",
+    ));
+    assert!(produce(&content, local_category_reference).is_ok());
 }

@@ -189,69 +189,101 @@ fn validate_manifest_references(
     input: &ActDefinitionInput,
     manifest: &ContentManifest,
 ) -> Result<(), ActReferenceError> {
+    let act_id = input.act_id.as_str();
+    let category_ids: BTreeSet<&str> = input
+        .room_categories
+        .iter()
+        .map(|category| category.category_id.as_str())
+        .collect();
     for category in &input.room_categories {
-        validate_reference_list(&category.references, manifest)?;
+        validate_reference_list(act_id, &category_ids, &category.references, manifest)?;
     }
     for encounter in &input.encounters {
-        validate_encounter_references(encounter, manifest)?;
+        validate_encounter_references(act_id, &category_ids, encounter, manifest)?;
     }
     if let Some(pools) = input.pools.value() {
         for pool in pools {
-            validate_reference_list(&pool.references, manifest)?;
+            validate_reference_list(act_id, &category_ids, &pool.references, manifest)?;
         }
     }
     if let Some(constraints) = input.constraints.value() {
         for constraint in constraints {
-            validate_constraint_references(constraint, manifest)?;
+            validate_constraint_references(act_id, &category_ids, constraint, manifest)?;
         }
     }
-    validate_reference_list(&input.references, manifest)
+    validate_reference_list(act_id, &category_ids, &input.references, manifest)
 }
 
 fn validate_encounter_references(
+    act_id: &str,
+    category_ids: &BTreeSet<&str>,
     encounter: &EncounterDefinitionInput,
     manifest: &ContentManifest,
 ) -> Result<(), ActReferenceError> {
-    validate_reference_list(&encounter.references, manifest)?;
+    validate_reference_list(act_id, category_ids, &encounter.references, manifest)?;
     for group in &encounter.groups {
-        validate_group_references(group, manifest)?;
+        validate_group_references(act_id, category_ids, group, manifest)?;
     }
     for condition in &encounter.eligibility {
-        validate_reference_list(&condition.references, manifest)?;
+        validate_reference_list(act_id, category_ids, &condition.references, manifest)?;
     }
     Ok(())
 }
 
 fn validate_group_references(
+    act_id: &str,
+    category_ids: &BTreeSet<&str>,
     group: &EncounterEnemyGroup,
     manifest: &ContentManifest,
 ) -> Result<(), ActReferenceError> {
-    validate_reference_list(&group.references, manifest)?;
+    validate_reference_list(act_id, category_ids, &group.references, manifest)?;
     for enemy in &group.enemies {
         ensure_manifest_reference(manifest, ACT_REFERENCE_ENEMY_KIND, &enemy.enemy_id)?;
-        validate_reference_list(&enemy.references, manifest)?;
+        validate_reference_list(act_id, category_ids, &enemy.references, manifest)?;
     }
     Ok(())
 }
 
 fn validate_constraint_references(
+    act_id: &str,
+    category_ids: &BTreeSet<&str>,
     constraint: &MapGenerationConstraint,
     manifest: &ContentManifest,
 ) -> Result<(), ActReferenceError> {
-    validate_reference_list(&constraint.references, manifest)
+    validate_reference_list(act_id, category_ids, &constraint.references, manifest)
 }
 
 fn validate_reference_list(
+    act_id: &str,
+    category_ids: &BTreeSet<&str>,
     references: &[ActSemanticReference],
     manifest: &ContentManifest,
 ) -> Result<(), ActReferenceError> {
     for reference in references {
+        if matches!(reference.kind, ActSemanticReferenceKind::RoomCategory) {
+            ensure_act_room_category(act_id, category_ids, &reference.id)?;
+            continue;
+        }
         let Some(entity_kind) = manifest_entity_kind(reference) else {
             continue;
         };
         ensure_manifest_reference(manifest, entity_kind, &reference.id)?;
     }
     Ok(())
+}
+
+fn ensure_act_room_category(
+    act_id: &str,
+    category_ids: &BTreeSet<&str>,
+    category_id: &str,
+) -> Result<(), ActReferenceError> {
+    if category_ids.contains(category_id) {
+        return Ok(());
+    }
+    Err(ActReferenceError::UnknownRoomCategoryReference {
+        act_id: act_id.to_owned(),
+        category_id: category_id.to_owned(),
+    })
 }
 
 fn manifest_entity_kind(reference: &ActSemanticReference) -> Option<&str> {
