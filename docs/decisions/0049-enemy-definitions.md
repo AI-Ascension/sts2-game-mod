@@ -51,10 +51,10 @@ page, and the byte estimate counts nested custom kind strings so no field can by
 ## Evidence and limits
 
 Synthetic fixtures cover a multi-phase boss with a compound move, a conditional transition, a
-summon, formula and difficulty-scaled stats, an origin variant, locked/owner-only/hidden
-visibility, bounded deterministic pagination with single-use continuations, exact
-definition/move/phase lookup, unsupported/unavailable/not-applicable family and field states,
-stale manifest/locale/producer references, duplicate and ambiguous identities, malformed and
-oversized input, and the nested definition byte limit. These prove deterministic local validation
-and read-only projection only. Native field availability, live AI behavior, thread affinity,
+summon, difficulty-scaled stats, an origin variant, locked/owner-only/hidden visibility, bounded
+deterministic pagination with single-use continuations, exact definition and move lookup plus
+definition-scoped phase/transition inspection, unsupported/unavailable family states and
+not-applicable/not-observed field states, stale manifest/locale/producer references, duplicate and
+ambiguous identities, malformed and oversized input, dangling move references, and the nested
+definition byte limit. These prove deterministic local validation and read-only projection only. Native field availability, live AI behavior, thread affinity,
 shared transport/gateway/MCP delivery, and exact-host compatibility remain unverified.

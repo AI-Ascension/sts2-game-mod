@@ -11,9 +11,9 @@ use sts2_game_mod::{
     ENEMY_MAX_IDENTITY_BYTES, ENEMY_MAX_MOVES, ENEMY_MAX_TAGS, ENEMY_MAX_TEXT_BYTES,
     EnemyCatalogError, EnemyCatalogProducer, EnemyCooldownRule, EnemyDefinitionInput,
     EnemyEvidence, EnemyField, EnemyKind, EnemyMoveDefinitionInput, EnemyMoveEffect,
-    EnemyMoveEffectKind, EnemyNumericValue, EnemyPhaseDefinition, EnemyProbability,
-    EnemyRepetitionRule, EnemySemanticReferenceKind, EnemyTag, EnemyTargetDomain, EnemyText,
-    EnemyUnavailableReason, EnemyVisibility,
+    EnemyMoveEffectKind, EnemyNumericValue, EnemyOriginVariant, EnemyPhaseDefinition,
+    EnemyProbability, EnemyRepetitionRule, EnemySemanticReferenceKind, EnemyTag, EnemyTargetDomain,
+    EnemyText, EnemyUnavailableReason, EnemyVisibility,
 };
 
 fn visible_enemy(enemy_id: &str) -> EnemyDefinitionInput {
@@ -257,6 +257,37 @@ fn definition_byte_limit_counts_nested_custom_effect_kinds() {
         long - short,
         ENEMY_MAX_MOVES * ENEMY_MAX_EFFECTS * 6,
         "every nested custom effect-kind byte must count toward the definition bound"
+    );
+}
+
+#[test]
+fn dangling_phase_and_variant_move_references_are_rejected() {
+    let content = manifest(&["enemy:ok"], &[], &[]);
+
+    let mut dangling_phase = visible_enemy("enemy:ok");
+    dangling_phase.phases[0].move_ids = vec!["move:missing".to_owned()];
+    assert_eq!(
+        produce(&content, dangling_phase),
+        Err(EnemyCatalogError::UnknownMoveReference {
+            enemy_id: "enemy:ok".to_owned(),
+            move_id: "move:missing".to_owned(),
+        })
+    );
+
+    let mut dangling_variant = visible_enemy("enemy:ok");
+    dangling_variant.origin_variants.push(EnemyOriginVariant {
+        variant_id: "variant:one".to_owned(),
+        label: text("Variant"),
+        origin: origin(),
+        stats: EnemyField::Unavailable(EnemyUnavailableReason::NotObserved),
+        move_ids: EnemyField::Available(vec!["move:missing".to_owned()]),
+    });
+    assert_eq!(
+        produce(&content, dangling_variant),
+        Err(EnemyCatalogError::UnknownMoveReference {
+            enemy_id: "enemy:ok".to_owned(),
+            move_id: "move:missing".to_owned(),
+        })
     );
 }
 

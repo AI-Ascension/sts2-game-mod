@@ -70,6 +70,14 @@ pub(super) fn validate_definition(input: &EnemyDefinitionInput) -> Result<(), En
             return Err(EnemyCatalogError::InvalidInput("duplicate_move"));
         }
     }
+    for phase in &input.phases {
+        resolve_move_references(&input.enemy_id, &phase.move_ids, &move_ids)?;
+    }
+    for variant in &input.origin_variants {
+        if let EnemyField::Available(variant_moves) = &variant.move_ids {
+            resolve_move_references(&input.enemy_id, variant_moves, &move_ids)?;
+        }
+    }
     if input.transitions.len() > ENEMY_MAX_TRANSITIONS {
         return Err(EnemyCatalogError::InvalidInput("transitions"));
     }
@@ -81,6 +89,22 @@ pub(super) fn validate_definition(input: &EnemyDefinitionInput) -> Result<(), En
         }
     }
     validate_references(&input.references)?;
+    Ok(())
+}
+
+fn resolve_move_references(
+    enemy_id: &str,
+    move_ids: &[String],
+    defined: &BTreeSet<&str>,
+) -> Result<(), EnemyCatalogError> {
+    for move_id in move_ids {
+        if !defined.contains(move_id.as_str()) {
+            return Err(EnemyCatalogError::UnknownMoveReference {
+                enemy_id: enemy_id.to_owned(),
+                move_id: move_id.clone(),
+            });
+        }
+    }
     Ok(())
 }
 
