@@ -15,8 +15,8 @@ mod port;
 mod receipt;
 
 pub use canonical::{
-    CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue, blob_digest, parse_canonical_text,
-    state_id, to_canonical_bytes,
+    CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue, blob_digest,
+    parse_canonical_text, state_id, to_canonical_bytes,
 };
 pub use capability::{
     CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointUnavailableReason,

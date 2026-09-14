@@ -2,15 +2,15 @@
 
 use std::collections::BTreeMap;
 
-use super::{CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue};
+use super::{CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue};
 
 /// Strictly parses restricted canonical JSON text into the game-owned value model.
 ///
 /// # Errors
 ///
 /// Returns [`CanonicalError`] for duplicate object keys, floats, exponents,
-/// negative zero, unsafe integers, non-ASCII object keys, malformed input, or
-/// trailing text.
+/// negative zero, unsafe integers, non-ASCII object keys, malformed input,
+/// nesting deeper than [`CANONICAL_MAX_DEPTH`], or trailing text.
 pub fn parse_canonical_text(text: &str) -> Result<CanonicalValue, CanonicalError> {
     let mut parser = Parser {
         bytes: text.as_bytes(),
@@ -20,7 +20,7 @@ pub fn parse_canonical_text(text: &str) -> Result<CanonicalValue, CanonicalError
     if parser.peek().is_none() {
         return Err(CanonicalError::EmptyInput);
     }
-    let value = parser.parse_value()?;
+    let value = parser.parse_value(0)?;
     parser.skip_whitespace();
     if parser.offset != parser.bytes.len() {
         return Err(CanonicalError::TrailingInput);
@@ -64,11 +64,11 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_value(&mut self) -> Result<CanonicalValue, CanonicalError> {
+    fn parse_value(&mut self, depth: usize) -> Result<CanonicalValue, CanonicalError> {
         self.skip_whitespace();
         match self.peek() {
-            Some(b'{') => self.parse_object(),
-            Some(b'[') => self.parse_array(),
+            Some(b'{') => self.parse_object(self.descend(depth)?),
+            Some(b'[') => self.parse_array(self.descend(depth)?),
             Some(b'"') => Ok(CanonicalValue::Text(self.parse_string()?)),
             Some(b't') => self.parse_literal("true", CanonicalValue::Bool(true)),
             Some(b'f') => self.parse_literal("false", CanonicalValue::Bool(false)),
@@ -100,7 +100,15 @@ impl Parser<'_> {
         Ok(value)
     }
 
-    fn parse_object(&mut self) -> Result<CanonicalValue, CanonicalError> {
+    fn descend(&self, depth: usize) -> Result<usize, CanonicalError> {
+        let next = depth + 1;
+        if next > CANONICAL_MAX_DEPTH {
+            return Err(CanonicalError::DepthExceeded);
+        }
+        Ok(next)
+    }
+
+    fn parse_object(&mut self, depth: usize) -> Result<CanonicalValue, CanonicalError> {
         self.consume(b'{')?;
         let mut entries = BTreeMap::new();
         self.skip_whitespace();
@@ -119,7 +127,7 @@ impl Parser<'_> {
             }
             self.skip_whitespace();
             self.consume(b':')?;
-            let value = self.parse_value()?;
+            let value = self.parse_value(depth)?;
             if entries.insert(key, value).is_some() {
                 return Err(CanonicalError::DuplicateKey);
             }
@@ -137,7 +145,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_array(&mut self) -> Result<CanonicalValue, CanonicalError> {
+    fn parse_array(&mut self, depth: usize) -> Result<CanonicalValue, CanonicalError> {
         self.consume(b'[')?;
         let mut items = Vec::new();
         self.skip_whitespace();
@@ -146,7 +154,7 @@ impl Parser<'_> {
             return Ok(CanonicalValue::Array(items));
         }
         loop {
-            items.push(self.parse_value()?);
+            items.push(self.parse_value(depth)?);
             self.skip_whitespace();
             match self.advance() {
                 Some(b',') => {}

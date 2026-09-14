@@ -19,6 +19,13 @@ pub use parse::parse_canonical_text;
 /// Largest integer magnitude representable exactly by an IEEE-754 double (2^53 - 1).
 pub const CANONICAL_MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 
+/// Maximum object/array nesting depth accepted by the strict parser and encoder.
+///
+/// The limit is enforced before recursive descent so that hostile nesting cannot
+/// exhaust the process stack; inputs nested deeper are rejected with
+/// [`CanonicalError::DepthExceeded`].
+pub const CANONICAL_MAX_DEPTH: usize = 128;
+
 /// Game-owned value model restricted to the canonical exact-state profile.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CanonicalValue {

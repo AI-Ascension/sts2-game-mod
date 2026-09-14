@@ -45,6 +45,8 @@ pub enum CanonicalError {
     NegativeZero,
     /// A leading zero was found on a multi-digit integer.
     LeadingZero,
+    /// Object or array nesting exceeds `CANONICAL_MAX_DEPTH`.
+    DepthExceeded,
 }
 
 impl std::fmt::Display for CanonicalError {
@@ -73,6 +75,7 @@ impl std::fmt::Display for CanonicalError {
             Self::ExponentNotAllowed => formatter.write_str("exponent numbers are not allowed"),
             Self::NegativeZero => formatter.write_str("negative zero is not allowed"),
             Self::LeadingZero => formatter.write_str("integer has a leading zero"),
+            Self::DepthExceeded => formatter.write_str("nesting exceeds the canonical depth limit"),
         }
     }
 }

@@ -24,7 +24,11 @@ subset its payloads may contain and does not claim general JCS coverage.
 
 The value model is `CanonicalValue`: `Null`, `Bool`, `Integer` (safe range `±(2^53 - 1)`), `Text`,
 `Array`, `Object` (ASCII keys, deterministic ordering), `Uint64`, and `Float64Bits`. Object keys
-must be ASCII, and object members are ordered by key. `Uint64` encodes as
+must be ASCII, and object members are ordered by key. Object and array nesting is bounded by the
+public `CANONICAL_MAX_DEPTH` constant (128). Both the strict parser and the encoder check the
+remaining depth before recursive descent, so an over-deep payload returns a typed
+`CanonicalError::DepthExceeded` rather than exhausting the process stack; a payload nested to
+exactly the limit is accepted. `Uint64` encodes as
 `{"kind":"uint64","value":"<decimal>"}` and `Float64Bits` as
 `{"kind":"float64_bits","value":"<16 lowercase hex>"}`, preserving exact values that the plain JSON
 number grammar cannot represent. Text escaping is the restricted JCS set: `"` and `\` are escaped,
@@ -40,6 +44,7 @@ The strict scanner ingests restricted JSON and rejects:
 | integers above `2^53 - 1` | outside the exact double-safe range |
 | non-ASCII object keys | deterministic ordering is defined over ASCII keys |
 | trailing text | one value per canonical payload |
+| nesting deeper than `CANONICAL_MAX_DEPTH` | recursive descent must be stack-bounded |
 | malformed input, unpaired surrogates, raw control bytes, invalid escapes | strict syntax only |
 
 Identities reuse the existing checkpoint constants: `state_id(bytes)` is
@@ -47,7 +52,10 @@ Identities reuse the existing checkpoint constants: `state_id(bytes)` is
 `blob_digest(bytes)` is `sha256:` followed by `sha256(bytes)`. `tests/checkpoint_canonical.rs`
 recomputes these identities, the canonical bytes, the equivalence/distinctness pairs, the reject
 matrix, and the golden manifest-derived `asc-checkpoint:v1:` identity from the checked-in
-`protocol-artifact/exact-state-v1` witness. `serde_json` is used in tests only to read the vector
+`protocol-artifact/exact-state-v1` witness. `tests/checkpoint_canonical_regressions.rs` adds the
+branch coverage that the pinned vectors omit (arrays, nulls, booleans, escaped strings, Unicode
+values versus ASCII keys, safe-integer endpoints, escaped duplicate keys, and the parser/encoder
+depth boundary) against fixed expected bytes. `serde_json` is used in tests only to read the vector
 file; ingestion itself is hand-rolled so rejections are exact.
 
 ## Evidence and limits

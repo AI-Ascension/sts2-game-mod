@@ -90,7 +90,7 @@ equivalence, hidden health/RNG distinctions, signed-zero and tagged-`uint64` ide
 domain-separated state/blob digests. It separately compares the canonical checkpoint-manifest
 golden, including compatibility/coverage/restore/boundary/origin references, and its
 manifest-derived checkpoint ID. It also checks bounded identity binding, redacted receipt debug
-output, private receipt bytes, explicit rejection vectors, and the complete fail-closed capability matrix:
+output, private receipt bytes, explicit rejection vectors, the `CANONICAL_MAX_DEPTH` parser/encoder boundary, and the complete fail-closed capability matrix:
 
 ~~~text
 cargo test --locked --offline --package sts2-game-mod --test checkpoint

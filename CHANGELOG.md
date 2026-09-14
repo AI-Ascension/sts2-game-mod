@@ -13,6 +13,13 @@ do not establish release support.
   non-ASCII keys, trailing text). Synthetic conformance tests pass; native capture, restore, and
   host compatibility remain unverified. See ADR 0054.
 
+- Bounded the source-only restricted canonical codec at `CANONICAL_MAX_DEPTH` (128) nesting levels
+  in both the strict parser and the encoder; deeper inputs are rejected with
+  `CanonicalError::DepthExceeded` instead of exhausting the process stack. Added parser regression
+  coverage for arrays, nulls, booleans, escaped strings, Unicode values versus ASCII keys,
+  safe-integer endpoints, escaped duplicate keys, and the depth boundary. Source-only; native
+  capture, restore, and host compatibility remain unverified.
+
 - Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
   read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
   readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest

@@ -39,14 +39,14 @@ pub use card_definitions::*;
 pub use character_state::*;
 pub use characters::*;
 pub use checkpoint::{
-    CANONICAL_MAX_SAFE_INTEGER, CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES,
-    CHECKPOINT_CAPTURE_PROFILE, CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN,
-    CHECKPOINT_MANIFEST_PROFILE, CHECKPOINT_MANIFEST_SCHEMA, CHECKPOINT_STATE_DOMAIN,
-    CanonicalError, CanonicalValue, CheckpointArtifactDescriptor, CheckpointBoundary,
-    CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity, CheckpointCapturePort,
-    CheckpointCaptureReceipt, CheckpointCaptureRejection, CheckpointCaptureRequest,
-    CheckpointDurability, CheckpointIdentityError, CheckpointManifest, CheckpointManifestBoundary,
-    CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
+    CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CHECKPOINT_CAPTURE_MAX_BYTES,
+    CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE, CHECKPOINT_CAPTURE_SCHEMA,
+    CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE, CHECKPOINT_MANIFEST_SCHEMA,
+    CHECKPOINT_STATE_DOMAIN, CanonicalError, CanonicalValue, CheckpointArtifactDescriptor,
+    CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity,
+    CheckpointCapturePort, CheckpointCaptureReceipt, CheckpointCaptureRejection,
+    CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
+    CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
     CheckpointUnavailableReason, UnavailableCheckpointCapture, blob_digest, parse_canonical_text,
     state_id, to_canonical_bytes,
 };
