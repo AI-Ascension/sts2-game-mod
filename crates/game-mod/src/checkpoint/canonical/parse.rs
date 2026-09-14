@@ -2,6 +2,8 @@
 
 use std::collections::BTreeMap;
 
+use super::super::CHECKPOINT_CAPTURE_MAX_BYTES;
+use super::validate_key;
 use super::{CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue};
 
 /// Strictly parses restricted canonical JSON text into the game-owned value model.
@@ -9,9 +11,13 @@ use super::{CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, Can
 /// # Errors
 ///
 /// Returns [`CanonicalError`] for duplicate object keys, floats, exponents,
-/// negative zero, unsafe integers, non-ASCII object keys, malformed input,
-/// nesting deeper than [`CANONICAL_MAX_DEPTH`], or trailing text.
+/// negative zero, unsafe integers, keys outside `^[a-z][a-z0-9_]*$`, malformed input,
+/// nesting deeper than [`CANONICAL_MAX_DEPTH`], trailing text, or raw UTF-8 input
+/// (including whitespace) exceeding the 16 MiB checkpoint byte limit.
 pub fn parse_canonical_text(text: &str) -> Result<CanonicalValue, CanonicalError> {
+    if text.len() > CHECKPOINT_CAPTURE_MAX_BYTES {
+        return Err(CanonicalError::PayloadTooLarge);
+    }
     let mut parser = Parser {
         bytes: text.as_bytes(),
         offset: 0,
@@ -122,9 +128,7 @@ impl Parser<'_> {
                 return Err(self.unexpected());
             }
             let key = self.parse_string()?;
-            if !key.is_ascii() {
-                return Err(CanonicalError::NonAsciiKey);
-            }
+            validate_key(&key)?;
             self.skip_whitespace();
             self.consume(b':')?;
             let value = self.parse_value(depth)?;

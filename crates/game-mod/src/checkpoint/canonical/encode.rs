@@ -4,16 +4,18 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 use super::super::{BLOB_DIGEST_PREFIX, CHECKPOINT_STATE_DOMAIN, STATE_DIGEST_PREFIX};
+use super::output::Output;
+use super::validate_key;
 use super::{CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue};
 
 /// Encodes a value with deterministic object-key ordering and JCS escaping.
 ///
 /// # Errors
 ///
-/// Returns [`CanonicalError`] for an unsafe integer, a non-ASCII object key, or
-/// nesting deeper than [`CANONICAL_MAX_DEPTH`].
+/// Returns [`CanonicalError`] for an unsafe integer, keys outside `^[a-z][a-z0-9_]*$`,
+/// nesting deeper than [`CANONICAL_MAX_DEPTH`], or canonical output exceeding 16 MiB.
 pub fn to_canonical_bytes(value: &CanonicalValue) -> Result<Vec<u8>, CanonicalError> {
-    let mut output = String::new();
+    let mut output = Output::default();
     write_value(&mut output, value, 0)?;
     Ok(output.into_bytes())
 }
@@ -27,73 +29,73 @@ fn guard_depth(depth: usize) -> Result<(), CanonicalError> {
 }
 
 fn write_value(
-    output: &mut String,
+    output: &mut Output,
     value: &CanonicalValue,
     depth: usize,
 ) -> Result<(), CanonicalError> {
     match value {
-        CanonicalValue::Null => output.push_str("null"),
-        CanonicalValue::Bool(true) => output.push_str("true"),
-        CanonicalValue::Bool(false) => output.push_str("false"),
+        CanonicalValue::Null => output.push_str("null")?,
+        CanonicalValue::Bool(true) => output.push_str("true")?,
+        CanonicalValue::Bool(false) => output.push_str("false")?,
         CanonicalValue::Integer(integer) => {
             if integer.unsigned_abs() > CANONICAL_MAX_SAFE_INTEGER as u64 {
                 return Err(CanonicalError::UnsafeInteger);
             }
-            output.push_str(&integer.to_string());
+            output.push_str(&integer.to_string())?;
         }
-        CanonicalValue::Text(text) => write_text(output, text),
+        CanonicalValue::Text(text) => write_text(output, text)?,
         CanonicalValue::Array(items) => {
             guard_depth(depth)?;
-            output.push('[');
+            output.push('[')?;
             for (index, item) in items.iter().enumerate() {
                 if index > 0 {
-                    output.push(',');
+                    output.push(',')?;
                 }
                 write_value(output, item, depth + 1)?;
             }
-            output.push(']');
+            output.push(']')?;
         }
         CanonicalValue::Object(entries) => write_object(output, entries, depth)?,
         CanonicalValue::Uint64(number) => {
             guard_depth(depth)?;
-            output.push_str("{\"kind\":\"uint64\",\"value\":\"");
-            output.push_str(&number.to_string());
-            output.push_str("\"}");
+            output.push_str("{\"kind\":\"uint64\",\"value\":\"")?;
+            output.push_str(&number.to_string())?;
+            output.push_str("\"}")?;
         }
         CanonicalValue::Float64Bits(bits) => {
             guard_depth(depth)?;
-            output.push_str("{\"kind\":\"float64_bits\",\"value\":\"");
-            output.push_str(&format!("{bits:016x}"));
-            output.push_str("\"}");
+            output.push_str("{\"kind\":\"float64_bits\",\"value\":\"")?;
+            output.push_str(&format!("{bits:016x}"))?;
+            output.push_str("\"}")?;
         }
     }
     Ok(())
 }
 
 fn write_object(
-    output: &mut String,
+    output: &mut Output,
     entries: &BTreeMap<String, CanonicalValue>,
     depth: usize,
 ) -> Result<(), CanonicalError> {
     guard_depth(depth)?;
-    if entries.keys().any(|key| !key.is_ascii()) {
-        return Err(CanonicalError::NonAsciiKey);
+    for key in entries.keys() {
+        validate_key(key)?;
     }
-    output.push('{');
+    output.push('{')?;
     for (index, (key, value)) in entries.iter().enumerate() {
         if index > 0 {
-            output.push(',');
+            output.push(',')?;
         }
-        write_text(output, key);
-        output.push(':');
+        write_text(output, key)?;
+        output.push(':')?;
         write_value(output, value, depth + 1)?;
     }
-    output.push('}');
+    output.push('}')?;
     Ok(())
 }
 
-fn write_text(output: &mut String, text: &str) {
-    output.push('"');
+fn write_text(output: &mut Output, text: &str) -> Result<(), CanonicalError> {
+    output.push('"')?;
     for character in text.chars() {
         match character {
             '"' => output.push_str("\\\""),
@@ -104,12 +106,12 @@ fn write_text(output: &mut String, text: &str) {
             '\r' => output.push_str("\\r"),
             '\t' => output.push_str("\\t"),
             control if (control as u32) < 0x20 => {
-                output.push_str(&format!("\\u{:04x}", control as u32));
+                output.push_str(&format!("\\u{:04x}", control as u32))
             }
             other => output.push(other),
-        }
+        }?;
     }
-    output.push('"');
+    output.push('"')
 }
 
 /// Returns the domain-separated exact-state identity over canonical bytes.

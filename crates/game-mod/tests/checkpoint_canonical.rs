@@ -115,7 +115,7 @@ fn positive_vectors_match_pinned_canonical_bytes_and_identities() -> Result<(), 
     assert_eq!(fixture["profile"], "asc-jcs-state-v1");
     assert_eq!(
         fixture["source_revision"],
-        "8a2e66f5d2190a0fca7f146dc3508e8d55515ea"
+        "8a2e66f5d2190a0fca7f146dc3508e8d55515ea7"
     );
 
     let positives = fixture["positive"]
@@ -204,7 +204,7 @@ fn strict_parser_rejects_every_pinned_raw_rejection() -> Result<(), Box<dyn Erro
     let rejects = fixture["reject_raw"]
         .as_array()
         .ok_or("reject_raw must be an array")?;
-    assert_eq!(rejects.len(), 7);
+    assert_eq!(rejects.len(), 14);
     for entry in rejects {
         let name = string_field(entry, "name")?;
         let text = string_field(entry, "text")?;
@@ -215,6 +215,11 @@ fn strict_parser_rejects_every_pinned_raw_rejection() -> Result<(), Box<dyn Erro
             "negative_zero" => CanonicalError::NegativeZero,
             "unsafe_integer" => CanonicalError::UnsafeInteger,
             "unicode_key" => CanonicalError::NonAsciiKey,
+            "uppercase_key" | "dash_key" => CanonicalError::InvalidKey,
+            "nan" | "infinity" => CanonicalError::UnexpectedToken { offset: 9 },
+            "surrogate" => CanonicalError::InvalidUnicodeEscape { offset: 9 },
+            "trailing_comma" => CanonicalError::UnexpectedToken { offset: 7 },
+            "leading_bom" => CanonicalError::UnexpectedToken { offset: 0 },
             "trailing_text" => CanonicalError::TrailingInput,
             other => return Err(format!("unexpected rejection vector {other}").into()),
         };
