@@ -321,6 +321,15 @@ monotonic epoch. Explicit field availability preserves hidden, denied, unsupport
 not-observed values; this slice has no native extractor, transport route, profile mutation, or
 exact-host compatibility claim.
 
+The owner-local `character_state` producer composes the same manifest and locale witness with
+typed character resources and controlled secondary combat entities. Resources retain current/max
+values and ordered slots; secondary entities retain controller links, HP/max HP/block, statuses,
+and typed intents. Static definitions and live references carry explicit character/mode coverage,
+visibility, game/run/snapshot/epoch, and field-availability fences. Unsupported, not-applicable,
+unavailable, and unknown mechanics fail closed instead of becoming empty success. This remains a
+source-only projection with bounded pages/details and synthetic evidence; it defines no transport,
+native extractor, host ABI, or exact-host compatibility.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native

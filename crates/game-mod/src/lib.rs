@@ -7,6 +7,7 @@ use sts2_game_mod_host::{
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
 mod card_definitions;
+mod character_state;
 mod characters;
 mod checkpoint;
 pub mod combat_bookkeeping;
@@ -28,6 +29,7 @@ mod save_profile;
 mod workshop;
 
 pub use card_definitions::*;
+pub use character_state::*;
 pub use characters::*;
 pub use checkpoint::{
     CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
