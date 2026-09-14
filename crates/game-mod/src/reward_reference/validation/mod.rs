@@ -7,7 +7,10 @@ mod values;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) use self::edges::RewardTarget;
-use self::edges::{RewardScope, collect_items, validate_item_membership, validate_reference_edges};
+use self::edges::{
+    RewardScope, collect_items, most_restrictive, validate_item_membership,
+    validate_reference_edges,
+};
 use self::quantities::validate_item_quantity;
 use self::values::{
     validate_generation_rule, validate_legal_actions, validate_reference_kind, validate_references,
@@ -16,7 +19,7 @@ use self::values::{
 
 use super::RewardCatalogError;
 use super::definition::{RewardItemInput, RewardKind, RewardOfferDefinitionInput};
-use super::model::{REWARD_MAX_RULES, RewardField, validate_identity};
+use super::model::{REWARD_MAX_RULES, RewardField, RewardVisibility, validate_identity};
 
 /// Validates one source-owned reward definition before it enters an immutable catalog.
 pub(super) fn validate_definition(
@@ -36,6 +39,21 @@ pub(super) fn validate_definition(
     validate_item_membership(&input.reward_id, &input.generation, &items)?;
     validate_state_policy(&input.state_policy)?;
 
+    let local_rules: BTreeMap<&str, RewardVisibility> = input
+        .generation
+        .iter()
+        .map(|rule| (rule.rule_id.as_str(), rule.visibility))
+        .collect();
+    let mut local_modifiers: BTreeMap<&str, RewardVisibility> = BTreeMap::new();
+    for rule in &input.generation {
+        for modifier in &rule.modifiers {
+            local_modifiers
+                .entry(modifier.modifier_id.as_str())
+                .and_modify(|existing| *existing = most_restrictive(*existing, modifier.visibility))
+                .or_insert(modifier.visibility);
+        }
+    }
+
     let scope = RewardScope::new(
         &input.reward_id,
         input.visibility,
@@ -45,17 +63,28 @@ pub(super) fn validate_definition(
     validate_reference_edges(
         &scope,
         reward_targets,
+        &local_rules,
+        &local_modifiers,
         input.selection.visibility,
         &input.selection.references,
     )?;
     for rule in &input.generation {
         if let RewardField::Available(pool) = &rule.pool {
-            validate_reference_edges(&scope, reward_targets, rule.visibility, pool)?;
+            validate_reference_edges(
+                &scope,
+                reward_targets,
+                &local_rules,
+                &local_modifiers,
+                rule.visibility,
+                pool,
+            )?;
         }
         for requirement in &rule.eligibility {
             validate_reference_edges(
                 &scope,
                 reward_targets,
+                &local_rules,
+                &local_modifiers,
                 requirement.visibility,
                 &requirement.references,
             )?;
@@ -64,22 +93,40 @@ pub(super) fn validate_definition(
             validate_reference_edges(
                 &scope,
                 reward_targets,
+                &local_rules,
+                &local_modifiers,
                 modifier.visibility,
                 &modifier.references,
             )?;
         }
-        validate_reference_edges(&scope, reward_targets, rule.visibility, &rule.references)?;
+        validate_reference_edges(
+            &scope,
+            reward_targets,
+            &local_rules,
+            &local_modifiers,
+            rule.visibility,
+            &rule.references,
+        )?;
     }
     for item in &input.items {
         validate_reference_edges(
             &scope,
             reward_targets,
+            &local_rules,
+            &local_modifiers,
             item.visibility,
             std::slice::from_ref(&item.reference),
         )?;
     }
     validate_references(&input.references)?;
-    validate_reference_edges(&scope, reward_targets, input.visibility, &input.references)
+    validate_reference_edges(
+        &scope,
+        reward_targets,
+        &local_rules,
+        &local_modifiers,
+        input.visibility,
+        &input.references,
+    )
 }
 
 fn validate_reward_kind(kind: &RewardKind) -> Result<(), RewardCatalogError> {

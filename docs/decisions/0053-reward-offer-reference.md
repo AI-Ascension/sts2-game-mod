@@ -76,14 +76,19 @@ generation rule more visible than an item it offers is rejected with the stricte
 
 Effective scope mirrors exact lookup including unlock state: an unlocked visible reward is public, a
 locked visible reward is reachable only from the reference/owner scopes, an owner-only reward is
-owner-only, and a hidden or unknown reward is observable in no scope. A record is observable only
-where both its owning reward and the record itself are observable, so a public unlocked reward can no
-longer expose a locked reward reference that exact lookup rejects as `ExcludedByScope`. Reserved-family
-alias spellings are normalized to their canonical reference kind before visibility is enforced: a
-generic `Content { entity_kind: "reward" }` reference resolves to the same manifest reward family as
-`Reward`, including when it appears in a generation pool, so the alias path and the canonical path
-produce the same rejection and a public record cannot disclose a hidden or owner-only reward identity
-or label.
+owner-only when its unlock state is known, a hidden or unknown reward is observable in no scope, and
+an owner-only reward whose unlock state is unknown is observable in no scope either. A record is
+observable only where both its owning reward and the record itself are observable, so a public
+unlocked reward can no longer expose a locked reward reference that exact lookup rejects as
+`ExcludedByScope`, and an owner-visible record can no longer expose an owner-only target whose unknown
+unlock state exact lookup excludes in every scope. Reserved-family alias spellings are normalized to
+their canonical reference kind before visibility is enforced: a generic
+`Content { entity_kind: "reward" }` reference resolves to the same manifest reward family as `Reward`,
+including when it appears in a generation pool, so the alias path and the canonical path produce the
+same rejection and a public record cannot disclose a hidden or owner-only reward identity or label. A
+`Rule` or `Modifier` reference that resolves to a restricted record in the same definition is enforced
+identically; an identity that does not resolve locally is treated as an external reference with no
+local visibility metadata.
 
 ### Item membership
 

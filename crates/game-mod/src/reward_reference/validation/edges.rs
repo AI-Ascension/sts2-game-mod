@@ -121,9 +121,16 @@ pub(super) fn validate_item_membership(
 /// must never disclose a hidden, owner-only, or locked target identity or label. Reserved-family
 /// alias spellings are normalized to the canonical reward kind first, and every pool, selection,
 /// requirement, modifier, rule, item, and top-level reference uses this same check.
+///
+/// `local_rules` and `local_modifiers` map the definition's own generation-rule and modifier
+/// identities to their visibility, so a `Rule` or `Modifier` edge that resolves to a restricted
+/// local record is rejected in place of falling through. An identity that does not resolve locally
+/// is treated as an external reference with no local visibility metadata.
 pub(super) fn validate_reference_edges(
     scope: &RewardScope<'_>,
     reward_targets: &BTreeMap<String, RewardTarget>,
+    local_rules: &BTreeMap<&str, RewardVisibility>,
+    local_modifiers: &BTreeMap<&str, RewardVisibility>,
     containing: RewardVisibility,
     references: &[RewardSemanticReference],
 ) -> Result<(), RewardCatalogError> {
@@ -163,10 +170,47 @@ pub(super) fn validate_reference_edges(
                     &reference.kind,
                 )?;
             }
+            RewardSemanticReferenceKind::Rule => {
+                if let Some(target_visibility) = local_rules.get(reference.id.as_str()) {
+                    reject_more_visible(
+                        scope.reward_id,
+                        containing_scope,
+                        label_min_scope(*target_visibility),
+                        &reference.kind,
+                    )?;
+                }
+            }
+            RewardSemanticReferenceKind::Modifier => {
+                if let Some(target_visibility) = local_modifiers.get(reference.id.as_str()) {
+                    reject_more_visible(
+                        scope.reward_id,
+                        containing_scope,
+                        label_min_scope(*target_visibility),
+                        &reference.kind,
+                    )?;
+                }
+            }
             _ => {}
         }
     }
     Ok(())
+}
+
+/// Returns the more restrictive of two visibility labels.
+///
+/// `visibility_rank` orders labels from most restrictive (`Hidden`/`Unknown`) to least
+/// (`Visible`), so the smaller rank is the more restrictive label. The fold is fail-closed when a
+/// single definition reuses an identity: a reference to that identity is judged against the most
+/// restricted matching record.
+pub(super) fn most_restrictive(
+    left: RewardVisibility,
+    right: RewardVisibility,
+) -> RewardVisibility {
+    if visibility_rank(left) <= visibility_rank(right) {
+        left
+    } else {
+        right
+    }
 }
 
 /// Normalizes a reserved-family generic spelling to its canonical reference kind.
