@@ -64,6 +64,8 @@ pub enum EnemyIntentError {
     DuplicateComponent(String),
     /// A source returned duplicate target identity within one target set.
     DuplicateTarget(String),
+    /// A source returned duplicate effect identity within one component.
+    DuplicateEffect(String),
     /// A source returned duplicate parameter identity within one component.
     DuplicateParameter(String),
     /// An intent ID was reused as one of its enclosing IDs.
@@ -111,6 +113,7 @@ impl std::fmt::Display for EnemyIntentError {
             Self::DuplicateStatus(id) => write!(formatter, "duplicate enemy status: {id}"),
             Self::DuplicateComponent(id) => write!(formatter, "duplicate intent component: {id}"),
             Self::DuplicateTarget(id) => write!(formatter, "duplicate intent target: {id}"),
+            Self::DuplicateEffect(id) => write!(formatter, "duplicate intent effect: {id}"),
             Self::DuplicateParameter(id) => write!(formatter, "duplicate intent parameter: {id}"),
             Self::AmbiguousIdentity(field) => {
                 write!(formatter, "intent identity is ambiguous: {field}")

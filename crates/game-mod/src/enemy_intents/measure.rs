@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    EnemyIntentEnemyInput, EnemyIntentField, EnemyIntentInput, EnemyIntentParameterValue,
-    EnemyIntentTargetInfo, EnemyIntentTargets,
+    EnemyIntentComponentKind, EnemyIntentEnemyInput, EnemyIntentField, EnemyIntentInput,
+    EnemyIntentParameterValue, EnemyIntentTargetInfo, EnemyIntentTargets,
 };
 
 pub(super) fn enemy_bytes(enemy: &EnemyIntentEnemyInput) -> usize {
@@ -28,7 +28,23 @@ fn intent_bytes(intent: &EnemyIntentInput) -> usize {
     add_field_text(&mut bytes, &intent.linkage.label);
     for component in &intent.components {
         bytes += component.component_id.len();
+        if let EnemyIntentComponentKind::Custom(value)
+        | EnemyIntentComponentKind::Unsupported(value) = &component.kind
+        {
+            bytes += value.len();
+        }
         add_field_text(&mut bytes, &component.description);
+        if let Some(amount) = component.amount.value() {
+            bytes += amount.unit.as_str().len();
+        }
+        if let Some(damage) = component.damage.value() {
+            if let Some(per_hit) = damage.per_hit.value() {
+                bytes += per_hit.unit.as_str().len();
+            }
+            if let Some(total) = damage.total.value() {
+                bytes += total.unit.as_str().len();
+            }
+        }
         if let Some(effects) = component.effects.value() {
             bytes += effects.iter().map(|effect| effect.id.len()).sum::<usize>();
         }
@@ -36,6 +52,9 @@ fn intent_bytes(intent: &EnemyIntentInput) -> usize {
             for parameter in parameters {
                 bytes += parameter.id.len();
                 add_field_text(&mut bytes, &parameter.label);
+                if let Some(unit) = parameter.unit.value() {
+                    bytes += unit.as_str().len();
+                }
                 if let EnemyIntentParameterValue::Text(value) = &parameter.value {
                     bytes += value.len();
                 }

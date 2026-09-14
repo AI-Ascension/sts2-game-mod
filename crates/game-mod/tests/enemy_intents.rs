@@ -7,9 +7,11 @@ mod fixture;
 
 use fixture::*;
 use sts2_game_mod::{
-    ENEMY_INTENT_MAX_COMPONENTS, ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES, ENEMY_INTENT_MAX_TEXT_BYTES,
-    EnemyIntentCapability, EnemyIntentComponentKind, EnemyIntentError, EnemyIntentField,
-    EnemyIntentLiveReader, EnemyIntentLiveSnapshot, EnemyIntentSource, EnemyIntentStatus,
+    ENEMY_INTENT_MAX_COMPONENTS, ENEMY_INTENT_MAX_IDENTITY_BYTES, ENEMY_INTENT_MAX_KIND_BYTES,
+    ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES, ENEMY_INTENT_MAX_PARAMETERS, ENEMY_INTENT_MAX_TEXT_BYTES,
+    EnemyIntentCapability, EnemyIntentComponent, EnemyIntentComponentKind, EnemyIntentError,
+    EnemyIntentField, EnemyIntentInput, EnemyIntentLiveReader, EnemyIntentLiveSnapshot,
+    EnemyIntentParameter, EnemyIntentParameterValue, EnemyIntentSource, EnemyIntentStatus,
     EnemyIntentTargets, EnemyIntentUnavailableReason, EnemyIntentVisibilityScope,
     FixtureEnemyIntentSource, UnavailableEnemyIntentSource,
 };
@@ -228,4 +230,46 @@ fn source_capability_identity_and_read_errors_are_typed() {
             EnemyIntentUnavailableReason::ExactHostEvidenceRequired
         ))
     ));
+}
+
+#[test]
+fn detail_limit_counts_component_kinds_and_units_without_bypass() {
+    let long_unit = "u".repeat(ENEMY_INTENT_MAX_IDENTITY_BYTES);
+    let components = (0..5)
+        .map(|index| EnemyIntentComponent {
+            component_id: format!("component:bulk:{index}"),
+            kind: EnemyIntentComponentKind::Custom("k".repeat(ENEMY_INTENT_MAX_KIND_BYTES)),
+            description: EnemyIntentField::NotObserved,
+            damage: EnemyIntentField::NotApplicable,
+            amount: EnemyIntentField::NotApplicable,
+            effects: EnemyIntentField::NotApplicable,
+            parameters: EnemyIntentField::Available(
+                (0..ENEMY_INTENT_MAX_PARAMETERS)
+                    .map(|parameter| EnemyIntentParameter {
+                        id: format!("parameter:unit:{parameter}"),
+                        label: EnemyIntentField::NotObserved,
+                        value: EnemyIntentParameterValue::Unknown,
+                        unit: EnemyIntentField::Available(unit(&long_unit)),
+                    })
+                    .collect(),
+            ),
+            targets: EnemyIntentField::NotApplicable,
+        })
+        .collect::<Vec<_>>();
+    let mut input = snapshot(11);
+    input.enemies[0].intent = EnemyIntentField::Available(EnemyIntentInput {
+        linkage: fixture::intent().linkage,
+        components,
+        targets: EnemyIntentField::NotApplicable,
+    });
+    assert!(
+        matches!(
+            EnemyIntentLiveSnapshot::from_input(input),
+            Err(EnemyIntentError::DetailTooLarge {
+                limit: ENEMY_INTENT_MAX_LIVE_DETAIL_BYTES,
+                ..
+            })
+        ),
+        "custom kinds and nested units must count toward the per-enemy detail bound"
+    );
 }

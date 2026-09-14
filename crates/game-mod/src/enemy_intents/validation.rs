@@ -253,7 +253,7 @@ fn validate_effects(
         validate_identity(&effect.id, "effect_reference_id")
             .map_err(EnemyIntentError::InvalidInput)?;
         if !ids.insert(effect.id.as_str()) {
-            return Err(EnemyIntentError::DuplicateTarget(effect.id.clone()));
+            return Err(EnemyIntentError::DuplicateEffect(effect.id.clone()));
         }
     }
     Ok(())
