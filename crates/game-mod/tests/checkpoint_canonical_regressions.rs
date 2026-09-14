@@ -150,3 +150,83 @@ fn depth_limit_is_enforced_by_parser_and_encoder() -> Result<(), Box<dyn Error>>
     );
     Ok(())
 }
+
+fn nest_arrays(value: CanonicalValue, levels: usize) -> CanonicalValue {
+    (0..levels).fold(value, |inner, _| CanonicalValue::Array(vec![inner]))
+}
+
+#[test]
+fn tagged_numeric_objects_count_toward_the_depth_limit() -> Result<(), Box<dyn Error>> {
+    assert_eq!(CANONICAL_MAX_DEPTH, 128);
+
+    let cases = [
+        ("uint64", CanonicalValue::Uint64(u64::MAX), "uint64"),
+        (
+            "float64_bits",
+            CanonicalValue::Float64Bits(0x3ff0_0000_0000_0000),
+            "float64_bits",
+        ),
+    ];
+
+    for (label, tagged, kind) in cases {
+        let accepted = nest_arrays(tagged.clone(), CANONICAL_MAX_DEPTH - 1);
+        let bytes = to_canonical_bytes(&accepted)?;
+        let text = std::str::from_utf8(&bytes)?;
+        assert!(
+            text.contains(kind),
+            "{label} encoding must carry its tag: {text}"
+        );
+        assert!(
+            parse_canonical_text(text).is_ok(),
+            "{label} at 127 enclosing arrays must be accepted by the parser"
+        );
+
+        let rejected = nest_arrays(tagged, CANONICAL_MAX_DEPTH);
+        assert_eq!(
+            to_canonical_bytes(&rejected),
+            Err(CanonicalError::DepthExceeded),
+            "{label} at 128 enclosing arrays must be rejected by the encoder"
+        );
+
+        let tagged_json = format!("{{\"kind\":\"{kind}\",\"value\":\"0\"}}");
+        let deep_text = format!(
+            "{}{}{}",
+            "[".repeat(CANONICAL_MAX_DEPTH),
+            tagged_json,
+            "]".repeat(CANONICAL_MAX_DEPTH)
+        );
+        assert_eq!(
+            parse_canonical_text(&deep_text),
+            Err(CanonicalError::DepthExceeded),
+            "{label} at 128 enclosing arrays must be rejected by the parser"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn accepted_encodings_are_parser_readable_at_the_depth_boundary() -> Result<(), Box<dyn Error>> {
+    let bases = [
+        CanonicalValue::Integer(0),
+        CanonicalValue::Null,
+        CanonicalValue::Bool(true),
+        CanonicalValue::Text("x".to_owned()),
+        CanonicalValue::Uint64(u64::MAX),
+        CanonicalValue::Float64Bits(0x3ff0_0000_0000_0000),
+    ];
+
+    for base in bases {
+        for levels in (CANONICAL_MAX_DEPTH - 2)..=(CANONICAL_MAX_DEPTH + 1) {
+            let value = nest_arrays(base.clone(), levels);
+            let Ok(bytes) = to_canonical_bytes(&value) else {
+                continue;
+            };
+            let text = std::str::from_utf8(&bytes)?;
+            assert!(
+                parse_canonical_text(text).is_ok(),
+                "encoder output must be parser-readable at {levels} enclosing arrays"
+            );
+        }
+    }
+    Ok(())
+}

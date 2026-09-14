@@ -55,11 +55,13 @@ fn write_value(
         }
         CanonicalValue::Object(entries) => write_object(output, entries, depth)?,
         CanonicalValue::Uint64(number) => {
+            guard_depth(depth)?;
             output.push_str("{\"kind\":\"uint64\",\"value\":\"");
             output.push_str(&number.to_string());
             output.push_str("\"}");
         }
         CanonicalValue::Float64Bits(bits) => {
+            guard_depth(depth)?;
             output.push_str("{\"kind\":\"float64_bits\",\"value\":\"");
             output.push_str(&format!("{bits:016x}"));
             output.push_str("\"}");
