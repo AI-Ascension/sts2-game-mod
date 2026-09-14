@@ -13,18 +13,21 @@ case ${0##*/} in
         printf '%s\n' "$mode" >> "$STS2_DEV_CYCLE_TEST_LOG"
         [[ ${STS2_DEV_CYCLE_TEST_INSPECTION_FAIL:-no} != yes ]] || exit 1
         stopped_file="$STS2_DEV_CYCLE_TEST_LOG.stopped"
-        running=no
-        if [[ ${STS2_DEV_CYCLE_TEST_RUNNING:-no} == yes || ${STS2_DEV_CYCLE_TEST_OTHER_RUNNING:-no} == yes ]]; then
-            [[ -e $stopped_file ]] || running=yes
-        fi
+        # Model the selected installation and other-path instances separately so
+        # AssertStopped stays selected-only, matching the real inspector.
+        selected_running=no
+        other_running=no
+        [[ ${STS2_DEV_CYCLE_TEST_RUNNING:-no} == yes && ! -e $stopped_file ]] && selected_running=yes
+        [[ ${STS2_DEV_CYCLE_TEST_OTHER_RUNNING:-no} == yes && ! -e $stopped_file ]] && other_running=yes
         if [[ $mode == StopAll ]]; then
             : > "$stopped_file"
-            running=no
+            selected_running=no
+            other_running=no
         fi
-        if [[ $mode == AssertStopped && $running == yes ]]; then
+        if [[ $mode == AssertStopped && $selected_running == yes ]]; then
             exit 1
         fi
-        if [[ $mode == AssertNoGame && $running == yes ]]; then
+        if [[ $mode == AssertNoGame && ($selected_running == yes || $other_running == yes) ]]; then
             exit 1
         fi
         ;;
