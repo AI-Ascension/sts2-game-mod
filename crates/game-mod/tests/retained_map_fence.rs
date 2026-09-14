@@ -7,9 +7,35 @@ mod fixture;
 
 use fixture::*;
 use sts2_game_mod::{
-    FixtureRetainedMapSource, RetainedMapError, RetainedMapFreshness, RetainedMapObservationState,
-    RetainedMapReader, RetainedMapTravelActionability, RetainedMapVisibilityScope,
+    FixtureRetainedMapSource, RetainedMapCapability, RetainedMapError, RetainedMapFreshness,
+    RetainedMapLiveBinding, RetainedMapObservationState, RetainedMapReader,
+    RetainedMapSnapshotInput, RetainedMapSource, RetainedMapSourceError,
+    RetainedMapTravelActionability, RetainedMapVisibilityScope,
 };
+
+/// Test source that reports an observable preflight but fails the copying read with one error.
+struct ReadErrorSource {
+    observation: RetainedMapObservationState,
+    error: RetainedMapSourceError,
+}
+
+impl RetainedMapSource for ReadErrorSource {
+    fn capability(&self) -> RetainedMapCapability {
+        RetainedMapCapability::SyntheticFixtureOnly
+    }
+
+    fn observation_state(&self) -> RetainedMapObservationState {
+        self.observation
+    }
+
+    fn read_snapshot(
+        &self,
+        _expected: &RetainedMapLiveBinding,
+        _scope: RetainedMapVisibilityScope,
+    ) -> Result<RetainedMapSnapshotInput, RetainedMapSourceError> {
+        Err(self.error)
+    }
+}
 
 #[test]
 fn reconcile_rejects_snapshot_identity_change_within_same_generation() {
@@ -110,4 +136,144 @@ fn rejected_run_mismatch_observation_marks_stale_and_refuses_old_travel() {
         )),
         "a rejected new-run observation must refuse old-run travel"
     );
+}
+
+#[test]
+fn source_reported_stale_read_revokes_current_authority() {
+    let source = FixtureRetainedMapSource::new(snapshot(1));
+    let mut reader =
+        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
+            .expect("reader");
+    let travel = reader.travel_references().expect("travel");
+    reader.authorize_travel(&travel[0]).expect("current travel");
+
+    let rotated = FixtureRetainedMapSource::new(snapshot(2));
+    assert_eq!(
+        reader.observe(&rotated, &binding(1)),
+        Err(RetainedMapError::SourceStale),
+        "a source that changed during copying reports a stale read"
+    );
+    assert_eq!(reader.freshness(), RetainedMapFreshness::Stale);
+    assert_eq!(
+        reader.travel_actionability(),
+        RetainedMapTravelActionability::Stale,
+        "a stale source read must mark the surface closed as well as stale"
+    );
+    assert_eq!(
+        reader.authorize_travel(&travel[0]),
+        Err(RetainedMapError::TravelNotActionable(
+            RetainedMapTravelActionability::Stale
+        )),
+        "a stale source read must refuse old travel"
+    );
+}
+
+#[test]
+fn read_reported_not_observable_demotes_current_authority() {
+    let source = FixtureRetainedMapSource::new(snapshot(1));
+    let mut reader =
+        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
+            .expect("reader");
+    let travel = reader.travel_references().expect("travel");
+    reader.authorize_travel(&travel[0]).expect("current travel");
+
+    let closed = ReadErrorSource {
+        observation: RetainedMapObservationState::Observable,
+        error: RetainedMapSourceError::NotObservable,
+    };
+    assert_eq!(
+        reader.observe(&closed, &binding(1)),
+        Err(RetainedMapError::MapNotObservable(
+            RetainedMapObservationState::Closed
+        )),
+        "an observable preflight cannot mask a closed copying surface"
+    );
+    assert_eq!(reader.observation(), RetainedMapObservationState::Closed);
+    assert_eq!(
+        reader.freshness(),
+        RetainedMapFreshness::Retained,
+        "read-time closure demotes current knowledge to retained"
+    );
+    assert_eq!(
+        reader.travel_actionability(),
+        RetainedMapTravelActionability::Retained
+    );
+    assert_eq!(
+        reader.authorize_travel(&travel[0]),
+        Err(RetainedMapError::TravelNotActionable(
+            RetainedMapTravelActionability::Retained
+        )),
+        "read-time closure must refuse old travel"
+    );
+}
+
+#[test]
+fn malformed_new_run_topology_still_invalidates_identity() {
+    let source = FixtureRetainedMapSource::new(snapshot(1));
+    let mut reader =
+        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
+            .expect("reader");
+    let travel = reader.travel_references().expect("travel");
+    reader.authorize_travel(&travel[0]).expect("current travel");
+
+    let mut malformed = snapshot(2);
+    malformed.binding.run_id = "run:other".to_owned();
+    malformed.nodes.push(malformed.nodes[0].clone());
+    let moved = FixtureRetainedMapSource::new(malformed);
+    let moved_binding = moved.binding().clone();
+    assert_eq!(
+        reader.observe(&moved, &moved_binding),
+        Err(RetainedMapError::RunMismatch),
+        "identity change must be reported before malformed topology"
+    );
+    assert_eq!(reader.freshness(), RetainedMapFreshness::Stale);
+    assert_ne!(reader.freshness(), RetainedMapFreshness::Current);
+    assert_eq!(
+        reader.authorize_travel(&travel[0]),
+        Err(RetainedMapError::TravelNotActionable(
+            RetainedMapTravelActionability::Stale
+        )),
+        "malformed new-run topology must still refuse old-run travel"
+    );
+}
+
+#[test]
+fn transient_read_errors_preserve_current_authority() {
+    let source = FixtureRetainedMapSource::new(snapshot(1));
+    let mut reader =
+        RetainedMapReader::from_source(&source, &binding(1), RetainedMapVisibilityScope::Public)
+            .expect("reader");
+    let travel = reader.travel_references().expect("travel");
+
+    for error in [
+        RetainedMapSourceError::Busy,
+        RetainedMapSourceError::NoActiveSource,
+        RetainedMapSourceError::AccessDenied,
+        RetainedMapSourceError::Malformed,
+    ] {
+        let failing = ReadErrorSource {
+            observation: RetainedMapObservationState::Observable,
+            error,
+        };
+        assert!(
+            reader.observe(&failing, &binding(1)).is_err(),
+            "a transient {error:?} read still reports failure"
+        );
+        assert_eq!(
+            reader.freshness(),
+            RetainedMapFreshness::Current,
+            "a transient {error:?} read must not revoke current authority"
+        );
+        assert_eq!(
+            reader.observation(),
+            RetainedMapObservationState::Observable
+        );
+        assert_eq!(
+            reader.travel_actionability(),
+            RetainedMapTravelActionability::Current
+        );
+        reader
+            .authorize_travel(&travel[0])
+            .expect("current travel survives a transient read failure");
+    }
 }
