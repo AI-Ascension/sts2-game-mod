@@ -6,6 +6,13 @@ do not establish release support.
 
 ## Unreleased
 
+- Added a source-only restricted `asc-jcs-state-v1` canonical encoder for game-owned checkpoint
+  payloads: deterministic ASCII-key ordering, exact `uint64`/`float64_bits` tagging, domain-separated
+  state/blob identities pinned to protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea`, and a
+  strict rejection matrix (duplicate keys, floats, exponents, negative zero, unsafe integers,
+  non-ASCII keys, trailing text). Synthetic conformance tests pass; native capture, restore, and
+  host compatibility remain unverified. See ADR 0054.
+
 - Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
   read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
   readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest

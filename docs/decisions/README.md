@@ -49,6 +49,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0051 | [Owner-local retained map knowledge](0051-retained-map-knowledge.md) |
 | 0052 | [Owner-local event definition and branch reference data](0052-event-reference.md) |
 | 0053 | [Owner-local reward offer definition and generation reference data](0053-reward-offer-reference.md) |
+| 0054 | [Restricted canonical checkpoint encoder and conformance witness](0054-restricted-canonical-checkpoint-encoder.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
