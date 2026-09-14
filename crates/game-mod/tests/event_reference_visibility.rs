@@ -7,9 +7,9 @@ mod fixture;
 
 use fixture::*;
 use sts2_game_mod::{
-    EventCatalog, EventCatalogError, EventCatalogProducer, EventCostKind, EventDefinitionInput,
-    EventFieldStatus, EventFollowUp, EventSemanticReferenceKind, EventVisibility,
-    EventVisibilityScope,
+    ContentManifest, EventCatalog, EventCatalogError, EventCatalogProducer, EventCostKind,
+    EventDefinitionInput, EventFieldStatus, EventFollowUp, EventSemanticReference,
+    EventSemanticReferenceKind, EventVisibility, EventVisibilityScope,
 };
 
 fn produce(
@@ -105,6 +105,69 @@ fn visible_event_referencing_owner_only_event_is_rejected() {
             reference_kind: EventSemanticReferenceKind::Event,
         })
     );
+}
+
+fn event_alias_manifest() -> ContentManifest {
+    manifest(&[
+        ("event", "event:one"),
+        ("event", "event:secret"),
+        ("enemy", "enemy:slime"),
+        ("relic", "relic:shrine"),
+    ])
+}
+
+fn secret_alias_reference(kind: EventSemanticReferenceKind) -> EventSemanticReference {
+    EventSemanticReference {
+        kind,
+        id: "event:secret".to_owned(),
+        label: text("SECRET LABEL"),
+    }
+}
+
+fn alias_referencing_event(
+    kind: EventSemanticReferenceKind,
+    target_visibility: EventVisibility,
+) -> Vec<EventDefinitionInput> {
+    let mut first = rich_event("event:one");
+    first.pages[0].references = vec![secret_alias_reference(kind)];
+    let mut secret = simple_event("event:secret");
+    secret.visibility = target_visibility;
+    vec![first, secret]
+}
+
+#[test]
+fn content_kind_event_alias_is_subject_to_visibility() {
+    for target in [EventVisibility::Hidden, EventVisibility::OwnerOnly] {
+        let content = event_alias_manifest();
+        let expected = Err(EventCatalogError::HiddenReferenceLeak {
+            event_id: "event:one".to_owned(),
+            reference_kind: EventSemanticReferenceKind::Event,
+        });
+        let canonical = produce(
+            &content,
+            alias_referencing_event(EventSemanticReferenceKind::Event, target),
+        );
+        let alias = produce(
+            &content,
+            alias_referencing_event(
+                EventSemanticReferenceKind::Content {
+                    entity_kind: "event".to_owned(),
+                },
+                target,
+            ),
+        );
+        assert_eq!(canonical, expected, "canonical Event path");
+        assert_eq!(
+            alias, expected,
+            "reserved-family alias must match canonical enforcement"
+        );
+        let error = alias.expect_err("reserved-family alias must be rejected");
+        let rendered = format!("{error:?}");
+        assert!(
+            !rendered.contains("event:secret") && !rendered.contains("SECRET LABEL"),
+            "the rejection must not disclose the protected event identity or label"
+        );
+    }
 }
 
 fn hidden_and_empty_catalog() -> EventCatalog {

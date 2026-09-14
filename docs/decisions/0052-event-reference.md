@@ -51,6 +51,13 @@ cannot disclose it. `follow_up` page edges retain the stricter `HiddenFutureLeak
 `ExcludedByScope`, so a hidden or owner-only page, option, or event can never be disclosed through a
 reference edge.
 
+Reserved-family alias spellings are normalized to their canonical reference kind before visibility
+is enforced: a generic `Content { entity_kind: "event" }` reference resolves to the same manifest
+event family as `Event`, so it is validated as `Event` and cannot bypass the visibility check that
+`Event` receives. This makes the alias path and the canonical path produce the same
+`HiddenReferenceLeak` rejection (with the same canonical reference-kind label) and prevents a public
+record from disclosing a hidden or owner-only event identity or label.
+
 ### Withheld versus observed-empty collections
 
 Projected eligibility, option requirements, costs, outcomes, and outcome effects are never silently
