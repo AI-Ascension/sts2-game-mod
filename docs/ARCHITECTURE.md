@@ -330,6 +330,14 @@ unavailable, and unknown mechanics fail closed instead of becoming empty success
 source-only projection with bounded pages/details and synthetic evidence; it defines no transport,
 native extractor, host ABI, or exact-host compatibility.
 
+The owner-local `enemy_intents` producer projects each enemy's current intention as an ordered,
+bounded component list with typed damage, amounts, effect/parameter references, and explicit target
+visibility (no target, unknown, hidden, or visible IDs). Enemy, intent, and component identities stay
+distinct, and reads share one coherent game/run/combat/snapshot/epoch fence. Unknown categories and
+hidden targets fail closed instead of collapsing into a known kind or fake sentinel. This remains a
+source-only projection with bounded details and synthetic evidence; it defines no transport, native
+extractor, host ABI, or exact-host compatibility.
+
 ## Evidence status
 
 The load-smoke report confirms game discovery, managed initializer invocation, and the paired native
