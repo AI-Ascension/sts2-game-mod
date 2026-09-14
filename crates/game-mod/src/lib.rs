@@ -6,6 +6,7 @@ use sts2_game_mod_host::{
 };
 use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpResponse};
 
+mod act_reference;
 mod card_definitions;
 mod character_state;
 mod characters;
@@ -30,6 +31,7 @@ mod runtime_v3_gameplay;
 mod save_profile;
 mod workshop;
 
+pub use act_reference::*;
 pub use card_definitions::*;
 pub use character_state::*;
 pub use characters::*;

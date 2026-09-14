@@ -45,6 +45,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0047 | [Owner-local character resource and secondary-entity state](0047-character-resource-secondary-entity-state.md) |
 | 0048 | [Owner-local structured enemy intents and public targets](0048-structured-enemy-intents.md) |
 | 0049 | [Owner-local enemy, boss, elite, and minion reference definitions](0049-enemy-definitions.md) |
+| 0050 | [Owner-local act, encounter, and map-generation reference data](0050-act-encounter-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
