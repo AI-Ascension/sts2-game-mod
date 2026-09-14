@@ -54,7 +54,7 @@ impl Parser<'_> {
         }
     }
 
-    fn expect(&mut self, byte: u8) -> Result<(), CanonicalError> {
+    fn consume(&mut self, byte: u8) -> Result<(), CanonicalError> {
         match self.advance() {
             Some(actual) if actual == byte => Ok(()),
             Some(_) => Err(CanonicalError::UnexpectedToken {
@@ -101,7 +101,7 @@ impl Parser<'_> {
     }
 
     fn parse_object(&mut self) -> Result<CanonicalValue, CanonicalError> {
-        self.expect(b'{')?;
+        self.consume(b'{')?;
         let mut entries = BTreeMap::new();
         self.skip_whitespace();
         if self.peek() == Some(b'}') {
@@ -118,7 +118,7 @@ impl Parser<'_> {
                 return Err(CanonicalError::NonAsciiKey);
             }
             self.skip_whitespace();
-            self.expect(b':')?;
+            self.consume(b':')?;
             let value = self.parse_value()?;
             if entries.insert(key, value).is_some() {
                 return Err(CanonicalError::DuplicateKey);
@@ -138,7 +138,7 @@ impl Parser<'_> {
     }
 
     fn parse_array(&mut self) -> Result<CanonicalValue, CanonicalError> {
-        self.expect(b'[')?;
+        self.consume(b'[')?;
         let mut items = Vec::new();
         self.skip_whitespace();
         if self.peek() == Some(b']') {
@@ -162,7 +162,7 @@ impl Parser<'_> {
     }
 
     fn parse_string(&mut self) -> Result<String, CanonicalError> {
-        self.expect(b'"')?;
+        self.consume(b'"')?;
         let mut bytes = Vec::new();
         loop {
             match self.advance() {
