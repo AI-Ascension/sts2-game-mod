@@ -286,7 +286,7 @@ inspect_selected_installation() {
         -BackupPath "$(to_windows_path "$backup_root")" \
         -Mode "$mode" -WaitSeconds "$wait_seconds" \
         -DeadlineEpoch "$live_authorization_deadline" \
-        || die 'selected-installation process/path inspection or termination failed'
+        || die "game process/path inspection or termination failed ($mode)"
 }
 
 for path in "$mods_dir" "$stage_dir" "$backup_root"; do

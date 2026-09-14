@@ -123,7 +123,8 @@ bash experiments/managed-rust-interop/dev-cycle.sh \
 After a successful build it stops only inspected processes from the selected installation, backs up replaced addon files under the
 ignored `.sts2-dev/backups/` directory, copies and compares the three staged files in `mods/`, then
 relaunches the same installation. Use `--dry-run` to inspect the cycle, `--no-launch` for an
-install-only operation, or `--no-kill` to require the selected installation already stopped.
+install-only operation, `--no-kill` to require the selected installation already stopped, or
+`--kill-running` to stop any running `SlayTheSpire2` instance (from any installation path) first.
 A game launch, load smoke, or runtime probe is separate host evidence and
 must be recorded as confirmed or unverified; it is never implied by a successful build.
 
