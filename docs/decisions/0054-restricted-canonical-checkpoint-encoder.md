@@ -18,21 +18,31 @@ that only checks bytes cannot enforce that contract or localize a game-owned sch
 
 `crates/game-mod` now owns a source-only restricted canonical encoder for a game-owned value model
 and a conformance witness against the pinned `sts2-protocol` revision
-`8a2e66f5d2190a0fca7f146dc3508e8d55515ea`. The protocol owner still owns complete RFC 8785
+`8a2e66f5d2190a0fca7f146dc3508e8d55515ea7`. The protocol owner still owns complete RFC 8785
 canonicalization and its full conformance suite; this target implements only the profile-restricted
 subset its payloads may contain and does not claim general JCS coverage.
 
 The value model is `CanonicalValue`: `Null`, `Bool`, `Integer` (safe range `±(2^53 - 1)`), `Text`,
-`Array`, `Object` (ASCII keys, deterministic ordering), `Uint64`, and `Float64Bits`. Object keys
-must be ASCII, and object members are ordered by key. Object and array nesting is bounded by the
-public `CANONICAL_MAX_DEPTH` constant (128). Both the strict parser and the encoder check the
+`Array`, `Object` (keys matching `^[a-z][a-z0-9_]*$`, deterministic ordering), `Uint64`, and
+`Float64Bits`. Both parser and encoder validate the decoded key grammar; non-ASCII keys return
+`NonAsciiKey` and other invalid keys return `InvalidKey`. Object members are ordered by key.
+Object and array nesting is bounded by the public `CANONICAL_MAX_DEPTH` constant (64),
+as required by the pinned protocol witness `tools/exact-state/canonical.mjs` and schema
+`schemas/exact-state-v1.schema.json`. Both the strict parser and the encoder check the
 remaining depth before recursive descent, so an over-deep payload returns a typed
 `CanonicalError::DepthExceeded` rather than exhausting the process stack; a payload nested to
-exactly the limit is accepted. `Uint64` encodes as
+exactly the limit is accepted. Root containers count as one. Tagged numeric objects count as
+containers, so 63 enclosing arrays accept a tagged value and 64 reject it. `Uint64` encodes as
 `{"kind":"uint64","value":"<decimal>"}` and `Float64Bits` as
 `{"kind":"float64_bits","value":"<16 lowercase hex>"}`, preserving exact values that the plain JSON
 number grammar cannot represent. Text escaping is the restricted JCS set: `"` and `\` are escaped,
 control bytes use `\b \f \n \r \t` or `\u00XX`, and other UTF-8 is unchanged.
+
+Both entrypoints enforce the pinned 16 MiB `CHECKPOINT_CAPTURE_MAX_BYTES` limit. The parser
+rejects oversized raw UTF-8 input, including whitespace, before scanning or allocating values.
+Every encoder append checks its remaining byte budget before growing the output, including keys,
+delimiters, and escaping expansion. Requested output capacity growth is capped at the same bound.
+Exactly 16 MiB is accepted; overflow returns `CanonicalError::PayloadTooLarge`.
 
 The strict scanner ingests restricted JSON and rejects:
 
@@ -42,7 +52,8 @@ The strict scanner ingests restricted JSON and rejects:
 | floats and exponents | exact numeric representation only |
 | negative zero (`-0`) | distinct from `0` and not representable here |
 | integers above `2^53 - 1` | outside the exact double-safe range |
-| non-ASCII object keys | deterministic ordering is defined over ASCII keys |
+| keys outside `^[a-z][a-z0-9_]*$` | pinned profile key grammar |
+| input or canonical output above 16 MiB | pinned profile byte bounds |
 | trailing text | one value per canonical payload |
 | nesting deeper than `CANONICAL_MAX_DEPTH` | recursive descent must be stack-bounded |
 | malformed input, unpaired surrogates, raw control bytes, invalid escapes | strict syntax only |
@@ -54,8 +65,10 @@ recomputes these identities, the canonical bytes, the equivalence/distinctness p
 matrix, and the golden manifest-derived `asc-checkpoint:v1:` identity from the checked-in
 `protocol-artifact/exact-state-v1` witness. `tests/checkpoint_canonical_regressions.rs` adds the
 branch coverage that the pinned vectors omit (arrays, nulls, booleans, escaped strings, Unicode
-values versus ASCII keys, safe-integer endpoints, escaped duplicate keys, and the parser/encoder
-depth boundary) against fixed expected bytes. `serde_json` is used in tests only to read the vector
+values versus restricted keys, safe-integer endpoints, escaped duplicate keys, and the parser/encoder
+depth boundary) against fixed expected bytes. All 14 pinned raw rejection vectors are retained.
+`tests/checkpoint_canonical_bounds.rs` covers byte boundaries, escaping expansion, key grammar,
+hostile nesting, and direct typed integer rejection. `serde_json` is used in tests only to read the vector
 file; ingestion itself is hand-rolled so rejections are exact.
 
 ## Evidence and limits

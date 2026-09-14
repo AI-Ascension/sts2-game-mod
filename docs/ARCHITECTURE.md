@@ -189,8 +189,8 @@ rejects every phase: candidate map/combat need exact-host evidence, offer/event/
 is incomplete, and enemy/animation/transition/unknown phases are unsafe. The receipt wrapper applies
 only the bounded state/blob identity domains to protocol-validated bytes and derives the checkpoint
 ID from the complete manifest envelope. Separately, the source-only `checkpoint::canonical` module
-owns the restricted `asc-jcs-state-v1` encoder (deterministic ASCII-key ordering, exact numeric
-tagging, a `CANONICAL_MAX_DEPTH`-bounded strict rejection matrix, and domain-separated identities); full RFC 8785 stays protocol-owned.
+owns the restricted `asc-jcs-state-v1` encoder (ordered `^[a-z][a-z0-9_]*$` keys, exact numeric
+tagging, 64-container depth, 16 MiB input/output bounds, and identities); full RFC 8785 stays protocol-owned.
 See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md) and [ADR 0054](decisions/0054-restricted-canonical-checkpoint-encoder.md).
 
 ## Repeat-seed practice replay

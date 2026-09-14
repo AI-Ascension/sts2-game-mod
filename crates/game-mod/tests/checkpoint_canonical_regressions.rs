@@ -106,7 +106,7 @@ fn escaped_duplicate_keys_are_rejected() {
 
 #[test]
 fn depth_limit_is_enforced_by_parser_and_encoder() -> Result<(), Box<dyn Error>> {
-    assert_eq!(CANONICAL_MAX_DEPTH, 128);
+    assert_eq!(CANONICAL_MAX_DEPTH, 64);
 
     let at_limit = format!(
         "{}0{}",
@@ -157,7 +157,7 @@ fn nest_arrays(value: CanonicalValue, levels: usize) -> CanonicalValue {
 
 #[test]
 fn tagged_numeric_objects_count_toward_the_depth_limit() -> Result<(), Box<dyn Error>> {
-    assert_eq!(CANONICAL_MAX_DEPTH, 128);
+    assert_eq!(CANONICAL_MAX_DEPTH, 64);
 
     let cases = [
         ("uint64", CanonicalValue::Uint64(u64::MAX), "uint64"),
@@ -178,14 +178,14 @@ fn tagged_numeric_objects_count_toward_the_depth_limit() -> Result<(), Box<dyn E
         );
         assert!(
             parse_canonical_text(text).is_ok(),
-            "{label} at 127 enclosing arrays must be accepted by the parser"
+            "{label} at 63 enclosing arrays must be accepted by the parser"
         );
 
         let rejected = nest_arrays(tagged, CANONICAL_MAX_DEPTH);
         assert_eq!(
             to_canonical_bytes(&rejected),
             Err(CanonicalError::DepthExceeded),
-            "{label} at 128 enclosing arrays must be rejected by the encoder"
+            "{label} at 64 enclosing arrays must be rejected by the encoder"
         );
 
         let tagged_json = format!("{{\"kind\":\"{kind}\",\"value\":\"0\"}}");
@@ -198,7 +198,7 @@ fn tagged_numeric_objects_count_toward_the_depth_limit() -> Result<(), Box<dyn E
         assert_eq!(
             parse_canonical_text(&deep_text),
             Err(CanonicalError::DepthExceeded),
-            "{label} at 128 enclosing arrays must be rejected by the parser"
+            "{label} at 64 enclosing arrays must be rejected by the parser"
         );
     }
     Ok(())

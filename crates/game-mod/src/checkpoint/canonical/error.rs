@@ -3,6 +3,10 @@
 /// Rejection while encoding or strictly parsing a canonical payload.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CanonicalError {
+    /// Raw input or encoded output exceeds the 16 MiB checkpoint byte limit.
+    PayloadTooLarge,
+    /// An ASCII object key does not match `^[a-z][a-z0-9_]*$`.
+    InvalidKey,
     /// The input contained no value.
     EmptyInput,
     /// A value, key, or delimiter ended unexpectedly.
@@ -52,6 +56,8 @@ pub enum CanonicalError {
 impl std::fmt::Display for CanonicalError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::PayloadTooLarge => formatter.write_str("canonical payload exceeds byte limit"),
+            Self::InvalidKey => formatter.write_str("object key violates the canonical grammar"),
             Self::EmptyInput => formatter.write_str("input is empty"),
             Self::UnexpectedEnd => formatter.write_str("input ended unexpectedly"),
             Self::UnexpectedToken { offset } => {

@@ -1,6 +1,6 @@
 {
   "profile": "asc-jcs-state-v1",
-  "source_revision": "8a2e66f5d2190a0fca7f146dc3508e8d55515ea",
+  "source_revision": "8a2e66f5d2190a0fca7f146dc3508e8d55515ea7",
   "positive": [
     {
       "name": "empty_object",
@@ -176,6 +176,34 @@
     {
       "name": "unicode_key",
       "text": "{\"é\":1}"
+    },
+    {
+      "name": "uppercase_key",
+      "text": "{\"Value\":1}"
+    },
+    {
+      "name": "dash_key",
+      "text": "{\"my-key\":1}"
+    },
+    {
+      "name": "nan",
+      "text": "{\"value\":NaN}"
+    },
+    {
+      "name": "infinity",
+      "text": "{\"value\":Infinity}"
+    },
+    {
+      "name": "surrogate",
+      "text": "{\"text\":\"\\ud800\"}"
+    },
+    {
+      "name": "trailing_comma",
+      "text": "{\"a\":1,}"
+    },
+    {
+      "name": "leading_bom",
+      "text": "\ufeff{\"a\":1}"
     },
     {
       "name": "trailing_text",
