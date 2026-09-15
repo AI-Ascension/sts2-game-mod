@@ -162,3 +162,79 @@ fn origin_versions_are_bounded_and_match_known_active_packages() {
             .is_ok()
     );
 }
+
+#[test]
+fn adapter_family_coverage_changes_inventory_without_changing_content_identity() {
+    let source = FakeCatalog {
+        snapshot: base_snapshot(),
+    };
+    let cards_only = producer("adapter-v1")
+        .produce(&source)
+        .expect("card adapter should produce");
+    // Keep compatibility identical to prove coverage itself expires old query bindings.
+    let all_families =
+        ContentManifestProducer::new("adapter-v1", [String::from("card"), String::from("relic")])
+            .expect("valid expanded producer")
+            .produce(&source)
+            .expect("expanded adapter should produce");
+
+    assert_eq!(
+        cards_only.content_set_revision,
+        all_families.content_set_revision
+    );
+    assert_eq!(
+        cards_only.localized_text_revision,
+        all_families.localized_text_revision
+    );
+    for (before, after) in cards_only.definitions.iter().zip(&all_families.definitions) {
+        assert_eq!(before.namespaced_id, after.namespaced_id);
+        assert_eq!(before.semantic_revision, after.semantic_revision);
+    }
+    assert_ne!(cards_only.families, all_families.families);
+    assert_ne!(
+        cards_only.inventory_revision,
+        all_families.inventory_revision
+    );
+    assert!(!all_families.accepts_cursor(&cards_only.cursor_binding()));
+    assert!(!cards_only.accepts_cursor(&all_families.cursor_binding()));
+}
+
+#[test]
+fn empty_family_coverage_is_inventory_but_family_membership_is_content() {
+    let mut snapshot = base_snapshot();
+    snapshot.available_entity_kinds.push(String::from("empty"));
+    let source = FakeCatalog { snapshot };
+    let unhandled = producer("adapter-v1")
+        .produce(&source)
+        .expect("valid catalog");
+    let handled =
+        ContentManifestProducer::new("adapter-v1", [String::from("card"), String::from("empty")])
+            .expect("valid producer")
+            .produce(&source)
+            .expect("valid catalog");
+
+    assert_eq!(unhandled.definitions, handled.definitions);
+    assert_eq!(unhandled.content_set_revision, handled.content_set_revision);
+    assert_eq!(
+        unhandled.localized_text_revision,
+        handled.localized_text_revision
+    );
+    assert_ne!(unhandled.inventory_revision, handled.inventory_revision);
+    assert!(!handled.accepts_cursor(&unhandled.cursor_binding()));
+    assert!(!unhandled.accepts_cursor(&handled.cursor_binding()));
+
+    let without_empty = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: base_snapshot(),
+        })
+        .expect("valid catalog");
+    assert_ne!(
+        unhandled.content_set_revision,
+        without_empty.content_set_revision
+    );
+    assert_ne!(
+        unhandled.inventory_revision,
+        without_empty.inventory_revision
+    );
+    assert!(!without_empty.accepts_cursor(&unhandled.cursor_binding()));
+}

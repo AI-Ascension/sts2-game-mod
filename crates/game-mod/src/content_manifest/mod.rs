@@ -161,7 +161,7 @@ pub struct ContentManifest {
     pub families: Vec<ContentFamily>,
     /// Owned definitions, deterministically ordered by kind and ID.
     pub definitions: Vec<ContentDefinition>,
-    /// Semantic content-set revision, independent of locale text.
+    /// Semantic content-set revision, independent of locale text and adapter family support.
     pub content_set_revision: String,
     /// Locale-qualified rendered-text revision.
     pub localized_text_revision: String,

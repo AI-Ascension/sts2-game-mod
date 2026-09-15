@@ -37,7 +37,15 @@ pub(super) fn content_set_revision(
     let mut canonical = String::new();
     field(&mut canonical, "game_build", game_build);
     package_fields(&mut canonical, packages);
-    family_fields(&mut canonical, families);
+    // Projection support belongs to the adapter's inventory, not installed content.
+    for family in families {
+        field(&mut canonical, "family.kind", &family.entity_kind);
+        field(
+            &mut canonical,
+            "family.count",
+            &family.definition_count.to_string(),
+        );
+    }
     for definition in definitions {
         field(&mut canonical, "definition.kind", &definition.entity_kind);
         field(&mut canonical, "definition.id", &definition.namespaced_id);
