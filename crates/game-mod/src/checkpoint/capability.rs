@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use super::error::CheckpointCaptureRejection;
+
 /// Every boundary that the owner must classify before capture is admitted.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CheckpointBoundary {
@@ -110,6 +112,19 @@ impl CheckpointCapability {
     pub const fn reason(self) -> CheckpointUnavailableReason {
         match self {
             Self::Unavailable { reason } => reason,
+        }
+    }
+
+    /// Maps this fail-closed capability to the typed rejection for a boundary.
+    #[must_use]
+    pub const fn rejection(self, boundary: CheckpointBoundary) -> CheckpointCaptureRejection {
+        match self {
+            Self::Unavailable { reason } => match reason {
+                CheckpointUnavailableReason::UnsafeBoundary => {
+                    CheckpointCaptureRejection::UnsafeBoundary
+                }
+                _ => CheckpointCaptureRejection::UnsupportedBoundary { boundary, reason },
+            },
         }
     }
 }

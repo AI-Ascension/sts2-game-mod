@@ -182,16 +182,11 @@ trace is recorded.
 
 ### Checkpoint capture owner boundary
 
-The target-owned `CheckpointCapturePort` is the future native checkpoint producer seam. It binds
-each request to the live instance/session/lease/epoch/run/profile and logical operation, classifies
-the complete boundary matrix, and returns only owned receipt values. `UnavailableCheckpointCapture`
-rejects every phase: candidate map/combat need exact-host evidence, offer/event/shop/rest coverage
-is incomplete, and enemy/animation/transition/unknown phases are unsafe. The receipt wrapper applies
-only the bounded state/blob identity domains to protocol-validated bytes and derives the checkpoint
-ID from the complete manifest envelope. Separately, the source-only `checkpoint::canonical` module
-owns the restricted `asc-jcs-state-v1` encoder (ordered `^[a-z][a-z0-9_]*$` keys, exact numeric
-tagging, 64-container depth, 16 MiB input/output bounds, and identities); full RFC 8785 stays protocol-owned.
-See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md) and [ADR 0054](decisions/0054-restricted-canonical-checkpoint-encoder.md).
+The target-owned `CheckpointCapturePort` is the future native checkpoint producer seam. It binds each request to the live instance/session/lease/epoch/run/profile and logical operation, classifies the complete boundary matrix, and returns only owned receipt values. `UnavailableCheckpointCapture` rejects every phase: candidate map/combat need exact-host evidence, offer/event/shop/rest coverage is incomplete, and enemy/animation/transition/unknown phases are unsafe. The receipt wrapper applies only the bounded state/blob identity domains to protocol-validated bytes and derives the checkpoint ID from the complete manifest envelope. The source-only `checkpoint::canonical` encoder owns the restricted `asc-jcs-state-v1` profile (ordered `^[a-z][a-z0-9_]*$` keys, exact numeric tagging, 64-container depth, 16 MiB input/output bounds, identities); full RFC 8785 stays protocol-owned.
+
+The source-only `checkpoint::admission` controller adds the two remaining owner gates. A `CheckpointCaptureBarrier` is held from settlement classification through production and persistence, so host mutation offered inside that window is refused as `Busy` and a nested hold is refused the same way; settlement is classified before mutual exclusion, so an unsafe host phase is never reported as mere contention. A bounded `CheckpointAdmissionLedger` (`CHECKPOINT_ADMISSION_MAX_OPERATIONS`, 256) binds one logical operation to one receipt: an identical duplicate replays the recorded receipt, the same operation with changed bytes or a changed request is a conflict, a durable capture whose persistence fails records nothing, and an in-memory artifact stays distinguishable from a durable one. Unsafe phases stay refused for every producer, including the synthetic fixture.
+
+See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md), [ADR 0054](decisions/0054-restricted-canonical-checkpoint-encoder.md), and [ADR 0055](decisions/0055-checkpoint-capture-admission-barrier.md).
 
 ## Repeat-seed practice replay
 

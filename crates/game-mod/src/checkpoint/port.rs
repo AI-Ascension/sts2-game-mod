@@ -30,17 +30,10 @@ impl CheckpointCapturePort for UnavailableCheckpointCapture {
         &mut self,
         request: CheckpointCaptureRequest,
     ) -> Result<CheckpointCaptureReceipt, CheckpointCaptureRejection> {
-        let capability = self.capabilities().for_boundary(request.boundary());
-        match capability {
-            super::capability::CheckpointCapability::Unavailable { reason } => match reason {
-                super::capability::CheckpointUnavailableReason::UnsafeBoundary => {
-                    Err(CheckpointCaptureRejection::UnsafeBoundary)
-                }
-                _ => Err(CheckpointCaptureRejection::UnsupportedBoundary {
-                    boundary: request.boundary(),
-                    reason,
-                }),
-            },
-        }
+        let boundary = request.boundary();
+        Err(self
+            .capabilities()
+            .for_boundary(boundary)
+            .rejection(boundary))
     }
 }
