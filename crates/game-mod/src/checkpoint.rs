@@ -6,6 +6,7 @@
 //! producer proves a complete closure for a boundary. It does not inspect host
 //! objects or imply that any native phase is currently supported.
 
+mod admission;
 mod canonical;
 mod capability;
 mod error;
@@ -14,6 +15,13 @@ mod manifest;
 mod port;
 mod receipt;
 
+pub use admission::{
+    CheckpointAdmissionDecision, CheckpointAdmissionLedger, CheckpointAdmissionOutcome,
+    CheckpointBarrierGuard, CheckpointCaptureAdmission, CheckpointCaptureBarrier,
+    CheckpointCaptureProducer, CheckpointMutationFence, CheckpointProducedCheckpoint,
+    CheckpointProducerCapability, CheckpointSettlement, FixtureCheckpointProducer,
+    UnavailableCheckpointProducer,
+};
 pub use canonical::{
     CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CanonicalError, CanonicalValue, blob_digest,
     parse_canonical_text, state_id, to_canonical_bytes,
@@ -39,6 +47,8 @@ pub const CHECKPOINT_CAPTURE_SCHEMA: &str = "ascension.exact_state.v1";
 pub const CHECKPOINT_CAPTURE_MAX_BYTES: usize = 16 * 1024 * 1024;
 /// Maximum encoded size of a session, lease, run, profile, or operation identity.
 pub const CHECKPOINT_CAPTURE_MAX_ID_BYTES: usize = 256;
+/// Maximum number of capture operations the owner admission ledger retains.
+pub const CHECKPOINT_ADMISSION_MAX_OPERATIONS: usize = 256;
 /// Domain separator for the exact-state identity.
 pub const CHECKPOINT_STATE_DOMAIN: &[u8] = b"AI-ASCENSION/EXACT-STATE/v1\0";
 /// Domain separator for the checkpoint identity.

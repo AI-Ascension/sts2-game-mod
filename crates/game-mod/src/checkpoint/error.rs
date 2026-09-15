@@ -22,6 +22,8 @@ pub enum CheckpointCaptureRejection {
     PersistenceFailed,
     /// The operation identity was already used with a different request.
     OperationConflict,
+    /// The bounded admission ledger cannot retain another distinct operation.
+    AdmissionLedgerFull,
     /// The supplied bytes are not a non-empty canonical payload.
     InvalidCanonicalBytes,
     /// The supplied canonical payload exceeds the protocol bound.
@@ -46,6 +48,7 @@ impl CheckpointCaptureRejection {
             Self::UnsupportedCoverage => "unsupported_coverage",
             Self::PersistenceFailed => "persistence_failed",
             Self::OperationConflict => "operation_conflict",
+            Self::AdmissionLedgerFull => "admission_ledger_full",
             Self::InvalidCanonicalBytes => "invalid_canonical_bytes",
             Self::Oversize { .. } => "oversize",
             Self::ManifestMismatch => "manifest_mismatch",

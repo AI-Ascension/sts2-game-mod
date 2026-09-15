@@ -39,16 +39,21 @@ pub use card_definitions::*;
 pub use character_state::*;
 pub use characters::*;
 pub use checkpoint::{
-    CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CHECKPOINT_CAPTURE_MAX_BYTES,
-    CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE, CHECKPOINT_CAPTURE_SCHEMA,
-    CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE, CHECKPOINT_MANIFEST_SCHEMA,
-    CHECKPOINT_STATE_DOMAIN, CanonicalError, CanonicalValue, CheckpointArtifactDescriptor,
-    CheckpointBoundary, CheckpointCapabilities, CheckpointCapability, CheckpointCaptureIdentity,
-    CheckpointCapturePort, CheckpointCaptureReceipt, CheckpointCaptureRejection,
+    CANONICAL_MAX_DEPTH, CANONICAL_MAX_SAFE_INTEGER, CHECKPOINT_ADMISSION_MAX_OPERATIONS,
+    CHECKPOINT_CAPTURE_MAX_BYTES, CHECKPOINT_CAPTURE_MAX_ID_BYTES, CHECKPOINT_CAPTURE_PROFILE,
+    CHECKPOINT_CAPTURE_SCHEMA, CHECKPOINT_ID_DOMAIN, CHECKPOINT_MANIFEST_PROFILE,
+    CHECKPOINT_MANIFEST_SCHEMA, CHECKPOINT_STATE_DOMAIN, CanonicalError, CanonicalValue,
+    CheckpointAdmissionDecision, CheckpointAdmissionLedger, CheckpointAdmissionOutcome,
+    CheckpointArtifactDescriptor, CheckpointBarrierGuard, CheckpointBoundary,
+    CheckpointCapabilities, CheckpointCapability, CheckpointCaptureAdmission,
+    CheckpointCaptureBarrier, CheckpointCaptureIdentity, CheckpointCapturePort,
+    CheckpointCaptureProducer, CheckpointCaptureReceipt, CheckpointCaptureRejection,
     CheckpointCaptureRequest, CheckpointDurability, CheckpointIdentityError, CheckpointManifest,
-    CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts, CheckpointOrigin,
-    CheckpointUnavailableReason, UnavailableCheckpointCapture, blob_digest, parse_canonical_text,
-    state_id, to_canonical_bytes,
+    CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts,
+    CheckpointMutationFence, CheckpointOrigin, CheckpointProducedCheckpoint,
+    CheckpointProducerCapability, CheckpointSettlement, CheckpointUnavailableReason,
+    FixtureCheckpointProducer, UnavailableCheckpointCapture, UnavailableCheckpointProducer,
+    blob_digest, parse_canonical_text, state_id, to_canonical_bytes,
 };
 pub use combat_bookkeeping::{
     COMBAT_BOOKKEEPING_MAX_IDENTITY_BYTES, COMBAT_BOOKKEEPING_MAX_PENDING_CHOICES,
