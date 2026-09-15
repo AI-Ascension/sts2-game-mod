@@ -126,6 +126,7 @@ fn family_identity_count_and_missing_family_are_rejected() {
         .snapshot
         .available_entity_kinds
         .retain(|kind| kind != "enemy");
+    source.snapshot.registry_definition_counts.remove("enemy");
     let no_enemy = ContentManifestProducer::new("adapter-v1", ["encounter".to_owned()])
         .expect("producer")
         .produce(&source)

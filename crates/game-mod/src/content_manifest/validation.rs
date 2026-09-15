@@ -99,5 +99,24 @@ pub(super) fn validate_snapshot(
         }
     }
 
+    if snapshot.registry_definition_counts.len() != available_kinds.len()
+        || snapshot
+            .registry_definition_counts
+            .keys()
+            .any(|kind| !available_kinds.contains(kind.as_str()))
+    {
+        return Err(ContentManifestError::RegistryCountCoverageMismatch);
+    }
+    let mut discovered_counts = BTreeMap::<&str, usize>::new();
+    for definition in &snapshot.definitions {
+        *discovered_counts
+            .entry(definition.entity_kind.as_str())
+            .or_default() += 1;
+    }
+    for (kind, expected) in &snapshot.registry_definition_counts {
+        if discovered_counts.get(kind.as_str()).copied().unwrap_or(0) != *expected {
+            return Err(ContentManifestError::RegistryDefinitionCountMismatch);
+        }
+    }
     Ok(())
 }

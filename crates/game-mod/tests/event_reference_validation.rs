@@ -153,6 +153,7 @@ fn missing_family_and_family_count_are_rejected() {
         .snapshot
         .available_entity_kinds
         .retain(|kind| kind != "event");
+    source.snapshot.registry_definition_counts.remove("event");
     let no_event = sts2_game_mod::ContentManifestProducer::new("adapter-v1", ["enemy".to_owned()])
         .expect("producer")
         .produce(&source)

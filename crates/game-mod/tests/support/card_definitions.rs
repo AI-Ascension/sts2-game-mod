@@ -48,6 +48,7 @@ pub fn manifest_source(card_ids: &[&str]) -> ManifestSource {
                 order: 0,
             }],
             available_entity_kinds: vec!["card".to_owned()],
+            registry_definition_counts: [("card".to_owned(), card_ids.len())].into(),
             definitions: card_ids
                 .iter()
                 .map(|id| ContentDefinitionInput {

@@ -72,6 +72,7 @@ pub fn catalog_snapshot() -> ContentCatalogSnapshot {
             package("mod:synthetic", None, 1),
         ],
         available_entity_kinds: vec!["card".to_owned(), "relic".to_owned()],
+        registry_definition_counts: [("card".to_owned(), 3), ("relic".to_owned(), 1)].into(),
         definitions: vec![
             manifest_definition(
                 "card",

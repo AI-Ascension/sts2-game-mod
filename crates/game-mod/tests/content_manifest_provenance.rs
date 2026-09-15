@@ -66,6 +66,7 @@ fn base_snapshot() -> ContentCatalogSnapshot {
             package("mod:synthetic", None, 1),
         ],
         available_entity_kinds: vec!["card".to_owned(), "relic".to_owned()],
+        registry_definition_counts: [("card".to_owned(), 2), ("relic".to_owned(), 1)].into(),
         definitions: vec![
             definition(
                 "card",
@@ -161,4 +162,162 @@ fn origin_versions_are_bounded_and_match_known_active_packages() {
             })
             .is_ok()
     );
+}
+
+#[test]
+fn adapter_support_changes_inventory_but_not_semantic_content_identity() {
+    let source = FakeCatalog {
+        snapshot: base_snapshot(),
+    };
+    let cards = producer("adapter-v1").produce(&source).expect("cards");
+    let all = ContentManifestProducer::new("adapter-v1", ["card".to_owned(), "relic".to_owned()])
+        .expect("producer")
+        .produce(&source)
+        .expect("all families");
+    assert_eq!(cards.content_set_revision, all.content_set_revision);
+    assert_eq!(cards.localized_text_revision, all.localized_text_revision);
+    for (before, after) in cards.definitions.iter().zip(&all.definitions) {
+        assert_eq!(before.semantic_revision, after.semantic_revision);
+    }
+    assert_ne!(cards.inventory_revision, all.inventory_revision);
+    assert!(!all.accepts_cursor(&cards.cursor_binding()));
+}
+
+#[test]
+fn independent_registry_counts_reject_missing_extra_and_partial_inventory() {
+    let mut missing = base_snapshot();
+    missing.registry_definition_counts.remove("relic");
+    let mut extra = base_snapshot();
+    extra
+        .registry_definition_counts
+        .insert("unknown".to_owned(), 0);
+    for snapshot in [missing, extra] {
+        assert_eq!(
+            producer("adapter-v1").produce(&FakeCatalog { snapshot }),
+            Err(ContentManifestError::RegistryCountCoverageMismatch),
+        );
+    }
+    for family in ["card", "relic"] {
+        let mut partial = base_snapshot();
+        partial
+            .definitions
+            .retain(|definition| definition.entity_kind != family);
+        assert_eq!(
+            producer("adapter-v1").produce(&FakeCatalog { snapshot: partial }),
+            Err(ContentManifestError::RegistryDefinitionCountMismatch),
+        );
+        let mut undercounted = base_snapshot();
+        undercounted
+            .registry_definition_counts
+            .insert(family.to_owned(), 0);
+        assert_eq!(
+            producer("adapter-v1").produce(&FakeCatalog {
+                snapshot: undercounted
+            }),
+            Err(ContentManifestError::RegistryDefinitionCountMismatch),
+        );
+    }
+}
+
+#[test]
+fn verified_empty_unhandled_family_is_distinct_from_missing_registry_evidence() {
+    let mut snapshot = base_snapshot();
+    snapshot
+        .available_entity_kinds
+        .push("unsupported".to_owned());
+    assert_eq!(
+        producer("adapter-v1").produce(&FakeCatalog {
+            snapshot: snapshot.clone()
+        }),
+        Err(ContentManifestError::RegistryCountCoverageMismatch),
+    );
+    snapshot
+        .registry_definition_counts
+        .insert("unsupported".to_owned(), 0);
+    let manifest = producer("adapter-v1")
+        .produce(&FakeCatalog { snapshot })
+        .expect("independently verified empty family");
+    let family = manifest
+        .families
+        .iter()
+        .find(|family| family.entity_kind == "unsupported")
+        .expect("unsupported family retained");
+    assert_eq!(family.definition_count, 0);
+    assert!(!family.handled);
+}
+
+#[test]
+fn empty_family_support_is_inventory_identity_and_membership_is_content_identity() {
+    let mut with_empty = base_snapshot();
+    with_empty.available_entity_kinds.push("empty".to_owned());
+    with_empty
+        .registry_definition_counts
+        .insert("empty".to_owned(), 0);
+
+    let unhandled = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: with_empty.clone(),
+        })
+        .expect("valid catalog");
+    let handled =
+        ContentManifestProducer::new("adapter-v1", ["card".to_owned(), "empty".to_owned()])
+            .expect("valid producer")
+            .produce(&FakeCatalog {
+                snapshot: with_empty,
+            })
+            .expect("valid catalog");
+
+    assert_eq!(unhandled.definitions, handled.definitions);
+    assert_eq!(unhandled.content_set_revision, handled.content_set_revision);
+    assert_eq!(
+        unhandled.localized_text_revision,
+        handled.localized_text_revision
+    );
+    assert_ne!(unhandled.inventory_revision, handled.inventory_revision);
+    assert!(!handled.accepts_cursor(&unhandled.cursor_binding()));
+    assert!(!unhandled.accepts_cursor(&handled.cursor_binding()));
+
+    let without_empty = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: base_snapshot(),
+        })
+        .expect("valid catalog");
+    assert_ne!(
+        unhandled.content_set_revision,
+        without_empty.content_set_revision
+    );
+    assert_ne!(
+        unhandled.inventory_revision,
+        without_empty.inventory_revision
+    );
+    assert!(!without_empty.accepts_cursor(&unhandled.cursor_binding()));
+}
+
+#[test]
+fn canonical_input_order_is_stable_and_package_removal_expires_cursors() {
+    let snapshot = base_snapshot();
+    let base = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: snapshot.clone(),
+        })
+        .expect("base");
+    let mut reordered = snapshot.clone();
+    reordered.packages.reverse();
+    reordered.available_entity_kinds.reverse();
+    reordered.definitions.reverse();
+    assert_eq!(
+        base,
+        producer("adapter-v1")
+            .produce(&FakeCatalog {
+                snapshot: reordered
+            })
+            .expect("reordered")
+    );
+    let mut added = snapshot;
+    added.packages.push(package("mod:unused", None, 2));
+    let with_package = producer("adapter-v1")
+        .produce(&FakeCatalog { snapshot: added })
+        .expect("unused active package");
+    assert_ne!(with_package.content_set_revision, base.content_set_revision);
+    assert!(!base.accepts_cursor(&with_package.cursor_binding()));
 }

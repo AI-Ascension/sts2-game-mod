@@ -155,6 +155,7 @@ fn missing_family_and_family_count_are_rejected() {
         .snapshot
         .available_entity_kinds
         .retain(|kind| kind != "act");
+    source.snapshot.registry_definition_counts.remove("act");
     let no_act =
         ContentManifestProducer::new("adapter-v1", ["encounter".to_owned(), "enemy".to_owned()])
             .expect("producer")

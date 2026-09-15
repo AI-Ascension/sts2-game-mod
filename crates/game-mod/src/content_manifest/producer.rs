@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use super::revisions::{
     content_set_revision, definition_semantic_revision, definition_text_revision,
@@ -68,22 +68,13 @@ impl ContentManifestProducer {
             .collect::<Vec<_>>();
         packages.sort_by_key(|package| package.order);
 
-        let available_kinds = snapshot
-            .available_entity_kinds
+        let families = snapshot
+            .registry_definition_counts
             .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        let mut counts = BTreeMap::<String, usize>::new();
-        for definition in &snapshot.definitions {
-            *counts.entry(definition.entity_kind.clone()).or_default() += 1;
-        }
-
-        let families = available_kinds
-            .iter()
-            .map(|entity_kind| ContentFamily {
+            .map(|(entity_kind, definition_count)| ContentFamily {
                 entity_kind: entity_kind.clone(),
                 handled: self.supported_entity_kinds.contains(entity_kind),
-                definition_count: counts.get(entity_kind).copied().unwrap_or(0),
+                definition_count: *definition_count,
             })
             .collect::<Vec<_>>();
 

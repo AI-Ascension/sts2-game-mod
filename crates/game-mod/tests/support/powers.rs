@@ -47,6 +47,9 @@ pub fn manifest() -> ContentManifest {
     snapshot
         .available_entity_kinds
         .push("power_status".to_owned());
+    snapshot
+        .registry_definition_counts
+        .insert("power_status".to_owned(), 6);
     for id in [
         "mod:synthetic:strength",
         "mod:synthetic:vulnerable",

@@ -43,6 +43,12 @@ fn adapter_registry_reconciles_added_and_removed_manifest_families() {
         .available_entity_kinds
         .push("potion".to_owned());
     added_catalog
+        .registry_definition_counts
+        .insert("potion".to_owned(), 0);
+    added_catalog
+        .registry_definition_counts
+        .insert("relic".to_owned(), 0);
+    added_catalog
         .definitions
         .retain(|definition| definition.entity_kind == "card");
     let added_manifest = manifest_from_catalog(added_catalog);
@@ -65,6 +71,7 @@ fn adapter_registry_reconciles_added_and_removed_manifest_families() {
     removed_catalog
         .available_entity_kinds
         .retain(|kind| kind != "relic");
+    removed_catalog.registry_definition_counts.remove("relic");
     removed_catalog
         .definitions
         .retain(|definition| definition.entity_kind != "relic");

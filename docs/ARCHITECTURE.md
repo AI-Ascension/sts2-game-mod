@@ -277,11 +277,12 @@ ordering, and versioning require a new project-owned profile and fixtures.
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
 
-The owner-local `content_index` producer binds typed definition metadata to the immutable
-`content_manifest` witness. Its adapter registry retains every inventoried family, marks
+The owner-local `content_index` producer binds typed definition metadata to the immutable `content_manifest` witness. Its adapter registry retains every inventoried family, marks
 unhandled families explicitly, and exposes only bounded list/search/exact-read operations with
 manifest, locale, query, and visibility bindings. It is source-only evidence: no public route,
 shared wire shape, native registry reflection, or profile/unlock mutation is implied.
+
+The manifest producer independently compares copied definitions with owner-registry totals for every available family, including unhandled families. Missing or mismatched evidence rejects the manifest. Adapter family support affects inventory/cursor identity, not semantic content identity. ADR 0038 records the remaining protocol-extension and exact-host acceptance gates.
 
 The owner-local `glossary` producer binds localized mechanic terms to that same manifest witness.
 Terms carry stable IDs, aliases, parameter placeholders, evidence provenance, rule IDs, and
