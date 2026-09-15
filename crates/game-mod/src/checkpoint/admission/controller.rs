@@ -97,9 +97,12 @@ impl<P: CheckpointCaptureProducer> CheckpointCaptureAdmission<P> {
     ///
     /// # Errors
     ///
-    /// Returns [`CheckpointCaptureRejection::UnsafeBoundary`] for a non-quiescent settlement or an
-    /// unclassifiable phase, [`CheckpointCaptureRejection::Busy`] while another capture holds the
-    /// barrier, [`CheckpointCaptureRejection::UnsupportedBoundary`] when no admitted producer
+    /// The fail-closed boundary matrix and the attached producer's capability gate are consulted
+    /// before any capture window opens, so a producer that reports itself unavailable is refused
+    /// with its own gate rather than with a settlement verdict. Once a producer is admitted,
+    /// [`CheckpointCaptureRejection::UnsafeBoundary`] is returned for a non-quiescent settlement or
+    /// an unclassifiable phase, [`CheckpointCaptureRejection::Busy`] while another capture holds
+    /// the barrier, [`CheckpointCaptureRejection::UnsupportedBoundary`] when no admitted producer
     /// serves the boundary, [`CheckpointCaptureRejection::OperationConflict`] when one operation
     /// identity is reused with different bytes or request, and
     /// [`CheckpointCaptureRejection::PersistenceFailed`] when durable storage did not complete. A

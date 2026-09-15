@@ -65,13 +65,16 @@ its receipt or refusal carries that producer's own gate instead of the matrix de
 
 ## Evidence and limits
 
-`crates/game-mod/tests/checkpoint_admission.rs` adds 17 source-only tests over the new module:
+`crates/game-mod/tests/checkpoint_admission.rs` adds 15 source-only tests over the new module:
 settlement tokens, fence and release behavior, non-quiescent refusal without holding the barrier, a
 nested hold refused as `Busy`, ledger replay, conflict, lookup, and capacity, private receipt bytes
 with no gameplay mutation, a mutation probe refused inside the capture window, duplicate replay,
 changed payload and changed request conflicts, pre-production refusal, durable persistence failure,
 an unavailable producer refused across the complete boundary matrix, unsafe boundaries refused even
 for a synthetic producer, an externally held barrier, an empty fixture, and replay at capacity.
+`crates/game-mod/tests/checkpoint_admission_debug.rs` adds one more: the produced checkpoint, the
+ledger, and the fixture producer render redacted `Debug` output that carries no canonical payload
+bytes and no exact state or blob digest.
 
 This is synthetic consumer evidence only. Nothing here captures a real game boundary, reads a
 native field, inspects a proprietary assembly, persists an artifact to a real store, or restores a

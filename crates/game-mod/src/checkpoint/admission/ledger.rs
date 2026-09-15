@@ -8,7 +8,7 @@ use super::super::identity::CheckpointCaptureRequest;
 use super::super::receipt::CheckpointCaptureReceipt;
 
 /// One recorded capture operation, keyed by the logical operation identity.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 struct CheckpointAdmissionEntry {
     request: CheckpointCaptureRequest,
     payload_digest: String,
@@ -35,7 +35,7 @@ pub enum CheckpointAdmissionDecision {
 /// the same canonical payload returns the original receipt, while a reused operation identity with
 /// a different boundary, identity fence, or payload is a conflict. It stores only owner-side
 /// receipt values; it never persists an artifact and never decides native capability.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct CheckpointAdmissionLedger {
     entries: BTreeMap<String, CheckpointAdmissionEntry>,
 }
@@ -123,5 +123,16 @@ impl CheckpointAdmissionLedger {
             },
         );
         Ok(())
+    }
+}
+
+impl std::fmt::Debug for CheckpointAdmissionLedger {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CheckpointAdmissionLedger")
+            .field("retained_operations", &self.entries.len())
+            .field("capacity", &CHECKPOINT_ADMISSION_MAX_OPERATIONS)
+            .field("operation_ids", &self.entries.keys())
+            .finish()
     }
 }

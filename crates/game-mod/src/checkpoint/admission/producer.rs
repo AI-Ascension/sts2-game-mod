@@ -34,7 +34,7 @@ impl CheckpointProducerCapability {
 ///
 /// The value carries immutable owned bytes only. It never borrows a host object, and it is the
 /// producer's responsibility to have validated the bytes as canonical before returning them.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct CheckpointProducedCheckpoint {
     canonical_bytes: Vec<u8>,
     manifest: CheckpointManifest,
@@ -60,6 +60,15 @@ impl CheckpointProducedCheckpoint {
     #[must_use]
     pub fn manifest(&self) -> &CheckpointManifest {
         &self.manifest
+    }
+}
+
+impl std::fmt::Debug for CheckpointProducedCheckpoint {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CheckpointProducedCheckpoint")
+            .field("canonical_bytes_len", &self.canonical_bytes.len())
+            .finish()
     }
 }
 
@@ -119,7 +128,7 @@ impl CheckpointCaptureProducer for UnavailableCheckpointProducer {
 /// restore descriptor is the pinned fixture illustration rather than a real closure. Each call
 /// yields the next queued payload, repeating the last one once the queue is exhausted so a repeated
 /// admission reproduces identical bytes.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct FixtureCheckpointProducer {
     payloads: Vec<Vec<u8>>,
     durability: CheckpointDurability,
@@ -178,6 +187,19 @@ impl FixtureCheckpointProducer {
     #[must_use]
     pub fn mutation_probe(&self) -> Option<Result<(), CheckpointCaptureRejection>> {
         self.probe_outcome.get()
+    }
+}
+
+impl std::fmt::Debug for FixtureCheckpointProducer {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FixtureCheckpointProducer")
+            .field("payload_count", &self.payloads.len())
+            .field("durability", &self.durability)
+            .field("persistence", &self.persistence)
+            .field("produced_count", &self.produced.get())
+            .field("has_mutation_probe", &self.probe.is_some())
+            .finish()
     }
 }
 

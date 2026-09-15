@@ -14,7 +14,8 @@ do not establish release support.
   whose persistence fails records no receipt, and the ledger is bounded by
   `CHECKPOINT_ADMISSION_MAX_OPERATIONS`. Rejection variants `Busy`, `UnsupportedCoverage`,
   `PersistenceFailed`, `OperationConflict`, and `AdmissionLedgerFull` are now produced by owner
-  code. Synthetic source tests pass; native capture, restore, and host compatibility remain
+  code. The new owner checkpoint, ledger, and fixture-producer types render redacted `Debug` output
+  instead of private payload bytes or exact digests. Synthetic source tests pass; native capture, restore, and host compatibility remain
   unverified. See ADR 0055.
 
 - Added a source-only restricted `asc-jcs-state-v1` canonical encoder for game-owned checkpoint

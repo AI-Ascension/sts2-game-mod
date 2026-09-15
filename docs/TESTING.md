@@ -90,13 +90,13 @@ The game-mod checkpoint test checks the pinned synthetic `asc-jcs-state-v1` vect
 cargo test --locked --offline --package sts2-game-mod --test checkpoint
 ~~~
 
-The checkpoint admission test covers the source-only owner barrier and operation ledger: settlement classification, a held barrier refusing host mutation inside the capture window, non-quiescent refusal without holding the barrier, an unavailable producer refused across the complete boundary matrix, unsafe boundaries refused for a synthetic producer, duplicate operation replay, changed bytes or request under one operation as a conflict, an externally held barrier reported as `Busy`, and a durable capture whose persistence fails recording nothing:
+The checkpoint admission tests cover the source-only owner barrier and operation ledger: settlement classification, a held barrier refusing host mutation inside the capture window, non-quiescent refusal without holding the barrier, an unavailable producer refused across the complete boundary matrix, unsafe boundaries refused for a synthetic producer, duplicate operation replay, changed bytes or request under one operation as a conflict, an externally held barrier reported as `Busy`, a durable capture whose persistence fails recording nothing, and redacted `Debug` output for the new owner surfaces:
 
 ~~~text
-cargo test --locked --offline --package sts2-game-mod --test checkpoint_admission
+cargo test --locked --offline --package sts2-game-mod --test checkpoint_admission --test checkpoint_admission_debug
 ~~~
 
-The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. Neither test canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043.
+The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. None of these tests canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043.
 
 ## Seeded-run source checks
 
