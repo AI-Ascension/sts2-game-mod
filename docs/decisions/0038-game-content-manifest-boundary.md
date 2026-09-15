@@ -11,9 +11,12 @@ they do not identify the installed game's definitions.  Treating either as a gam
 would make two different content sets appear comparable.  Conversely, reading arbitrary installed
 files or constructing playable objects to discover content would exceed this target's authority.
 
-The protocol owner accepted `game-information-query-v1` in protocol PR #49 (merge
-`34f68b182c09472c3a0573ff478e17e6ed53c91f`). This decision defines the game-owned extraction
-boundary and acceptance inventory. It introduces
+The protocol owner published the `game-information-query-v1` candidate in protocol PR #49 (merge
+`34f68b182c09472c3a0573ff478e17e6ed53c91f`). Publication is not admission: the protocol-owned ADR
+remains `proposed; not admitted`, and requires at least two named consumers to validate
+byte-identical vectors before acceptance. No consumer, including this target, has pinned or
+negotiated the profile. This decision therefore defines only the game-owned extraction boundary and
+acceptance inventory. It introduces
 no public route, wire shape, definition IDs, registry reflection, or native capability claim.
 
 ## Decision
@@ -81,8 +84,8 @@ does not authorize putting proprietary content or package bytes into the reposit
 
 ## Integration and limits
 
-The accepted v1 envelope binds queries to `content_manifest_id` but does not define a complete
-manifest payload. Its closed entity-kind and field-name enums and capability shape cannot carry
+The published (not yet admitted) v1 envelope binds queries to `content_manifest_id` but does not
+define a complete manifest payload. Its closed entity-kind and field-name enums and capability shape cannot carry
 active package/version/order, inventory totals/revision, unhandled owner families, or definition
 override chains. These facts must not be encoded into `description`, `tags`, or `source_id`.
 The `game-information-query-v2` candidate concerns rest reads and is not an admitted replacement.

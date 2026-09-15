@@ -247,6 +247,53 @@ fn verified_empty_unhandled_family_is_distinct_from_missing_registry_evidence() 
 }
 
 #[test]
+fn empty_family_support_is_inventory_identity_and_membership_is_content_identity() {
+    let mut with_empty = base_snapshot();
+    with_empty.available_entity_kinds.push("empty".to_owned());
+    with_empty
+        .registry_definition_counts
+        .insert("empty".to_owned(), 0);
+
+    let unhandled = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: with_empty.clone(),
+        })
+        .expect("valid catalog");
+    let handled =
+        ContentManifestProducer::new("adapter-v1", ["card".to_owned(), "empty".to_owned()])
+            .expect("valid producer")
+            .produce(&FakeCatalog {
+                snapshot: with_empty,
+            })
+            .expect("valid catalog");
+
+    assert_eq!(unhandled.definitions, handled.definitions);
+    assert_eq!(unhandled.content_set_revision, handled.content_set_revision);
+    assert_eq!(
+        unhandled.localized_text_revision,
+        handled.localized_text_revision
+    );
+    assert_ne!(unhandled.inventory_revision, handled.inventory_revision);
+    assert!(!handled.accepts_cursor(&unhandled.cursor_binding()));
+    assert!(!unhandled.accepts_cursor(&handled.cursor_binding()));
+
+    let without_empty = producer("adapter-v1")
+        .produce(&FakeCatalog {
+            snapshot: base_snapshot(),
+        })
+        .expect("valid catalog");
+    assert_ne!(
+        unhandled.content_set_revision,
+        without_empty.content_set_revision
+    );
+    assert_ne!(
+        unhandled.inventory_revision,
+        without_empty.inventory_revision
+    );
+    assert!(!without_empty.accepts_cursor(&unhandled.cursor_binding()));
+}
+
+#[test]
 fn canonical_input_order_is_stable_and_package_removal_expires_cursors() {
     let snapshot = base_snapshot();
     let base = producer("adapter-v1")
