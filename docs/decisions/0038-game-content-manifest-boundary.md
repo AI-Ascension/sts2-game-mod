@@ -14,9 +14,12 @@ files or constructing playable objects to discover content would exceed this tar
 The protocol owner published the `game-information-query-v1` candidate in protocol PR #49 (merge
 `34f68b182c09472c3a0573ff478e17e6ed53c91f`). Publication is not admission: the protocol-owned ADR
 remains `proposed; not admitted`, and requires at least two named consumers to validate
-byte-identical vectors before acceptance. No consumer, including this target, has pinned or
-negotiated the profile. This decision therefore defines only the game-owned extraction boundary and
-acceptance inventory. It introduces
+byte-identical vectors before acceptance. Consumer adoption already exists: gateway commit
+`b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161` records a
+[source/schema pin](https://github.com/AI-Ascension/sts2-gateway/blob/b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161/protocol-artifact/game-information-query-v1/manifest.json)
+and [synthetic component conformance](https://github.com/AI-Ascension/sts2-gateway/blob/b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161/protocol-artifact/game-information-query-v1/consumer-conformance.json).
+These records do not establish formal protocol admission, complete manifest transport, or native
+acceptance. This decision defines only the game-owned extraction boundary and acceptance inventory. It introduces
 no public route, wire shape, definition IDs, registry reflection, or native capability claim.
 
 ## Decision
