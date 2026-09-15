@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use crate::content_fixture::ManifestSource;
+#[path = "potion_manifest.rs"]
+mod potion_manifest;
+pub use potion_manifest::manifest;
+
 use sts2_game_mod::{
-    ContentDefinitionInput, ContentManifest, ContentManifestProducer, ContentOriginInput,
-    ContentUnlockState, PotionAcquisition, PotionAcquisitionRule, PotionCatalog,
+    ContentManifest, ContentUnlockState, PotionAcquisition, PotionAcquisitionRule, PotionCatalog,
     PotionCatalogSnapshot, PotionCatalogSource, PotionCondition, PotionDefinitionInput,
     PotionEffect, PotionEffectAlternative, PotionEffectKind, PotionEffectMagnitude,
     PotionFamilyCoverage, PotionFamilyState, PotionField, PotionInstanceInput, PotionLiveBinding,
@@ -41,33 +43,6 @@ impl sts2_game_mod::PotionLiveSource for LiveSource {
     ) -> Result<PotionLiveSnapshotInput, sts2_game_mod::PotionSourceError> {
         self.snapshot.clone()
     }
-}
-
-pub fn manifest() -> ContentManifest {
-    let mut snapshot = crate::content_fixture::catalog_snapshot();
-    snapshot.available_entity_kinds.push("potion".to_owned());
-    for id in [
-        "mod:synthetic:healing",
-        "mod:synthetic:choice",
-        "mod:synthetic:conditional",
-        "mod:synthetic:locked",
-    ] {
-        snapshot.definitions.push(ContentDefinitionInput {
-            entity_kind: "potion".to_owned(),
-            namespaced_id: id.to_owned(),
-            semantic_inputs: format!("kind=potion;id={id}"),
-            localized_text: Some(id.to_owned()),
-            origin: ContentOriginInput {
-                package_id: Some("mod:synthetic".to_owned()),
-                package_version: None,
-            },
-            override_chain: Vec::new(),
-        });
-    }
-    ContentManifestProducer::new("adapter-v1", ["card".to_owned()])
-        .expect("manifest producer")
-        .produce(&ManifestSource { snapshot })
-        .expect("manifest")
 }
 
 pub fn unit(value: &str) -> PotionUnit {

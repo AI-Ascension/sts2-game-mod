@@ -72,6 +72,12 @@ pub fn manifest_source(
                 "enemy".to_owned(),
                 "power_status".to_owned(),
             ],
+            registry_definition_counts: [
+                ("encounter".to_owned(), encounter_ids.len()),
+                ("enemy".to_owned(), enemy_ids.len()),
+                ("power_status".to_owned(), status_ids.len()),
+            ]
+            .into(),
             definitions,
         },
     }

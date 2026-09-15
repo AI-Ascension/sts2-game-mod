@@ -62,6 +62,18 @@ pub fn manifest_source(entries: &[(&str, &str)]) -> ManifestSource {
                 package_version: Some("1".to_owned()),
                 order: 0,
             }],
+            registry_definition_counts: available_entity_kinds
+                .iter()
+                .map(|kind| {
+                    (
+                        kind.clone(),
+                        entries
+                            .iter()
+                            .filter(|(entry_kind, _)| entry_kind == kind)
+                            .count(),
+                    )
+                })
+                .collect(),
             available_entity_kinds,
             definitions,
         },

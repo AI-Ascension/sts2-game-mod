@@ -29,6 +29,9 @@ impl RelicCatalogSource for CatalogSource {
 
 pub fn manifest() -> ContentManifest {
     let mut snapshot = crate::content_fixture::catalog_snapshot();
+    snapshot
+        .registry_definition_counts
+        .insert("relic".to_owned(), 6);
     for id in [
         "mod:synthetic:charged",
         "mod:synthetic:conditional",

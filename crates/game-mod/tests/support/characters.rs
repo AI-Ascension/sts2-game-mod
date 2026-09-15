@@ -78,6 +78,12 @@ pub fn manifest() -> ContentManifest {
             "character".to_owned(),
             "relic".to_owned(),
         ],
+        registry_definition_counts: [
+            ("card".to_owned(), 2),
+            ("character".to_owned(), 3),
+            ("relic".to_owned(), 1),
+        ]
+        .into(),
         definitions: vec![
             definition(
                 "card",

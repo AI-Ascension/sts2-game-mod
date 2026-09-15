@@ -86,6 +86,8 @@ pub fn manifest() -> ContentManifest {
                 locale: "en-US".to_owned(),
                 packages: vec![package("base:game", Some("0.107.1"), 0)],
                 available_entity_kinds: vec!["card".to_owned(), "status".to_owned()],
+                registry_definition_counts: [("card".to_owned(), 1), ("status".to_owned(), 1)]
+                    .into(),
                 definitions: vec![
                     definition("card", "base:ironclad:strike", "Strike"),
                     definition("status", "base:status:strength", "Strength"),

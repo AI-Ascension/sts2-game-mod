@@ -90,6 +90,11 @@ pub struct ContentCatalogSnapshot {
     pub packages: Vec<ContentPackageInput>,
     /// Full available model-registry family list.
     pub available_entity_kinds: Vec<String>,
+    /// Independent owner-registry totals captured within the same generation witnesses.
+    ///
+    /// Every available family must have a count, including known empty and unhandled families.
+    /// The source must not derive these totals from the extracted `definitions` subset.
+    pub registry_definition_counts: std::collections::BTreeMap<String, usize>,
     /// Definitions discovered through supported owner access.
     pub definitions: Vec<ContentDefinitionInput>,
 }
@@ -172,7 +177,7 @@ pub struct ContentManifest {
 /// The owner-local invalidation witness for a query cursor or cached page.
 ///
 /// This is intentionally not a transport cursor. Protocol-owned query binding must add its own
-/// query, scope, and snapshot fields after the shared contract is accepted.
+/// query, scope, and snapshot fields when a compatible manifest transport is integrated.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ContentCursorBinding {
     /// Catalog generation observed by the producer.
@@ -218,6 +223,10 @@ pub enum ContentManifestError {
     OriginPackageVersionMismatch,
     /// A definition override chain repeats a reference.
     DuplicateOverrideReference,
+    /// Independent registry counts are missing or name a family outside the registry.
+    RegistryCountCoverageMismatch,
+    /// Extracted definitions do not match an independent owner-registry total.
+    RegistryDefinitionCountMismatch,
 }
 
 impl std::fmt::Display for ContentManifestError {

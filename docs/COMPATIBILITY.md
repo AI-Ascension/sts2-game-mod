@@ -25,6 +25,11 @@ The owner-local content-index producer currently has only Rust source/build/test
 synthetic manifest-bound records. It does not establish a host registry adapter, native content
 coverage, shared protocol adoption, or compatibility with any installed game build.
 
+The content-manifest producer requires independent registry counts for all available families and
+fails closed on missing or mismatched extraction evidence. Its corrected semantic revision excludes
+adapter family support; previous source-only digests must be regenerated. No public artifact pin
+changes, supported manifest transport, or exact-host count comparison is implied (see ADR 0038).
+
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
 duration/decay rules, visibility states, and epoch fences do not extend the native host matrix or
