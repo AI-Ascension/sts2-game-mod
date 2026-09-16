@@ -114,10 +114,11 @@ The existing lookup-binding source must continue to refuse until it can consume 
 `inventory_revision` from this producer output. That field is the only admitted content manifest
 identity; neither entity-kind IDs nor a separately reconstructed digest may stand in for it.
 
-ADR 0056 permits a separate pinned, read-only ModelDb diagnostic probe that copies existing IDs
-and type/category names only. Its dictionary enumeration is not a content-manifest source: it
-supplies no independent per-family totals, definition provenance or override chain, or coherent
-catalog generation witness.
+ADR 0056 provides a separate pinned ModelDb diagnostic build that can report only a bounded partial
+registry snapshot and two-capture stability interval. It does not establish `ModelDb.Init`
+completion or catalog completeness. Its copied IDs and type/category names do not provide
+independent per-family totals, definition provenance or override chain, or a coherent catalog
+generation witness.
 
 Gateway, MCP, and harness retain current-scope authorization, authenticated delivery, tool, and
 replay responsibilities. This owner route and synthetic producer-to-wire conformance do not claim

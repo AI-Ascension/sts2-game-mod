@@ -2,79 +2,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using MegaCrit.Sts2.Core.Models;
 
 namespace AiAscension.Sts2ModelDbRegistryProbe;
-
-internal sealed record RegistryProbeItem(
-    string IdCategory,
-    string IdEntry,
-    string RuntimeType,
-    string CategoryType);
-
-internal sealed class RegistryProbeSnapshot
-{
-    private readonly ReadOnlyCollection<RegistryProbeItem> _items;
-
-    internal RegistryProbeSnapshot(
-        string gameBuild,
-        IReadOnlyList<RegistryProbeItem> items,
-        int copiedStringBytes)
-    {
-        GameBuild = gameBuild;
-        _items = Array.AsReadOnly(items.ToArray());
-        CopiedStringBytes = copiedStringBytes;
-    }
-
-    internal string GameBuild { get; }
-    internal IReadOnlyList<RegistryProbeItem> Items => _items;
-    internal int Count => _items.Count;
-    internal int CopiedStringBytes { get; }
-
-    internal bool HasSameOwnedValues(RegistryProbeSnapshot other) =>
-        string.Equals(GameBuild, other.GameBuild, StringComparison.Ordinal)
-        && _items.SequenceEqual(other._items);
-
-    internal string SerializeBoundedReport(string hostHash, int maxEncodedBytes)
-    {
-        var report = new Dictionary<string, object?>
-        {
-            ["kind"] = "modeldb_registry_probe",
-            ["game_build"] = GameBuild,
-            ["host_sha256"] = hostHash,
-            ["registry_entry_count"] = Count,
-            ["stability_captures"] = 2,
-            ["copied_string_bytes"] = CopiedStringBytes,
-            ["items"] = _items
-        };
-        string encoded = JsonSerializer.Serialize(report);
-        if (Encoding.UTF8.GetByteCount(encoded) > maxEncodedBytes)
-            throw new ProbeFailure("report_limit_exceeded");
-        return encoded;
-    }
-}
-
-internal sealed record RegistryProbeLimits(
-    int MaxEntries,
-    int MaxIdentityBytes,
-    int MaxTypeNameBytes,
-    int MaxOwnedStringBytes,
-    TimeSpan MaxCaptureDuration)
-{
-    internal static RegistryProbeLimits Production { get; } = new(
-        MaxEntries: 65_536,
-        MaxIdentityBytes: 256,
-        MaxTypeNameBytes: 512,
-        MaxOwnedStringBytes: 8 * 1024 * 1024,
-        MaxCaptureDuration: TimeSpan.FromSeconds(2));
-}
 
 internal static class ModelDbRegistryCapture
 {
@@ -112,6 +47,24 @@ internal static class ModelDbRegistryCapture
         ownerType.GetField(
             RegistryFieldName,
             BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
+
+    internal static Dictionary<ModelId, AbstractModel> ReadPinnedRegistry()
+    {
+        Type modelDbType = typeof(ModelDb);
+        FieldInfo field = RequirePinnedField(
+            modelDbType, FindPinnedField(modelDbType));
+        object? fieldValue;
+        try
+        {
+            fieldValue = field.GetValue(null);
+        }
+        catch (Exception)
+        {
+            throw new ProbeFailure("registry_unavailable");
+        }
+
+        return ResolvePinnedRegistry(modelDbType, field, fieldValue);
+    }
 
     internal static RegistryProbeSnapshot Capture(
         Dictionary<ModelId, AbstractModel> registry,
@@ -177,9 +130,7 @@ internal static class ModelDbRegistryCapture
                 if (!hasNext)
                     break;
 
-                captureToken.ThrowIfCancellationRequested();
-                if (stopwatch.Elapsed >= bounds.MaxCaptureDuration)
-                    throw new ProbeFailure("capture_timeout");
+                EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
                 if (items.Count >= bounds.MaxEntries)
                     throw new ProbeFailure("registry_entry_limit_exceeded");
                 if (pair.Value is null)
@@ -189,6 +140,7 @@ internal static class ModelDbRegistryCapture
                 string entry = pair.Key.Entry;
                 Type runtimeType = pair.Value.GetType();
                 Type categoryType = categoryTypeResolver(runtimeType);
+                EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
                 string runtimeTypeName = runtimeType.FullName ?? string.Empty;
                 string categoryTypeName = categoryType.FullName ?? string.Empty;
                 ValidateIdentity(category, bounds.MaxIdentityBytes);
@@ -210,9 +162,7 @@ internal static class ModelDbRegistryCapture
                     category, entry, runtimeTypeName, categoryTypeName));
             }
 
-            captureToken.ThrowIfCancellationRequested();
-            if (stopwatch.Elapsed >= bounds.MaxCaptureDuration)
-                throw new ProbeFailure("capture_timeout");
+            EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
             int afterCount = registry.Count;
             if (beforeCount != afterCount || items.Count != beforeCount)
                 throw new ProbeFailure("registry_changed");
@@ -236,12 +186,31 @@ internal static class ModelDbRegistryCapture
             enumerator.Dispose();
         }
 
+        EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
         RegistryProbeItem[] ordered = items
             .OrderBy(item => item.IdCategory, StringComparer.Ordinal)
             .ThenBy(item => item.IdEntry, StringComparer.Ordinal)
             .ThenBy(item => item.CategoryType, StringComparer.Ordinal)
             .ToArray();
-        return new RegistryProbeSnapshot(gameBuild, ordered, ownedBytes);
+        EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
+        var snapshot = new RegistryProbeSnapshot(gameBuild, ordered, ownedBytes);
+        EnsureCaptureBudget(stopwatch, bounds, cancellationToken, captureToken);
+        return snapshot;
+    }
+
+    private static void EnsureCaptureBudget(
+        Stopwatch stopwatch,
+        RegistryProbeLimits bounds,
+        CancellationToken probeToken,
+        CancellationToken captureToken)
+    {
+        if (probeToken.IsCancellationRequested)
+            throw new ProbeFailure("probe_cancelled");
+        if (captureToken.IsCancellationRequested
+            || stopwatch.Elapsed >= bounds.MaxCaptureDuration)
+        {
+            throw new ProbeFailure("capture_timeout");
+        }
     }
 
     private static void ValidateIdentity(string value, int maxBytes)

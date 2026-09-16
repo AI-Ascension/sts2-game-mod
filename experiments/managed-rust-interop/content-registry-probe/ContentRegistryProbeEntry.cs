@@ -33,15 +33,22 @@ public static class ContentRegistryProbeEntry
     private static string? _verifiedHostHash;
     private static int? _ownerThreadId;
     private static int _frameCount;
+    private static int _active;
 
     public static void Initialize()
     {
         if (System.Environment.GetEnvironmentVariable(EnableVariable) != "1")
             return;
 
+        if (Interlocked.CompareExchange(ref _active, 1, 0) != 0)
+        {
+            GD.PrintErr("modeldb_probe: already_active");
+            return;
+        }
+
         if (Engine.GetMainLoop() is not SceneTree tree)
         {
-            GD.PrintErr("modeldb_probe: scene_tree_unavailable");
+            Fail("scene_tree_unavailable");
             return;
         }
 
@@ -104,13 +111,13 @@ public static class ContentRegistryProbeEntry
                 ProbeReadinessGate.EvaluateManagerState(modManagerState);
             if (stateReadiness == ProbeReadiness.Refuse)
                 throw new ProbeFailure("mod_manager_skipped");
-            if (stateReadiness != ProbeReadiness.Ready)
+            if (stateReadiness != ProbeReadiness.Observed)
                 return;
 
             Dictionary<ModelId, AbstractModel> registry = ReadPinnedRegistry();
             ProbeReadiness registryReadiness =
                 ProbeReadinessGate.EvaluateRegistryCount(registry.Count);
-            if (registryReadiness != ProbeReadiness.Ready)
+            if (registryReadiness != ProbeReadiness.Observed)
                 return;
 
             RegistryProbeSnapshot current = ModelDbRegistryCapture.Capture(
@@ -125,7 +132,7 @@ public static class ContentRegistryProbeEntry
                 return;
             }
 
-            EmitReport(current, _verifiedHostHash);
+            EmitReport(current, _verifiedHostHash, token);
             Finish();
         }
         catch (OperationCanceledException)
@@ -148,24 +155,7 @@ public static class ContentRegistryProbeEntry
     }
 
     private static Dictionary<ModelId, AbstractModel> ReadPinnedRegistry()
-    {
-        Type modelDbType = typeof(ModelDb);
-        FieldInfo field = ModelDbRegistryCapture.RequirePinnedField(
-            modelDbType,
-            ModelDbRegistryCapture.FindPinnedField(modelDbType));
-        object? fieldValue;
-        try
-        {
-            fieldValue = field.GetValue(null);
-        }
-        catch (Exception)
-        {
-            throw new ProbeFailure("registry_unavailable");
-        }
-
-        return ModelDbRegistryCapture.ResolvePinnedRegistry(
-            modelDbType, field, fieldValue);
-    }
+        => ModelDbRegistryCapture.ReadPinnedRegistry();
 
     private static string? ReadOfficialGameBuild()
     {
@@ -179,10 +169,22 @@ public static class ContentRegistryProbeEntry
         }
     }
 
-    private static void EmitReport(RegistryProbeSnapshot snapshot, string hostHash)
+    private static void EmitReport(
+        RegistryProbeSnapshot snapshot,
+        string hostHash,
+        CancellationToken token)
     {
+        EnsureProbeBudget(token);
         string encoded = snapshot.SerializeBoundedReport(hostHash, MaxEncodedReportBytes);
+        EnsureProbeBudget(token);
         GD.Print(encoded);
+    }
+
+    private static void EnsureProbeBudget(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (_elapsed is null || _elapsed.Elapsed >= MaxProbeDuration)
+            throw new ProbeFailure("probe_deadline");
     }
 
     private static void Fail(string code)
@@ -209,5 +211,6 @@ public static class ContentRegistryProbeEntry
         _verifiedHostHash = null;
         _ownerThreadId = null;
         _frameCount = 0;
+        Volatile.Write(ref _active, 0);
     }
 }

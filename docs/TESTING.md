@@ -25,8 +25,9 @@ Workshop regression probes reject duplicate JSON properties, symlink install roo
 manifests without proportional allocation, and producer metadata/payload bounds before staging.
 Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic
 checks do not establish Windows junction behavior or safety against concurrent package replacement.
-The isolated pinned ModelDb diagnostic also has host-free guard and bounds regressions; its live
-registry read remains pending.
+The isolated pinned ModelDb diagnostic also has host-free guard, initializer, and bounds
+regressions; its live registry read remains pending, and its report labels only a partial snapshot
+and observed stability interval, not content-loading completion.
 
 ## Purpose
 

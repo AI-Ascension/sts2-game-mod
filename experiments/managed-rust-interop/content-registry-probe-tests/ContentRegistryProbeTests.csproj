@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../content-registry-probe/HostBinaryHashVerifier.cs" Link="HostBinaryHashVerifier.cs" />
     <Compile Include="../content-registry-probe/ModelDbRegistryCapture.cs" Link="ModelDbRegistryCapture.cs" />
+    <Compile Include="../content-registry-probe/RegistryProbeSnapshot.cs" Link="RegistryProbeSnapshot.cs" />
     <Compile Include="../content-registry-probe/ProbeReadiness.cs" Link="ProbeReadiness.cs" />
     <Compile Include="../content-registry-probe/ProbeFailure.cs" Link="ProbeFailure.cs" />
   </ItemGroup>

@@ -7,7 +7,7 @@ namespace AiAscension.Sts2ModelDbRegistryProbe;
 internal enum ProbeReadiness
 {
     Wait,
-    Ready,
+    Observed,
     Refuse
 }
 
@@ -19,9 +19,9 @@ internal static class ProbeReadinessGate
             return ProbeReadiness.Refuse;
         if (state != ModManagerState.Initialized)
             return ProbeReadiness.Wait;
-        return ProbeReadiness.Ready;
+        return ProbeReadiness.Observed;
     }
 
     internal static ProbeReadiness EvaluateRegistryCount(int registryCount) =>
-        registryCount > 0 ? ProbeReadiness.Ready : ProbeReadiness.Wait;
+        registryCount > 0 ? ProbeReadiness.Observed : ProbeReadiness.Wait;
 }

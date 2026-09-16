@@ -57,7 +57,16 @@ internal static partial class Program
         RegistryProbeSnapshot snapshot = Capture();
         string report = snapshot.SerializeBoundedReport(new string('a', 64), 4096);
         Check(report.Contains("\"game_build\":\"v0.107.1\"", StringComparison.Ordinal)
-            && report.Contains("\"items\"", StringComparison.Ordinal),
+            && report.Contains("\"items\"", StringComparison.Ordinal)
+            && report.Contains(
+                "\"readiness_kind\":\"observed_partial_registry_stability\"",
+                StringComparison.Ordinal)
+            && report.Contains(
+                "\"readiness_basis\":\"mod_manager_initialized_nonempty_registry_two_matching_owner_thread_process_frame_captures\"",
+                StringComparison.Ordinal)
+            && report.Contains(
+                "\"readiness_limit\":\"does_not_establish_modeldb_init_completion_or_catalog_completeness\"",
+                StringComparison.Ordinal),
             "serializes a bounded owned report");
         ExpectFailure("report_limit_exceeded", () =>
             snapshot.SerializeBoundedReport(new string('a', 64), 1));

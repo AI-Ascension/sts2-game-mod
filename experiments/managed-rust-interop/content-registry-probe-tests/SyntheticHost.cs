@@ -55,7 +55,14 @@ namespace MegaCrit.Sts2.Core.Models
 
     internal static class ModelDb
     {
-        private static readonly Dictionary<ModelId, AbstractModel> _contentById = new();
+        private static readonly Dictionary<ModelId, AbstractModel> _contentById;
+        internal static int InitializationCalls { get; private set; }
+
+        static ModelDb()
+        {
+            AiAscension.Sts2ModelDbRegistryProbe.Tests.SyntheticModelDbInitializerMarker.CallCount++;
+            _contentById = new();
+        }
 
         internal static int Count => _contentById.Count;
 
@@ -65,6 +72,12 @@ namespace MegaCrit.Sts2.Core.Models
         internal static void ClearForTest() => _contentById.Clear();
 
         internal static Type GetCategoryType(Type modelType) => typeof(SyntheticCategory);
+
+        internal static void Init()
+        {
+            InitializationCalls++;
+            AddForTest("card", "synthetic", new SyntheticCard());
+        }
     }
 }
 
@@ -80,6 +93,28 @@ namespace MegaCrit.Sts2.Core.Modding
 
 namespace AiAscension.Sts2ModelDbRegistryProbe.Tests
 {
+    internal static class SyntheticStaticConstructorMarker
+    {
+        internal static int CallCount;
+    }
+
+    internal static class SyntheticModelDbInitializerMarker
+    {
+        internal static int CallCount;
+    }
+
+    internal static class UninitializedSyntheticRegistry
+    {
+        private static readonly Dictionary<MegaCrit.Sts2.Core.Models.ModelId,
+            MegaCrit.Sts2.Core.Models.AbstractModel> _contentById;
+
+        static UninitializedSyntheticRegistry()
+        {
+            SyntheticStaticConstructorMarker.CallCount++;
+            _contentById = new();
+        }
+    }
+
     internal static class WrongOwner
     {
         private static readonly Dictionary<MegaCrit.Sts2.Core.Models.ModelId,

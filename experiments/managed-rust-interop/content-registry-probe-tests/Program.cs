@@ -19,15 +19,16 @@ internal static partial class Program
         MaxIdentityBytes: 32,
         MaxTypeNameBytes: 128,
         MaxOwnedStringBytes: 1024,
-        MaxCaptureDuration: TimeSpan.FromSeconds(1));
+        MaxCaptureDuration: TimeSpan.FromSeconds(30));
 
     private static async Task<int> Main()
     {
         try
         {
+            TestStaticFieldReadCanInitializeOwnerType();
             TestExactFieldGuard();
             TestCaptureCopiesOnlyOwnedValues();
-            TestPostInitializationWitness();
+            TestLoaderReadinessSignals();
             TestVersionThreadAndCancellationRefuse();
             TestCountStringAndDeadlineBounds();
             TestMutationAndResolverFailuresRefuse();
@@ -69,6 +70,33 @@ internal static partial class Program
                 typeof(InstanceRegistry).GetField("_contentById", BindingFlags.NonPublic | BindingFlags.Instance)));
         ExpectFailure("registry_unavailable", () =>
             ModelDbRegistryCapture.ResolvePinnedRegistry(typeof(ModelDb), valid, null));
+    }
+
+    private static void TestStaticFieldReadCanInitializeOwnerType()
+    {
+        SyntheticStaticConstructorMarker.CallCount = 0;
+        FieldInfo field = typeof(UninitializedSyntheticRegistry).GetField(
+            "_contentById", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("synthetic registry field was not found");
+        Check(SyntheticStaticConstructorMarker.CallCount == 0,
+            "metadata inspection alone does not initialize the synthetic owner type");
+        int modelConstructors = AbstractModel.ConstructorCount;
+        _ = field.GetValue(null);
+        Check(SyntheticStaticConstructorMarker.CallCount == 1,
+            "static reflection read executes the owner type initializer");
+        Check(AbstractModel.ConstructorCount == modelConstructors,
+            "the synthetic owner initializer does not construct model definitions");
+
+        SyntheticModelDbInitializerMarker.CallCount = 0;
+        modelConstructors = AbstractModel.ConstructorCount;
+        Dictionary<ModelId, AbstractModel> registry =
+            ModelDbRegistryCapture.ReadPinnedRegistry();
+        Check(registry.Count == 0 && AbstractModel.ConstructorCount == modelConstructors,
+            "the production pinned-field reader initializes only the empty registry");
+        Check(SyntheticModelDbInitializerMarker.CallCount == 1,
+            "the production pinned-field reader may run the owner type initializer");
+        Check(ModelDb.InitializationCalls == 0,
+            "the pinned-field reader does not invoke ModelDb.Init");
     }
 
     private static void TestCaptureCopiesOnlyOwnedValues()
@@ -120,17 +148,17 @@ internal static partial class Program
                 Environment.CurrentManagedThreadId, canceled.Token, NormalLimits));
     }
 
-    private static void TestPostInitializationWitness()
+    private static void TestLoaderReadinessSignals()
     {
         Check(ProbeReadinessGate.EvaluateManagerState(ModManagerState.None)
             == ProbeReadiness.Wait, "waits until ModManager reaches initialized state");
         Check(ProbeReadinessGate.EvaluateRegistryCount(registryCount: 0)
             == ProbeReadiness.Wait, "an empty registry is not treated as successful initialization");
         Check(ProbeReadinessGate.EvaluateManagerState(ModManagerState.Initialized)
-                == ProbeReadiness.Ready
+                == ProbeReadiness.Observed
             && ProbeReadinessGate.EvaluateRegistryCount(registryCount: 1)
-                == ProbeReadiness.Ready,
-            "requires initialized mod manager and populated registry");
+                == ProbeReadiness.Observed,
+            "requires initialized ModManager state and a populated registry");
         Check(ProbeReadinessGate.EvaluateManagerState(ModManagerState.Skipped)
             == ProbeReadiness.Refuse, "refuses when mod loading was skipped");
         ResetRegistry();
