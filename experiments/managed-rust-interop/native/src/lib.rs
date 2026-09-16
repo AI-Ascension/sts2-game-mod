@@ -5,7 +5,8 @@
     reason = "this dedicated spike proves the reviewed native FFI boundary"
 )]
 
-const ABI_VERSION: u32 = 1;
+// RuntimeRequest gained the required locale pointer/length fields in ABI v2.
+const ABI_VERSION: u32 = 2;
 const STATUS_OK: i32 = 0;
 const STATUS_NULL_OUTPUT: i32 = 1;
 const STATUS_OVERFLOW: i32 = 2;

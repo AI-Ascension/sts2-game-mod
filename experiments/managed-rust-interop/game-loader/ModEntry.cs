@@ -12,7 +12,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 [ModInitializer(nameof(Initialize))]
 public static partial class ModEntry
 {
-    private const uint ExpectedAbiVersion = 1;
+    private const uint ExpectedAbiVersion = 2;
     private const int ExpectedCheckedAddStatus = 0;
     private const int ExpectedCheckedAddResult = 42;
     private const string DebugArgument = "--debug";
