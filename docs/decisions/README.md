@@ -51,6 +51,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0053 | [Owner-local reward offer definition and generation reference data](0053-reward-offer-reference.md) |
 | 0054 | [Restricted canonical checkpoint encoder and conformance witness](0054-restricted-canonical-checkpoint-encoder.md) |
 | 0055 | [Checkpoint capture admission barrier and operation ledger](0055-checkpoint-capture-admission-barrier.md) |
+| 0056 | [Pinned read-only ModelDb registry probe](0056-pinned-readonly-modeldb-registry-probe.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

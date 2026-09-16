@@ -36,6 +36,12 @@ witnesses are verified against the installed host. The managed partial snapshot 
 `ReleaseInfoManager.Instance?.ReleaseInfo?.Version` for its build identity and refuses a missing
 value; this public getter is source-confirmed, but live values are unverified. The owner mapping
 excludes raw semantic inputs and localized text (see ADR 0038).
+ADR 0056 defines a separate pinned ModelDb ID/type/category probe. It is not wired to the route and
+cannot establish per-family independent totals, definition provenance/overrides, or a catalog
+generation witness. The separate addon now compiles against the pinned host references, and CI runs
+its synthetic field-guard, capture-bound, cancellation, and no-construction checks. The probe also
+hashes the selected `sts2.dll` before reflection. These are build/source results only; a live
+registry read and exact-host collection comparison remain pending.
 
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
