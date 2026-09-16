@@ -22,6 +22,8 @@ pub struct RuntimeRequest {
     pub lease_epoch_len: usize,
     pub correlation_id: *const u8,
     pub correlation_id_len: usize,
+    pub locale: *const u8,
+    pub locale_len: usize,
     pub body: *const u8,
     pub body_len: usize,
 }

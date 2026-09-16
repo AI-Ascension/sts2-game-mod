@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 using System.Collections.Generic;
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -29,7 +28,11 @@ public static partial class ModEntry
             LookupBindingManifest manifest = LookupBindingManifest.Read();
             using JsonDocument request = JsonDocument.Parse(body);
             JsonElement root = request.RootElement;
-            string locale = LookupBindingManifest.Locale();
+            string locale = context.Locale;
+            if (!LookupBindingManifest.ValidLocale(locale))
+            {
+                return (400, LookupBindingError(context, "malformed"));
+            }
             string bindingId = LookupBindingManifest.Digest(
                 $"{root.GetProperty("project_id").GetString()}\n{root.GetProperty("run_id").GetString()}\n"
                 + $"{root.GetProperty("episode_id").GetString()}\n{root.GetProperty("agent_id").GetString()}\n"
@@ -223,11 +226,10 @@ internal sealed class LookupBindingManifest
         return new LookupBindingManifest(Digest(string.Join("\n", entries)));
     }
 
-    internal static string Locale()
-    {
-        string locale = CultureInfo.CurrentUICulture.Name;
-        return RuntimeV3GameplayContract.IsIdentity(locale) ? locale : "en";
-    }
+    internal static bool ValidLocale(string value) =>
+        value.Length is >= 2 and <= 35
+        && value.Split('-').All(part => part.Length is >= 2 and <= 8
+            && part.All(char.IsLetterOrDigit));
 
     internal static string Digest(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();

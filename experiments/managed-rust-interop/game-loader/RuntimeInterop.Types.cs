@@ -31,6 +31,8 @@ public static partial class ModEntry
         public nuint LeaseEpochLength;
         public nint CorrelationId;
         public nuint CorrelationIdLength;
+        public nint Locale;
+        public nuint LocaleLength;
         public nint Body;
         public nuint BodyLength;
     }
@@ -43,7 +45,8 @@ public static partial class ModEntry
             string sessionId,
             string leaseId,
             string leaseEpoch,
-            string correlationId)
+            string correlationId,
+            string locale)
         {
             InstanceId = instanceId;
             CallerId = callerId;
@@ -51,6 +54,7 @@ public static partial class ModEntry
             LeaseId = leaseId;
             LeaseEpoch = leaseEpoch;
             CorrelationId = correlationId;
+            Locale = locale;
         }
 
         public string InstanceId { get; }
@@ -59,6 +63,7 @@ public static partial class ModEntry
         public string LeaseId { get; }
         public string LeaseEpoch { get; }
         public string CorrelationId { get; }
+        public string Locale { get; }
     }
 
     private sealed class RuntimeWork

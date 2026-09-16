@@ -164,7 +164,8 @@ public static partial class ModEntry
                 ReadNativeText(native.SessionId, native.SessionIdLength),
                 ReadNativeText(native.LeaseId, native.LeaseIdLength),
                 ReadNativeText(native.LeaseEpoch, native.LeaseEpochLength),
-                ReadNativeText(native.CorrelationId, native.CorrelationIdLength));
+                ReadNativeText(native.CorrelationId, native.CorrelationIdLength),
+                ReadNativeText(native.Locale, native.LocaleLength));
             string body = ReadNativeText(native.Body, native.BodyLength);
             RuntimeWork work = new(native.Kind, context, body);
             if (Volatile.Read(ref _runtimePumpReady) == 0)

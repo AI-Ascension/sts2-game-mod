@@ -253,6 +253,10 @@ fn dispatch_with_body(
     let Some(correlation_id) = request.headers.get("x-sts2-correlation-id") else {
         return http::write_response(stream, 400, b"{\"error_code\":\"missing_correlation_id\"}");
     };
+    let locale = request.headers.get("x-sts2-locale");
+    if kind == CALLBACK_LOOKUP_BINDING && locale.is_none() {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_locale\"}");
+    }
     if [
         instance_id.as_str(),
         caller_id.as_str(),
@@ -265,6 +269,11 @@ fn dispatch_with_body(
     .any(|value| !http::safe_header_value(value))
     {
         return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_identity\"}");
+    }
+    if kind == CALLBACK_LOOKUP_BINDING
+        && !http::safe_header_value(locale.map_or("", String::as_str))
+    {
+        return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_locale\"}");
     }
 
     let native_request = RuntimeRequest {
@@ -281,6 +290,8 @@ fn dispatch_with_body(
         lease_epoch_len: lease_epoch.len(),
         correlation_id: correlation_id.as_bytes().as_ptr(),
         correlation_id_len: correlation_id.len(),
+        locale: locale.map_or(std::ptr::null(), |value| value.as_bytes().as_ptr()),
+        locale_len: locale.map_or(0, String::len),
         body: body.as_ptr(),
         body_len: body.len(),
     };
