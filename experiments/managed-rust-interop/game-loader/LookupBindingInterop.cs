@@ -211,19 +211,11 @@ internal sealed class LookupBindingManifest
 
     internal static LookupBindingManifest Read()
     {
-        // These are the host-owned registries used by run setup and unlock flow. Their
-        // canonical kind/id stream is the manifest input; assembly paths and bytes never are.
-        var entries = new List<string>();
-        Add(entries, "card", ModelDb.AllCards.Select(model => model.Id.ToString()));
-        Add(entries, "relic", ModelDb.AllRelics.Select(model => model.Id.ToString()));
-        Add(entries, "potion", ModelDb.AllPotions.Select(model => model.Id.ToString()));
-        Add(entries, "event", ModelDb.AllEvents.Select(model => model.Id.ToString()));
-        Add(entries, "enemy", ModelDb.Monsters.Select(model => model.Id.ToString()));
-        Add(entries, "act", ModelDb.Acts.Select(model => model.Id.ToString()));
-        Add(entries, "character", ModelDb.AllCharacters.Select(model => model.Id.ToString()));
-        if (entries.Count == 0) throw new InvalidOperationException("host registries are unavailable");
-        entries.Sort(StringComparer.Ordinal);
-        return new LookupBindingManifest(Digest(string.Join("\n", entries)));
+        // ModelDb exposes IDs, but #83's canonical ContentManifestProducer also requires
+        // build, package order/version, semantic inputs, locale text, provenance, override
+        // chains, and a before/after generation witness. Do not publish an ID-only digest as
+        // a content_manifest_id: it would not identify the manifest queried downstream.
+        throw new InvalidOperationException("typed content manifest source unavailable");
     }
 
     internal static bool ValidLocale(string value) =>
@@ -234,12 +226,4 @@ internal sealed class LookupBindingManifest
     internal static string Digest(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 
-    private static void Add(List<string> entries, string kind, IEnumerable<string> ids)
-    {
-        foreach (string id in ids)
-        {
-            if (RuntimeV3GameplayContract.IsIdentity(id))
-                entries.Add($"{kind}:{id}");
-        }
-    }
 }
