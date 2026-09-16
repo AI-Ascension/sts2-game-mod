@@ -46,6 +46,7 @@ cargo test --locked --offline --package sts2-game-mod --test runtime_v2
 (cd protocol-artifact/seeded-run-v1 && sha256sum -c SHA256SUMS)
 (cd protocol-artifact/runtime-map-v1 && sha256sum -c SHA256SUMS)
 (cd protocol-artifact/runtime-v4-expert-rest-action && sha256sum -c SHA256SUMS)
+(cd protocol-artifact/exact-state-v1 && sha256sum -c SHA256SUMS)
 cargo test --locked --offline --package sts2-game-mod --test runtime_map
 cargo test --locked --offline --package sts2-game-mod --test checkpoint
 cargo run --locked --offline --package repo-policy -- --strict
@@ -65,8 +66,9 @@ map extraction, or Runtime-v2 host settlement.
 
 CI runs the Runtime-v2 `sha256sum -c SHA256SUMS` check from its artifact directory alongside
 the POC, Runtime-v1, and Runtime-v3 checksum gates, then discovers every `SHA256SUMS` under
-`protocol-artifact/`. The discovery step includes the `runtime-v4-expert` and
-`runtime-v4-expert-action` copies, so a newly copied profile cannot be omitted from CI. The
+`protocol-artifact/`. The discovery step includes the `runtime-v4-expert`,
+`runtime-v4-expert-action`, `seeded-run-v1`, and `exact-state-v1` copies, so a newly copied profile
+cannot be omitted from CI. The
 copies are also checked locally and compared byte-for-byte against merged `sts2-protocol` main;
 a self-consistent inventory cannot detect a stale copy.
 
@@ -84,7 +86,7 @@ executing them.
 
 ## Checkpoint capture source boundary
 
-The game-mod checkpoint test checks the pinned synthetic `asc-jcs-state-v1` vectors from `protocol-artifact/exact-state-v1/`, including key-order equivalence, hidden health/RNG distinctions, signed-zero and tagged-`uint64` identities, and domain-separated state/blob digests. It separately compares the canonical checkpoint-manifest golden, including compatibility/coverage/restore/boundary/origin references, and its manifest-derived checkpoint ID. It also checks bounded identity binding, redacted receipt debug output, private receipt bytes, explicit rejection vectors, the `CANONICAL_MAX_DEPTH` parser/encoder boundary, and the complete fail-closed capability matrix:
+The game-mod checkpoint test checks the complete pinned synthetic `asc-jcs-state-v1` vector set from `protocol-artifact/exact-state-v1/` (all 26 positives, both equivalence pairs, and all 8 distinctness pairs), including key-order equivalence, hidden health/RNG distinctions, absent/null/empty/unknown distinctness, signed-zero and tagged-`uint64` identities, and domain-separated state/blob digests. It separately compares the canonical checkpoint-manifest golden, including compatibility/coverage/restore/boundary/origin references, and its manifest-derived checkpoint ID. It also checks bounded identity binding, redacted receipt debug output, private receipt bytes, explicit rejection vectors, the `CANONICAL_MAX_DEPTH` parser/encoder boundary, and the complete fail-closed capability matrix, and recomputes the directory's `SHA256SUMS` inventory from the checked-in bytes:
 
 ~~~text
 cargo test --locked --offline --package sts2-game-mod --test checkpoint

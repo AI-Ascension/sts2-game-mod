@@ -51,8 +51,10 @@ control-plane owner.
 
 ## Protocol-vector witness
 
-`protocol-artifact/exact-state-v1/selected-vectors.json` pins a synthetic subset from
-`sts2-protocol` revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea`. It covers key ordering,
+`protocol-artifact/exact-state-v1/selected-vectors.json` pins the complete positive, equivalence,
+and distinctness set from `sts2-protocol` revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea`:
+26 positives, 2 equivalence pairs, and 8 distinctness pairs, including the profile guarantee that
+absent, null, empty, and explicit unknown values stay distinct. It covers key ordering,
 tagged `uint64`, signed zero, unchanged public fields with changed hidden health/RNG values, and
 raw duplicate/numeric/trailing-input rejection cases. The test recomputes the recorded
 domain-separated state/blob digests from the pinned canonical bytes, then independently compares
