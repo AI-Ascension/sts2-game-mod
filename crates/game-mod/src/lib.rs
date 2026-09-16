@@ -75,7 +75,8 @@ pub use content_manifest::{
     CONTENT_MANIFEST_MAX_TEXT_BYTES, CONTENT_MANIFEST_PRODUCER_VERSION, ContentCatalogSnapshot,
     ContentCatalogSource, ContentCursorBinding, ContentDefinition, ContentDefinitionInput,
     ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
-    ContentOriginInput, ContentPackage, ContentPackageInput, ContentSourceError,
+    ContentManifestWireError, ContentManifestWireResponse, ContentOriginInput, ContentPackage,
+    ContentPackageInput, ContentSourceError,
 };
 pub use enemies::*;
 pub use enemy_intents::*;

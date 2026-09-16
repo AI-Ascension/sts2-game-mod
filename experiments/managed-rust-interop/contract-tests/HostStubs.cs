@@ -32,6 +32,8 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const int RuntimeRequestKindRuntimeV2Operation = 5;
         private const int RuntimeRequestKindSeededRun = 9;
         private const int RuntimeRequestKindSeededOperation = 10;
+        private const int RuntimeRequestKindLookupBinding = 22;
+        private const int RuntimeRequestKindContentManifest = 23;
         private const uint RuntimeRequestKindGameplay = 6;
         private const uint RuntimeRequestKindExpertState = 7;
         private const uint RuntimeRequestKindExpertAction = 8;
@@ -51,6 +53,10 @@ namespace AiAscension.Sts2GameMod.Runtime
         private const int RuntimeRequestKindMap = 14;
         private static (int, string) ProcessRuntimeMapV1Work(RuntimeContext context, string body) =>
             throw new InvalidOperationException("v1 test crossed into map");
+        private static (int, string) ProcessLookupBindingWork(RuntimeContext context, string body) =>
+            throw new InvalidOperationException("v1 test crossed into lookup binding");
+        private static (int, string) ProcessContentManifestWork(RuntimeContext context) =>
+            throw new InvalidOperationException("v1 test crossed into content manifest");
         private static string RuntimeV2PlainError(string code) =>
             throw new InvalidOperationException("v1 error crossed into v2");
         private static bool TryAuthorizeRuntimeV2Context(RuntimeContext context, out string error) =>

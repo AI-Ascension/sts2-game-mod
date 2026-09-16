@@ -16,7 +16,12 @@ pub(super) fn exchange(
     let (mut stream, _) = listener.accept()?;
     let stop = AtomicBool::new(false);
     let mut connection = super::io::Connection::new(&mut stream, &stop, Duration::from_secs(1));
-    super::handle_connection(&mut connection, "127.0.0.1:1234", b"synthetic", callback)?;
+    super::connection::handle_connection(
+        &mut connection,
+        "127.0.0.1:1234",
+        b"synthetic",
+        callback,
+    )?;
     drop(stream);
     let mut response = String::new();
     peer.read_to_string(&mut response)?;

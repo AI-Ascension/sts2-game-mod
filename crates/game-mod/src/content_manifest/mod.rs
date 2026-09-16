@@ -3,8 +3,10 @@
 mod producer;
 mod revisions;
 mod validation;
+mod wire;
 
 pub use producer::ContentManifestProducer;
+pub use wire::{ContentManifestWireError, ContentManifestWireResponse};
 
 /// The owner-local producer contract for a source-only content manifest.
 pub const CONTENT_MANIFEST_PRODUCER_VERSION: &str = "game-content-manifest-producer-v1";

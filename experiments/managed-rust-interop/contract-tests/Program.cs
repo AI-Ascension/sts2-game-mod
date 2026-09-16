@@ -24,7 +24,8 @@ namespace AiAscension.Sts2GameMod.Runtime
             JsonObject request = JsonNode.Parse(fixture)!.AsObject();
             RuntimeContext context = new(request["instance_id"]!.GetValue<string>(), "caller",
                 request["session_id"]!.GetValue<string>(), request["lease_id"]!.GetValue<string>(),
-                request["lease_epoch"]!.ToJsonString(), request["correlation_id"]!.GetValue<string>());
+                request["lease_epoch"]!.ToJsonString(), request["correlation_id"]!.GetValue<string>(),
+                "en-US");
             ulong initial = request["generation"]!.GetValue<ulong>();
             _runtimeGeneration = initial;
             foreach (string field in new[] { "generation", "lease_epoch" })
@@ -69,13 +70,13 @@ namespace AiAscension.Sts2GameMod.Runtime
             foreach (string value in new[] { "invalid epoch", "9007199254740992", "-1", "+1" })
             {
                 RuntimeContext invalid = new(context.InstanceId, context.CallerId, context.SessionId,
-                    context.LeaseId, value, context.CorrelationId);
+                    context.LeaseId, value, context.CorrelationId, context.Locale);
                 Reject(wire, invalid, "invalid context epoch");
             }
             foreach (string value in new[] { "", "space invalid", "unicode-λ", new string('a', 129) })
             {
                 RuntimeContext invalid = new(context.InstanceId, value, context.SessionId,
-                    context.LeaseId, context.LeaseEpoch, context.CorrelationId);
+                    context.LeaseId, context.LeaseEpoch, context.CorrelationId, context.Locale);
                 Reject(wire, invalid, "invalid caller context");
             }
             if (_hostCalls != 0) throw new InvalidOperationException("rejection mutated host");

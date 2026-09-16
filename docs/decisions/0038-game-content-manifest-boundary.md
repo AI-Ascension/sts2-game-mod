@@ -1,6 +1,6 @@
 # ADR 0038: game-content manifest boundary
 
-- Status: Accepted owner-local source boundary; native and transport acceptance pending
+- Status: Accepted owner-local source boundary and typed transport mapping; exact-host source acceptance pending
 - Date: 2026-09-13
 - Tracking: game-mod #83
 
@@ -18,9 +18,14 @@ byte-identical vectors before acceptance. Consumer adoption already exists: gate
 `b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161` records a
 [source/schema pin](https://github.com/AI-Ascension/sts2-gateway/blob/b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161/protocol-artifact/game-information-query-v1/manifest.json)
 and [synthetic component conformance](https://github.com/AI-Ascension/sts2-gateway/blob/b6b94bf1f1d5dd9a2144e0f83cd5c2785b8a6161/protocol-artifact/game-information-query-v1/consumer-conformance.json).
-These records do not establish formal protocol admission, complete manifest transport, or native
-acceptance. This decision defines only the game-owned extraction boundary and acceptance inventory. It introduces
-no public route, wire shape, definition IDs, registry reflection, or native capability claim.
+Those records did not establish formal protocol admission, complete manifest transport, or native
+acceptance. This decision originally defined only the game-owned extraction boundary and
+acceptance inventory; transport is addressed by the later accepted extension below and still makes
+no native capability claim.
+The protocol owner has since accepted the typed `game-information-content-manifest-v1` extension in
+PR #54 (merge `9581a1b3de49c08b2d46eba8131f1edf0f686ce3`) with the canonical producer fields and a
+16 MiB bounded codec. This owner decision consumes that pinned contract for one fixed manifest
+read; it does not change the separate query-v1 cursor binding or authorize incomplete native data.
 
 ## Decision
 
@@ -67,8 +72,7 @@ reuse an old cursor or silently return a partial catalog as complete.
 
 ## Acceptance inventory
 
-Before any transport integration, source-only fixtures must establish the following boundary
-properties with synthetic catalog values:
+Source-only fixtures establish the following boundary properties with synthetic catalog values:
 
 | Case | Required result |
 | --- | --- |
@@ -87,17 +91,29 @@ does not authorize putting proprietary content or package bytes into the reposit
 
 ## Integration and limits
 
-The published (not yet admitted) v1 envelope binds queries to `content_manifest_id` but does not
-define a complete manifest payload. Its closed entity-kind and field-name enums and capability shape cannot carry
-active package/version/order, inventory totals/revision, unhandled owner families, or definition
-override chains. These facts must not be encoded into `description`, `tags`, or `source_id`.
-The `game-information-query-v2` candidate concerns rest reads and is not an admitted replacement.
-Full manifest transport therefore needs a protocol-owned compatible extension and named consumer
-adoption before game-mod can map this inventory to the supported bounded query path.
+The mod pins `sts2-protocol` at `9581a1b3de49c08b2d46eba8131f1edf0f686ce3` and maps the
+`ContentManifestProducer` result through its schema-validating codec. The fixed owner-local route is
+authenticated `GET /api/v1/game-information/content-manifest` with an empty body and the existing
+instance, caller, session, lease, epoch, correlation, and locale headers. The owner returns the
+full typed manifest on success and echoes correlation in the protocol envelope. Only the protocol's
+16 MiB whole-envelope limit is admitted; output is refused as a bounded error rather than
+truncated. Semantic inputs and localized text are never sent.
 
-Gateway, MCP, and harness retain their authenticated delivery, tool, and replay responsibilities.
-This source-only boundary provides no public manifest capability and does not complete issue #83.
-Exact-host extraction/count comparison and integrated tool-path acceptance remain separate gates.
+The managed owner path currently returns `missing_capability/source_unavailable`. The exact-host
+registry source has not yet supplied all definition families, independent totals, provenance,
+overrides, and a coherent generation witness. `ModManager.GetLoadedMods()` is the source-derived
+loaded-package enumeration used for package inputs rather than the general `Mods` property. The
+public method's presence is confirmed from the exact host assembly metadata; its live output is not
+yet runtime-verified.
+
+The existing lookup-binding source must continue to refuse until it can consume the exact
+`inventory_revision` from this producer output. That field is the only admitted content manifest
+identity; neither entity-kind IDs nor a separately reconstructed digest may stand in for it.
+
+Gateway, MCP, and harness retain current-scope authorization, authenticated delivery, tool, and
+replay responsibilities. This owner route and synthetic producer-to-wire conformance do not claim
+that an installed game can yet provide a complete manifest. Exact-host extraction/count comparison
+and integrated tool-path acceptance remain separate gates.
 
 This decision does not enumerate game content, inspect a host, grant access to assets, mutate
 game state, or validate native registry APIs.  All native facts remain unverified until the

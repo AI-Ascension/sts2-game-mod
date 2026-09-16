@@ -53,7 +53,7 @@ public static partial class ModEntry
 
         SeededRunSelectionContext context = Context();
         RuntimeContext runtimeContext = new(
-            "instance-1", "caller-1", "session-1", "lease-1", "1", "corr-seed-0001");
+            "instance-1", "caller-1", "session-1", "lease-1", "1", "corr-seed-0001", "en-US");
         Check(SeededRunStandardHost.IsExactReplay("fingerprint", "fingerprint", 7, 7),
             "same fingerprint and request generation are an exact replay");
         Check(!SeededRunStandardHost.IsExactReplay("fingerprint", "fingerprint", 7, 8),

@@ -14,5 +14,8 @@ crate-type = ["cdylib"]
 serde.workspace = true
 serde_json.workspace = true
 
+[dev-dependencies]
+sts2-protocol.workspace = true
+
 [lints]
 workspace = true

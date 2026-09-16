@@ -10,6 +10,12 @@ using System.Collections.Generic;
 // provide only the symbols needed to compile that production partial class.
 internal sealed class LiveCombatSource : IRuntimeV3HostSource
 {
+    internal static bool TryReadCurrentGeneration(out ulong generation)
+    {
+        generation = 0;
+        return false;
+    }
+
     public RuntimeV3GameplayObservation Observe() =>
         throw new InvalidOperationException("bounded expert source stub");
 

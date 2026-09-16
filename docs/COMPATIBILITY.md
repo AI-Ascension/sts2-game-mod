@@ -26,9 +26,14 @@ synthetic manifest-bound records. It does not establish a host registry adapter,
 coverage, shared protocol adoption, or compatibility with any installed game build.
 
 The content-manifest producer requires independent registry counts for all available families and
-fails closed on missing or mismatched extraction evidence. Its corrected semantic revision excludes
-adapter family support; previous source-only digests must be regenerated. No public artifact pin
-changes, supported manifest transport, or exact-host count comparison is implied (see ADR 0038).
+fails closed on missing or mismatched extraction evidence. Its owner adapter pins
+`sts2-protocol` at `9581a1b3de49c08b2d46eba8131f1edf0f686ce3`, validates the complete v1 wire envelope,
+and enforces a 16 MiB response bound on authenticated
+`GET /api/v1/game-information/content-manifest`. Synthetic producer-to-wire and native route tests
+do not establish an exact-host definition source: the route still returns
+`missing_capability/source_unavailable` until counts, provenance, overrides, and generation
+witnesses are verified against the installed host. The owner mapping excludes raw semantic inputs
+and localized text (see ADR 0038).
 
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
