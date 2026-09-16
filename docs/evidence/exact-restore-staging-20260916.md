@@ -57,5 +57,7 @@ dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidatio
 ~~~
 
 The managed commands used `/home/agent/.dotnet/dotnet` with the available ICU runtime directory
-from the native-toolchain bundle. The focused restore suite passed 10 tests; the fixed native route
-test passed 1 test. No native game or restore execution was performed.
+from the native-toolchain bundle. The focused restore suite passed 11 tests, including a
+replacement-owner regression across chunk/finish/commit/lookup proving no staged-data disclosure
+or mutation and preserving an identical same-owner chunk retry. The fixed native route test
+passed 1 test. No native game or restore execution was performed.

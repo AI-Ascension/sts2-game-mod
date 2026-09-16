@@ -64,6 +64,104 @@ fn complete_closure_rejects_manifest_extensions_and_invalid_origin_witness()
 }
 
 #[test]
+fn replacement_owner_cannot_mutate_or_read_an_existing_owner_operation()
+-> Result<(), Box<dyn std::error::Error>> {
+    let fixture = Fixture::new(false)?;
+    let shared_store = Arc::new(Mutex::new(StoreState::default()));
+    let live_owner = Arc::new(Mutex::new(current_owner(&fixture.owner)));
+    let mut engine = create_engine(
+        shared_store.clone(),
+        live_owner.clone(),
+        RecordingApplier::unknown(Arc::new(AtomicUsize::new(0))),
+    )?;
+    send(
+        &mut engine,
+        "exact_restore_begin_request",
+        fixture.begin_payload.clone(),
+    )?;
+
+    let first_byte = &fixture.canonical_bytes[..1];
+    let original_chunk = chunk_payload(&fixture, first_byte, 0, &fixture.canonical_digest);
+    let accepted = send(
+        &mut engine,
+        "exact_restore_chunk_request",
+        original_chunk.clone(),
+    )?;
+    assert_eq!(accepted["payload"]["result"], "CHUNK_ACCEPTED");
+    let staged_before = engine.staged_bytes();
+    assert_eq!(staged_before, 1);
+    let (append_calls_before, blobs_before) = {
+        let store = shared_store.lock().map_err(|_| "store lock poisoned")?;
+        (store.append_calls, store.blobs.clone())
+    };
+
+    let replacement = owner_with_generation(&fixture.owner, 4)?;
+    *live_owner.lock().map_err(|_| "owner lock poisoned")? = current_owner(&replacement);
+    let mut next_chunk = chunk_payload(
+        &fixture,
+        &fixture.canonical_bytes[1..2],
+        1,
+        &fixture.canonical_digest,
+    );
+    next_chunk["expected_owner"] = json!(replacement);
+    let finish = json!({
+        "operation_id": fixture.operation_id,
+        "expected_owner": replacement,
+        "artifact_digest": fixture.canonical_digest,
+        "total_bytes": fixture.canonical_bytes.len()
+    });
+    let mut commit = fixture.commit_payload();
+    commit["expected_owner"] = json!(replacement);
+    let lookup = json!({
+        "operation_id": fixture.operation_id,
+        "expected_owner": replacement,
+        "artifact_digest": fixture.canonical_digest
+    });
+    let attempts = vec![
+        ("exact_restore_chunk_request", next_chunk),
+        ("exact_restore_finish_blob_request", finish),
+        ("exact_restore_commit_request", commit),
+        ("exact_restore_lookup_request", lookup),
+    ];
+    for (kind, payload) in attempts {
+        let response = send(&mut engine, kind, payload)?;
+        assert_eq!(
+            response["payload"]["outcome"], "STALE_OWNER",
+            "{response:?}"
+        );
+        assert_eq!(response["payload"]["error_code"], "owner_mismatch");
+        assert_eq!(response["payload"]["host_effect"], "not_started");
+        for private_field in [
+            "next_offset",
+            "total_bytes",
+            "verified",
+            "receipt",
+            "data_base64",
+        ] {
+            assert!(
+                response["payload"].get(private_field).is_none(),
+                "{private_field} leaked in {response:?}"
+            );
+        }
+    }
+    assert_eq!(engine.staged_bytes(), staged_before);
+    {
+        let store = shared_store.lock().map_err(|_| "store lock poisoned")?;
+        assert_eq!(store.append_calls, append_calls_before);
+        assert_eq!(store.blobs, blobs_before);
+    }
+
+    *live_owner.lock().map_err(|_| "owner lock poisoned")? = current_owner(&fixture.owner);
+    let duplicate = send(&mut engine, "exact_restore_chunk_request", original_chunk)?;
+    assert_eq!(duplicate["payload"]["result"], "CHUNK_ACCEPTED");
+    assert_eq!(engine.staged_bytes(), staged_before);
+    let store = shared_store.lock().map_err(|_| "store lock poisoned")?;
+    assert_eq!(store.append_calls, append_calls_before);
+    assert_eq!(store.blobs, blobs_before);
+    Ok(())
+}
+
+#[test]
 fn process_loss_after_commit_intent_recovers_unknown_without_second_effect()
 -> Result<(), Box<dyn std::error::Error>> {
     let fixture = Fixture::new(false)?;

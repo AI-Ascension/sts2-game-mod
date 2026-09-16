@@ -24,13 +24,22 @@ where
     O: RestoreOwnerProvider,
     A: RestoreHostApplier,
 {
-    let result = match frame.kind.as_str() {
-        "exact_restore_begin_request" => begin::begin(engine, &frame, &current),
-        "exact_restore_chunk_request" => transfer::chunk(engine, &frame),
-        "exact_restore_finish_blob_request" => transfer::finish(engine, &frame),
-        "exact_restore_commit_request" => commit::commit(engine, &frame, &current),
-        "exact_restore_lookup_request" => lookup::lookup(engine, &frame),
-        _ => Err(ExactRestoreError::InvalidFrame),
+    let stored_owner = engine
+        .index()
+        .operations
+        .get(&frame.operation_id)
+        .map(|operation| &operation.owner);
+    let result = if stored_owner.is_some_and(|owner| owner != &current.fence) {
+        Err(ExactRestoreError::StaleOwner)
+    } else {
+        match frame.kind.as_str() {
+            "exact_restore_begin_request" => begin::begin(engine, &frame, &current),
+            "exact_restore_chunk_request" => transfer::chunk(engine, &frame),
+            "exact_restore_finish_blob_request" => transfer::finish(engine, &frame),
+            "exact_restore_commit_request" => commit::commit(engine, &frame, &current),
+            "exact_restore_lookup_request" => lookup::lookup(engine, &frame),
+            _ => Err(ExactRestoreError::InvalidFrame),
+        }
     };
     match result {
         Ok(response) => Ok(response),
