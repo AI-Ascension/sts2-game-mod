@@ -14,6 +14,7 @@ mod identity;
 mod manifest;
 mod port;
 mod receipt;
+mod restore;
 
 pub use admission::{
     CheckpointAdmissionDecision, CheckpointAdmissionLedger, CheckpointAdmissionOutcome,
@@ -38,6 +39,16 @@ pub use manifest::{
 };
 pub use port::{CheckpointCapturePort, UnavailableCheckpointCapture};
 pub use receipt::{CheckpointCaptureReceipt, CheckpointDurability};
+pub use restore::{
+    EXACT_RESTORE_MAX_BLOB_BYTES, EXACT_RESTORE_MAX_CHUNK_BASE64_BYTES,
+    EXACT_RESTORE_MAX_CHUNK_BYTES, EXACT_RESTORE_MAX_CLOSURE_BYTES, EXACT_RESTORE_MAX_FRAME_BYTES,
+    EXACT_RESTORE_MAX_REFERENCES, EXACT_RESTORE_MAX_TERMINAL_RECEIPTS, EXACT_RESTORE_SCHEMA_DIGEST,
+    ExactRestoreAuthorization, ExactRestoreCapability, ExactRestoreCurrentOwner,
+    ExactRestoreEngine, ExactRestoreError, ExactRestoreOwnerFence, ExactRestoreStore,
+    ExactRestoreUnavailableOwner, NoExactRestoreApplier, RestoreApplyOutcome, RestoreClosureView,
+    RestoreHostApplier, RestoreOwnerProvider, SecureExactRestoreStore,
+    exact_restore_unavailable_response,
+};
 
 /// Canonical exact-state profile consumed by this owner boundary.
 pub const CHECKPOINT_CAPTURE_PROFILE: &str = "asc-jcs-state-v1";

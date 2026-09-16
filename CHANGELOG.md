@@ -6,6 +6,13 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the pinned `exact-restore-v1` game-mod consumer with strict frame/schema parsing, bounded
+  closure staging, manifest and digest verification, Linux owner-private durable storage, and
+  `COMMIT_INTENT` recovery semantics. The production fixed routes return typed unsupported errors
+  before storage or managed dispatch because the local owner-fence provider and exact-host restore
+  adapter are not available. Synthetic tests only; native restoration remains unsupported. See ADR
+  0042.
+
 - Connected the canonical #83 `ContentManifestProducer` to the pinned
   `game-information-content-manifest-v1` codec and added the authenticated owner route
   `GET /api/v1/game-information/content-manifest`. Responses preserve `inventory_revision`, omit

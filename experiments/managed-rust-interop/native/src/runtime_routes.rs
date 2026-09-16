@@ -9,6 +9,7 @@ use super::{
     CALLBACK_RUNTIME_V4_EXPERT_ACTION, CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
     CALLBACK_SEEDED_OPERATION, CALLBACK_SEEDED_RUN, RuntimeRequestCallback, http,
 };
+use sts2_game_mod::{ExactRestoreAuthorization, exact_restore_unavailable_response};
 
 pub(super) const CALLBACK_GAMEPLAY: u32 = super::CALLBACK_GAMEPLAY;
 
@@ -23,6 +24,14 @@ pub(super) fn dispatch(
             let response = format!(r#"{{"status":"ready","listener":"{listener_address}"}}"#);
             http::write_response(stream, 200, response.as_bytes())
         }
+        (
+            "POST",
+            path @ ("/v1/exact-restore/begin"
+            | "/v1/exact-restore/chunk"
+            | "/v1/exact-restore/finish"
+            | "/v1/exact-restore/commit"
+            | "/v1/exact-restore/lookup"),
+        ) if request.content_type_is_json() => exact_restore_unavailable(path, request, stream),
         ("GET", "/api/v1/runtime/state") if request.body.is_empty() => {
             dispatch_callback(callback, 1, request, stream)
         }
@@ -130,6 +139,86 @@ pub(super) fn dispatch(
     }
 }
 
+/// The production restore owner is unavailable. This bearer-authenticated route validates the
+/// closed protocol frame and correlation, then refuses before constructing storage or accepting
+/// bytes. Header identities are echoed for request matching and are not treated as live authority.
+fn exact_restore_unavailable(
+    path: &str,
+    request: &http::Request,
+    stream: &mut super::io::Connection<'_>,
+) -> std::io::Result<()> {
+    let expected_kind = match path {
+        "/v1/exact-restore/begin" => "exact_restore_begin_request",
+        "/v1/exact-restore/chunk" => "exact_restore_chunk_request",
+        "/v1/exact-restore/finish" => "exact_restore_finish_blob_request",
+        "/v1/exact-restore/commit" => "exact_restore_commit_request",
+        "/v1/exact-restore/lookup" => "exact_restore_lookup_request",
+        _ => return http::write_response(stream, 404, b"{\"error_code\":\"route_not_found\"}"),
+    };
+    let Some(instance_id) = request.headers.get("x-sts2-instance-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_instance_id\"}");
+    };
+    let Some(caller_id) = request.headers.get("x-sts2-caller-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_caller_id\"}");
+    };
+    let Some(session_id) = request.headers.get("x-sts2-session-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_session_id\"}");
+    };
+    let Some(lease_id) = request.headers.get("x-sts2-lease-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_id\"}");
+    };
+    let Some(lease_epoch) = request.headers.get("x-sts2-lease-epoch") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_epoch\"}");
+    };
+    let Some(correlation_id) = request.headers.get("x-sts2-correlation-id") else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"missing_correlation_id\"}");
+    };
+    if [
+        instance_id.as_str(),
+        caller_id.as_str(),
+        session_id.as_str(),
+        lease_id.as_str(),
+        lease_epoch.as_str(),
+        correlation_id.as_str(),
+    ]
+    .into_iter()
+    .any(|value| !http::safe_header_value(value))
+    {
+        return http::write_response(stream, 400, b"{\"error_code\":\"invalid_identity\"}");
+    }
+    let Ok(lease_epoch) = lease_epoch.parse::<u64>() else {
+        return http::write_response(stream, 400, b"{\"error_code\":\"invalid_lease_epoch\"}");
+    };
+    // This fixed value identifies only the already bearer-authenticated gateway transport.
+    // `caller_id` is required for the established envelope but is not an authority witness here.
+    let authorization = match ExactRestoreAuthorization::new(
+        String::from("bearer-authenticated-gateway"),
+        correlation_id.clone(),
+        instance_id.clone(),
+        session_id.clone(),
+        lease_id.clone(),
+        lease_epoch,
+    ) {
+        Ok(value) => value,
+        Err(_) => {
+            return http::write_response(stream, 400, b"{\"error_code\":\"invalid_identity\"}");
+        }
+    };
+    match exact_restore_unavailable_response(
+        &request.body,
+        &authorization,
+        "bearer-authenticated-gateway",
+        expected_kind,
+    ) {
+        Ok(response) => http::write_response(stream, response.status, &response.body),
+        Err(_) => http::write_response(
+            stream,
+            400,
+            b"{\"error_code\":\"invalid_exact_restore_frame\"}",
+        ),
+    }
+}
+
 fn dispatch_gameplay(
     callback: RuntimeRequestCallback,
     request: &http::Request,
@@ -162,69 +251,5 @@ fn dispatch_operation(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{dispatch, http};
-    use crate::runtime::RuntimeRequest;
-    use std::io::Read;
-    use std::net::{TcpListener, TcpStream};
-
-    unsafe extern "C" fn echo_operation(
-        request: *const RuntimeRequest,
-        output: *mut u8,
-        capacity: usize,
-        length: *mut usize,
-    ) -> i32 {
-        // SAFETY: dispatch provides live request/output pointers and the bounded output capacity.
-        let request = unsafe { &*request };
-        if request.body_len > capacity {
-            return 500;
-        }
-        // SAFETY: both buffers are owned by dispatch and are disjoint for body_len bytes.
-        unsafe {
-            std::ptr::copy_nonoverlapping(request.body, output, request.body_len);
-            *length = request.body_len;
-        }
-        200
-    }
-
-    #[test]
-    fn admitted_slash_identity_reaches_operation_lookup_unchanged() -> std::io::Result<()> {
-        let listener = TcpListener::bind("127.0.0.1:0")?;
-        let mut client = TcpStream::connect(listener.local_addr()?)?;
-        client.set_read_timeout(Some(std::time::Duration::from_secs(2)))?;
-        let (mut server, _) = listener.accept()?;
-        let request = http::Request {
-            method: String::from("GET"),
-            path: String::from("/api/v2/runtime/operations/run/operation"),
-            headers: [
-                "x-sts2-instance-id",
-                "x-sts2-caller-id",
-                "x-sts2-session-id",
-                "x-sts2-lease-id",
-                "x-sts2-lease-epoch",
-                "x-sts2-correlation-id",
-            ]
-            .into_iter()
-            .map(|name| (name.to_owned(), String::from("1")))
-            .collect(),
-            body: Vec::new(),
-        };
-        let stop = std::sync::atomic::AtomicBool::new(false);
-        dispatch(
-            echo_operation,
-            &request,
-            "127.0.0.1:0",
-            &mut crate::runtime::io::Connection::new(
-                &mut server,
-                &stop,
-                std::time::Duration::from_secs(2),
-            ),
-        )?;
-        drop(server);
-        let mut response = String::new();
-        client.read_to_string(&mut response)?;
-        assert!(response.starts_with("HTTP/1.1 200"));
-        assert!(response.ends_with("run/operation"));
-        Ok(())
-    }
-}
+#[path = "runtime_routes_tests.rs"]
+mod tests;

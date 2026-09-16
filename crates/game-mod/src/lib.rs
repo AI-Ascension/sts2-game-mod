@@ -52,8 +52,16 @@ pub use checkpoint::{
     CheckpointManifestBoundary, CheckpointManifestError, CheckpointManifestParts,
     CheckpointMutationFence, CheckpointOrigin, CheckpointProducedCheckpoint,
     CheckpointProducerCapability, CheckpointSettlement, CheckpointUnavailableReason,
-    FixtureCheckpointProducer, UnavailableCheckpointCapture, UnavailableCheckpointProducer,
-    blob_digest, parse_canonical_text, state_id, to_canonical_bytes,
+    EXACT_RESTORE_MAX_BLOB_BYTES, EXACT_RESTORE_MAX_CHUNK_BASE64_BYTES,
+    EXACT_RESTORE_MAX_CHUNK_BYTES, EXACT_RESTORE_MAX_CLOSURE_BYTES, EXACT_RESTORE_MAX_FRAME_BYTES,
+    EXACT_RESTORE_MAX_REFERENCES, EXACT_RESTORE_MAX_TERMINAL_RECEIPTS, EXACT_RESTORE_SCHEMA_DIGEST,
+    ExactRestoreAuthorization, ExactRestoreCapability, ExactRestoreCurrentOwner,
+    ExactRestoreEngine, ExactRestoreError, ExactRestoreOwnerFence, ExactRestoreStore,
+    ExactRestoreUnavailableOwner, FixtureCheckpointProducer, NoExactRestoreApplier,
+    RestoreApplyOutcome, RestoreClosureView, RestoreHostApplier, RestoreOwnerProvider,
+    SecureExactRestoreStore, UnavailableCheckpointCapture, UnavailableCheckpointProducer,
+    blob_digest, exact_restore_unavailable_response, parse_canonical_text, state_id,
+    to_canonical_bytes,
 };
 pub use combat_bookkeeping::{
     COMBAT_BOOKKEEPING_MAX_IDENTITY_BYTES, COMBAT_BOOKKEEPING_MAX_PENDING_CHOICES,
