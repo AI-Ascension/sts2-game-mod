@@ -34,10 +34,17 @@ public static partial class ModEntry
                 return (400, LookupBindingError(context, "malformed"));
             }
             string bindingId = LookupBindingManifest.Digest(
-                $"{root.GetProperty("project_id").GetString()}\n{root.GetProperty("run_id").GetString()}\n"
-                + $"{root.GetProperty("episode_id").GetString()}\n{root.GetProperty("agent_id").GetString()}\n"
-                + $"{root.GetProperty("authority_epoch").GetRawText()}\n{context.InstanceId}\nsts2\n"
-                + $"{manifest.ContentManifestId}\n{locale}");
+                JsonSerializer.Serialize(new SortedDictionary<string, object?>
+                {
+                    ["agent_id"] = root.GetProperty("agent_id").GetString(),
+                    ["authority_epoch"] = root.GetProperty("authority_epoch").GetUInt64(),
+                    ["content_manifest_id"] = manifest.ContentManifestId,
+                    ["episode_id"] = root.GetProperty("episode_id").GetString(),
+                    ["game_profile"] = "sts2",
+                    ["locale"] = locale,
+                    ["project_id"] = root.GetProperty("project_id").GetString(),
+                    ["run_id"] = root.GetProperty("run_id").GetString()
+                }));
             var binding = new Dictionary<string, object?>
             {
                 ["binding_id"] = bindingId,
