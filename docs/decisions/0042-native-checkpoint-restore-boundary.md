@@ -1,8 +1,8 @@
 # ADR 0042: native checkpoint restore boundary
 
-- Status: Proposed; no native restore implementation
-- Date: 2026-09-13
-- Tracking: game-mod #81
+- Status: Accepted for source-only protocol staging and refusal; production restore unavailable
+- Date: 2026-09-13; source-only staging update 2026-09-16
+- Tracking: game-mod #81, #116
 
 ## Decision
 
@@ -31,6 +31,16 @@ uncertainty. Exact-host evidence must prove fresh-process capture/restore/recapt
 same-action continuation across every advertised phase. Restore verification is distinct from
 continuation certification.
 
-This decision adds no codec, persistence, route, process provisioning, native host action, or
-restore capability. It remains unavailable until #80, #78, gateway lifecycle/provisioning, and
-authorized exact-host evidence meet these requirements.
+The source-only consumer slice copies the accepted `exact-restore-v1` artifact, validates closed
+canonical frames and complete checkpoint manifests, and tests bounded durable staging with
+synthetic owner and applier ports. The Linux store uses an owner-private no-follow directory; other
+platforms refuse storage until an equivalent backend is reviewed. The fixed bearer-authenticated
+native routes return typed `no_restore_adapter` at begin and `native_unavailable` for later phases
+before constructing the storage engine or dispatching a managed callback. Caller and lease headers
+are correlation inputs, not proof of live ownership. Production still has neither an authoritative
+local owner-fence provider nor an exact-host restore adapter.
+
+This source-only slice does not provision a process or alter a profile. It does not establish native
+restore capability. Restore remains unavailable until #80, #78, Gateway lifecycle/provisioning,
+authoritative native owner fencing, and authorized exact-host restore/recapture evidence meet the
+acceptance requirements above.

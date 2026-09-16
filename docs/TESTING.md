@@ -1,30 +1,18 @@
 # Testing and evidence
 
-The [combat-only terminal settlement regression](evidence/combat-only-settlement-20260906.md)
-has a native Windows Astra run and a source check that keeps campaign reward readiness strict.
+The [combat-only terminal settlement regression](evidence/combat-only-settlement-20260906.md) has a native Windows Astra run and a source check that keeps campaign reward readiness strict.
 
-The separately compiled [native terminal fixture](../experiments/managed-rust-interop/terminal-host-probe/README.md)
-checks fresh Victory, living terminal player state, disabled input, empty legal actions,
-and rejection of stale/missing win markers and late attachment. Its
-[Windows and Linux evidence](evidence/native-victory-observation-20260906.md) is a forced host test,
-not a played campaign win; normal builds exclude the fixture.
+The separately compiled [native terminal fixture](../experiments/managed-rust-interop/terminal-host-probe/README.md) checks fresh Victory, living terminal player state, disabled input, empty legal actions, and rejection of stale/missing win markers and late attachment.
+Its [Windows and Linux evidence](evidence/native-victory-observation-20260906.md) is a forced host test, not a played campaign win; normal builds exclude the fixture.
 
 For bounded native Astra treasure opening, relic acquisition and map continuation, see
 [the treasure evidence](evidence/native-treasure-20260906.md). Shop entry remained unresolved.
 
-For bounded native Astra rest-site healing, smithing and map continuation, see
-[the Windows evidence](evidence/native-rest-sites-20260906.md). Treasure entry remained
-unresolved; this does not establish full campaign completion.
+For bounded native Astra rest-site healing, smithing and map continuation, see [the Windows evidence](evidence/native-rest-sites-20260906.md). Treasure entry remained unresolved; this does not establish full campaign completion.
 
-For the opt-in exact-host LLM combat, repeat/replay evidence, launch settings and isolation
-limits, see [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md). Host-free CI does not replace this
-live evidence. Changed-seed replay must stop before dispatch; repeated same-seed choices
-must receive fresh host completion witnesses.
+For the opt-in exact-host LLM combat, repeat/replay evidence, launch settings and isolation limits, see [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md). Host-free CI does not replace this live evidence. Changed-seed replay must stop before dispatch; repeated same-seed choices must receive fresh host completion witnesses.
 
-Workshop regression probes reject duplicate JSON properties, symlink install roots, oversized
-manifests without proportional allocation, and producer metadata/payload bounds before staging.
-Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic
-checks do not establish Windows junction behavior or safety against concurrent package replacement.
+Workshop regression probes reject duplicate JSON properties, symlink install roots, oversized manifests without proportional allocation, and producer metadata/payload bounds before staging. Symlink checks report unverified when the runner cannot create a link; these synthetic checks do not establish Windows junction behavior or safety against concurrent package replacement.
 The isolated pinned ModelDb diagnostic also has host-free guard, initializer, and bounds
 regressions; its live registry read remains pending, and its report labels only a partial snapshot
 and observed stability interval, not content-loading completion.
@@ -103,6 +91,17 @@ cargo test --locked --offline --package sts2-game-mod --test checkpoint_admissio
 ~~~
 
 The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. None of these tests canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043.
+
+## Exact-restore source consumer
+
+The pinned `exact-restore-v1` copy is checked against `SHA256SUMS`. Consumer tests cover canonical closed frames, duplicate-key rejection, ordered/idempotent bounded chunks, manifest closure and aliases, owner rechecks, operation capacity, Linux private-store restart/permission/symlink refusal, and `COMMIT_INTENT` recovery to `UNKNOWN` without a second synthetic effect:
+
+~~~text
+cargo test --locked --offline --package sts2-game-mod --test checkpoint_restore
+cargo test --locked --offline --package sts2-game-mod-interop exact_restore_routes_refuse_before_managed_callback_or_staging
+~~~
+
+The route regression sends protocol golden requests through the authenticated listener and proves that production returns the typed unsupported response without dispatching managed code. Tests use synthetic owner/applier fixtures; they do not prove a real owner fence, host restore adapter, game mutation, independent recapture, or restore capability. Production begin refuses before opening storage; the Linux engine is source-only and unsupported on other platforms.
 
 ## Seeded-run source checks
 

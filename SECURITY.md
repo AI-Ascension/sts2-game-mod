@@ -68,6 +68,22 @@ The native HTTP listener bounds each accepted connection's socket I/O with one a
 resource bound, not a host callback cancellation mechanism or a guarantee of real-time shutdown.
 Only loopback synthetic connections are used in the regression suite.
 
+## Exact-restore boundary
+
+The production exact-restore routes remain fail-closed: after the native bearer-token check, begin
+returns `no_restore_adapter` and every later phase returns `native_unavailable`, before storage
+construction, byte staging, or managed callback dispatch. The request's caller and lease headers
+are only transport-matching inputs and do not prove live owner authority. No exact-host restore
+adapter or local authoritative owner-fence provider is installed.
+
+The source-only Linux staging store accepts only an absolute path whose traversed components are
+opened without following symlinks. Its terminal directory and regular files must belong to the
+effective user and exclude group/other access; data and sidecar lookups are relative to a retained
+directory handle and a nonblocking process lock prevents a second writer. Other operating systems
+refuse this backend. This protects against path substitution and other users within the local
+filesystem model; it does not protect against the same user, an administrator, or a compromised
+process. The synthetic applier is test-only and never mutates a game profile.
+
 The native co-op candidate adds five authenticated loopback routes. They require the existing
 instance, caller, session, lease, epoch, and correlation headers, and the managed host adapter
 accepts mutations only for the authenticated local native peer. Client-side callers cannot supply

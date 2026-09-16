@@ -55,6 +55,15 @@ synthetic manifest- and locale-bound records. Its native-tooltip and owner-docum
 provenance types do not establish a native registry extractor, live rendered-text coverage,
 shared protocol adoption, or compatibility with any installed game build.
 
+The `exact-restore-v1` game-mod consumer is pinned to schema digest
+`2289d888c33eac46873408303c4423eab762e3f7bd6132ae8ae88d0d3b1858e4` from `sts2-protocol` main
+`5d5a368ef8a89fd1cb356b04dbf9d8a056adbf05`. Synthetic Rust tests cover strict wire parsing,
+closure and alias checks, Linux private-store reopen/symlink/permission behavior, owner fencing,
+and uncertain-commit restart handling. The authenticated native routes refuse before staging
+because the production owner provider and exact-host restore adapter are missing. The Linux store
+is not enabled by those routes; non-Linux storage is unsupported. These are source/build/test
+results only and do not establish checkpoint restoration or host compatibility (ADR 0042).
+
 The initial game baseline is recorded in
 [decision 0002](decisions/0002-initial-game-compatibility-baseline.md). It is a source-derived
 planning target, not runtime proof from this target.

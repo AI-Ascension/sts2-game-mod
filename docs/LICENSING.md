@@ -9,6 +9,11 @@ MIT does not grant rights to STS2 binaries, game data, art, music, trademarks, p
 personal saves, or host assemblies. An operator may use an authorized local host installation for
 build or compatibility work, but those files remain outside this tree and all release archives.
 
+The copied `protocol-artifact/exact-restore-v1/` consumer input is MIT-licensed and retains its
+protocol-owner checksums and provenance. The source-only Rust consumer adds locked `jsonschema`
+0.55.0 (MIT), `getrandom` 0.3.4 (MIT or Apache-2.0), and `libc` 0.2.189 (MIT or Apache-2.0), plus
+their locked transitive dependencies.
+
 ## Greenfield and runtime-package rules
 
 This target is original preparation work. Do not copy, vendor, transliterate, or use another

@@ -640,6 +640,9 @@ dependencies = [
 name = "sts2-game-mod"
 version = "0.0.0"
 dependencies = [
+ "getrandom",
+ "jsonschema",
+ "libc",
  "serde",
  "serde_json",
  "sha2",
@@ -662,6 +665,7 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "serde_json",
+ "sts2-game-mod",
  "sts2-protocol",
 ]
 

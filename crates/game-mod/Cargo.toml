@@ -7,6 +7,9 @@ publish = false
 license.workspace = true
 
 [dependencies]
+getrandom.workspace = true
+jsonschema.workspace = true
+libc.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2 = "=0.11.0"

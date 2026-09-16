@@ -19,6 +19,9 @@ verification. A green check is not a merge, release, install, deployment, or com
 - policy.yml checks the target policy tool and strict policy from pull requests and main pushes.
 - ci.yml runs Rust format, Clippy, tests, the source-only native interop and co-op probes, and the
   synthetic ephemeral-session launcher checks.
+- The Rust workspace gates include the source-only exact-restore consumer, artifact checksum,
+  private-store, and fixed-route refusal regressions. They do not install a restore adapter or run
+  a game.
 - The managed runtime-addon build is intentionally not a CI lane because it needs an
   operator-owned proprietary `sts2.dll` and `GodotSharp.dll`.
 - The authorized host load-smoke is a manual lane using

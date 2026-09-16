@@ -188,6 +188,12 @@ The source-only `checkpoint::admission` controller adds the two remaining owner 
 
 See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md), [ADR 0054](decisions/0054-restricted-canonical-checkpoint-encoder.md), and [ADR 0055](decisions/0055-checkpoint-capture-admission-barrier.md).
 
+### Exact-restore staging boundary
+
+The game-mod target consumes the pinned `exact-restore-v1` artifact with a strict decoder for canonical JSON, duplicate members, schema digest, and the 16 KiB frame bound. Synthetic fixtures exercise closure verification, bounded staging, commit-intent recovery, and receipts; the Linux private store uses no-follow directory-relative opens, owner-only permissions, a process lock, and digest-derived filenames.
+
+The five fixed production POST paths never construct staging or call managed code. After bearer authentication, begin returns `REJECTED/no_restore_adapter`; later phases return `UNAVAILABLE/native_unavailable`, all with `host_effect=not_started`. Header identity binds only the request envelope. The production owner-fence provider and exact-host restore/recapture adapter are absent, so native restoration is not advertised or performed. See [ADR 0042](decisions/0042-native-checkpoint-restore-boundary.md).
+
 ## Repeat-seed practice replay
 
 `SeedReplayController` and the standalone settings partials own the narrow repeat-seed feature in

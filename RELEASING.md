@@ -13,6 +13,11 @@ Repository, HTTP, ABI, managed host, game compatibility, and package versions ar
 Do not infer one from another. A host ABI adaptation can require a compatibility release even when
 the local HTTP contract is unchanged.
 
+The source-only exact-restore staging consumer does not make native checkpoint restoration a
+release feature. No release or compatibility claim may describe restore as supported until an
+authoritative local owner fence, exact-host restore adapter, independent recapture, and disposable
+host evidence satisfy ADR 0042.
+
 ## Release readiness
 
 A release may claim only the highest executed evidence level in
