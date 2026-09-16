@@ -158,9 +158,10 @@ fn selected_protocol_vectors_match_the_pinned_witness() -> Result<(), Box<dyn Er
         "393dc9bb5bb7fc00672ffba24e78768c242c5d1488e442e5882b68d00e7441fc"
     );
     assert_eq!(manifest["live_runtime"], false);
+    assert_eq!(manifest["checksums"], "SHA256SUMS");
 
     let vectors = positive_vectors()?;
-    assert_eq!(vectors.len(), 11);
+    assert_eq!(vectors.len(), 26);
     for entry in &vectors {
         let bytes = decode_hex(string_field(entry, "canonical_hex")?)?;
         assert_eq!(

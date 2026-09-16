@@ -7,7 +7,8 @@
   "source_vectors_sha256": "393dc9bb5bb7fc00672ffba24e78768c242c5d1488e442e5882b68d00e7441fc",
   "golden_manifest": "golden-manifest.json",
   "consumer": "sts2-game-mod",
-  "fixture_kind": "selected_synthetic_vectors",
+  "fixture_kind": "complete_synthetic_vectors",
   "live_runtime": false,
-  "proprietary_data": false
+  "proprietary_data": false,
+  "checksums": "SHA256SUMS"
 }

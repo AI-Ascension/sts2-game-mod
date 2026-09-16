@@ -63,10 +63,12 @@ Identities reuse the existing checkpoint constants: `state_id(bytes)` is
 `blob_digest(bytes)` is `sha256:` followed by `sha256(bytes)`. `tests/checkpoint_canonical.rs`
 recomputes these identities, the canonical bytes, the equivalence/distinctness pairs, the reject
 matrix, and the golden manifest-derived `asc-checkpoint:v1:` identity from the checked-in
-`protocol-artifact/exact-state-v1` witness. `tests/checkpoint_canonical_regressions.rs` adds the
-branch coverage that the pinned vectors omit (arrays, nulls, booleans, escaped strings, Unicode
-values versus restricted keys, safe-integer endpoints, escaped duplicate keys, and the parser/encoder
-depth boundary) against fixed expected bytes. All 14 pinned raw rejection vectors are retained.
+`protocol-artifact/exact-state-v1` witness, which now pins the complete protocol positive,
+equivalence, and distinctness set (26 positives, 2 equivalence pairs, 8 distinctness pairs).
+`tests/checkpoint_canonical_regressions.rs` adds the grammar and boundary coverage a value-level
+witness cannot express (Unicode values versus restricted keys, safe-integer endpoints, escaped
+duplicate keys, and the parser/encoder depth boundary) against fixed expected bytes. All 14 pinned
+raw rejection vectors are retained.
 `tests/checkpoint_canonical_bounds.rs` covers byte boundaries, escaping expansion, key grammar,
 hostile nesting, and direct typed integer rejection. `serde_json` is used in tests only to read the vector
 file; ingestion itself is hand-rolled so rejections are exact.

@@ -14,6 +14,8 @@ const VECTORS: &str =
     include_str!("../../../protocol-artifact/exact-state-v1/selected-vectors.json");
 const GOLDEN_MANIFEST: &str =
     include_str!("../../../protocol-artifact/exact-state-v1/golden-manifest.json");
+const MANIFEST: &str = include_str!("../../../protocol-artifact/exact-state-v1/manifest.json");
+const CHECKSUMS: &str = include_str!("../../../protocol-artifact/exact-state-v1/SHA256SUMS");
 
 fn fixture() -> Result<Value, Box<dyn Error>> {
     Ok(serde_json::from_str(VECTORS)?)
@@ -121,7 +123,7 @@ fn positive_vectors_match_pinned_canonical_bytes_and_identities() -> Result<(), 
     let positives = fixture["positive"]
         .as_array()
         .ok_or("positive must be an array")?;
-    assert_eq!(positives.len(), 11);
+    assert_eq!(positives.len(), 26);
     for entry in positives {
         let name = string_field(entry, "name")?;
         let expected = decode_hex(string_field(entry, "canonical_hex")?)?;
@@ -162,10 +164,11 @@ fn equivalence_and_distinctness_hold_under_canonical_encoding() -> Result<(), Bo
         by_name.insert(string_field(entry, "name")?.to_owned(), entry.clone());
     }
 
-    for pair in fixture["equivalence_pairs"]
+    let equivalence_pairs = fixture["equivalence_pairs"]
         .as_array()
-        .ok_or("equivalence_pairs must be an array")?
-    {
+        .ok_or("equivalence_pairs must be an array")?;
+    assert_eq!(equivalence_pairs.len(), 2);
+    for pair in equivalence_pairs {
         let left = by_name
             .get(pair_name(pair, 0)?)
             .ok_or("left vector is missing")?;
@@ -179,10 +182,11 @@ fn equivalence_and_distinctness_hold_under_canonical_encoding() -> Result<(), Bo
         );
     }
 
-    for pair in fixture["distinct_pairs"]
+    let distinct_pairs = fixture["distinct_pairs"]
         .as_array()
-        .ok_or("distinct_pairs must be an array")?
-    {
+        .ok_or("distinct_pairs must be an array")?;
+    assert_eq!(distinct_pairs.len(), 8);
+    for pair in distinct_pairs {
         let left = by_name
             .get(pair_name(pair, 0)?)
             .ok_or("left vector is missing")?;
@@ -285,6 +289,78 @@ fn manifest_derived_checkpoint_identity_remains_pinned() -> Result<(), Box<dyn E
     assert_eq!(
         manifest.exact_checkpoint_id()?,
         "asc-checkpoint:v1:sha256:e64d4b9eb2fd555f50a1fde40454ae1f036484adfe48bd8ccadb46bb7e708b1f"
+    );
+    Ok(())
+}
+
+#[test]
+fn absent_null_empty_and_unknown_stay_distinct() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let positives = fixture["positive"]
+        .as_array()
+        .ok_or("positive must be an array")?;
+    let mut by_name = BTreeMap::new();
+    for entry in positives {
+        by_name.insert(string_field(entry, "name")?.to_owned(), entry.clone());
+    }
+    let pairs = fixture["distinct_pairs"]
+        .as_array()
+        .ok_or("distinct_pairs must be an array")?;
+    for (left, right) in [
+        ("unicode_nfc", "unicode_nfd"),
+        ("null_value", "absent_value"),
+        ("false_value", "zero_value"),
+        ("array_ab", "array_ba"),
+    ] {
+        let left_vector = by_name.get(left).ok_or("guarantee vector is missing")?;
+        let right_vector = by_name.get(right).ok_or("guarantee vector is missing")?;
+        assert!(
+            pairs
+                .iter()
+                .any(|pair| pair[0].as_str() == Some(left) && pair[1].as_str() == Some(right)),
+            "protocol guarantee pair {left}/{right} is not pinned as distinct"
+        );
+        assert_ne!(
+            canonical_of(left_vector)?,
+            canonical_of(right_vector)?,
+            "protocol guarantee pair {left}/{right} is not distinct"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn artifact_inventory_pins_every_checked_in_file() -> Result<(), Box<dyn Error>> {
+    let mut pinned = BTreeMap::new();
+    for line in CHECKSUMS.lines() {
+        let (hex, path) = line
+            .split_once("  ")
+            .ok_or("inventory line must be '<hex>  <path>'")?;
+        assert_eq!(hex.len(), 64, "inventory digest must be 64 hex digits");
+        assert!(
+            hex.chars().all(|digit| digit.is_ascii_hexdigit()),
+            "inventory digest must be hex for {path}"
+        );
+        assert!(
+            pinned.insert(path.to_owned(), hex.to_owned()).is_none(),
+            "duplicate inventory entry for {path}"
+        );
+    }
+    for (path, text) in [
+        ("manifest.json", MANIFEST),
+        ("selected-vectors.json", VECTORS),
+        ("golden-manifest.json", GOLDEN_MANIFEST),
+    ] {
+        let expected = pinned
+            .remove(path)
+            .ok_or("inventory is missing a pinned file")?;
+        let digest = blob_digest(text.as_bytes());
+        let actual = digest.strip_prefix("sha256:").ok_or("blob digest prefix")?;
+        assert_eq!(actual, expected, "inventory digest differs for {path}");
+    }
+    assert!(
+        pinned.is_empty(),
+        "inventory covers a file that is not pinned"
     );
     Ok(())
 }
