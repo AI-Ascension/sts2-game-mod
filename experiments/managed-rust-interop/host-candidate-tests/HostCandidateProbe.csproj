@@ -29,5 +29,6 @@
     <Compile Include="../game-loader/RuntimeMapV1Model.cs" />
     <Compile Include="../game-loader/ContentManifestInterop.cs" />
     <Compile Include="../game-loader/LookupBindingInterop.cs" />
+    <Compile Include="../game-loader/NativeContentCatalogSnapshot.cs" />
   </ItemGroup>
 </Project>

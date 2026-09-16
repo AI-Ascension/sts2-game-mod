@@ -142,17 +142,8 @@ internal sealed partial class LiveCombatSource
 
     private static string CurrentGameBuild()
     {
-        try
-        {
-            string? version = MegaCrit.Sts2.Core.Debug.ReleaseInfoManager.Instance
-                ?.ReleaseInfo?.Version;
-            if (RuntimeMapV1Contract.IsText(version)) return version!;
-        }
-        catch
-        {
-            // The projection remains valid with an explicit unknown build if the host's
-            // release-info resource is unavailable during early startup.
-        }
+        string? version = NativeContentCatalogSnapshot.ReadOfficialGameBuild();
+        if (RuntimeMapV1Contract.IsText(version)) return version!;
         return "unknown";
     }
 
