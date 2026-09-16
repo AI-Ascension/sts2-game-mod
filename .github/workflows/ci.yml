@@ -133,8 +133,8 @@ jobs:
       - name: Build source-only managed probe
         run: dotnet build experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj --configuration Release
 
-      - name: Run managed Workshop validation probe
-        run: dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release
+      - name: Run managed Workshop validation and ModelDb registry guard probes
+        run: dotnet run --project experiments/managed-rust-interop/workshop/WorkshopValidationProbe.csproj --configuration Release && dotnet run --project experiments/managed-rust-interop/content-registry-probe-tests/ContentRegistryProbeTests.csproj --configuration Release
 
       - name: Run managed seeded-run context digest probe
         run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunContextProbe.csproj --configuration Release; dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunStandardAdmissionProbe.csproj --configuration Release

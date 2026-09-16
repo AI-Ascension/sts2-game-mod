@@ -25,6 +25,9 @@ Workshop regression probes reject duplicate JSON properties, symlink install roo
 manifests without proportional allocation, and producer metadata/payload bounds before staging.
 Symlink checks explicitly report unverified when the runner cannot create a link. These synthetic
 checks do not establish Windows junction behavior or safety against concurrent package replacement.
+The isolated pinned ModelDb diagnostic also has host-free guard, initializer, and bounds
+regressions; its live registry read remains pending, and its report labels only a partial snapshot
+and observed stability interval, not content-loading completion.
 
 ## Purpose
 
@@ -53,6 +56,7 @@ cargo run --locked --offline --package repo-policy -- --strict
 cargo fmt --all --check
 cargo clippy --locked --offline --workspace --all-targets --all-features -- -D warnings
 cargo test --locked --offline --workspace --all-targets --all-features
+dotnet run --project experiments/managed-rust-interop/content-registry-probe-tests/ContentRegistryProbeTests.csproj --configuration Release
 ~~~
 
 The workspace now also contains the target-owned host, HTTP-adapter, composition, and copied
@@ -512,6 +516,7 @@ Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Ex
 retries ignore transport correlation and JSON formatting; run/combat/player replacement
 invalidates generation. This bounded observation is not a complete game-state revision
 or a game-rule parity claim.
+
 ## Runtime-v3 and co-op checks
 
 The combined `HostCandidateProbe` now runs 47 source-linked synthetic checks: the 12 v2-only
