@@ -101,10 +101,14 @@ truncated. Semantic inputs and localized text are never sent.
 
 The managed owner path currently returns `missing_capability/source_unavailable`. The exact-host
 registry source has not yet supplied all definition families, independent totals, provenance,
-overrides, and a coherent generation witness. `ModManager.GetLoadedMods()` is the source-derived
-loaded-package enumeration used for package inputs rather than the general `Mods` property. The
-public method's presence is confirmed from the exact host assembly metadata; its live output is not
-yet runtime-verified.
+overrides, and a coherent generation witness. The partial known-input snapshot reads
+`ReleaseInfoManager.Instance?.ReleaseInfo?.Version` directly for `game_build` and fails closed
+when it is missing or not a protocol identity token. The existing map source uses the same getter
+with its pre-existing `unknown` fallback; the manifest path does not use that fallback.
+`ModManager.GetLoadedMods()` is the source-derived loaded-package enumeration used for package
+inputs rather than the general `Mods` property. These public accessor signatures are confirmed
+from exact host assembly metadata and the managed host build; their live values and package order
+are not runtime-verified.
 
 The existing lookup-binding source must continue to refuse until it can consume the exact
 `inventory_revision` from this producer output. That field is the only admitted content manifest

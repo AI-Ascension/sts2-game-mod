@@ -32,8 +32,10 @@ and enforces a 16 MiB response bound on authenticated
 `GET /api/v1/game-information/content-manifest`. Synthetic producer-to-wire and native route tests
 do not establish an exact-host definition source: the route still returns
 `missing_capability/source_unavailable` until counts, provenance, overrides, and generation
-witnesses are verified against the installed host. The owner mapping excludes raw semantic inputs
-and localized text (see ADR 0038).
+witnesses are verified against the installed host. The managed partial snapshot reads
+`ReleaseInfoManager.Instance?.ReleaseInfo?.Version` for its build identity and refuses a missing
+value; this public getter is source-confirmed, but live values are unverified. The owner mapping
+excludes raw semantic inputs and localized text (see ADR 0038).
 
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,

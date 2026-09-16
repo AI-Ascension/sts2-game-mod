@@ -117,6 +117,10 @@ public static partial class ModEntry
         Check(ContentManifestWireContract.ValidLocale("en_US")
             && !ContentManifestWireContract.ValidLocale("bad locale"),
             "content-manifest locale bounds match producer/schema identity tokens");
+        Check(ContentManifestWireContract.ValidIdentity("v0.107.1")
+            && !ContentManifestWireContract.ValidIdentity("unknown build"),
+            "content-manifest game build uses the protocol identity token boundary");
+        CheckNativeContentManifestKnownInputs();
         nint boundedOutput = Marshal.AllocHGlobal(4096);
         try
         {
@@ -145,5 +149,44 @@ public static partial class ModEntry
             Marshal.FreeHGlobal(boundedOutput);
         }
         CheckSharedGameplayBoundary();
+    }
+
+    private static void CheckNativeContentManifestKnownInputs()
+    {
+        MegaCrit.Sts2.Core.Debug.ReleaseInfoManager.Instance = new()
+        {
+            ReleaseInfo = new() { Version = "v0.107.1" }
+        };
+        MegaCrit.Sts2.Core.Localization.LocManager.Instance = new() { Language = "en_US" };
+        MegaCrit.Sts2.Core.Modding.ModManager.LoadedMods =
+        [
+            new()
+            {
+                manifest = new()
+                {
+                    id = "base:game",
+                    version = "0.107.1"
+                }
+            }
+        ];
+        NativeContentCatalogSnapshot snapshot = NativeContentCatalogSnapshot.CaptureKnownInputs();
+        Check(snapshot.GameBuild == "v0.107.1"
+            && snapshot.Locale == "en_US"
+            && snapshot.Packages.Count == 1
+            && snapshot.Packages[0].PackageId == "base:game",
+            "partial native catalog input copies official ReleaseInfo.Version with locale and loaded package identity");
+
+        MegaCrit.Sts2.Core.Debug.ReleaseInfoManager.Instance = null;
+        bool missingBuildRefused = false;
+        try
+        {
+            _ = NativeContentCatalogSnapshot.CaptureKnownInputs();
+        }
+        catch (InvalidOperationException)
+        {
+            missingBuildRefused = true;
+        }
+        Check(missingBuildRefused,
+            "partial native catalog input fails closed when official release version is unavailable");
     }
 }

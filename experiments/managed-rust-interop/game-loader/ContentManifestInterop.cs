@@ -16,13 +16,15 @@ internal static class ContentManifestWireContract
         "416a39769445e6e462c5d5b5504f29010c255e2116a73094e55c7268e47f2ba6";
     internal const int MaxMessageBytes = 16 * 1024 * 1024;
 
-    internal static bool ValidLocale(string value) =>
+    internal static bool ValidIdentity(string value) =>
         value.Length is > 0 and <= 256
         && value.All(static character =>
             character is >= 'a' and <= 'z'
                 or >= 'A' and <= 'Z'
                 or >= '0' and <= '9'
                 or '.' or ':' or '/' or '_' or '-');
+
+    internal static bool ValidLocale(string value) => ValidIdentity(value);
 }
 
 public static partial class ModEntry
