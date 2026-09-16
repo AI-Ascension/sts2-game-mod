@@ -70,7 +70,7 @@ public static partial class ModEntry
         result = ProcessRuntimeWork(new(RuntimeRequestKindRuntimeV2Action, Context(), Request()));
         Check(Status(result) == "unknown" && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 1, "exception after enqueue remains unknown");
         Reset();
-        var otherOwner = new RuntimeContext("instance", "caller2", "session2", "lease2", "2", "corr");
+        var otherOwner = new RuntimeContext("instance", "caller2", "session2", "lease2", "2", "corr", "en-US");
         Check(TryAuthorizeRuntimeV2Context(Context(), out _) && !TryAuthorizeRuntimeV2Context(otherOwner, out _),
             "another owner cannot adopt the bound host");
         Reset();

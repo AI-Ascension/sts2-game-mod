@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -95,11 +97,7 @@ public static partial class ModEntry
                         ["profile"] = LookupBindingProfile,
                         ["schema_digest"] = LookupBindingSchemaDigest
                     },
-                    ["reobserve"] = new Dictionary<string, object?>
-                    {
-                        ["attempts"] = 0,
-                        ["supersedes_observation_id"] = null
-                    }
+                    ["reobserve"] = null
                 }, new Dictionary<string, object?>
                 {
                     ["observation_id"] = $"observation:{generation}",
