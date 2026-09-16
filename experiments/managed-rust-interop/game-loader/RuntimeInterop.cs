@@ -23,6 +23,7 @@ public static partial class ModEntry
     private const int RuntimeRequestKindExpertAction = 8;
     private const int RuntimeRequestKindExpertRestAction = 15;
     private const int RuntimeRequestKindMap = 14;
+    private const int RuntimeRequestKindLookupBinding = 22;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
