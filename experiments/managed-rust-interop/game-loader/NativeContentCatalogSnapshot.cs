@@ -31,9 +31,9 @@ internal sealed class NativeContentCatalogSnapshot
         LocManager manager = LocManager.Instance
             ?? throw new InvalidOperationException("localization manager unavailable");
         string locale = manager.Language;
-        if (!LookupBindingManifest.ValidLocale(locale))
+        if (!ContentManifestWireContract.ValidLocale(locale))
             throw new InvalidOperationException("host locale is malformed");
-        var packages = ModManager.Mods.Select((mod, order) =>
+        var packages = ModManager.GetLoadedMods().Select((mod, order) =>
         {
             ModManifest manifest = mod.manifest
                 ?? throw new InvalidOperationException("mod manifest unavailable");

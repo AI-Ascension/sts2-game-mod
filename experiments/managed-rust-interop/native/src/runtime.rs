@@ -26,8 +26,10 @@ const CALLBACK_COOP_REJOIN: u32 = 19;
 const CALLBACK_COOP_RECOVER: u32 = 20;
 const CALLBACK_COOP_LEGAL_CATALOG: u32 = 21;
 const CALLBACK_LOOKUP_BINDING: u32 = 22;
+const CALLBACK_CONTENT_MANIFEST: u32 = 23;
 const CALLBACK_RUNTIME_MAP: u32 = 14;
 const MAX_RESPONSE_BYTES: usize = 256 * 1024;
+const MAX_CONTENT_MANIFEST_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
 const STARTED: i32 = 0;
 const INVALID_ARGUMENT: i32 = 1;
 const ALREADY_STARTED: i32 = 2;
@@ -37,6 +39,11 @@ const STOP_FAILED: i32 = 5;
 
 #[path = "runtime_auth.rs"]
 mod auth;
+#[path = "runtime_connection.rs"]
+mod connection;
+#[cfg(test)]
+#[path = "runtime_content_manifest_tests.rs"]
+mod content_manifest_tests;
 #[cfg(test)]
 #[path = "runtime_endpoint_tests.rs"]
 mod endpoint_tests;
@@ -58,6 +65,8 @@ mod io_tests;
 mod listener;
 #[path = "runtime_routes.rs"]
 mod routes;
+#[path = "runtime_dispatch.rs"]
+mod runtime_dispatch;
 #[path = "runtime_types.rs"]
 mod types;
 use input::copy_input;
@@ -187,7 +196,12 @@ fn serve(
             Ok((mut stream, _)) => {
                 let mut connection =
                     io::Connection::new(&mut stream, &stop, Duration::from_secs(10));
-                let _ = handle_connection(&mut connection, &listener_address, &token, callback);
+                let _ = self::connection::handle_connection(
+                    &mut connection,
+                    &listener_address,
+                    &token,
+                    callback,
+                );
             }
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                 thread::sleep(Duration::from_millis(5));
@@ -195,121 +209,4 @@ fn serve(
             Err(_) => thread::sleep(Duration::from_millis(10)),
         }
     }
-}
-
-fn handle_connection(
-    stream: &mut io::Connection<'_>,
-    listener_address: &str,
-    token: &[u8],
-    callback: RuntimeRequestCallback,
-) -> std::io::Result<()> {
-    let request = match http::read_request(stream) {
-        Ok(value) => value,
-        Err(status) => {
-            return http::write_response(stream, status, b"{\"error_code\":\"malformed_request\"}");
-        }
-    };
-    if !http::headers_are_allowed(&request.headers) {
-        return http::write_response(stream, 400, b"{\"error_code\":\"unsupported_header\"}");
-    }
-    if !auth::bearer_token_matches(request.headers.get("authorization"), token) {
-        return http::write_response(stream, 401, b"{\"error_code\":\"unauthorized\"}");
-    }
-
-    routes::dispatch(callback, &request, listener_address, stream)
-}
-
-fn dispatch(
-    callback: RuntimeRequestCallback,
-    kind: u32,
-    request: &http::Request,
-    stream: &mut io::Connection<'_>,
-) -> std::io::Result<()> {
-    dispatch_with_body(callback, kind, request, &request.body, stream)
-}
-
-fn dispatch_with_body(
-    callback: RuntimeRequestCallback,
-    kind: u32,
-    request: &http::Request,
-    body: &[u8],
-    stream: &mut io::Connection<'_>,
-) -> std::io::Result<()> {
-    let Some(instance_id) = request.headers.get("x-sts2-instance-id") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_instance_id\"}");
-    };
-    let Some(caller_id) = request.headers.get("x-sts2-caller-id") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_caller_id\"}");
-    };
-    let Some(session_id) = request.headers.get("x-sts2-session-id") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_session_id\"}");
-    };
-    let Some(lease_id) = request.headers.get("x-sts2-lease-id") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_id\"}");
-    };
-    let Some(lease_epoch) = request.headers.get("x-sts2-lease-epoch") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_lease_epoch\"}");
-    };
-    let Some(correlation_id) = request.headers.get("x-sts2-correlation-id") else {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_correlation_id\"}");
-    };
-    let locale = request.headers.get("x-sts2-locale");
-    if kind == CALLBACK_LOOKUP_BINDING && locale.is_none() {
-        return http::write_response(stream, 400, b"{\"error_code\":\"missing_locale\"}");
-    }
-    if [
-        instance_id.as_str(),
-        caller_id.as_str(),
-        session_id.as_str(),
-        lease_id.as_str(),
-        lease_epoch.as_str(),
-        correlation_id.as_str(),
-    ]
-    .into_iter()
-    .any(|value| !http::safe_header_value(value))
-    {
-        return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_identity\"}");
-    }
-    if kind == CALLBACK_LOOKUP_BINDING
-        && !http::safe_header_value(locale.map_or("", String::as_str))
-    {
-        return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_locale\"}");
-    }
-
-    let native_request = RuntimeRequest {
-        kind,
-        instance_id: instance_id.as_bytes().as_ptr(),
-        instance_id_len: instance_id.len(),
-        caller_id: caller_id.as_bytes().as_ptr(),
-        caller_id_len: caller_id.len(),
-        session_id: session_id.as_bytes().as_ptr(),
-        session_id_len: session_id.len(),
-        lease_id: lease_id.as_bytes().as_ptr(),
-        lease_id_len: lease_id.len(),
-        lease_epoch: lease_epoch.as_bytes().as_ptr(),
-        lease_epoch_len: lease_epoch.len(),
-        correlation_id: correlation_id.as_bytes().as_ptr(),
-        correlation_id_len: correlation_id.len(),
-        locale: locale.map_or(std::ptr::null(), |value| value.as_bytes().as_ptr()),
-        locale_len: locale.map_or(0, String::len),
-        body: body.as_ptr(),
-        body_len: body.len(),
-    };
-    let mut output = vec![0_u8; MAX_RESPONSE_BYTES];
-    let mut output_length = 0_usize;
-    // SAFETY: Request fields borrow live read-only buffers; output and length are distinct,
-    // exclusively borrowed storage. The callback obeys capacity, does not unwind or retain pointers.
-    // The start caller guarantees callback validity on this listener thread until stop joins it.
-    let status = unsafe {
-        callback(
-            &native_request,
-            output.as_mut_ptr(),
-            output.len(),
-            &mut output_length,
-        )
-    };
-    if !(200..600).contains(&status) || output_length > output.len() {
-        return http::write_response(stream, 500, b"{\"error_code\":\"callback_failed\"}");
-    }
-    http::write_response(stream, status as u16, &output[..output_length])
 }

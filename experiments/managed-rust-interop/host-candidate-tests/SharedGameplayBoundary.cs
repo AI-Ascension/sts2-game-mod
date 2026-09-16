@@ -105,11 +105,11 @@ public static partial class ModEntry
     {
         RuntimeContext[] foreignContexts =
         {
-            new("other-instance", "caller", "session", "lease", "1", "corr"),
-            new("instance", "other-caller", "session", "lease", "1", "corr"),
-            new("instance", "caller", "other-session", "lease", "1", "corr"),
-            new("instance", "caller", "session", "other-lease", "1", "corr"),
-            new("instance", "caller", "session", "lease", "2", "corr")
+            new("other-instance", "caller", "session", "lease", "1", "corr", "en-US"),
+            new("instance", "other-caller", "session", "lease", "1", "corr", "en-US"),
+            new("instance", "caller", "other-session", "lease", "1", "corr", "en-US"),
+            new("instance", "caller", "session", "other-lease", "1", "corr", "en-US"),
+            new("instance", "caller", "session", "lease", "2", "corr", "en-US")
         };
         foreach (RuntimeContext foreign in foreignContexts)
         {

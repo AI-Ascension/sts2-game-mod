@@ -60,6 +60,10 @@ public static partial class ModEntry
         {
             return ProcessLookupBindingWork(work.Context, work.Body);
         }
+        if (work.Kind == RuntimeRequestKindContentManifest)
+        {
+            return ProcessContentManifestWork(work.Context);
+        }
         if (work.Kind != RuntimeRequestKindAction)
         {
             return (400, RuntimeError(work.Context, work.Kind, "unknown_request_kind"));

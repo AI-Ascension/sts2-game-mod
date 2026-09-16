@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+use super::runtime_dispatch::{dispatch as dispatch_callback, dispatch_with_body};
 use super::{
-    CALLBACK_ACTION, CALLBACK_COOP_ACTION, CALLBACK_COOP_LEGAL_CATALOG, CALLBACK_COOP_OBSERVATION,
-    CALLBACK_COOP_RECOVER, CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE, CALLBACK_LOOKUP_BINDING,
-    CALLBACK_RUNTIME_MAP, CALLBACK_RUNTIME_V2_ACTION, CALLBACK_RUNTIME_V2_OPERATION,
-    CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT, CALLBACK_RUNTIME_V4_EXPERT_ACTION,
-    CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION, CALLBACK_SEEDED_OPERATION, CALLBACK_SEEDED_RUN,
-    RuntimeRequestCallback, dispatch as dispatch_callback, dispatch_with_body, http,
+    CALLBACK_ACTION, CALLBACK_CONTENT_MANIFEST, CALLBACK_COOP_ACTION, CALLBACK_COOP_LEGAL_CATALOG,
+    CALLBACK_COOP_OBSERVATION, CALLBACK_COOP_RECOVER, CALLBACK_COOP_REJOIN, CALLBACK_COOP_VOTE,
+    CALLBACK_LOOKUP_BINDING, CALLBACK_RUNTIME_MAP, CALLBACK_RUNTIME_V2_ACTION,
+    CALLBACK_RUNTIME_V2_OPERATION, CALLBACK_RUNTIME_V2_STATE, CALLBACK_RUNTIME_V4_EXPERT,
+    CALLBACK_RUNTIME_V4_EXPERT_ACTION, CALLBACK_RUNTIME_V4_EXPERT_REST_ACTION,
+    CALLBACK_SEEDED_OPERATION, CALLBACK_SEEDED_RUN, RuntimeRequestCallback, http,
 };
 
 pub(super) const CALLBACK_GAMEPLAY: u32 = super::CALLBACK_GAMEPLAY;
@@ -121,6 +122,9 @@ pub(super) fn dispatch(
         }
         ("POST", "/api/v1/game-information/lookup-binding") if request.content_type_is_json() => {
             dispatch_callback(callback, CALLBACK_LOOKUP_BINDING, request, stream)
+        }
+        ("GET", "/api/v1/game-information/content-manifest") if request.body.is_empty() => {
+            dispatch_callback(callback, CALLBACK_CONTENT_MANIFEST, request, stream)
         }
         _ => dispatch_gameplay(callback, request, stream),
     }

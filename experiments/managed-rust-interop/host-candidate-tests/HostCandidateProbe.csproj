@@ -21,10 +21,13 @@
     <Compile Include="../game-loader/RuntimeDispatchQueue.cs" />
     <Compile Include="../game-loader/RuntimeContract.cs" />
     <Compile Include="../game-loader/RuntimeContractValidation.cs" />
+    <Compile Include="../game-loader/RuntimeNativeResponse.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Interop.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Support.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Codec.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Contract.cs" />
     <Compile Include="../game-loader/RuntimeMapV1Model.cs" />
+    <Compile Include="../game-loader/ContentManifestInterop.cs" />
+    <Compile Include="../game-loader/LookupBindingInterop.cs" />
   </ItemGroup>
 </Project>

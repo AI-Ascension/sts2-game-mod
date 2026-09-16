@@ -24,6 +24,7 @@ public static partial class ModEntry
     private const int RuntimeRequestKindExpertRestAction = 15;
     private const int RuntimeRequestKindMap = 14;
     private const int RuntimeRequestKindLookupBinding = 22;
+    private const int RuntimeRequestKindContentManifest = 23;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;
@@ -170,19 +171,47 @@ public static partial class ModEntry
             RuntimeWork work = new(native.Kind, context, body);
             if (Volatile.Read(ref _runtimePumpReady) == 0)
             {
-                return WriteNativeResponse(RuntimeUnavailable,
-                    "{\"error_code\":\"runtime_pump_unavailable\"}", output, outputCapacity, out outputLength);
+                return WriteNativeResponse(
+                    RuntimeUnavailable,
+                    native.Kind == RuntimeRequestKindContentManifest
+                        ? ContentManifestError(context.CorrelationId, "missing_capability", "source_unavailable")
+                        : "{\"error_code\":\"runtime_pump_unavailable\"}",
+                    native.Kind,
+                    context.CorrelationId,
+                    output,
+                    outputCapacity,
+                    out outputLength);
             }
             else
             {
                 var pending = RuntimeQueue.Enqueue(work);
                 if (pending == null)
                 {
-                    return WriteNativeResponse(RuntimeUnavailable,
-                        "{\"error_code\":\"runtime_queue_full\"}", output, outputCapacity, out outputLength);
+                    return WriteNativeResponse(
+                        RuntimeUnavailable,
+                        native.Kind == RuntimeRequestKindContentManifest
+                            ? ContentManifestError(context.CorrelationId, "missing_capability", "source_unavailable")
+                            : "{\"error_code\":\"runtime_queue_full\"}",
+                        native.Kind,
+                        context.CorrelationId,
+                        output,
+                        outputCapacity,
+                        out outputLength);
                 }
                 var response = RuntimeQueue.Wait(pending, TimeSpan.FromSeconds(5));
-                return WriteNativeResponse(response.Status, response.Response, output, outputCapacity, out outputLength);
+                bool contentManifestUnavailable = native.Kind == RuntimeRequestKindContentManifest
+                    && response.Status == 504;
+                string responseBody = contentManifestUnavailable
+                    ? ContentManifestError(context.CorrelationId, "missing_capability", "source_unavailable")
+                    : response.Response;
+                return WriteNativeResponse(
+                    contentManifestUnavailable ? RuntimeUnavailable : response.Status,
+                    responseBody,
+                    native.Kind,
+                    context.CorrelationId,
+                    output,
+                    outputCapacity,
+                    out outputLength);
             }
         }
         catch (Exception)
@@ -210,7 +239,10 @@ public static partial class ModEntry
         catch (Exception)
         {
             GD.PrintErr($"{LogPrefix} runtime main-thread request failed");
-            return (RuntimeUnavailable, "{\"error_code\":\"main_thread_outcome_unknown\"}");
+            return work.Kind == RuntimeRequestKindContentManifest
+                ? (RuntimeUnavailable, ContentManifestError(
+                    work.Context.CorrelationId, "malformed", "source_malformed"))
+                : (RuntimeUnavailable, "{\"error_code\":\"main_thread_outcome_unknown\"}");
         }
     }
 
@@ -230,16 +262,4 @@ public static partial class ModEntry
         return Encoding.UTF8.GetString(bytes);
     }
 
-    private static int WriteNativeResponse(int status, string response, nint output, nuint outputCapacity, out nuint outputLength)
-    {
-        byte[] bytes = Encoding.UTF8.GetBytes(response);
-        if (bytes.Length > (long)outputCapacity || bytes.Length > RuntimeMapV1Contract.MaxMessageBytes)
-        {
-            outputLength = 0;
-            return RuntimeUnavailable;
-        }
-        Marshal.Copy(bytes, 0, output, bytes.Length);
-        outputLength = (nuint)bytes.Length;
-        return status;
-    }
 }

@@ -218,8 +218,9 @@ internal sealed class LookupBindingManifest
     {
         // ModelDb exposes IDs, but #83's canonical ContentManifestProducer also requires
         // build, package order/version, semantic inputs, locale text, provenance, override
-        // chains, and a before/after generation witness. Do not publish an ID-only digest as
-        // a content_manifest_id: it would not identify the manifest queried downstream.
+        // chains, and a before/after generation witness. When that source is available, the
+        // binding must use its exact inventory_revision. Do not publish an ID-only digest or a
+        // separately reconstructed hash as content_manifest_id.
         throw new InvalidOperationException("typed content manifest source unavailable");
     }
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Combat;
@@ -8,7 +9,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 public static partial class ModEntry
 {
     private const string LogPrefix = "synthetic";
-    private static RuntimeContext Context(string correlation = "corr") => new("instance", "caller", "session", "lease", "1", correlation);
+    private static RuntimeContext Context(string correlation = "corr") => new("instance", "caller", "session", "lease", "1", correlation, "en-US");
     private static string Request(string op = "op", string correlation = "corr") => JsonSerializer.Serialize(new Dictionary<string, object?>
     {
         ["protocol_version"] = RuntimeV2ProtocolVersion,
@@ -97,6 +98,52 @@ public static partial class ModEntry
         Check(RuntimeQueue.Wait(expired, TimeSpan.Zero).Status == 504
             && RunManager.Instance.ActionQueueSynchronizer.Queued.Count == 0,
             "shared queue removes expired candidate before host dispatch");
+        var contentManifest = ProcessContentManifestWork(
+            new RuntimeContext("instance", "caller", "session", "lease", "1", "corr-manifest", "en_US"));
+        using (JsonDocument envelope = JsonDocument.Parse(contentManifest.Response))
+        {
+            Check(contentManifest.Status == 503
+                && envelope.RootElement.GetProperty("protocol_version").GetString()
+                    == ContentManifestWireContract.ProtocolVersion
+                && envelope.RootElement.GetProperty("correlation_id").GetString() == "corr-manifest"
+                && envelope.RootElement.GetProperty("kind").GetString() == "error_response"
+                && envelope.RootElement.GetProperty("manifest").ValueKind == JsonValueKind.Null
+                && envelope.RootElement.GetProperty("error").GetProperty("code").GetString()
+                    == "missing_capability"
+                && envelope.RootElement.GetProperty("error").GetProperty("reason").GetString()
+                    == "source_unavailable",
+                "native content-manifest path stays unavailable until coherent host registry evidence exists");
+        }
+        Check(ContentManifestWireContract.ValidLocale("en_US")
+            && !ContentManifestWireContract.ValidLocale("bad locale"),
+            "content-manifest locale bounds match producer/schema identity tokens");
+        nint boundedOutput = Marshal.AllocHGlobal(4096);
+        try
+        {
+            int boundedStatus = WriteNativeResponse(
+                200,
+                new string('x', ContentManifestWireContract.MaxMessageBytes + 1),
+                RuntimeRequestKindContentManifest,
+                "corr-limit",
+                boundedOutput,
+                4096,
+                out nuint boundedLength);
+            byte[] boundedBytes = new byte[(int)boundedLength];
+            Marshal.Copy(boundedOutput, boundedBytes, 0, boundedBytes.Length);
+            using JsonDocument boundedError = JsonDocument.Parse(boundedBytes);
+            Check(boundedStatus == 413
+                && boundedError.RootElement.GetProperty("correlation_id").GetString() == "corr-limit"
+                && boundedError.RootElement.GetProperty("kind").GetString() == "error_response"
+                && boundedError.RootElement.GetProperty("error").GetProperty("code").GetString()
+                    == "result_limit_exceeded"
+                && boundedError.RootElement.GetProperty("error").GetProperty("reason").GetString()
+                    == "serialized_payload_too_large",
+                "content-manifest output overflow becomes a small typed 413 without truncation");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(boundedOutput);
+        }
         CheckSharedGameplayBoundary();
     }
 }
