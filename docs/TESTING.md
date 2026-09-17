@@ -90,6 +90,12 @@ The checkpoint admission tests cover the source-only owner barrier and operation
 cargo test --locked --offline --package sts2-game-mod --test checkpoint_admission --test checkpoint_admission_debug
 ~~~
 
+The checkpoint payload test is the witness for the closed game-owned `checkpoint-payload-v1` contract (ADR 0057): a settled-map-choice payload round-trips through the canonical encoder to identical bytes, a later-turn payload changes its exact-state identity when one RNG cursor changes while its public projection stays identical, a required family reported `unknown` (or not captured) is rejected as `unsupported_coverage`, the schema digest is pinned in code and in the conformance case and every object node is closed, every unsupported boundary has no payload schema and returns the existing matrix rejection, every fixture under `conformance/fixtures/checkpoint-payload-v1/` is inventoried in `SHA256SUMS` (recomputed by the test) and consumed by a case vector with its pinned digests and typed error, and the payload `Debug` output carries no seed or RNG value:
+
+~~~text
+cargo test --locked --offline --package sts2-game-mod --test checkpoint_payload
+~~~
+
 The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. None of these tests canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043.
 
 ## Exact-restore source consumer

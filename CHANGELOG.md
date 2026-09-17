@@ -11,6 +11,14 @@ do not establish release support.
   protocol `bfe28e45`, harness/gateway/MCP heads, staged guest set); AC1 is `confirmed-source`,
   native rows remain `unverified-native` behind the interactive Windows/Steam session gate.
 
+- Added the closed, versioned game-owned checkpoint payload contract `checkpoint-payload-v1`
+  (`schemas/checkpoint-payload-v1.schema.json`, `ascension.checkpoint_payload.v1`) for the three
+  first-release boundaries, a typed `CheckpointPayload` model that lowers to `CanonicalValue` and
+  parses back strictly with typed errors, per-family `captured`/`unknown`/`not_applicable` coverage
+  with required-unknown rejection, and pinned conformance fixtures with `SHA256SUMS`. Unsupported
+  phases have no payload schema and keep the existing typed rejection; no phase is advertised as
+  available. Synthetic source evidence only. See ADR 0057. Refs #80.
+
 - Added the pinned `exact-restore-v1` game-mod consumer with strict frame/schema parsing, bounded
   closure staging, manifest and digest verification, Linux owner-private durable storage, and
   `COMMIT_INTENT` recovery semantics. The production fixed routes return typed unsupported errors

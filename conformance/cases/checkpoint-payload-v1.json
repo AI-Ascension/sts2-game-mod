@@ -1,0 +1,177 @@
+{
+  "case_id": "CT-CHECKPOINT-PAYLOAD-V1-001",
+  "contract": "sts2-game-mod/checkpoint-payload-v1",
+  "profile": "checkpoint-payload-v1",
+  "payload_schema": "ascension.checkpoint_payload.v1",
+  "canonical_profile": "asc-jcs-state-v1",
+  "schema": "schemas/checkpoint-payload-v1.schema.json",
+  "schema_sha256": "e332d8ca1a44d903147d3d3a3336f65686ff502522a45293228d6fc9c63f73dc",
+  "checksums": "conformance/fixtures/checkpoint-payload-v1/SHA256SUMS",
+  "decision": "docs/decisions/0057-checkpoint-payload-schema-v1.md",
+  "consumers": ["sts2-game-mod"],
+  "protocol_envelope": {
+    "owner": "sts2-protocol",
+    "schema": "ascension.exact_state.v1",
+    "decision": "docs/decisions/0036-exact-state-identity-contract.md",
+    "source_revision": "8a2e66f5d2190a0fca7f146dc3508e8d55515ea7",
+    "relation": "This payload is the game-owned content the exact-state envelope leaves open; it does not replace the envelope, its compatibility block, or its manifest identity."
+  },
+  "supported_boundaries": ["settled_map_choice", "stable_player_turn_combat", "later_turn_combat"],
+  "unsupported_boundaries": {
+    "reward_card_selection": "coverage_inventory_pending",
+    "event": "coverage_inventory_pending",
+    "shop": "coverage_inventory_pending",
+    "rest": "coverage_inventory_pending",
+    "enemy_turn": "unsafe_boundary",
+    "animation": "unsafe_boundary",
+    "transition": "unsafe_boundary",
+    "unknown": "unsafe_boundary"
+  },
+  "families": [
+    "seed_and_rng",
+    "run_configuration",
+    "campaign_progress",
+    "player_resources",
+    "deck_and_piles",
+    "card_instances",
+    "relics",
+    "potions",
+    "combat_turn",
+    "powers",
+    "enemies_and_intents",
+    "pending_effects"
+  ],
+  "coverage_tokens": ["captured", "unknown", "not_applicable"],
+  "contract_assertions": {
+    "closed_everywhere": true,
+    "every_family_carries_coverage": true,
+    "required_unknown_rejects_capture": true,
+    "not_applicable_only_for_combat_families_at_settled_map_choice": true,
+    "rng_cursor_participates_in_identity": true,
+    "ordered_collections_preserved": true,
+    "unsupported_boundary_has_no_payload_schema": true,
+    "no_native_phase_advertised": true
+  },
+  "valid_vectors": [
+    {
+      "id": "CPV-VALID-SETTLED-MAP-CHOICE",
+      "boundary": "settled_map_choice",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/valid/settled-map-choice.json",
+      "canonical_bytes": 2446,
+      "exact_state_digest": "asc-state:v1:sha256:08f93e5abf17b3e091278d65695cb79faf0f1ee5f89e460458ad22520cf4f690",
+      "blob_digest": "sha256:9d2d4ad69f6fdf68f4ad11789c37d38c3cd89a2f75d4da0d388eccf1b6fa1167"
+    },
+    {
+      "id": "CPV-VALID-STABLE-PLAYER-TURN-COMBAT",
+      "boundary": "stable_player_turn_combat",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/valid/stable-player-turn-combat.json",
+      "canonical_bytes": 2677,
+      "exact_state_digest": "asc-state:v1:sha256:501ea138acf4e353a02212f09f898eb07acc052aabc88caebc75fcd2221893b5",
+      "blob_digest": "sha256:afb4129c76ae94b6602459bce75ed202f6c5989f66faca784d9f17c3b1aaf477"
+    },
+    {
+      "id": "CPV-VALID-LATER-TURN-COMBAT",
+      "boundary": "later_turn_combat",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/valid/later-turn-combat.json",
+      "canonical_bytes": 3120,
+      "exact_state_digest": "asc-state:v1:sha256:ec6030cb4378705c70d33076ef8aed5aa27b0dd97cb7f1c3a52e45a065fecc0a",
+      "blob_digest": "sha256:247652be7824a5eafbbb95d71b48f0b069d8970400b17f92b9a956dc586acbae"
+    },
+    {
+      "id": "CPV-VALID-LATER-TURN-COMBAT-RNG-CURSOR-ADVANCED",
+      "boundary": "later_turn_combat",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/valid/later-turn-combat-rng-cursor-advanced.json",
+      "canonical_bytes": 3120,
+      "exact_state_digest": "asc-state:v1:sha256:78c749738b505a7ddaae805f1f451e1ade1fd69deb0b60242fe54cf3305ca26e",
+      "blob_digest": "sha256:c03d7ae2a86c136fbea07149feb78c430938e40c6098c6f393fa7dbd4f099f67"
+    }
+  ],
+  "distinct_pairs": [
+    {
+      "id": "CPV-DISTINCT-RNG-CURSOR",
+      "pair": ["CPV-VALID-LATER-TURN-COMBAT", "CPV-VALID-LATER-TURN-COMBAT-RNG-CURSOR-ADVANCED"],
+      "differs_only_in": "families.seed_and_rng.value.streams[0].cursor",
+      "public_projection_identical": true
+    }
+  ],
+  "invalid_vectors": [
+    {
+      "id": "CPV-INVALID-REQUIRED-FAMILY-UNKNOWN",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/required-family-unknown.json",
+      "schema_valid": false,
+      "expected_error": "required_family_unknown",
+      "expected_rejection": "unsupported_coverage"
+    },
+    {
+      "id": "CPV-INVALID-COMBAT-FAMILY-IN-MAP-CHOICE",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/combat-family-in-map-choice.json",
+      "schema_valid": false,
+      "expected_error": "family_not_applicable",
+      "expected_rejection": "unsupported_coverage"
+    },
+    {
+      "id": "CPV-INVALID-UNSUPPORTED-BOUNDARY",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/unsupported-boundary.json",
+      "schema_valid": false,
+      "expected_error": "unsupported_boundary",
+      "expected_rejection": "unsupported_boundary"
+    },
+    {
+      "id": "CPV-INVALID-UNEXPECTED-FIELD",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/unexpected-field.json",
+      "schema_valid": false,
+      "expected_error": "unexpected_field",
+      "expected_rejection": "invalid_canonical_bytes"
+    },
+    {
+      "id": "CPV-INVALID-MISSING-FAMILY",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/missing-family.json",
+      "schema_valid": false,
+      "expected_error": "missing_field",
+      "expected_rejection": "invalid_canonical_bytes"
+    },
+    {
+      "id": "CPV-INVALID-LATER-TURN-FIRST-TURN",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/later-turn-first-turn.json",
+      "schema_valid": false,
+      "expected_error": "turn_witness_mismatch",
+      "expected_rejection": "unsupported_coverage"
+    },
+    {
+      "id": "CPV-INVALID-PENDING-EFFECT-OUTSTANDING",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/pending-effect-outstanding.json",
+      "schema_valid": false,
+      "expected_error": "pending_effects_outstanding",
+      "expected_rejection": "unsafe_boundary"
+    },
+    {
+      "id": "CPV-INVALID-DUPLICATE-STREAM-ID",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/duplicate-stream-id.json",
+      "schema_valid": true,
+      "expected_error": "duplicate_stream_id",
+      "expected_rejection": "invalid_canonical_bytes"
+    },
+    {
+      "id": "CPV-INVALID-DANGLING-CARD-REFERENCE",
+      "fixture": "conformance/fixtures/checkpoint-payload-v1/invalid/dangling-card-reference.json",
+      "schema_valid": true,
+      "expected_error": "unresolved_card_reference",
+      "expected_rejection": "invalid_canonical_bytes"
+    }
+  ],
+  "validators": [
+    {
+      "language": "rust",
+      "name": "game-mod-payload-witness",
+      "path": "crates/game-mod/tests/checkpoint_payload.rs",
+      "test": "cargo test --locked --offline --package sts2-game-mod --test checkpoint_payload"
+    }
+  ],
+  "setup": {
+    "credentials": false,
+    "live_runtime": false,
+    "network": false,
+    "proprietary_data": false,
+    "synthetic_values": true
+  }
+}

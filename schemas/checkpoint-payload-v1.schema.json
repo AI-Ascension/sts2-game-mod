@@ -1,0 +1,601 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sts2-checkpoint-payload-v1",
+  "title": "STS2 game-owned checkpoint payload v1",
+  "description": "Closed, versioned game-owned payload for the three first-release checkpoint boundaries (settled_map_choice, stable_player_turn_combat, later_turn_combat). Every ADR 0037 coverage family carries an explicit coverage token; a required family reported as unknown is rejected, never substituted. Field families are typed placeholders over the source-derived inventory and do not claim proprietary member names or native semantics. Schema validity never proves native coverage, restorability, or host compatibility.",
+  "type": "object",
+  "properties": {
+    "schema": {"const": "ascension.checkpoint_payload.v1"},
+    "canonical_profile": {"const": "asc-jcs-state-v1"},
+    "boundary": {"$ref": "#/$defs/boundary"},
+    "families": {"$ref": "#/$defs/families"}
+  },
+  "required": ["schema", "canonical_profile", "boundary", "families"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"boundary": {"const": "settled_map_choice"}}},
+      "then": {
+        "properties": {
+          "families": {
+            "properties": {
+              "seed_and_rng": {"$ref": "#/$defs/must_capture"},
+              "run_configuration": {"$ref": "#/$defs/must_capture"},
+              "campaign_progress": {"$ref": "#/$defs/must_capture"},
+              "player_resources": {"$ref": "#/$defs/must_capture"},
+              "deck_and_piles": {"$ref": "#/$defs/must_capture"},
+              "card_instances": {"$ref": "#/$defs/must_capture"},
+              "relics": {"$ref": "#/$defs/must_capture"},
+              "potions": {"$ref": "#/$defs/must_capture"},
+              "combat_turn": {"$ref": "#/$defs/must_not_apply"},
+              "powers": {"$ref": "#/$defs/must_not_apply"},
+              "enemies_and_intents": {"$ref": "#/$defs/must_not_apply"},
+              "pending_effects": {"$ref": "#/$defs/must_capture"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"boundary": {"enum": ["stable_player_turn_combat", "later_turn_combat"]}}},
+      "then": {
+        "properties": {
+          "families": {
+            "properties": {
+              "seed_and_rng": {"$ref": "#/$defs/must_capture"},
+              "run_configuration": {"$ref": "#/$defs/must_capture"},
+              "campaign_progress": {"$ref": "#/$defs/must_capture"},
+              "player_resources": {"$ref": "#/$defs/must_capture"},
+              "deck_and_piles": {"$ref": "#/$defs/must_capture"},
+              "card_instances": {"$ref": "#/$defs/must_capture"},
+              "relics": {"$ref": "#/$defs/must_capture"},
+              "potions": {"$ref": "#/$defs/must_capture"},
+              "combat_turn": {"$ref": "#/$defs/must_capture"},
+              "powers": {"$ref": "#/$defs/must_capture"},
+              "enemies_and_intents": {"$ref": "#/$defs/must_capture"},
+              "pending_effects": {"$ref": "#/$defs/must_capture"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"boundary": {"const": "stable_player_turn_combat"}}},
+      "then": {
+        "properties": {
+          "families": {
+            "properties": {
+              "combat_turn": {"properties": {"value": {"properties": {"turn": {"minimum": 1}}}}}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"boundary": {"const": "later_turn_combat"}}},
+      "then": {
+        "properties": {
+          "families": {
+            "properties": {
+              "combat_turn": {"properties": {"value": {"properties": {"turn": {"minimum": 2}}}}}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "boundary": {
+      "description": "First-release boundaries only. Every other CheckpointBoundary value has no payload schema and returns the owner's existing typed rejection.",
+      "enum": ["settled_map_choice", "stable_player_turn_combat", "later_turn_combat"]
+    },
+    "coverage": {
+      "description": "captured: the family closure was read completely at the boundary; unknown: the producer could not prove the closure (a required family reported unknown rejects capture); not_applicable: the family has no state at this boundary.",
+      "enum": ["captured", "unknown", "not_applicable"]
+    },
+    "must_capture": {
+      "properties": {"coverage": {"const": "captured"}}
+    },
+    "must_not_apply": {
+      "properties": {"coverage": {"const": "not_applicable"}}
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/-]+$"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "safe_integer": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "uint64": {
+      "description": "Exact unsigned 64-bit value in the asc-jcs-state-v1 tagged form.",
+      "type": "object",
+      "properties": {
+        "kind": {"const": "uint64"},
+        "value": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})$"}
+      },
+      "required": ["kind", "value"],
+      "additionalProperties": false
+    },
+    "uncovered": {
+      "type": "object",
+      "properties": {"coverage": {"enum": ["unknown", "not_applicable"]}},
+      "required": ["coverage"],
+      "additionalProperties": false
+    },
+    "families": {
+      "type": "object",
+      "properties": {
+        "seed_and_rng": {"$ref": "#/$defs/seed_and_rng"},
+        "run_configuration": {"$ref": "#/$defs/run_configuration"},
+        "campaign_progress": {"$ref": "#/$defs/campaign_progress"},
+        "player_resources": {"$ref": "#/$defs/player_resources"},
+        "deck_and_piles": {"$ref": "#/$defs/deck_and_piles"},
+        "card_instances": {"$ref": "#/$defs/card_instances"},
+        "relics": {"$ref": "#/$defs/relics"},
+        "potions": {"$ref": "#/$defs/potions"},
+        "combat_turn": {"$ref": "#/$defs/combat_turn"},
+        "powers": {"$ref": "#/$defs/powers"},
+        "enemies_and_intents": {"$ref": "#/$defs/enemies_and_intents"},
+        "pending_effects": {"$ref": "#/$defs/pending_effects"}
+      },
+      "required": [
+        "seed_and_rng",
+        "run_configuration",
+        "campaign_progress",
+        "player_resources",
+        "deck_and_piles",
+        "card_instances",
+        "relics",
+        "potions",
+        "combat_turn",
+        "powers",
+        "enemies_and_intents",
+        "pending_effects"
+      ],
+      "additionalProperties": false
+    },
+    "seed_and_rng": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "master_seed": {"$ref": "#/$defs/identifier"},
+                "derivation_version": {"$ref": "#/$defs/identifier"},
+                "streams": {
+                  "description": "Every gameplay-affecting RNG stream in producer order. Stream identities must be distinct; the typed parser enforces that.",
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {"$ref": "#/$defs/rng_stream"}
+                }
+              },
+              "required": ["master_seed", "derivation_version", "streams"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "rng_stream": {
+      "type": "object",
+      "properties": {
+        "stream_id": {"$ref": "#/$defs/identifier"},
+        "algorithm": {"$ref": "#/$defs/identifier"},
+        "cursor": {"$ref": "#/$defs/uint64"},
+        "state_words": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {"$ref": "#/$defs/uint64"}
+        }
+      },
+      "required": ["stream_id", "algorithm", "cursor", "state_words"],
+      "additionalProperties": false
+    },
+    "run_configuration": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "character": {"$ref": "#/$defs/identifier"},
+                "ascension": {"$ref": "#/$defs/count"},
+                "mode": {"$ref": "#/$defs/identifier"},
+                "act_sequence": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "items": {"$ref": "#/$defs/identifier"}
+                },
+                "modifiers": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "items": {"$ref": "#/$defs/identifier"}
+                }
+              },
+              "required": ["character", "ascension", "mode", "act_sequence", "modifiers"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "campaign_progress": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "act_index": {"$ref": "#/$defs/count"},
+                "floor": {"$ref": "#/$defs/count"},
+                "current_node": {"$ref": "#/$defs/identifier"},
+                "room_kind": {"$ref": "#/$defs/identifier"},
+                "visited_nodes": {
+                  "type": "array",
+                  "maxItems": 256,
+                  "items": {"$ref": "#/$defs/identifier"}
+                }
+              },
+              "required": ["act_index", "floor", "current_node", "room_kind", "visited_nodes"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "player_resources": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "current_hp": {"$ref": "#/$defs/count"},
+                "max_hp": {"$ref": "#/$defs/count"},
+                "gold": {"$ref": "#/$defs/count"},
+                "keys": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {"$ref": "#/$defs/identifier"}
+                }
+              },
+              "required": ["current_hp", "max_hp", "gold", "keys"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "card_reference_list": {
+      "description": "Ordered card instance references; every reference must resolve to a card_instances entry (typed parser rule).",
+      "type": "array",
+      "maxItems": 1024,
+      "items": {"$ref": "#/$defs/identifier"}
+    },
+    "deck_and_piles": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "deck": {"$ref": "#/$defs/card_reference_list"},
+                "piles": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "pile_id": {"$ref": "#/$defs/identifier"},
+                      "cards": {"$ref": "#/$defs/card_reference_list"}
+                    },
+                    "required": ["pile_id", "cards"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["deck", "piles"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "card_instances": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "cards": {
+                  "type": "array",
+                  "maxItems": 1024,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "instance_id": {"$ref": "#/$defs/identifier"},
+                      "definition_id": {"$ref": "#/$defs/identifier"},
+                      "upgrade_level": {"$ref": "#/$defs/count"},
+                      "temporary_values": {
+                        "type": "array",
+                        "maxItems": 32,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {"$ref": "#/$defs/identifier"},
+                            "value": {"$ref": "#/$defs/safe_integer"}
+                          },
+                          "required": ["key", "value"],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": ["instance_id", "definition_id", "upgrade_level", "temporary_values"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["cards"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "relics": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "relics": {
+                  "type": "array",
+                  "maxItems": 128,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "relic_id": {"$ref": "#/$defs/identifier"},
+                      "counter": {"$ref": "#/$defs/safe_integer"}
+                    },
+                    "required": ["relic_id", "counter"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["relics"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "potions": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "capacity": {"$ref": "#/$defs/count"},
+                "slots": {
+                  "type": "array",
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "index": {"$ref": "#/$defs/count"},
+                      "potion_id": {"$ref": "#/$defs/identifier"}
+                    },
+                    "required": ["index", "potion_id"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["capacity", "slots"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "combat_turn": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "turn": {"$ref": "#/$defs/count"},
+                "energy": {"$ref": "#/$defs/count"},
+                "player_block": {"$ref": "#/$defs/count"}
+              },
+              "required": ["turn", "energy", "player_block"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "powers": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "powers": {
+                  "type": "array",
+                  "maxItems": 256,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "owner": {"$ref": "#/$defs/identifier"},
+                      "power_id": {"$ref": "#/$defs/identifier"},
+                      "amount": {"$ref": "#/$defs/safe_integer"}
+                    },
+                    "required": ["owner", "power_id", "amount"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["powers"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "enemies_and_intents": {
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "enemies": {
+                  "type": "array",
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "enemy_id": {"$ref": "#/$defs/identifier"},
+                      "current_hp": {"$ref": "#/$defs/count"},
+                      "max_hp": {"$ref": "#/$defs/count"},
+                      "block": {"$ref": "#/$defs/count"},
+                      "intents": {
+                        "type": "array",
+                        "maxItems": 8,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "intent_id": {"$ref": "#/$defs/identifier"},
+                            "value": {"$ref": "#/$defs/safe_integer"}
+                          },
+                          "required": ["intent_id", "value"],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": ["enemy_id", "current_hp", "max_hp", "block", "intents"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["enemies"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "pending_effects": {
+      "description": "A supported boundary admits capture only after host effects settle, so the pending-effect list is closed to empty in v1; any outstanding effect is an unsafe boundary. Declared external inputs record the controlled-input mode without carrying their values.",
+      "oneOf": [
+        {"$ref": "#/$defs/uncovered"},
+        {
+          "type": "object",
+          "properties": {
+            "coverage": {"const": "captured"},
+            "value": {
+              "type": "object",
+              "properties": {
+                "pending_effects": {
+                  "type": "array",
+                  "maxItems": 0,
+                  "items": {"$ref": "#/$defs/identifier"}
+                },
+                "external_inputs": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "input_id": {"$ref": "#/$defs/identifier"},
+                      "mode": {"enum": ["controlled", "absent"]}
+                    },
+                    "required": ["input_id", "mode"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["pending_effects", "external_inputs"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["coverage", "value"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
