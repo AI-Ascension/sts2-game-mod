@@ -23,15 +23,36 @@ pub(crate) fn runtime_operation_response(
     }
     let kind = request["kind"].as_str().unwrap_or_default();
     if kind == "operation_intent_request" {
-        runtime.remember_pending(operation_id, Value::Object(operation.clone()));
+        let pending = Value::Object(operation.clone());
+        let inserted = match runtime.remember_pending(operation_id, pending.clone()) {
+            Ok(inserted) => inserted,
+            Err(error) => return (409, error_json(&error)),
+        };
         return (
             200,
-            operation_frame(request, "INTENT_RECORDED", Value::Object(operation.clone())),
+            operation_frame(
+                request,
+                if inserted {
+                    "INTENT_RECORDED"
+                } else {
+                    "DUPLICATE"
+                },
+                runtime.pending_operation(operation_id).unwrap_or(pending),
+            ),
         );
     }
     let Some(pending) = runtime.pending_operation(operation_id) else {
         return (404, error_json("recovery_operation_not_found"));
     };
+    if !operation_reference_matches(&pending, operation) {
+        return (409, error_json("recovery_operation_conflict"));
+    }
+    if pending["state"].as_str() == Some("SETTLED")
+        && pending["ticket"].is_object()
+        && pending["witness"].is_object()
+    {
+        return (200, operation_frame(request, "DUPLICATE", pending));
+    }
     let expected = pending["expected_boundary"].clone();
     let Some(generation) = expected["generation"].as_u64() else {
         return (400, Vec::new());
@@ -64,13 +85,16 @@ pub(crate) fn runtime_operation_response(
         } else {
             "UNKNOWN"
         };
+        let host_operation = with_host_operation(&pending, host_status, None, None);
+        if let Err(error) = runtime.remember_pending(operation_id, host_operation.clone()) {
+            return (
+                503,
+                error_json(&format!("recovery_pending_persist_failed:{error}")),
+            );
+        }
         return (
             if host_status == "UNKNOWN" { 503 } else { 200 },
-            operation_frame(
-                request,
-                host_status,
-                with_host_operation(&pending, None, None),
-            ),
+            operation_frame(request, host_status, host_operation),
         );
     }
     let effect_digest = digest(
@@ -104,9 +128,23 @@ pub(crate) fn runtime_operation_response(
         "effect_digest": effect_digest,
         "observed_at": timestamp(),
     });
-    let host_operation = with_host_operation(&pending, Some(ticket), Some(witness));
-    runtime.remember_pending(operation_id, host_operation.clone());
+    let host_operation = with_host_operation(&pending, "SETTLED", Some(ticket), Some(witness));
+    if let Err(error) = runtime.remember_pending(operation_id, host_operation.clone()) {
+        return (
+            503,
+            error_json(&format!("recovery_pending_persist_failed:{error}")),
+        );
+    }
     (200, operation_frame(request, "SETTLED", host_operation))
+}
+
+fn operation_reference_matches(
+    pending: &Value,
+    reference: &serde_json::Map<String, Value>,
+) -> bool {
+    pending["operation_id"] == reference["operation_id"]
+        && pending["payload_digest"] == reference["payload_digest"]
+        && pending["original_context"] == reference["original_context"]
 }
 
 fn operation_owner_matches(
@@ -123,15 +161,14 @@ fn operation_owner_matches(
         && context["lease_epoch"].as_u64() == Some(owner.fence.lease_epoch())
 }
 
-fn with_host_operation(pending: &Value, ticket: Option<Value>, witness: Option<Value>) -> Value {
+fn with_host_operation(
+    pending: &Value,
+    state: &str,
+    ticket: Option<Value>,
+    witness: Option<Value>,
+) -> Value {
     let mut operation = pending.clone();
-    operation["state"] = Value::String(if witness.is_some() {
-        "SETTLED".to_owned()
-    } else if ticket.is_some() {
-        "ACCEPTED".to_owned()
-    } else {
-        "REJECTED".to_owned()
-    });
+    operation["state"] = Value::String(state.to_owned());
     operation["ticket"] = ticket.unwrap_or(Value::Null);
     operation["witness"] = witness.unwrap_or(Value::Null);
     operation
@@ -196,4 +233,106 @@ fn decode_base64_no_pad(value: &str) -> Option<Vec<u8>> {
 
 fn error_json(code: &str) -> Vec<u8> {
     serde_json::to_vec(&json!({"error_code": code})).unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::TransportConfig;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn state() -> (RuntimeV3State, TransportConfig, std::path::PathBuf) {
+        let transport = TransportConfig {
+            principal: "harness".into(),
+            token: "token".into(),
+            instance_id: "instance-1".into(),
+            session_id: "session-1".into(),
+            lease_id: "lease-1".into(),
+            lease_epoch: 1,
+        };
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("sts2-runtime-v3-pending-{suffix}"));
+        std::fs::create_dir_all(&path).expect("store");
+        (
+            RuntimeV3State::open(transport.clone(), path.clone()).expect("state"),
+            transport,
+            path,
+        )
+    }
+
+    fn operation() -> Value {
+        json!({
+            "operation_id": "operation-1",
+            "payload_digest": "sha256:payload",
+            "original_context": {
+                "deployment_id": "deployment-1",
+                "instance_id": "instance-1",
+                "instance_incarnation": "incarnation-1",
+                "boot_id": "boot-1",
+                "authority_generation": 1,
+                "lease_id": "lease-1",
+                "lease_epoch": 1
+            },
+            "expected_boundary": {
+                "state_id": STATE_ID,
+                "generation": 0,
+                "catalog_digest": "catalog-1"
+            },
+            "action": {
+                "schema_digest": "schema-1",
+                "canonical_json_b64": "eyJhY3Rpb24iOnsia2luZCI6ImVuZF90dXJuIn0sImFjdGlvbl9pZCI6ImNvbWJhdC5lbmQtdHVybiJ9",
+                "payload_digest": "sha256:payload"
+            }
+        })
+    }
+
+    #[test]
+    fn pending_operation_replays_after_restart_and_rejects_mutation() {
+        let (mut runtime, transport, path) = state();
+        let pending = operation();
+        assert!(
+            runtime
+                .remember_pending("operation-1", pending.clone())
+                .expect("persist pending")
+        );
+        assert!(
+            !runtime
+                .remember_pending("operation-1", pending.clone())
+                .expect("duplicate pending")
+        );
+
+        let mut reopened = RuntimeV3State::open(transport.clone(), path.clone()).expect("reopen");
+        assert_eq!(
+            reopened.pending_operation("operation-1"),
+            Some(pending.clone())
+        );
+        let dispatch = json!({
+            "kind": "dispatch_action_request",
+            "operation_id": "operation-1",
+            "generation": 0,
+            "state_id": STATE_ID,
+            "action": {
+                "action_id": "combat.end-turn",
+                "action": {"kind": "end_turn"}
+            }
+        });
+        assert_eq!(reopened.dispatch_operation(dispatch)["status"], "settled");
+        let ledger: Value = serde_json::from_slice(
+            &std::fs::read(path.join("runtime-v3-effects.json")).expect("ledger"),
+        )
+        .expect("ledger json");
+        assert_eq!(ledger["action_count"], 1);
+
+        let mut conflict = pending;
+        conflict["payload_digest"] = json!("sha256:changed");
+        assert!(
+            reopened
+                .remember_pending("operation-1", conflict)
+                .expect_err("conflict")
+                .contains("conflict")
+        );
+    }
 }

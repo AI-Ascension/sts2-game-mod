@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+//
+//! Bounded test-only Runtime-v3 peer used by the actual Gateway/MCP fixture.
+//! It records one legal end-turn effect and persists host operation intent.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -18,6 +21,7 @@ pub(super) const EFFECT_KIND: &str = "combat.end-turn_settled";
 pub(crate) struct RuntimeV3State {
     transport: TransportConfig,
     store_path: PathBuf,
+    pending_path: PathBuf,
     generation: u64,
     operations: BTreeMap<String, Operation>,
     pending_operations: BTreeMap<String, Value>,
@@ -34,6 +38,7 @@ struct Operation {
 impl RuntimeV3State {
     pub(crate) fn open(transport: TransportConfig, store_dir: PathBuf) -> Result<Self, String> {
         let store_path = store_dir.join("runtime-v3-effects.json");
+        let pending_path = store_dir.join("runtime-v3-pending.json");
         let operations: BTreeMap<String, Operation> =
             if store_path.exists() {
                 let size = std::fs::metadata(&store_path)
@@ -105,6 +110,7 @@ impl RuntimeV3State {
             } else {
                 BTreeMap::new()
             };
+        let pending_operations = super::runtime_v3_pending::load(&pending_path)?;
         let generation = operations
             .values()
             .next()
@@ -112,15 +118,24 @@ impl RuntimeV3State {
         Ok(Self {
             transport,
             store_path,
+            pending_path,
             generation,
             operations,
-            pending_operations: BTreeMap::new(),
+            pending_operations,
         })
     }
 
-    pub(crate) fn remember_pending(&mut self, operation_id: &str, operation: Value) {
-        self.pending_operations
-            .insert(operation_id.to_owned(), operation);
+    pub(crate) fn remember_pending(
+        &mut self,
+        operation_id: &str,
+        operation: Value,
+    ) -> Result<bool, String> {
+        super::runtime_v3_pending::remember(
+            &mut self.pending_operations,
+            &self.pending_path,
+            operation_id,
+            operation,
+        )
     }
 
     pub(crate) fn pending_operation(&self, operation_id: &str) -> Option<Value> {
