@@ -359,7 +359,6 @@ impl RuntimeV3State {
                 operation_id,
             );
             response["kind"] = Value::String("wait_response".to_owned());
-            response["wait_for_millis"] = request["wait_for_millis"].clone();
             response["wait_outcome"] = Value::String("successor".to_owned());
             return response;
         }

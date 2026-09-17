@@ -116,6 +116,21 @@ fn observe_dispatch_wait_persists_one_settled_effect() {
 }
 
 #[test]
+fn unknown_wait_requires_recovery_without_echoing_request_timeout() {
+    let (mut state, transport, _path) = fixture();
+    let wait = json!({
+        "kind":"wait_request","correlation_id":"corr-unknown",
+        "operation_id":"missing","wait_for_millis":1000
+    });
+    let (status, body) = state.handle(&request(&transport, "/api/v3/runtime/wait", wait, false));
+    assert_eq!(status, 200);
+    let response: Value = serde_json::from_slice(&body).expect("response");
+    assert_eq!(response["status"], "unknown");
+    assert_eq!(response["wait_outcome"], "recovery_required");
+    assert!(response["wait_for_millis"].is_null());
+}
+
+#[test]
 fn stale_fence_is_rejected_without_effect() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
