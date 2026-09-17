@@ -72,6 +72,7 @@ public static partial class ModEntry
                         $"native smoke call failed: status={status}, result={sum}");
                 }
                 _ = NativeLibrary.GetExport(candidate, "sts2_game_mod_content_manifest_produce");
+                _ = NativeLibrary.GetExport(candidate, "sts2_game_mod_content_index_query");
 
                 _nativeLibrary = candidate;
                 candidate = 0;

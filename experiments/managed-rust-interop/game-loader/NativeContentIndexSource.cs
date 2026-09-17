@@ -31,6 +31,14 @@ internal sealed record NativeContentIndexSnapshot(
     string Locale,
     IReadOnlyList<NativeContentIndexDefinition> Definitions);
 
+/// <summary>
+/// One canonical index capture plus the exact owned source JSON used to produce its manifest.
+/// The source JSON is retained only for the native query bridge and is never emitted directly.
+/// </summary>
+internal sealed record NativeContentIndexCapture(
+    NativeContentIndexSnapshot Snapshot,
+    string SourceJson);
+
 internal static partial class NativeContentCatalogManifestSource
 {
     private const int MaxIndexDefinitions = 16_384;
@@ -42,7 +50,22 @@ internal static partial class NativeContentCatalogManifestSource
         string locale,
         out NativeContentIndexSnapshot snapshot)
     {
+        if (TryCaptureCanonicalContentIndexWithSource(
+                correlationId, locale, out NativeContentIndexCapture capture))
+        {
+            snapshot = capture.Snapshot;
+            return true;
+        }
         snapshot = null!;
+        return false;
+    }
+
+    internal static bool TryCaptureCanonicalContentIndexWithSource(
+        string correlationId,
+        string locale,
+        out NativeContentIndexCapture capture)
+    {
+        capture = null!;
         if (!ContentManifestWireContract.ValidIdentity(correlationId)
             || !ContentManifestWireContract.ValidLocale(locale))
         {
@@ -124,12 +147,14 @@ internal static partial class NativeContentCatalogManifestSource
             if (manifestKeys.Count != 0)
                 return false;
 
-            snapshot = new NativeContentIndexSnapshot(manifestId, locale, definitions);
+            capture = new NativeContentIndexCapture(
+                new NativeContentIndexSnapshot(manifestId, locale, definitions),
+                sourceJson);
             return true;
         }
         catch (Exception)
         {
-            snapshot = null!;
+            capture = null!;
             return false;
         }
     }

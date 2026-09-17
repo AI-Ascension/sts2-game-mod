@@ -11,6 +11,7 @@ const STATUS_OK: i32 = 0;
 const STATUS_NULL_OUTPUT: i32 = 1;
 const STATUS_OVERFLOW: i32 = 2;
 
+mod content_index_ffi;
 mod content_manifest_ffi;
 #[cfg(test)]
 mod content_manifest_semantic_tests;
