@@ -45,6 +45,8 @@ internal static class Program
         Check(snapshot.Cards[0].Location.Value.Zone == LiveCardZone.Hand
             && snapshot.Cards[1].Location.Value.Position == 3,
             "copies source zone and position evidence");
+        Check(snapshot.StateGeneration == 42,
+            "preserves the gameplay observation generation separately from the source epoch");
         Check(registry.IsCurrent(snapshot, "instance:1", "manifest:1"),
             "the captured owner-local read fence is current");
 
@@ -105,12 +107,13 @@ internal static class Program
             DefinitionManifest = LiveCardField<string>.NotObserved()
         };
         LiveCardCapturedSnapshot missing = registry.Capture(
-            "instance:1", new object(), "missing", "manifest:1", new[] { missingManifest });
+            "instance:1", new object(), "missing", "manifest:1", 42,
+            new[] { missingManifest });
         Check(!missing.Available && missing.UnavailableReason == "required_card_field_unavailable",
             "a missing required binding field fails closed");
 
         LiveCardCapturedSnapshot mismatched = registry.Capture(
-            "instance:1", new object(), "mismatch", "manifest:1",
+            "instance:1", new object(), "mismatch", "manifest:1", 42,
             new[] { Input(new object(), "card:alpha", LiveCardZone.Hand, 0)
                 with { DefinitionManifest = LiveCardField<string>.Available("manifest:other") } });
         Check(!mismatched.Available && mismatched.UnavailableReason == "content_manifest_mismatch",
@@ -142,9 +145,36 @@ internal static class Program
         }
 
         LiveCardCapturedSnapshot snapshot = registry.Capture(
-            "instance:1", new object(), "bounded", "manifest:1", cards);
+            "instance:1", new object(), "bounded", "manifest:1", 42, cards);
         Check(!snapshot.Available && snapshot.UnavailableReason == "card_count_exceeded",
             "card-count bound rejects an oversized capture");
+
+        LiveCardCaptureInput oversizedList = Input(
+            new object(), "card:list", LiveCardZone.Deck, 0) with
+        {
+            Flags = LiveCardField<IReadOnlyList<string>>.Available(
+                new[] { new string('x', LiveCardSnapshotRegistry.MaxIdentityBytes + 1) })
+        };
+        LiveCardCapturedSnapshot listResult = registry.Capture(
+            "instance:1", new object(), "oversized-list", "manifest:1", 42,
+            new[] { oversizedList });
+        Check(!listResult.Available && listResult.UnavailableReason == "card_field_bound_exceeded",
+            "auxiliary list values enforce a byte bound");
+
+        LiveCardCaptureInput oversizedMap = Input(
+            new object(), "card:map", LiveCardZone.Deck, 0) with
+        {
+            EffectParameters = LiveCardField<IReadOnlyDictionary<string, string>>.Available(
+                new Dictionary<string, string>
+                {
+                    ["effect"] = new string('x', LiveCardSnapshotRegistry.MaxIdentityBytes + 1)
+                })
+        };
+        LiveCardCapturedSnapshot mapResult = registry.Capture(
+            "instance:1", new object(), "oversized-map", "manifest:1", 42,
+            new[] { oversizedMap });
+        Check(!mapResult.Available && mapResult.UnavailableReason == "card_field_bound_exceeded",
+            "effect parameter values enforce a byte bound");
     }
 
     private static LiveCardCapturedSnapshot Capture(
@@ -152,7 +182,7 @@ internal static class Program
         object runHandle,
         string runKey,
         params LiveCardCaptureInput[] cards) =>
-        registry.Capture("instance:1", runHandle, runKey, "manifest:1", cards);
+        registry.Capture("instance:1", runHandle, runKey, "manifest:1", 42, cards);
 
     private static LiveCardCaptureInput Input(
         object hostCard,
@@ -170,7 +200,7 @@ internal static class Program
             LiveCardField<string>.NotObserved(),
             LiveCardField<string>.Available("Fixture Card"),
             LiveCardField<bool>.Available(false),
-            LiveCardField<int>.Available(1),
+            LiveCardField<int>.NotObserved(),
             LiveCardField<int>.NotObserved(),
             LiveCardField<int>.Available(1),
             LiveCardField<IReadOnlyList<string>>.NotObserved(),

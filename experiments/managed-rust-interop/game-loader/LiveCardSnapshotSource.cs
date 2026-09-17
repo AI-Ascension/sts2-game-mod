@@ -100,11 +100,12 @@ internal sealed record LiveCardCapturedSnapshot(
     string RunId,
     string SnapshotId,
     ulong Epoch,
+    ulong StateGeneration,
     IReadOnlyList<LiveCardCapturedCard> Cards,
     bool Available,
     string? UnavailableReason)
 {
     internal static LiveCardCapturedSnapshot Unavailable(string reason) =>
-        new(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 0,
+        new(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 0, 0,
             Array.Empty<LiveCardCapturedCard>(), false, reason);
 }

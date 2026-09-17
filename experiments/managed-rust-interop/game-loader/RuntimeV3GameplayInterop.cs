@@ -20,6 +20,7 @@ public static partial class ModEntry
     {
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
         _liveCardSourceReader = null;
+        _liveCardBinding = null;
         _runtimeV4Expert = RuntimeV4ExpertSupport.Unconfigured();
         _runtimeV4ExpertRest = RuntimeV4ExpertRestActionSupport.Unconfigured();
     }

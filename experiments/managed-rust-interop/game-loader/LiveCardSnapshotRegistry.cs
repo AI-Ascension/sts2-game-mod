@@ -15,7 +15,7 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// Bounded source-owned occurrence registry. CardModel reference identity is used only as an
 /// in-thread lifetime handle; no object hash or host pointer is emitted as an ID.
 /// </summary>
-internal sealed class LiveCardSnapshotRegistry
+internal sealed partial class LiveCardSnapshotRegistry
 {
     internal const int MaxCards = 512;
     internal const int MaxIdentityBytes = 256;
@@ -37,6 +37,7 @@ internal sealed class LiveCardSnapshotRegistry
         object runHandle,
         string runKey,
         string contentManifest,
+        ulong stateGeneration,
         IReadOnlyList<LiveCardCaptureInput> cards)
     {
         if (!ValidIdentity(instanceId) || !ValidIdentity(contentManifest) || runHandle is null)
@@ -45,12 +46,15 @@ internal sealed class LiveCardSnapshotRegistry
             return LiveCardCapturedSnapshot.Unavailable("run_identity_unavailable");
         if (cards.Count > MaxCards)
             return LiveCardCapturedSnapshot.Unavailable("card_count_exceeded");
+        if (stateGeneration > 9_007_199_254_740_991UL)
+            return LiveCardCapturedSnapshot.Unavailable("state_generation_exhausted");
 
         if (_invalidated || _runHandle is null || !ReferenceEquals(_runHandle, runHandle)
             || _runKey is null || !string.Equals(_runKey, runKey,
                 StringComparison.Ordinal))
         {
-            RotateRun(runHandle, runKey);
+            if (!TryRotateRun(runHandle, runKey))
+                return LiveCardCapturedSnapshot.Unavailable("run_incarnation_exhausted");
         }
 
         var seen = new HashSet<object>(ReferenceEqualityComparer.Instance);
@@ -139,6 +143,7 @@ internal sealed class LiveCardSnapshotRegistry
             runId,
             snapshotId,
             _epoch,
+            stateGeneration,
             new ReadOnlyCollection<LiveCardCapturedCard>(captured),
             true,
             null);
@@ -153,6 +158,11 @@ internal sealed class LiveCardSnapshotRegistry
         _occurrences.Clear();
         _runHandle = null;
         _runKey = null;
+        if (_runIncarnation == ulong.MaxValue)
+        {
+            _invalidated = true;
+            return;
+        }
         _runIncarnation++;
         _invalidated = true;
     }
@@ -174,86 +184,17 @@ internal sealed class LiveCardSnapshotRegistry
                 + Digest(_runKey),
             StringComparison.Ordinal);
 
-    private void RotateRun(object runHandle, string runKey)
+    private bool TryRotateRun(object runHandle, string runKey)
     {
+        if (_runIncarnation == ulong.MaxValue)
+            return false;
         _occurrences.Clear();
         _runHandle = runHandle;
         _runKey = runKey;
         _runIncarnation++;
         _nextOccurrence = 0;
         _invalidated = false;
+        return true;
     }
 
-    private static bool RequiredFieldAvailable<T>(LiveCardField<T> field) =>
-        field.Status == LiveCardFieldStatus.Available;
-
-    private static bool ValidFieldIdentity(LiveCardField<string> field) =>
-        field.Status != LiveCardFieldStatus.Available
-            || field.Value is not null && ValidIdentity(field.Value);
-
-    private static bool ValidFieldText(LiveCardField<string> field) =>
-        field.Status != LiveCardFieldStatus.Available
-            || field.Value is not null && Encoding.UTF8.GetByteCount(field.Value) <= MaxTitleBytes
-                && !field.Value.Any(char.IsControl);
-
-    private static LiveCardField<IReadOnlyList<string>> CopyListField(
-        LiveCardField<IReadOnlyList<string>> field)
-    {
-        if (field.Status != LiveCardFieldStatus.Available || field.Value is null)
-            return new(field.Status, default!);
-        string[] values = field.Value.ToArray();
-        return LiveCardField<IReadOnlyList<string>>.Available(
-            new ReadOnlyCollection<string>(values));
-    }
-
-    private static LiveCardField<IReadOnlyDictionary<string, string>> CopyMapField(
-        LiveCardField<IReadOnlyDictionary<string, string>> field)
-    {
-        if (field.Status != LiveCardFieldStatus.Available || field.Value is null)
-            return new(field.Status, default!);
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach ((string key, string value) in field.Value)
-        {
-            if (!ValidIdentity(key) || value is null || value.Any(char.IsControl))
-                return LiveCardField<IReadOnlyDictionary<string, string>>.Failed();
-            values.Add(key, value);
-        }
-        return LiveCardField<IReadOnlyDictionary<string, string>>.Available(
-            new ReadOnlyDictionary<string, string>(values));
-    }
-
-    private static bool ValidIdentity(string value) =>
-        !string.IsNullOrEmpty(value)
-        && Encoding.UTF8.GetByteCount(value) <= MaxIdentityBytes
-        && value.All(character => char.IsAsciiLetterOrDigit(character)
-            || character is '.' or ':' or '/' or '_' or '-');
-
-    private static string Digest(string value) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)))
-            .ToLowerInvariant();
-
-    private static bool BoundedCollection<T>(LiveCardField<IReadOnlyList<T>> field) =>
-        field.Status != LiveCardFieldStatus.Available
-        || field.Value is not null && field.Value.Count <= MaxAuxiliaryEntries;
-
-    private static bool BoundedMap(
-        LiveCardField<IReadOnlyDictionary<string, string>> field) =>
-        field.Status != LiveCardFieldStatus.Available
-        || field.Value is not null && field.Value.Count <= MaxAuxiliaryEntries;
-
-    private static string CreateSourceNonce()
-    {
-        Span<byte> bytes = stackalloc byte[12];
-        RandomNumberGenerator.Fill(bytes);
-        return Convert.ToHexString(bytes).ToLowerInvariant();
-    }
-
-    private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
-    {
-        internal static readonly ReferenceEqualityComparer Instance = new();
-
-        public new bool Equals(object? left, object? right) => ReferenceEquals(left, right);
-
-        public int GetHashCode(object value) => RuntimeHelpers.GetHashCode(value);
-    }
 }

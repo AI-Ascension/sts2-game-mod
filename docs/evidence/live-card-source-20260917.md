@@ -15,17 +15,18 @@ references while they remain in one source-owned run incarnation. The emitted ID
 per-source lifetime nonce, run incarnation, and bounded ordinal; object hashes and host pointers
 never cross the boundary. A run stop, source invalidation, changed `RunState` reference, or
 changed run key clears the handle table and rotates the incarnation. Every successful capture
-advances a source-owned epoch and emits a new snapshot identity. The same seed after invalidation
-or a recreated source therefore cannot reuse a prior card occurrence.
+advances a source-owned epoch and emits a new snapshot identity while retaining the gameplay
+observation generation from the existing runtime-v3 source as a separate field. The same seed
+after invalidation or a recreated source therefore cannot reuse a prior card occurrence.
 
 The managed capture currently copies the fields that the installed host adapter already observes:
 card definition entry, content-manifest input, player owner identity, hand/deck/discard/exhaust
 zone and position, upgrade level, title, upgraded flag, and resolved current cost. Base cost,
 effective-cost provenance, upgrade variant/path, modifiers, flags, and effect-parameter overrides
-remain explicit
-`not_observed` fields. A missing required definition, manifest, owner, location, or upgrade field
-rejects the whole capture rather than publishing an incomplete identity fence. Unobservable
-collections are never represented as empty values.
+remain explicit `not_observed` fields. A missing required definition, manifest, owner, location,
+or upgrade field rejects the whole capture rather than publishing an incomplete identity fence.
+Card collection size, auxiliary collection size, and auxiliary string byte bounds are enforced
+before publication. Unobservable collections are never represented as empty values.
 
 ## Evidence and limits
 
@@ -36,8 +37,16 @@ rejection, explicit unavailable statuses, and the card-count bound. Those tests 
 external STS2 process, host assembly compatibility, native interop delivery, or a stable native
 CardModel occurrence ID.
 
-The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable only until a
-versioned mapping is agreed. The managed DTO is intended to be mapped later by that owner; it is
-not a protocol or gateway capability claim. The adapter returns an unavailable result if the host
-callback cannot complete synchronously. Exact host execution and any native snapshot/restore
-source remain unverified.
+The native listener now admits a fixed `POST /api/v1/game-information/live-observation-bootstrap`
+route and dispatches a dedicated callback kind. The managed route parser is pinned to the
+candidate bootstrap schema digest. It exports the workflow run namespace only after an
+authenticated lookup-binding association matches the current source incarnation and native run
+handle; the source-owned native run ID remains internal. The explicit invalidation hook is
+available to restore/session owners, while wiring every host lifecycle event remains unverified.
+The current content-manifest producer is unavailable, so no native route success is claimed.
+
+The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable until a versioned
+mapping is agreed. The managed DTO is intended to be mapped by that owner; it is not a protocol
+or gateway capability claim. The adapter returns an unavailable result if the host callback cannot
+complete synchronously. Exact host execution and any native snapshot/restore source remain
+unverified.

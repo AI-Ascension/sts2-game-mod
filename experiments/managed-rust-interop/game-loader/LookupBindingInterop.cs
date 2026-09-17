@@ -69,6 +69,12 @@ public static partial class ModEntry
                     ["content_revision"] = "sts2-game-mod"
                 }
             };
+            LiveCardCapturedSnapshot liveSnapshot = ReadLiveCardSnapshot(
+                context.InstanceId, manifest.ContentManifestId);
+            if (liveSnapshot.Available)
+            {
+                AssociateLiveCardBinding(context, root, liveSnapshot);
+            }
             if (root.GetProperty("operation").GetString() == "discovery")
             {
                 return (200, LookupBindingResponse(context, "lookup_binding_discovery_response",

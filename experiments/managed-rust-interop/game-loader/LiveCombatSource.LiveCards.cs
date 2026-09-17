@@ -40,20 +40,25 @@ internal sealed partial class LiveCombatSource
                 return LiveCardCapturedSnapshot.Unavailable("player_source_unavailable");
             }
 
+            ulong stateGeneration = Observe().Generation;
             var cards = new List<LiveCardCaptureInput>();
             if (player.PlayerCombatState is { } combat)
             {
-                AddCards(cards, combat.Hand.Cards, LiveCardZone.Hand, player, contentManifest);
-                AddCards(cards, combat.DiscardPile.Cards, LiveCardZone.Discard, player,
-                    contentManifest);
-                AddCards(cards, combat.ExhaustPile.Cards, LiveCardZone.Exhaust, player,
-                    contentManifest);
+                if (!AddCards(cards, combat.Hand.Cards, LiveCardZone.Hand, player,
+                        contentManifest)
+                    || !AddCards(cards, combat.DiscardPile.Cards, LiveCardZone.Discard, player,
+                        contentManifest)
+                    || !AddCards(cards, combat.ExhaustPile.Cards, LiveCardZone.Exhaust, player,
+                        contentManifest))
+                    return LiveCardCapturedSnapshot.Unavailable("card_count_exceeded");
             }
-            AddCards(cards, player.Deck.Cards, LiveCardZone.Deck, player, contentManifest);
+            if (!AddCards(cards, player.Deck.Cards, LiveCardZone.Deck, player, contentManifest))
+                return LiveCardCapturedSnapshot.Unavailable("card_count_exceeded");
 
             string runKey = $"{run.GameMode}|{run.Rng.StringSeed}|"
                 + $"{player.NetId.ToString(CultureInfo.InvariantCulture)}";
-            return _liveCardRegistry.Capture(instanceId, run, runKey, contentManifest, cards);
+            return _liveCardRegistry.Capture(
+                instanceId, run, runKey, contentManifest, stateGeneration, cards);
         }
         catch (Exception)
         {
@@ -70,9 +75,10 @@ internal sealed partial class LiveCombatSource
     {
         RequireThread();
         _liveCardRegistry.Invalidate();
+        _liveCardBinding = null;
     }
 
-    private static void AddCards(
+    private static bool AddCards(
         ICollection<LiveCardCaptureInput> output,
         IEnumerable<CardModel> cards,
         LiveCardZone zone,
@@ -82,6 +88,8 @@ internal sealed partial class LiveCombatSource
         int position = 0;
         foreach (CardModel card in cards)
         {
+            if (output.Count >= LiveCardSnapshotRegistry.MaxCards)
+                return false;
             int resolvedCost = card.EnergyCost.GetResolved();
             LiveCardField<int> cost = resolvedCost >= 0
                 ? LiveCardField<int>.Available(resolvedCost)
@@ -112,5 +120,6 @@ internal sealed partial class LiveCombatSource
                 LiveCardField<IReadOnlyDictionary<string, string>>.NotObserved()));
             position++;
         }
+        return true;
     }
 }

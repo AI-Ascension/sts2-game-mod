@@ -9,5 +9,7 @@
   <ItemGroup>
     <Compile Include="../game-loader/LiveCardSnapshotSource.cs" Link="LiveCardSnapshotSource.cs" />
     <Compile Include="../game-loader/LiveCardSnapshotRegistry.cs" Link="LiveCardSnapshotRegistry.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotRegistry.Helpers.cs"
+             Link="LiveCardSnapshotRegistry.Helpers.cs" />
   </ItemGroup>
 </Project>

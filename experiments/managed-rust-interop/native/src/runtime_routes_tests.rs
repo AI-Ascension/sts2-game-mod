@@ -48,6 +48,60 @@ fn admitted_slash_identity_reaches_operation_lookup_unchanged() -> std::io::Resu
 }
 
 #[test]
+fn live_observation_bootstrap_route_reaches_its_callback() -> std::io::Result<()> {
+    let body = b"{}";
+    let request = format!(
+        concat!(
+            "POST /api/v1/game-information/live-observation-bootstrap HTTP/1.1\r\n",
+            "Authorization: Bearer synthetic\r\n",
+            "Content-Type: application/json\r\nContent-Length: {}\r\n",
+            "X-Sts2-Instance-Id: instance-1\r\nX-Sts2-Caller-Id: caller-1\r\n",
+            "X-Sts2-Session-Id: session-1\r\nX-Sts2-Lease-Id: lease-1\r\n",
+            "X-Sts2-Lease-Epoch: 1\r\nX-Sts2-Correlation-Id: corr-1\r\n",
+            "X-Sts2-Locale: en-US\r\n\r\n"
+        ),
+        body.len()
+    );
+    let mut request = request.into_bytes();
+    request.extend_from_slice(body);
+    let response = endpoint_tests::exchange(&request, echo_operation)?;
+    assert!(response.starts_with("HTTP/1.1 200"));
+    assert!(response.ends_with("{}"));
+    Ok(())
+}
+
+#[test]
+fn live_observation_bootstrap_route_rejects_wrong_method_and_extra_segment() -> std::io::Result<()>
+{
+    for method_path in [
+        ("GET", "/api/v1/game-information/live-observation-bootstrap"),
+        (
+            "POST",
+            "/api/v1/game-information/live-observation-bootstrap/extra",
+        ),
+    ] {
+        let body = if method_path.0 == "POST" { "{}" } else { "" };
+        let request = format!(
+            concat!(
+                "{} {} HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+                "Content-Type: application/json\r\nContent-Length: {}\r\n",
+                "X-Sts2-Instance-Id: instance-1\r\nX-Sts2-Caller-Id: caller-1\r\n",
+                "X-Sts2-Session-Id: session-1\r\nX-Sts2-Lease-Id: lease-1\r\n",
+                "X-Sts2-Lease-Epoch: 1\r\nX-Sts2-Correlation-Id: corr-1\r\n",
+                "X-Sts2-Locale: en-US\r\n\r\n{}"
+            ),
+            method_path.0,
+            method_path.1,
+            body.len(),
+            body
+        );
+        let response = endpoint_tests::exchange(request.as_bytes(), unexpected_callback)?;
+        assert!(response.starts_with("HTTP/1.1 404"));
+    }
+    Ok(())
+}
+
+#[test]
 fn exact_restore_routes_refuse_before_managed_callback_or_staging()
 -> Result<(), Box<dyn std::error::Error>> {
     let fixture: Value = serde_json::from_str(include_str!(
