@@ -35,6 +35,9 @@ public static partial class ModEntry
                 "request_too_large"));
         try
         {
+            if (HasDuplicateJsonKeys(Encoding.UTF8.GetBytes(body)))
+                return (400, GameInformationError(context.CorrelationId, null, "malformed",
+                    "duplicate_key"));
             using JsonDocument document = JsonDocument.Parse(body,
                 new JsonDocumentOptions { MaxDepth = 16, AllowTrailingCommas = false });
             JsonElement root = document.RootElement;
@@ -62,6 +65,9 @@ public static partial class ModEntry
                 || !binding.TryGetProperty("mode", out JsonElement mode))
                 return (400, GameInformationError(context.CorrelationId, null, "malformed",
                     "invalid_query_binding"));
+            if (!ValidLiveQueryShape(query, mode.GetString() == "live"))
+                return (400, GameInformationError(context.CorrelationId, query, "malformed",
+                    "unsupported_query_field"));
 
             // A retained live read is an authority check, never a fresh observation.  The full
             // projection is intentionally unavailable until the content-index owner exposes its
@@ -82,6 +88,48 @@ public static partial class ModEntry
             return (503, GameInformationError(context.CorrelationId, null, "source_unavailable",
                 "query_source_unavailable"));
         }
+    }
+
+    private static bool ValidLiveQueryShape(JsonElement query, bool live)
+    {
+        if (!query.TryGetProperty("entity_kind", out JsonElement entityKind)
+            || entityKind.GetString() != "card"
+            || !query.TryGetProperty("fields", out JsonElement fields)
+            || fields.ValueKind != JsonValueKind.Array
+            || !query.TryGetProperty("limits", out JsonElement limits)
+            || !LimitsAllowShape(limits))
+            return false;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (JsonElement field in fields.EnumerateArray())
+            if (field.ValueKind != JsonValueKind.String
+                || field.GetString() is not ("cost" or "display_name" or "owner")
+                || !seen.Add(field.GetString()!))
+                return false;
+        return live && seen.Count > 0;
+    }
+
+    private static bool LimitsAllowShape(JsonElement limits) =>
+        limits.ValueKind == JsonValueKind.Object
+        && limits.TryGetProperty("item_bytes", out JsonElement item) && item.TryGetInt32(out int itemValue) && itemValue is > 0 and <= 4096
+        && limits.TryGetProperty("page_bytes", out JsonElement page) && page.TryGetInt32(out int pageValue) && pageValue is > 0 and <= 65536
+        && limits.TryGetProperty("page_items", out JsonElement count) && count.TryGetInt32(out int countValue) && countValue is > 0 and <= 32
+        && limits.TryGetProperty("text_bytes", out JsonElement text) && text.TryGetInt32(out int textValue) && textValue is >= 0 and <= 4096;
+
+    private static bool HasDuplicateJsonKeys(byte[] utf8)
+    {
+        var reader = new Utf8JsonReader(utf8, new JsonReaderOptions { MaxDepth = 16 });
+        var members = new Stack<HashSet<string>>();
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.StartObject)
+                members.Push(new HashSet<string>(StringComparer.Ordinal));
+            else if (reader.TokenType == JsonTokenType.EndObject)
+                members.Pop();
+            else if (reader.TokenType == JsonTokenType.PropertyName
+                && (members.Count == 0 || !members.Peek().Add(reader.GetString() ?? string.Empty)))
+                return true;
+        }
+        return false;
     }
 
     private static (int Status, string Response) ProcessLiveDetail(
