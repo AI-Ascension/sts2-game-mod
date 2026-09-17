@@ -48,7 +48,7 @@ internal static partial class NativeContentCatalogManifestSource
             throw new InvalidOperationException("catalog changed during extraction");
         }
         EnsureCountsMatch(independentCounts, independentAfter);
-        string[] secondSemantic = owner.Definitions.Select(definition =>
+        string[] secondSemantic = after.Definitions.Select(definition =>
                 definition.EntityKind == "card"
                     ? CardDefinition(afterCards[(definition.EntityKind, definition.NamespacedId)])
                     : GenericDefinition(definition))
@@ -66,7 +66,7 @@ internal static partial class NativeContentCatalogManifestSource
         var payload = new Dictionary<string, object?>
         {
             ["generation_before"] = owner.Generation,
-            ["generation_after"] = owner.Generation,
+            ["generation_after"] = after.Generation,
             ["game_build"] = known.GameBuild,
             ["locale"] = known.Locale,
             ["packages"] = packages,
