@@ -6,8 +6,11 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static partial class NativeContentCatalogManifestSource
 {
+    internal static string? ControlledJson { get; set; }
+
     internal static string CaptureJson() =>
-        throw new InvalidOperationException("synthetic host does not provide ModelDb");
+        ControlledJson
+        ?? throw new InvalidOperationException("synthetic host does not provide ModelDb");
 }
 
 internal sealed class NativeContentCatalogOwnerObservation
@@ -18,14 +21,16 @@ internal sealed class NativeContentCatalogOwnerObservation
 
 public static partial class ModEntry
 {
+    internal static string? ControlledManifestResponse { get; set; }
+
     internal static bool TryProduceContentManifest(
         string input,
         string correlationId,
         out int status,
         out string response)
     {
-        status = 503;
-        response = string.Empty;
-        return false;
+        status = ControlledManifestResponse is null ? 503 : 200;
+        response = ControlledManifestResponse ?? string.Empty;
+        return ControlledManifestResponse is not null;
     }
 }

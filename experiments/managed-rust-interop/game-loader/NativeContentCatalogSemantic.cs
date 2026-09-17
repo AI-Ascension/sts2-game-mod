@@ -113,6 +113,12 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
             semantic["semantic_scope"] = "typed-badge-v1";
             AddProperties(semantic, definition.Model, AdditionalSemanticProperties["BadgeModel"]);
         }
+        else if (definition.Model is AncientEventModel)
+        {
+            semantic["semantic_scope"] = "typed-ancient-v1";
+            AddProperties(
+                semantic, definition.Model, AdditionalSemanticProperties["AncientEventModel"]);
+        }
         else if (TryAdditionalSemanticProperties(
                      definition, out string[] properties))
         {
@@ -156,6 +162,13 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     private static string FamilyTypeName(
         NativeContentCatalogOwnerObservation.Definition definition)
     {
+        for (Type? type = definition.Model.GetType();
+             type is not null;
+             type = type.BaseType)
+        {
+            if (AdditionalSemanticProperties.ContainsKey(type.Name))
+                return type.Name;
+        }
         int separator = definition.CategoryType.LastIndexOf('.');
         return separator >= 0
             ? definition.CategoryType[(separator + 1)..]

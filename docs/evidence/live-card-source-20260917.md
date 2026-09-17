@@ -90,6 +90,10 @@ explicit typed scopes where their stable host getters are available, including t
 by an ID-only hash. The exact host route remains unverified until the addon can run in the
 authorized STS2 process.
 
+Family dispatch walks the concrete model's base-type chain before consulting the category type.
+This preserves the `AncientEventModel` fields (`Epithet`, `HealedAmount`) when the host reports
+its category as the broader `EventModel`.
+
 The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable until a versioned
 mapping is agreed. The managed DTO is intended to be mapped by that owner; it is not a protocol
 or gateway capability claim. The adapter returns an unavailable result if the host callback cannot
