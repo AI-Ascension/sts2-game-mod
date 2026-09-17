@@ -113,6 +113,12 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
             semantic["semantic_scope"] = "typed-badge-v1";
             AddProperties(semantic, definition.Model, AdditionalSemanticProperties["BadgeModel"]);
         }
+        else if (definition.Model is AncientEventModel)
+        {
+            semantic["semantic_scope"] = "typed-ancient-v1";
+            AddProperties(
+                semantic, definition.Model, AdditionalSemanticProperties["AncientEventModel"]);
+        }
         else if (TryAdditionalSemanticProperties(
                      definition, out string[] properties))
         {
