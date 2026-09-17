@@ -239,11 +239,73 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
+pub(crate) fn digest(bytes: &[u8]) -> String {
+    hex(&Sha256::digest(bytes))
+}
+
+pub(crate) fn digest_value(value: &Value) -> String {
+    digest(value.as_str().unwrap_or_default().as_bytes())
+}
+
+#[cfg(test)]
+pub(crate) fn valid_ticket_window(ticket: &Value) -> bool {
+    let issued = ticket["issued_at"]
+        .as_str()
+        .and_then(crate::http::parse_timestamp_millis);
+    let expires = ticket["expires_at"]
+        .as_str()
+        .and_then(crate::http::parse_timestamp_millis);
+    matches!((issued, expires), (Some(issued), Some(expires)) if expires > issued)
+}
+
+#[cfg(test)]
+pub(crate) fn valid_effect_digest(witness: &Value) -> bool {
+    witness["effect_digest"].as_str().is_some_and(|digest| {
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    })
+}
+
 pub(crate) fn timestamp() -> String {
+    timestamp_after_seconds(0)
+}
+
+pub(crate) fn timestamp_after_seconds(seconds: u64) -> String {
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_millis() as u64);
-    format!("2026-09-17T00:00:{:02}.000Z", (millis / 1000) % 60)
+        .map_or(0, |duration| {
+            duration
+                .as_millis()
+                .saturating_add(u128::from(seconds) * 1_000)
+                .min(u128::from(u64::MAX)) as u64
+        });
+    let total_seconds = millis / 1_000;
+    let days = (total_seconds / 86_400) as i64;
+    let day_seconds = total_seconds % 86_400;
+    let (year, month, day) = civil_from_days(days);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{:03}Z",
+        day_seconds / 3_600,
+        day_seconds / 60 % 60,
+        day_seconds % 60,
+        millis % 1_000
+    )
+}
+
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let year = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let month = (5 * doy + 2) / 153;
+    let day = doy - (153 * month + 2) / 5 + 1;
+    let month = month + if month < 10 { 3 } else { -9 };
+    let year = year + if month <= 2 { 1 } else { 0 };
+    (year, month, day)
 }
 
 pub(crate) fn uuid() -> String {

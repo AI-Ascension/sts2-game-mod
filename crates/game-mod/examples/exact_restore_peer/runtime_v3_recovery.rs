@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sts2_game_mod::ExactRestoreCurrentOwner;
 
-use super::recovery::{RECOVERY_CONTRACT, RECOVERY_SCHEMA, hex, timestamp, uuid};
+use super::recovery::{
+    RECOVERY_CONTRACT, RECOVERY_SCHEMA, digest_value, timestamp, timestamp_after_seconds, uuid,
+};
 use super::runtime_v3::{RuntimeV3State, STATE_ID};
 
 pub(crate) fn runtime_operation_response(
@@ -97,12 +98,7 @@ pub(crate) fn runtime_operation_response(
             operation_frame(request, host_status, host_operation),
         );
     }
-    let effect_digest = digest(
-        pending["action"]["canonical_json_b64"]
-            .as_str()
-            .unwrap_or_default()
-            .as_bytes(),
-    );
+    let effect_digest = digest_value(&pending["action"]["canonical_json_b64"]);
     let ticket = json!({
         "ticket_id": uuid(),
         "operation_id": operation_id,
@@ -113,7 +109,7 @@ pub(crate) fn runtime_operation_response(
         "host_fence_id": owner.fence.host_fence_id(),
         "state": "SETTLED",
         "issued_at": timestamp(),
-        "expires_at": timestamp(),
+        "expires_at": timestamp_after_seconds(5),
     });
     let witness = json!({
         "witness_id": uuid(),
@@ -201,10 +197,6 @@ fn operation_frame(request: &Value, status: &str, operation: Value) -> Vec<u8> {
     serde_json::to_vec(&body).unwrap_or_default()
 }
 
-fn digest(bytes: &[u8]) -> String {
-    format!("sha256:{}", hex(&Sha256::digest(bytes)))
-}
-
 fn decode_base64_no_pad(value: &str) -> Option<Vec<u8>> {
     let mut output = Vec::new();
     let mut buffer = 0_u32;
@@ -239,6 +231,7 @@ fn error_json(code: &str) -> Vec<u8> {
 mod tests {
     use super::*;
     use crate::config::TransportConfig;
+    use crate::recovery::{valid_effect_digest, valid_ticket_window};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn state() -> (RuntimeV3State, TransportConfig, std::path::PathBuf) {
@@ -397,6 +390,8 @@ mod tests {
         assert_eq!(first["payload"]["result"]["status"], "SETTLED");
         let ticket = first["payload"]["operation"]["ticket"].clone();
         let witness = first["payload"]["operation"]["witness"].clone();
+        assert!(valid_ticket_window(&ticket));
+        assert!(valid_effect_digest(&witness));
 
         let mut reopened = RuntimeV3State::open(transport, path.clone()).expect("reopen");
         let (status, body) = runtime_operation_response(&dispatch, &owner, &mut reopened);
