@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 //
-//! Bounded, test-only Runtime-v3 gameplay peer.
-//!
-//! This fixture exercises the real Gateway/MCP transport without claiming to
-//! implement a native game or provider. It exposes one deterministic combat
-//! action so the harness can prove observe -> legal action -> dispatch ->
-//! settled successor and records that effect in the exact-store directory.
+//! Bounded test-only Runtime-v3 peer used by the actual Gateway/MCP fixture.
+//! It records one legal end-turn effect and persists host operation intent.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -25,8 +21,10 @@ pub(super) const EFFECT_KIND: &str = "combat.end-turn_settled";
 pub(crate) struct RuntimeV3State {
     transport: TransportConfig,
     store_path: PathBuf,
+    pending_path: PathBuf,
     generation: u64,
     operations: BTreeMap<String, Operation>,
+    pending_operations: BTreeMap<String, Value>,
 }
 
 #[derive(Clone)]
@@ -40,8 +38,15 @@ struct Operation {
 impl RuntimeV3State {
     pub(crate) fn open(transport: TransportConfig, store_dir: PathBuf) -> Result<Self, String> {
         let store_path = store_dir.join("runtime-v3-effects.json");
+        let pending_path = store_dir.join("runtime-v3-pending.json");
         let operations: BTreeMap<String, Operation> =
             if store_path.exists() {
+                let size = std::fs::metadata(&store_path)
+                    .map_err(|error| format!("stat runtime-v3 ledger: {error}"))?
+                    .len();
+                if size > 64 * 1024 {
+                    return Err(String::from("runtime-v3 ledger exceeds its byte bound"));
+                }
                 let bytes = std::fs::read(&store_path)
                     .map_err(|error| format!("read runtime-v3 ledger: {error}"))?;
                 let value: Value = serde_json::from_slice(&bytes)
@@ -55,6 +60,9 @@ impl RuntimeV3State {
                 let settled_count = value["settled_count"]
                     .as_u64()
                     .ok_or_else(|| String::from("runtime-v3 ledger settled_count is missing"))?;
+                let top_action_id = value["action_id"]
+                    .as_str()
+                    .ok_or_else(|| String::from("runtime-v3 ledger action_id is missing"))?;
                 if items.len() > 1
                     || action_count != items.len() as u64
                     || settled_count != action_count
@@ -78,7 +86,12 @@ impl RuntimeV3State {
                     let generation = item["generation"]
                         .as_u64()
                         .ok_or_else(|| String::from("runtime-v3 ledger generation is missing"))?;
-                    if action_id != ACTION_ID || generation != 0 {
+                    if item["status"].as_str() != Some("settled")
+                        || item["effect_kind"].as_str() != Some(EFFECT_KIND)
+                        || action_id != ACTION_ID
+                        || generation != 0
+                        || top_action_id != action_id
+                    {
                         return Err(String::from("runtime-v3 ledger operation is invalid"));
                     }
                     if operations.insert(
@@ -97,6 +110,9 @@ impl RuntimeV3State {
             } else {
                 BTreeMap::new()
             };
+        let settled_operation_ids = operations.keys().cloned().collect();
+        let pending_operations =
+            super::runtime_v3_pending::load(&pending_path, &settled_operation_ids)?;
         let generation = operations
             .values()
             .next()
@@ -104,9 +120,32 @@ impl RuntimeV3State {
         Ok(Self {
             transport,
             store_path,
+            pending_path,
             generation,
             operations,
+            pending_operations,
         })
+    }
+
+    pub(crate) fn remember_pending(
+        &mut self,
+        operation_id: &str,
+        operation: Value,
+    ) -> Result<bool, String> {
+        super::runtime_v3_pending::remember(
+            &mut self.pending_operations,
+            &self.pending_path,
+            operation_id,
+            operation,
+        )
+    }
+
+    pub(crate) fn pending_operation(&self, operation_id: &str) -> Option<Value> {
+        self.pending_operations.get(operation_id).cloned()
+    }
+
+    pub(crate) fn dispatch_operation(&mut self, request: Value) -> Value {
+        self.dispatch_response(&request)
     }
 
     pub(crate) fn update_transport(
@@ -263,6 +302,11 @@ impl RuntimeV3State {
         else {
             return json_error_value("runtime_v3_action_id_required");
         };
+        if request["state_id"].as_str() != Some(STATE_ID)
+            || action.get("action") != Some(&json!({"kind": "end_turn"}))
+        {
+            return json_error_value("runtime_v3_action_invalid");
+        }
         if let Some(existing) = self.operations.get(operation_id) {
             if existing.action_id != action_id
                 || existing.action != request["action"]
@@ -315,7 +359,6 @@ impl RuntimeV3State {
                 operation_id,
             );
             response["kind"] = Value::String("wait_response".to_owned());
-            response["wait_for_millis"] = request["wait_for_millis"].clone();
             response["wait_outcome"] = Value::String("successor".to_owned());
             return response;
         }

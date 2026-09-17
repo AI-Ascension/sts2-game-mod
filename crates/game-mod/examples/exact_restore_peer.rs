@@ -15,6 +15,10 @@ mod http_wire;
 mod recovery;
 #[path = "exact_restore_peer/runtime_v3.rs"]
 mod runtime_v3;
+#[path = "exact_restore_peer/runtime_v3_pending.rs"]
+mod runtime_v3_pending;
+#[path = "exact_restore_peer/runtime_v3_recovery.rs"]
+mod runtime_v3_recovery;
 #[path = "exact_restore_peer/runtime_v3_wire.rs"]
 mod runtime_v3_wire;
 

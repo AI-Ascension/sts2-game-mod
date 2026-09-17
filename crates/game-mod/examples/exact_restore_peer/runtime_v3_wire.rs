@@ -113,7 +113,7 @@ pub(super) fn unknown_response(
     request: &Value,
     operation_id: &str,
 ) -> Value {
-    envelope(
+    let mut response = envelope(
         transport,
         request,
         "wait_response",
@@ -124,7 +124,9 @@ pub(super) fn unknown_response(
         Some(operation_id),
         Some("unknown"),
         Some("operation_unknown"),
-    )
+    );
+    response["wait_outcome"] = Value::String("recovery_required".to_owned());
+    response
 }
 
 pub(super) fn json_error(code: &str) -> Vec<u8> {
