@@ -15,6 +15,7 @@ use super::config::Config;
 use super::fixture::PeerApplier;
 use super::http_wire::{MAX_RECOVERY_FRAME, Request, read_request, write_response};
 use super::recovery::{RECOVERY_PATH, lease_response, recovery_response, valid_lease_request};
+use super::runtime_v3::RuntimeV3State;
 
 const EXACT_PREFIX: &str = "/v1/exact-restore/";
 
@@ -36,6 +37,7 @@ struct PeerState {
     config: Config,
     lookup_unknown_left: bool,
     requests: usize,
+    runtime_v3: RuntimeV3State,
 }
 
 pub(crate) fn run() -> Result<(), String> {
@@ -74,6 +76,7 @@ pub(crate) fn run() -> Result<(), String> {
         config: config.clone(),
         lookup_unknown_left: config.lookup_unknown_once,
         requests: 0,
+        runtime_v3: RuntimeV3State::open(config.transport.clone(), config.store_dir.clone())?,
     };
     for stream in listener.incoming() {
         let stream = stream.map_err(|error| format!("accept: {error}"))?;
@@ -99,11 +102,18 @@ fn serve_connection(mut stream: TcpStream, state: &mut PeerState) -> Result<(), 
 
 impl PeerState {
     fn handle(&mut self, request: &Request) -> (u16, Vec<u8>) {
-        if request.method != "POST" {
+        let runtime_get = matches!(
+            request.path.as_str(),
+            "/api/v3/runtime/state" | "/api/v3/runtime/legal-actions" | "/api/v3/runtime/reobserve"
+        );
+        if request.method != "POST" && !(runtime_get && request.method == "GET") {
             return (405, Vec::new());
         }
         if !self.authenticated(request, request.path == RECOVERY_PATH) {
             return (401, Vec::new());
+        }
+        if request.path.starts_with("/api/v3/runtime/") {
+            return self.runtime_v3.handle(request);
         }
         if request.path == RECOVERY_PATH {
             return self.handle_recovery(&request.body);
@@ -229,7 +239,7 @@ impl PeerState {
         )
     }
 
-    fn update_owner_from_grant(&self, grant: &Value) {
+    fn update_owner_from_grant(&mut self, grant: &Value) {
         let boot = &grant["boot"];
         let fence = &grant["fence"];
         let lease = &grant["lease"];
@@ -268,10 +278,17 @@ impl PeerState {
             return;
         };
         if let Ok(mut current) = self.owner.lock() {
-            *current = ExactRestoreCurrentOwner {
+            let next = ExactRestoreCurrentOwner {
                 fence: owner,
                 observed_at_millis: current_millis(),
             };
+            self.runtime_v3.update_transport(
+                next.fence.instance_id().to_owned(),
+                next.fence.session_id().to_owned(),
+                next.fence.lease_id().to_owned(),
+                next.fence.lease_epoch(),
+            );
+            *current = next;
         }
     }
 }

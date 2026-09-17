@@ -13,6 +13,10 @@ mod http;
 mod http_wire;
 #[path = "exact_restore_peer/recovery.rs"]
 mod recovery;
+#[path = "exact_restore_peer/runtime_v3.rs"]
+mod runtime_v3;
+#[path = "exact_restore_peer/runtime_v3_wire.rs"]
+mod runtime_v3_wire;
 
 fn main() {
     if let Err(error) = http::run() {

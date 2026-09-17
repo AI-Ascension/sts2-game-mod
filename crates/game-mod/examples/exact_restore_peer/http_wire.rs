@@ -77,6 +77,7 @@ pub(crate) fn write_response(
         403 => "Forbidden",
         404 => "Not Found",
         405 => "Method Not Allowed",
+        409 => "Conflict",
         413 => "Payload Too Large",
         503 => "Service Unavailable",
         _ => "Error",
