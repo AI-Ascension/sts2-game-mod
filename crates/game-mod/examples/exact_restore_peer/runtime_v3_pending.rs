@@ -126,18 +126,18 @@ fn receipt_identity_matches(operation: &Value) -> bool {
     let boundary = &operation["expected_boundary"];
     let ticket = &operation["ticket"];
     let witness = &operation["witness"];
-    let matches_common = |value: &Value| {
+    let matches_common = |value: &Value, require_epoch: bool| {
         value["operation_id"].as_str() == operation["operation_id"].as_str()
             && value["payload_digest"].as_str() == operation["payload_digest"].as_str()
             && value["boot_id"].as_str() == context["boot_id"].as_str()
             && value["instance_incarnation"].as_str() == context["instance_incarnation"].as_str()
-            && value["lease_epoch"].as_u64() == context["lease_epoch"].as_u64()
+            && (!require_epoch || value["lease_epoch"].as_u64() == context["lease_epoch"].as_u64())
             && value["host_fence_id"]
                 .as_str()
                 .is_some_and(|id| !id.is_empty())
     };
-    matches_common(ticket)
-        && matches_common(witness)
+    matches_common(ticket, true)
+        && matches_common(witness, false)
         && witness["state_id"] == boundary["state_id"]
         && witness["generation"] == 1
 }
