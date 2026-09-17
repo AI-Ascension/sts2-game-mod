@@ -19,7 +19,7 @@ public static partial class ModEntry
     private static readonly string[] QueryKinds = ["detail"];
     private static readonly string[] EntityKinds = ["card"];
     private static readonly string[] Levels = ["summary", "standard", "full"];
-    private static readonly string[] Fields = ["amount", "cost", "description", "display_name", "flags", "owner", "position", "rarity", "source_id", "tags"];
+    private static readonly string[] Fields = ["cost", "display_name", "owner"];
     private static readonly string[] InvalidatedBy = ["content_change", "epoch_change", "profile_change", "restore", "restart", "run_change"];
 
     private static (int Status, string Response) ProcessGameInformationQueryWork(
@@ -86,6 +86,9 @@ public static partial class ModEntry
     private static (int Status, string Response) ProcessLiveDetail(
         RuntimeContext context, JsonElement query, JsonElement binding)
     {
+        if (!TryAuthorizeRuntimeV2Context(context, out string authorizationError))
+            return (RuntimeRejected, GameInformationError(context.CorrelationId, query,
+                "unauthorized", authorizationError));
         if (!binding.TryGetProperty("content_manifest_id", out JsonElement manifest)
             || !binding.TryGetProperty("snapshot_ref", out JsonElement snapshotRef)
             || snapshotRef.ValueKind != JsonValueKind.Object
@@ -99,6 +102,17 @@ public static partial class ModEntry
         if (!snapshot.Available)
             return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
                 "retained_snapshot_unavailable"));
+        if (!SnapshotMatches(snapshotRef, snapshot) || !InstanceMatches(snapshotInstance, snapshot)
+            || !query.TryGetProperty("parent_observation", out JsonElement parent)
+            || !parent.TryGetProperty("snapshot_ref", out JsonElement parentSnapshot)
+            || !SnapshotMatches(parentSnapshot, snapshot)
+            || !parent.TryGetProperty("instance_ref", out JsonElement parentInstance)
+            || !InstanceMatches(parentInstance, snapshot)
+            || !parent.TryGetProperty("state_generation", out JsonElement parentGeneration)
+            || !parentGeneration.TryGetUInt64(out ulong parentState)
+            || parentState != snapshot.StateGeneration)
+            return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
+                "snapshot_fence_mismatch"));
         if (!query.TryGetProperty("target", out JsonElement target)
             || !target.TryGetProperty("instance_ref", out JsonElement targetInstance)
             || !targetInstance.TryGetProperty("entity_id", out JsonElement entityId))
@@ -111,14 +125,25 @@ public static partial class ModEntry
             return (404, GameInformationError(context.CorrelationId, query, "not_found",
                 "live_card_not_found"));
 
-        object definitionRef = target.GetProperty("definition_ref").Clone();
+        if (!target.TryGetProperty("definition_ref", out JsonElement definitionRef)
+            || !definitionRef.TryGetProperty("content_manifest_id", out JsonElement definitionManifest)
+            || definitionManifest.GetString() != snapshot.ContentManifest
+            || !definitionRef.TryGetProperty("entity_kind", out JsonElement definitionKind)
+            || definitionKind.GetString() != "card")
+            return (400, GameInformationError(context.CorrelationId, query, "malformed",
+                "definition_fence_mismatch"));
+        if (!TryReadLiveCardBinding(context, snapshot.RunId, snapshot.ContentManifest,
+                snapshot.Epoch, snapshot))
+            return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
+                "lookup_binding_mismatch"));
+        object definition = definitionRef.Clone();
         object instanceRef = targetInstance.Clone();
         var fields = new List<Dictionary<string, object?>>();
         foreach (JsonElement name in query.GetProperty("fields").EnumerateArray())
             fields.Add(LiveField(name.GetString() ?? string.Empty, card, context.InstanceId));
         var item = new Dictionary<string, object?>
         {
-            ["definition_ref"] = definitionRef, ["instance_ref"] = instanceRef, ["fields"] = fields
+            ["definition_ref"] = definition, ["instance_ref"] = instanceRef, ["fields"] = fields
         };
         var page = new Dictionary<string, object?>
         {
@@ -136,6 +161,24 @@ public static partial class ModEntry
             ["result"] = new Dictionary<string, object?> { ["page"] = page, ["read_only"] = true, ["result_generation"] = snapshot.StateGeneration, ["parent_observation"] = query.GetProperty("parent_observation").Clone() }
         }));
     }
+
+    private static bool InstanceMatches(JsonElement value, LiveCardCapturedSnapshot snapshot) =>
+        value.ValueKind == JsonValueKind.Object
+        && value.TryGetProperty("instance_id", out JsonElement instance)
+        && instance.GetString() == snapshot.InstanceId
+        && value.TryGetProperty("run_id", out JsonElement run) && run.GetString() == snapshot.RunId
+        && value.TryGetProperty("epoch", out JsonElement epoch)
+        && epoch.TryGetUInt64(out ulong valueEpoch) && valueEpoch == snapshot.Epoch
+        && value.TryGetProperty("entity_kind", out JsonElement kind) && kind.GetString() == "card";
+
+    private static bool SnapshotMatches(JsonElement value, LiveCardCapturedSnapshot snapshot) =>
+        value.ValueKind == JsonValueKind.Object
+        && value.TryGetProperty("snapshot_id", out JsonElement id) && id.GetString() == snapshot.SnapshotId
+        && value.TryGetProperty("state_generation", out JsonElement generation)
+        && generation.TryGetUInt64(out ulong valueGeneration)
+        && valueGeneration == snapshot.StateGeneration
+        && value.TryGetProperty("instance_ref", out JsonElement instance)
+        && InstanceMatches(instance, snapshot);
 
     private static Dictionary<string, object?> LiveField(string name, LiveCardCapturedCard card,
         string instanceId)
@@ -181,8 +224,8 @@ public static partial class ModEntry
                 ["max_message_bytes"] = 262144,
                 ["snapshot_policy"] = new Dictionary<string, object?>
                 {
-                    ["supports_live"] = true, ["lifetime_generations"] = 128,
-                    ["max_retained_snapshots"] = 8, ["expiry_behavior"] = "reject_stale_snapshot",
+                    ["supports_live"] = true, ["lifetime_generations"] = 0,
+                    ["max_retained_snapshots"] = 1, ["expiry_behavior"] = "reject_stale_snapshot",
                     ["invalidated_by"] = InvalidatedBy
                 }
             }
