@@ -12,6 +12,7 @@ mod capability;
 mod error;
 mod identity;
 mod manifest;
+mod payload;
 mod port;
 mod receipt;
 mod restore;
@@ -36,6 +37,20 @@ pub use manifest::{
     CHECKPOINT_MANIFEST_PROFILE, CHECKPOINT_MANIFEST_SCHEMA, CheckpointArtifactDescriptor,
     CheckpointManifest, CheckpointManifestBoundary, CheckpointManifestError,
     CheckpointManifestParts, CheckpointOrigin,
+};
+pub use payload::{
+    CHECKPOINT_PAYLOAD_BOUNDARIES, CHECKPOINT_PAYLOAD_SCHEMA, CHECKPOINT_PAYLOAD_SCHEMA_DIGEST,
+    CHECKPOINT_PAYLOAD_SCHEMA_SOURCE, CheckpointPayload, CheckpointPayloadError,
+    CheckpointPayloadFamilies, PAYLOAD_MAX_ACTS, PAYLOAD_MAX_CARDS, PAYLOAD_MAX_ENEMIES,
+    PAYLOAD_MAX_EXTERNAL_INPUTS, PAYLOAD_MAX_IDENTIFIER_BYTES, PAYLOAD_MAX_INTENTS,
+    PAYLOAD_MAX_KEYS, PAYLOAD_MAX_MODIFIERS, PAYLOAD_MAX_PILES, PAYLOAD_MAX_POTION_SLOTS,
+    PAYLOAD_MAX_POWERS, PAYLOAD_MAX_RELICS, PAYLOAD_MAX_RNG_STATE_WORDS, PAYLOAD_MAX_RNG_STREAMS,
+    PAYLOAD_MAX_TEMPORARY_VALUES, PAYLOAD_MAX_VISITED_NODES, PayloadCampaignProgress,
+    PayloadCardInstance, PayloadCardInstances, PayloadCardPile, PayloadCombatTurn,
+    PayloadDeckAndPiles, PayloadEnemies, PayloadEnemy, PayloadEnemyIntent, PayloadExternalInput,
+    PayloadExternalInputMode, PayloadFamilyCoverage, PayloadPendingEffects, PayloadPlayerResources,
+    PayloadPotionSlot, PayloadPotions, PayloadPower, PayloadPowers, PayloadRelic, PayloadRelics,
+    PayloadRngStream, PayloadRunConfiguration, PayloadSeedAndRng, PayloadTemporaryValue,
 };
 pub use port::{CheckpointCapturePort, UnavailableCheckpointCapture};
 pub use receipt::{CheckpointCaptureReceipt, CheckpointDurability};

@@ -1,0 +1,269 @@
+{
+  "schema": "ascension.checkpoint_payload.v1",
+  "canonical_profile": "asc-jcs-state-v1",
+  "boundary": "later_turn_combat",
+  "families": {
+    "seed_and_rng": {
+      "coverage": "captured",
+      "value": {
+        "master_seed": "SYNTHETIC-SEED-0001",
+        "derivation_version": "synthetic-derivation-v1",
+        "streams": [
+          {
+            "stream_id": "synthetic.shuffle",
+            "algorithm": "synthetic-counter-v1",
+            "cursor": {
+              "kind": "uint64",
+              "value": "17"
+            },
+            "state_words": [
+              {
+                "kind": "uint64",
+                "value": "18446744073709551615"
+              },
+              {
+                "kind": "uint64",
+                "value": "42"
+              }
+            ]
+          },
+          {
+            "stream_id": "synthetic.enemy_intent",
+            "algorithm": "synthetic-counter-v1",
+            "cursor": {
+              "kind": "uint64",
+              "value": "5"
+            },
+            "state_words": [
+              {
+                "kind": "uint64",
+                "value": "9007199254740993"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "run_configuration": {
+      "coverage": "captured",
+      "value": {
+        "character": "synthetic.character.a",
+        "ascension": 0,
+        "mode": "standard",
+        "act_sequence": [
+          "synthetic.act.1",
+          "synthetic.act.2",
+          "synthetic.act.3"
+        ],
+        "modifiers": []
+      }
+    },
+    "campaign_progress": {
+      "coverage": "captured",
+      "value": {
+        "act_index": 0,
+        "floor": 3,
+        "current_node": "node:0:3:2",
+        "room_kind": "monster",
+        "visited_nodes": [
+          "node:0:1:1",
+          "node:0:2:1",
+          "node:0:3:2"
+        ]
+      }
+    },
+    "player_resources": {
+      "coverage": "captured",
+      "value": {
+        "current_hp": 61,
+        "max_hp": 80,
+        "gold": 142,
+        "keys": []
+      }
+    },
+    "deck_and_piles": {
+      "coverage": "captured",
+      "value": {
+        "deck": [
+          "card:1",
+          "card:2",
+          "card:3",
+          "card:4",
+          "card:5"
+        ],
+        "piles": [
+          {
+            "pile_id": "draw",
+            "cards": [
+              "card:4",
+              "card:1"
+            ]
+          },
+          {
+            "pile_id": "hand",
+            "cards": [
+              "card:2",
+              "card:5"
+            ]
+          },
+          {
+            "pile_id": "discard",
+            "cards": [
+              "card:3"
+            ]
+          },
+          {
+            "pile_id": "exhaust",
+            "cards": []
+          }
+        ]
+      }
+    },
+    "card_instances": {
+      "coverage": "captured",
+      "value": {
+        "cards": [
+          {
+            "instance_id": "card:1",
+            "definition_id": "synthetic.card.strike",
+            "upgrade_level": 0,
+            "temporary_values": []
+          },
+          {
+            "instance_id": "card:2",
+            "definition_id": "synthetic.card.strike",
+            "upgrade_level": 1,
+            "temporary_values": []
+          },
+          {
+            "instance_id": "card:3",
+            "definition_id": "synthetic.card.defend",
+            "upgrade_level": 0,
+            "temporary_values": [
+              {
+                "key": "cost_this_turn",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "instance_id": "card:4",
+            "definition_id": "synthetic.card.defend",
+            "upgrade_level": 0,
+            "temporary_values": []
+          },
+          {
+            "instance_id": "card:5",
+            "definition_id": "synthetic.card.bash",
+            "upgrade_level": 0,
+            "temporary_values": [
+              {
+                "key": "damage_bonus",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "relics": {
+      "coverage": "captured",
+      "value": {
+        "relics": [
+          {
+            "relic_id": "synthetic.relic.starter",
+            "counter": -1
+          },
+          {
+            "relic_id": "synthetic.relic.counter",
+            "counter": 3
+          }
+        ]
+      }
+    },
+    "potions": {
+      "coverage": "captured",
+      "value": {
+        "capacity": 3,
+        "slots": [
+          {
+            "index": 1,
+            "potion_id": "synthetic.potion.block"
+          }
+        ]
+      }
+    },
+    "combat_turn": {
+      "coverage": "captured",
+      "value": {
+        "turn": 1,
+        "energy": 2,
+        "player_block": 5
+      }
+    },
+    "powers": {
+      "coverage": "captured",
+      "value": {
+        "powers": [
+          {
+            "owner": "player",
+            "power_id": "synthetic.power.strength",
+            "amount": 2
+          },
+          {
+            "owner": "enemy:1",
+            "power_id": "synthetic.power.vulnerable",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    "enemies_and_intents": {
+      "coverage": "captured",
+      "value": {
+        "enemies": [
+          {
+            "enemy_id": "enemy:1",
+            "current_hp": 30,
+            "max_hp": 44,
+            "block": 0,
+            "intents": [
+              {
+                "intent_id": "synthetic.intent.attack",
+                "value": 11
+              }
+            ]
+          },
+          {
+            "enemy_id": "enemy:2",
+            "current_hp": 12,
+            "max_hp": 12,
+            "block": 6,
+            "intents": [
+              {
+                "intent_id": "synthetic.intent.buff",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "pending_effects": {
+      "coverage": "captured",
+      "value": {
+        "pending_effects": [],
+        "external_inputs": [
+          {
+            "input_id": "wall_clock",
+            "mode": "controlled"
+          },
+          {
+            "input_id": "network",
+            "mode": "absent"
+          }
+        ]
+      }
+    }
+  }
+}
