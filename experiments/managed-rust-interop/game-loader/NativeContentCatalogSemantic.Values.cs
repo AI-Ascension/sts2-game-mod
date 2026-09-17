@@ -49,12 +49,19 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     {
         if (variable is null)
             return null;
+        object? stringValue = ReadOptionalValue(variable, "StringValue");
+        if (stringValue is string text
+            && System.Text.Encoding.UTF8.GetByteCount(text) > MaxValueBytes)
+        {
+            throw new InvalidOperationException("dynamic variable string value exceeds source bounds");
+        }
         return new Dictionary<string, object?>
         {
             ["type"] = variable.GetType().FullName,
             ["name"] = ReadProperty(variable, "Name"),
             ["base_value"] = ReadProperty(variable, "BaseValue"),
-            ["int_value"] = ReadProperty(variable, "IntValue")
+            ["int_value"] = ReadProperty(variable, "IntValue"),
+            ["string_value"] = stringValue
         };
     }
 

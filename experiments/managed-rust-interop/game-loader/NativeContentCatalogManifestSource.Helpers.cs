@@ -38,6 +38,7 @@ internal static partial class NativeContentCatalogManifestSource
             ["AllSharedRelicPools"] = "relic_pool",
             ["Orbs"] = "orb",
             ["Acts"] = "act",
+            ["BadgeModels"] = "badge",
             ["Achievements"] = "achievement",
             ["GoodModifiers"] = "modifier",
             ["BadModifiers"] = "modifier",
@@ -92,7 +93,7 @@ internal static partial class NativeContentCatalogManifestSource
             "AllEvents", "Monsters", "AllEncounters", "AllPotions", "AllPotionPools",
             "AllCharacterPotionPools", "AllCharacterRelicPools", "AllSharedPotionPools",
             "AllPowers", "AllRelics", "AllRelicPools", "CharacterRelicPools",
-            "AllSharedRelicPools", "Orbs", "Acts", "Achievements", "GoodModifiers",
+            "AllSharedRelicPools", "Orbs", "Acts", "BadgeModels", "Achievements", "GoodModifiers",
             "BadModifiers", "DebugAfflictions", "DebugEnchantments"
         };
         var seen = new HashSet<AbstractModel>(ReferenceComparer.Instance);

@@ -148,6 +148,7 @@ public static partial class ModEntry
         {
             Marshal.FreeHGlobal(boundedOutput);
         }
+        CheckLiveObservationBootstrapVariants();
         CheckSharedGameplayBoundary();
     }
 

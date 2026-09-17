@@ -215,8 +215,7 @@ public static partial class ModEntry
                 continue;
             if (request.DefinitionVariant is null)
             {
-                if (card.UpgradeVariant.Status is not LiveCardFieldStatus.NotObserved
-                    and not LiveCardFieldStatus.Available)
+                if (card.UpgradeVariant.Status != LiveCardFieldStatus.NotObserved)
                     continue;
             }
             else if (card.UpgradeVariant.Status != LiveCardFieldStatus.Available

@@ -85,7 +85,8 @@ decodes a successful manifest envelope. Cards use a typed semantic scope with ca
 variable values; relics, potions, and powers use typed field scopes. Families without an explicit
 typed source mapping fail closed before producing a manifest; pools, characters, events, ancients,
 monsters, encounters, orbs, acts, achievements, modifiers, afflictions, and enchantments use
-explicit typed scopes where their stable host getters are available. They are never represented
+explicit typed scopes where their stable host getters are available, including the exact-host
+`BadgeModels` family through `ShouldReceiveCombatHooks`. They are never represented
 by an ID-only hash. The exact host route remains unverified until the addon can run in the
 authorized STS2 process.
 
@@ -94,3 +95,9 @@ mapping is agreed. The managed DTO is intended to be mapped by that owner; it is
 or gateway capability claim. The adapter returns an unavailable result if the host callback cannot
 complete synchronously. Exact host execution and any native snapshot/restore source remain
 unverified.
+
+`NativeContentCatalogManifestSource.TryCaptureCanonicalContentIndex` provides the query adapter
+with one coherent owner capture shaped like `ContentIndexDefinitionInput`: it returns the native
+`inventory_revision` together with the locale and optional localized/semantic fields copied from
+that same source JSON. Missing optional host values remain explicit unknowns; a definition-key or
+manifest-revision mismatch fails the capture.
