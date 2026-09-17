@@ -83,7 +83,7 @@ fn observe_dispatch_wait_persists_one_settled_effect() {
     );
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-2",
-        "operation_id":"op-1","generation":0,"state_id":"combat-1",
+        "operation_id":"op-1","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, body) = state.handle(&request(
@@ -120,7 +120,7 @@ fn stale_fence_is_rejected_without_effect() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr",
-        "operation_id":"op-stale","generation":0,"state_id":"combat-1",
+        "operation_id":"op-stale","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, body) = state.handle(&request(
@@ -142,7 +142,7 @@ fn duplicate_operation_is_idempotent_and_binds_payload_and_generation() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-1",
-        "operation_id":"op-1","generation":0,"state_id":"combat-1",
+        "operation_id":"op-1","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, _) = state.handle(&request(
@@ -166,7 +166,7 @@ fn duplicate_operation_is_idempotent_and_binds_payload_and_generation() {
 
     let mut changed = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-changed",
-        "operation_id":"op-1","generation":0,"state_id":"combat-1",
+        "operation_id":"op-1","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":"combat.other","action":{"kind":"end_turn"}}
     });
     changed["action"]["action_id"] = json!("combat.other");
@@ -187,7 +187,7 @@ fn stale_generation_is_rejected_without_second_effect() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-1",
-        "operation_id":"op-1","generation":0,"state_id":"combat-1",
+        "operation_id":"op-1","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     state.handle(&request(
@@ -198,7 +198,7 @@ fn stale_generation_is_rejected_without_second_effect() {
     ));
     let stale = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-2",
-        "operation_id":"op-2","generation":0,"state_id":"combat-1",
+        "operation_id":"op-2","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, body) = state.handle(&request(&transport, "/api/v3/runtime/action", stale, false));
@@ -218,7 +218,7 @@ fn reopened_operation_replays_original_generation_without_second_effect() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-1",
-        "operation_id":"op-reopen","generation":0,"state_id":"combat-1",
+        "operation_id":"op-reopen","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, _) = state.handle(&request(
@@ -251,7 +251,7 @@ fn terminal_successor_rejects_fresh_operation_without_second_effect() {
     let (mut state, transport, path) = fixture();
     let dispatch = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-1",
-        "operation_id":"op-terminal","generation":0,"state_id":"combat-1",
+        "operation_id":"op-terminal","generation":0,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     state.handle(&request(
@@ -262,7 +262,7 @@ fn terminal_successor_rejects_fresh_operation_without_second_effect() {
     ));
     let fresh = json!({
         "kind":"dispatch_action_request","correlation_id":"corr-2",
-        "operation_id":"op-fresh","generation":1,"state_id":"combat-1",
+        "operation_id":"op-fresh","generation":1,"state_id":super::STATE_ID,
         "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
     });
     let (status, body) = state.handle(&request(&transport, "/api/v3/runtime/action", fresh, false));
