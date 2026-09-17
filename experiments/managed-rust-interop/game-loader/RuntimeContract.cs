@@ -64,6 +64,10 @@ public static partial class ModEntry
         {
             return ProcessContentManifestWork(work.Context);
         }
+        if (work.Kind == RuntimeRequestKindLiveObservationBootstrap)
+        {
+            return ProcessLiveObservationBootstrapWork(work.Context, work.Body);
+        }
         if (work.Kind != RuntimeRequestKindAction)
         {
             return (400, RuntimeError(work.Context, work.Kind, "unknown_request_kind"));

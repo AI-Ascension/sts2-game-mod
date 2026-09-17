@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using MegaCrit.Sts2.Core.Models;
 
@@ -27,7 +25,6 @@ public static partial class ModEntry
 
         try
         {
-            LookupBindingManifest manifest = LookupBindingManifest.Read();
             using JsonDocument request = JsonDocument.Parse(body);
             JsonElement root = request.RootElement;
             string locale = context.Locale;
@@ -35,6 +32,11 @@ public static partial class ModEntry
             {
                 return (400, LookupBindingError(context, "malformed"));
             }
+            if (!TryAuthorizeRuntimeV2Context(context, out _))
+            {
+                return (409, LookupBindingError(context, "missing_capability"));
+            }
+            LookupBindingManifest manifest = LookupBindingManifest.Read(context.CorrelationId);
             string bindingId = LookupBindingManifest.Digest(
                 JsonSerializer.Serialize(new SortedDictionary<string, object?>
                 {
@@ -69,6 +71,12 @@ public static partial class ModEntry
                     ["content_revision"] = "sts2-game-mod"
                 }
             };
+            LiveCardCapturedSnapshot liveSnapshot = ReadLiveCardSnapshot(
+                context.InstanceId, manifest.ContentManifestId);
+            if (liveSnapshot.Available)
+            {
+                AssociateLiveCardBinding(context, root, liveSnapshot);
+            }
             if (root.GetProperty("operation").GetString() == "discovery")
             {
                 return (200, LookupBindingResponse(context, "lookup_binding_discovery_response",
@@ -202,34 +210,4 @@ public static partial class ModEntry
             ["observation"] = observation,
             ["error"] = null
         });
-}
-
-/// <summary>Reads the installed host's model registries on the queued game thread.</summary>
-internal sealed class LookupBindingManifest
-{
-    private LookupBindingManifest(string contentManifestId)
-    {
-        ContentManifestId = contentManifestId;
-    }
-
-    internal string ContentManifestId { get; }
-
-    internal static LookupBindingManifest Read()
-    {
-        // ModelDb exposes IDs, but #83's canonical ContentManifestProducer also requires
-        // build, package order/version, semantic inputs, locale text, provenance, override
-        // chains, and a before/after generation witness. When that source is available, the
-        // binding must use its exact inventory_revision. Do not publish an ID-only digest or a
-        // separately reconstructed hash as content_manifest_id.
-        throw new InvalidOperationException("typed content manifest source unavailable");
-    }
-
-    internal static bool ValidLocale(string value) =>
-        value.Length is >= 2 and <= 35
-        && value.Split('-').All(part => part.Length is >= 2 and <= 8
-            && part.All(char.IsLetterOrDigit));
-
-    internal static string Digest(string value) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
-
 }

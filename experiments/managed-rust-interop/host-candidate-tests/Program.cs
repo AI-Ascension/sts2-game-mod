@@ -121,6 +121,7 @@ public static partial class ModEntry
             && !ContentManifestWireContract.ValidIdentity("unknown build"),
             "content-manifest game build uses the protocol identity token boundary");
         CheckNativeContentManifestKnownInputs();
+        CheckCanonicalContentIndexSource();
         nint boundedOutput = Marshal.AllocHGlobal(4096);
         try
         {
@@ -148,6 +149,7 @@ public static partial class ModEntry
         {
             Marshal.FreeHGlobal(boundedOutput);
         }
+        CheckLiveObservationBootstrapVariants();
         CheckSharedGameplayBoundary();
     }
 
@@ -189,4 +191,5 @@ public static partial class ModEntry
         Check(missingBuildRefused,
             "partial native catalog input fails closed when official release version is unavailable");
     }
+
 }

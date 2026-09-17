@@ -37,9 +37,22 @@ public static partial class ModEntry
                 "malformed", "invalid_identity"));
         }
 
-        // Native registry extraction must provide a coherent generation, independent family
-        // totals, and definition provenance before it can call the canonical producer. The
-        // current host adapter has no verified source for those fields, so it fails closed.
+        try
+        {
+            string sourceJson = NativeContentCatalogManifestSource.CaptureJson();
+            if (TryProduceContentManifest(
+                    sourceJson, context.CorrelationId, out int status, out string response)
+                && status == RuntimeAccepted
+                && !string.IsNullOrEmpty(response))
+            {
+                return (status, response);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Keep host readiness and source details out of the protocol envelope.
+        }
+
         return (503, ContentManifestError(context.CorrelationId,
             "missing_capability", "source_unavailable"));
     }
