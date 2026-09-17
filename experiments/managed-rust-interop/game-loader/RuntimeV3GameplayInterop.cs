@@ -18,6 +18,7 @@ public static partial class ModEntry
 
     private static void InitializeRuntimeV3Gameplay()
     {
+        _liveCardSourceReader?.Invalidate();
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
         _liveCardSourceReader = null;
         _liveCardBinding = null;
