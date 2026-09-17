@@ -156,6 +156,13 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     private static string FamilyTypeName(
         NativeContentCatalogOwnerObservation.Definition definition)
     {
+        for (Type? type = definition.Model.GetType();
+             type is not null;
+             type = type.BaseType)
+        {
+            if (AdditionalSemanticProperties.ContainsKey(type.Name))
+                return type.Name;
+        }
         int separator = definition.CategoryType.LastIndexOf('.');
         return separator >= 0
             ? definition.CategoryType[(separator + 1)..]

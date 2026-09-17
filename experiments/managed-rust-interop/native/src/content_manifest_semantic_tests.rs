@@ -29,8 +29,14 @@ mod tests {
                 package_version: Some("0.107.1".to_owned()),
                 order: 0,
             }],
-            available_entity_kinds: vec!["badge".to_owned(), "card".to_owned(), "relic".to_owned()],
+            available_entity_kinds: vec![
+                "ancient".to_owned(),
+                "badge".to_owned(),
+                "card".to_owned(),
+                "relic".to_owned(),
+            ],
             registry_definition_counts: [
+                ("ancient".to_owned(), 1),
                 ("badge".to_owned(), 1),
                 ("card".to_owned(), 1),
                 ("relic".to_owned(), 1),
@@ -47,6 +53,11 @@ mod tests {
                     "badge",
                     "base:badge:starter",
                     "{\"should_receive_combat_hooks\":false}",
+                ),
+                definition(
+                    "ancient",
+                    "base:ancient:shrine",
+                    "{\"epithet\":\"A\",\"healed_amount\":5}",
                 ),
             ],
         };
@@ -74,13 +85,21 @@ mod tests {
             changed_relic_manifest.inventory_revision
         );
 
-        let mut changed_badge = snapshot;
+        let mut changed_badge = snapshot.clone();
         changed_badge.definitions[2].semantic_inputs =
             "{\"should_receive_combat_hooks\":true}".to_owned();
         let changed_badge_manifest = producer.produce(&Fixture(changed_badge))?;
         assert_ne!(
             first.inventory_revision,
             changed_badge_manifest.inventory_revision
+        );
+        let mut changed_ancient = snapshot;
+        changed_ancient.definitions[3].semantic_inputs =
+            "{\"epithet\":\"B\",\"healed_amount\":6}".to_owned();
+        let ancient_manifest = producer.produce(&Fixture(changed_ancient))?;
+        assert_ne!(
+            first.inventory_revision,
+            ancient_manifest.inventory_revision
         );
         Ok(())
     }
