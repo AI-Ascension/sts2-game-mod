@@ -41,7 +41,7 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     internal static object? ReadOptionalValue(object value, string name)
     {
         PropertyInfo? property = value.GetType().GetProperty(
-            name, BindingFlags.Public | BindingFlags.Instance);
+            name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         return property?.GetValue(value);
     }
 
@@ -156,7 +156,7 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     private static object? ReadProperty(object value, string name)
     {
         PropertyInfo property = value.GetType().GetProperty(
-                name, BindingFlags.Public | BindingFlags.Instance)
+                name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             ?? throw new InvalidOperationException(
                 $"host semantic property unavailable: {value.GetType().Name}.{name}");
         object? result = property.GetValue(value);
