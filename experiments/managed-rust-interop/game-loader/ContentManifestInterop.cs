@@ -37,15 +37,16 @@ public static partial class ModEntry
                 "malformed", "invalid_identity"));
         }
 
-        // Read the owner registry on the host thread before deciding whether the canonical
-        // producer can run. The exact host exposes IDs, type/category metadata, and per-family
-        // counts through ModelDb, but it does not expose a catalog generation, definition
-        // provenance/override chain, or canonical semantic-input reader. The observation is
-        // therefore useful evidence and still fails closed at the producer boundary.
         try
         {
-            _ = NativeContentCatalogSnapshot.CaptureKnownInputs();
-            _ = NativeContentCatalogOwnerObservation.Capture();
+            string sourceJson = NativeContentCatalogManifestSource.CaptureJson();
+            if (TryProduceContentManifest(
+                    sourceJson, context.CorrelationId, out int status, out string response)
+                && status == RuntimeAccepted
+                && !string.IsNullOrEmpty(response))
+            {
+                return (status, response);
+            }
         }
         catch (InvalidOperationException)
         {

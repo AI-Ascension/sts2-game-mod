@@ -41,8 +41,7 @@ internal sealed class LiveCardSourceReadAdapter
             return LiveCardCapturedSnapshot.Unavailable("host_thread_unavailable");
         }
 
-        if (result is { Available: true } available)
-            _retained = available;
+        _retained = result is { Available: true } available ? available : null;
         return result ?? LiveCardCapturedSnapshot.Unavailable("host_read_outcome_unknown");
     }
 

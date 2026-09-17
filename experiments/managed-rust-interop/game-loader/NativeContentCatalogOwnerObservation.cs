@@ -3,14 +3,15 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security.Cryptography;
 using MegaCrit.Sts2.Core.Models;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
 /// <summary>
-/// Copies the exact host ModelDb owner registry into bounded values. This is an observation seam,
-/// not a complete content-manifest source: the inspected host exposes no catalog generation,
-/// origin/override provenance, or semantic-input reader.
+/// Copies the exact host ModelDb owner registry into bounded values. The generation is a
+/// source-owned before/after identity fingerprint over the actual owner references and canonical
+/// registry fields; it is an invalidation witness, not a native counter.
 /// </summary>
 internal sealed class NativeContentCatalogOwnerObservation
 {
@@ -22,14 +23,17 @@ internal sealed class NativeContentCatalogOwnerObservation
 
     private NativeContentCatalogOwnerObservation(
         IReadOnlyList<Definition> definitions,
-        IReadOnlyDictionary<string, int> registryDefinitionCounts)
+        IReadOnlyDictionary<string, int> registryDefinitionCounts,
+        ulong generation)
     {
         Definitions = definitions;
         RegistryDefinitionCounts = registryDefinitionCounts;
+        Generation = generation;
     }
 
     internal IReadOnlyList<Definition> Definitions { get; }
     internal IReadOnlyDictionary<string, int> RegistryDefinitionCounts { get; }
+    internal ulong Generation { get; }
 
     internal static NativeContentCatalogOwnerObservation Capture()
     {
@@ -46,12 +50,25 @@ internal sealed class NativeContentCatalogOwnerObservation
 
         if (field.GetValue(null) is not Dictionary<ModelId, AbstractModel> registry)
             throw new InvalidOperationException("host ModelDb registry unavailable");
+        RegistryRead before = ReadRegistry(registry);
+        if (before.Definitions.Count == 0)
+            throw new InvalidOperationException("host ModelDb registry is not ready");
+        RegistryRead after = ReadRegistry(registry);
+        if (!before.HasSameReferences(after))
+            throw new InvalidOperationException("host ModelDb registry changed during observation");
+
+        return new NativeContentCatalogOwnerObservation(
+            before.Definitions, before.Counts, before.Fingerprint);
+    }
+
+    private static RegistryRead ReadRegistry(Dictionary<ModelId, AbstractModel> registry)
+    {
         int beforeCount = registry.Count;
         if (beforeCount <= 0 || beforeCount > MaxEntries)
             throw new InvalidOperationException("host ModelDb registry is not ready");
-
         var definitions = new List<Definition>(beforeCount);
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var references = new Dictionary<(string Category, string Entry), AbstractModel>();
         var identities = new HashSet<(string Category, string Entry)>();
         int ownedBytes = 0;
         Dictionary<ModelId, AbstractModel>.Enumerator enumerator = registry.GetEnumerator();
@@ -67,6 +84,7 @@ internal sealed class NativeContentCatalogOwnerObservation
                 string entry = RequireIdentity(pair.Key.Entry, MaxIdentityBytes);
                 if (!identities.Add((category, entry)))
                     throw new InvalidOperationException("host ModelDb registry duplicates an ID");
+                references.Add((category, entry), pair.Value);
 
                 Type runtimeType = pair.Value.GetType();
                 string runtimeTypeName = RequireTypeName(
@@ -99,10 +117,8 @@ internal sealed class NativeContentCatalogOwnerObservation
         {
             enumerator.Dispose();
         }
-
         if (registry.Count != beforeCount || definitions.Count != beforeCount)
             throw new InvalidOperationException("host ModelDb registry changed during observation");
-
         definitions.Sort(static (left, right) =>
         {
             int category = string.CompareOrdinal(left.EntityKind, right.EntityKind);
@@ -110,7 +126,17 @@ internal sealed class NativeContentCatalogOwnerObservation
                 ? category
                 : string.CompareOrdinal(left.NamespacedId, right.NamespacedId);
         });
-        return new NativeContentCatalogOwnerObservation(definitions, counts);
+        string fingerprintInput = string.Join(
+            "\n",
+            definitions.ConvertAll(static item =>
+                $"{item.EntityKind}\u001f{item.NamespacedId}\u001f{item.RuntimeType}\u001f"
+                + $"{item.CategorySortingId}\u001f{item.EntrySortingId}\u001f"
+                + $"{item.IsCanonical}\u001f{item.IsMutable}"));
+        byte[] fingerprint = SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(fingerprintInput));
+        ulong generation = BitConverter.ToUInt64(fingerprint, 0)
+            & 9_007_199_254_740_991UL;
+        return new RegistryRead(definitions, counts, references, generation);
     }
 
     private static string RequireIdentity(string value, int maxBytes)
@@ -143,4 +169,25 @@ internal sealed class NativeContentCatalogOwnerObservation
         bool IsMutable,
         int CategorySortingId,
         int EntrySortingId);
+
+    private sealed record RegistryRead(
+        IReadOnlyList<Definition> Definitions,
+        IReadOnlyDictionary<string, int> Counts,
+        IReadOnlyDictionary<(string Category, string Entry), AbstractModel> References,
+        ulong Fingerprint)
+    {
+        internal bool HasSameReferences(RegistryRead other)
+        {
+            if (Fingerprint != other.Fingerprint
+                || References.Count != other.References.Count)
+                return false;
+            foreach ((string Category, string Entry) key in References.Keys)
+            {
+                if (!other.References.TryGetValue(key, out AbstractModel? value)
+                    || !ReferenceEquals(References[key], value))
+                    return false;
+            }
+            return true;
+        }
+    }
 }

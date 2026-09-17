@@ -49,16 +49,25 @@ candidate bootstrap schema digest. It exports the workflow run namespace only af
 authenticated lookup-binding association matches the current source incarnation and native run
 handle; the source-owned native run ID remains internal. The explicit invalidation hook is
 available to restore/session owners, while wiring every host lifecycle event remains unverified.
-The current content-manifest producer is unavailable, so no native route success is claimed.
+The content-manifest producer route is wired through the managed owner DTO and native canonical
+producer; no installed-process route success is claimed.
 
 The exact pinned host metadata confirms `ModelDb._contentById` as a private
 `Dictionary<ModelId, AbstractModel>` and exposes `ModelId.Category/Entry`,
 `AbstractModel.IsCanonical/IsMutable` and category/entry sorting fields. The new bounded
 `NativeContentCatalogOwnerObservation` copies those values on the owner thread and groups actual
-registry counts. The same metadata exposes no catalog generation/reload witness, definition
-origin or override chain, or canonical semantic-input reader; those missing fields keep the
-canonical producer fail-closed. This is source evidence, not a complete manifest or live-process
-acceptance claim.
+registry counts; both the content-manifest path and lookup-binding path exercise this read before
+refusing publication. The source now establishes a bounded before/after owner fingerprint and
+supports card-family semantic fields; missing lifecycle provenance and override-chain APIs remain
+explicit limitations. This is source evidence, not a complete installed-process acceptance claim.
+
+The managed source now serializes one bounded owner DTO and calls the internal native
+`sts2_game_mod_content_manifest_produce` ABI. Rust converts that DTO into the canonical
+`ContentManifestProducer` and schema-validating wire codec; its focused fixture produces and
+decodes a successful manifest envelope. The supported projection is `card` with family-specific
+canonical fields and localized title/description, while every other observed registry family is
+included as an explicitly unhandled inventory family. The exact host route remains unverified
+until the addon can run in the authorized STS2 process.
 
 The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable until a versioned
 mapping is agreed. The managed DTO is intended to be mapped by that owner; it is not a protocol

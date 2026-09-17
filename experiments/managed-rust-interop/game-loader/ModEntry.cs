@@ -71,6 +71,7 @@ public static partial class ModEntry
                     throw new InvalidOperationException(
                         $"native smoke call failed: status={status}, result={sum}");
                 }
+                _ = NativeLibrary.GetExport(candidate, "sts2_game_mod_content_manifest_produce");
 
                 _nativeLibrary = candidate;
                 candidate = 0;
