@@ -16,7 +16,7 @@ public static partial class ModEntry
     private const string GameInformationProtocol = "game-information-query-v1";
     private const string GameInformationDigest =
         "376845b0c86b4afcd2c79ffba753eb7e7e416f5410da26b4dae970cfee2221d9";
-    private static readonly string[] QueryKinds = ["availability", "detail", "get", "list", "search"];
+    private static readonly string[] QueryKinds = ["detail"];
     private static readonly string[] EntityKinds = ["card"];
     private static readonly string[] Levels = ["summary", "standard", "full"];
     private static readonly string[] Fields = ["amount", "cost", "description", "display_name", "flags", "owner", "position", "rarity", "source_id", "tags"];
@@ -65,17 +65,8 @@ public static partial class ModEntry
             // A retained live read is an authority check, never a fresh observation.  The full
             // projection is intentionally unavailable until the content-index owner exposes its
             // immutable index through this adapter.
-            if (mode.GetString() == "live"
-                && (!binding.TryGetProperty("snapshot_ref", out JsonElement snapshotRef)
-                    || snapshotRef.ValueKind != JsonValueKind.Object
-                    || !snapshotRef.TryGetProperty("instance_ref", out JsonElement instanceRef)
-                    || !instanceRef.TryGetProperty("epoch", out JsonElement epoch)
-                    || !epoch.TryGetUInt64(out ulong snapshotEpoch)
-                    || ReadRetainedLiveCardSnapshot(context.InstanceId,
-                        binding.GetProperty("content_manifest_id").GetString() ?? string.Empty,
-                        snapshotEpoch).Available == false))
-                return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
-                    "retained_snapshot_unavailable"));
+            if (mode.GetString() == "live" && queryKind.GetString() == "detail")
+                return ProcessLiveDetail(context, query, binding);
 
             return (503, GameInformationError(context.CorrelationId, query, "missing_capability",
                 "content_index_adapter_unavailable"));
@@ -90,6 +81,75 @@ public static partial class ModEntry
             return (503, GameInformationError(context.CorrelationId, null, "source_unavailable",
                 "query_source_unavailable"));
         }
+    }
+
+    private static (int Status, string Response) ProcessLiveDetail(
+        RuntimeContext context, JsonElement query, JsonElement binding)
+    {
+        if (!binding.TryGetProperty("content_manifest_id", out JsonElement manifest)
+            || !binding.TryGetProperty("snapshot_ref", out JsonElement snapshotRef)
+            || snapshotRef.ValueKind != JsonValueKind.Object
+            || !snapshotRef.TryGetProperty("instance_ref", out JsonElement snapshotInstance)
+            || !snapshotInstance.TryGetProperty("epoch", out JsonElement epoch)
+            || !epoch.TryGetUInt64(out ulong snapshotEpoch))
+            return (400, GameInformationError(context.CorrelationId, query, "malformed",
+                "invalid_snapshot_ref"));
+        LiveCardCapturedSnapshot snapshot = ReadRetainedLiveCardSnapshot(context.InstanceId,
+            manifest.GetString() ?? string.Empty, snapshotEpoch);
+        if (!snapshot.Available)
+            return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
+                "retained_snapshot_unavailable"));
+        if (!query.TryGetProperty("target", out JsonElement target)
+            || !target.TryGetProperty("instance_ref", out JsonElement targetInstance)
+            || !targetInstance.TryGetProperty("entity_id", out JsonElement entityId))
+            return (400, GameInformationError(context.CorrelationId, query, "malformed",
+                "missing_live_target"));
+        LiveCardCapturedCard? card = null;
+        foreach (LiveCardCapturedCard candidate in snapshot.Cards)
+            if (candidate.InstanceId == entityId.GetString()) { card = candidate; break; }
+        if (card is null)
+            return (404, GameInformationError(context.CorrelationId, query, "not_found",
+                "live_card_not_found"));
+
+        object definitionRef = target.GetProperty("definition_ref").Clone();
+        object instanceRef = targetInstance.Clone();
+        var fields = new List<Dictionary<string, object?>>();
+        foreach (JsonElement name in query.GetProperty("fields").EnumerateArray())
+            fields.Add(LiveField(name.GetString() ?? string.Empty, card, context.InstanceId));
+        var item = new Dictionary<string, object?>
+        {
+            ["definition_ref"] = definitionRef, ["instance_ref"] = instanceRef, ["fields"] = fields
+        };
+        var page = new Dictionary<string, object?>
+        {
+            ["items"] = new[] { item }, ["next_cursor"] = null, ["final_page"] = true,
+            ["total_count"] = 1, ["total_count_known"] = true, ["coverage"] = "complete",
+            ["cursor_binding"] = null, ["limits"] = query.GetProperty("limits").Clone(),
+            ["ordering"] = new Dictionary<string, object?> { ["algorithm"] = "identity_bytes", ["deterministic"] = true, ["direction"] = "ascending", ["key"] = "instance_ref" },
+            ["accounting"] = new Dictionary<string, int> { ["item_count"] = 1, ["item_bytes"] = 4096, ["payload_bytes"] = 4096, ["page_bytes"] = 8192, ["text_bytes"] = 4096 }
+        };
+        return (200, JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["protocol_version"] = GameInformationProtocol, ["schema_digest"] = GameInformationDigest,
+            ["provenance"] = GameInformationProvenance(), ["correlation_id"] = context.CorrelationId,
+            ["kind"] = "query_response", ["query"] = query.Clone(), ["capabilities"] = null, ["error"] = null,
+            ["result"] = new Dictionary<string, object?> { ["page"] = page, ["read_only"] = true, ["result_generation"] = snapshot.StateGeneration, ["parent_observation"] = query.GetProperty("parent_observation").Clone() }
+        }));
+    }
+
+    private static Dictionary<string, object?> LiveField(string name, LiveCardCapturedCard card,
+        string instanceId)
+    {
+        object? value = null; string kind = "text"; string? unit = null; string availability = "not_observable";
+        if (name == "display_name" && card.Title.Status == LiveCardFieldStatus.Available)
+            { value = card.Title.Value; availability = "available"; }
+        else if (name == "cost" && card.ResolvedCost.Status == LiveCardFieldStatus.Available)
+            { value = card.ResolvedCost.Value; kind = "integer"; unit = "count"; availability = "available"; }
+        else if (name == "owner" && card.OwnerId.Status == LiveCardFieldStatus.Available)
+            { value = card.OwnerId.Value; availability = "available"; }
+        return new Dictionary<string, object?> { ["name"] = name, ["kind"] = kind, ["value"] = value,
+            ["unit"] = unit, ["availability"] = availability, ["reason"] = availability == "available" ? null : "field_not_observed",
+            ["source"] = new Dictionary<string, string> { ["kind"] = "game_mod", ["ref"] = instanceId } };
     }
 
     private static bool ValidGameInformationContext(RuntimeContext context) =>
