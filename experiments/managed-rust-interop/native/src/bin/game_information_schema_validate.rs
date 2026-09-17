@@ -275,7 +275,12 @@ fn validate_items(
         let instance = item
             .get("instance_ref")
             .ok_or_else(|| "instance_ref missing".to_owned())?;
-        if (mode == "static" && !instance.is_null()) || (mode == "live" && instance.is_null()) {
+        let bound_instance = query
+            .get("binding")
+            .and_then(|binding| binding.get("instance_ref"));
+        if (mode == "static" && !instance.is_null())
+            || (mode == "live" && (instance.is_null() || Some(instance) != bound_instance))
+        {
             return Err("item instance scope does not match query mode".to_owned());
         }
         for field in item
