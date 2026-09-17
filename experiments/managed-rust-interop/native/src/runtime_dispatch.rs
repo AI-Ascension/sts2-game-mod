@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use super::{
-    CALLBACK_CONTENT_MANIFEST, CALLBACK_LIVE_OBSERVATION_BOOTSTRAP, CALLBACK_LOOKUP_BINDING,
+    CALLBACK_CONTENT_MANIFEST, CALLBACK_GAME_INFORMATION_QUERY,
+    CALLBACK_LIVE_OBSERVATION_BOOTSTRAP, CALLBACK_LOOKUP_BINDING,
     MAX_CONTENT_MANIFEST_RESPONSE_BYTES, MAX_RESPONSE_BYTES, RuntimeRequest,
     RuntimeRequestCallback, http, io,
 };
@@ -43,7 +44,10 @@ pub(super) fn dispatch_with_body(
     let locale = request.headers.get("x-sts2-locale");
     if matches!(
         kind,
-        CALLBACK_LOOKUP_BINDING | CALLBACK_CONTENT_MANIFEST | CALLBACK_LIVE_OBSERVATION_BOOTSTRAP
+        CALLBACK_LOOKUP_BINDING
+            | CALLBACK_CONTENT_MANIFEST
+            | CALLBACK_LIVE_OBSERVATION_BOOTSTRAP
+            | CALLBACK_GAME_INFORMATION_QUERY
     ) && locale.is_none()
     {
         return http::write_response(stream, 400, b"{\"error_code\":\"missing_locale\"}");
@@ -68,7 +72,9 @@ pub(super) fn dispatch_with_body(
     }
     if matches!(
         kind,
-        CALLBACK_CONTENT_MANIFEST | CALLBACK_LIVE_OBSERVATION_BOOTSTRAP
+        CALLBACK_CONTENT_MANIFEST
+            | CALLBACK_LIVE_OBSERVATION_BOOTSTRAP
+            | CALLBACK_GAME_INFORMATION_QUERY
     ) && !content_manifest_locale(locale.map_or("", String::as_str))
     {
         return http::write_response(stream, 400, b"{\"error_code\":\"unsafe_locale\"}");

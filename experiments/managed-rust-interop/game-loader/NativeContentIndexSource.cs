@@ -20,7 +20,8 @@ internal sealed record NativeContentIndexDefinition(
     string? CharacterOrPool,
     string? Rarity,
     string UnlockState,
-    IReadOnlyList<string> TermReferences);
+    IReadOnlyList<string> TermReferences,
+    IReadOnlyList<string>? Tags);
 
 /// <summary>
 /// Immutable content-index source capture. ManifestId and definitions are derived from one
@@ -30,6 +31,14 @@ internal sealed record NativeContentIndexSnapshot(
     string ManifestId,
     string Locale,
     IReadOnlyList<NativeContentIndexDefinition> Definitions);
+
+/// <summary>
+/// One canonical index capture plus the exact owned source JSON used to produce its manifest.
+/// The source JSON is retained only for the native query bridge and is never emitted directly.
+/// </summary>
+internal sealed record NativeContentIndexCapture(
+    NativeContentIndexSnapshot Snapshot,
+    string SourceJson);
 
 internal static partial class NativeContentCatalogManifestSource
 {
@@ -42,7 +51,22 @@ internal static partial class NativeContentCatalogManifestSource
         string locale,
         out NativeContentIndexSnapshot snapshot)
     {
+        if (TryCaptureCanonicalContentIndexWithSource(
+                correlationId, locale, out NativeContentIndexCapture capture))
+        {
+            snapshot = capture.Snapshot;
+            return true;
+        }
         snapshot = null!;
+        return false;
+    }
+
+    internal static bool TryCaptureCanonicalContentIndexWithSource(
+        string correlationId,
+        string locale,
+        out NativeContentIndexCapture capture)
+    {
+        capture = null!;
         if (!ContentManifestWireContract.ValidIdentity(correlationId)
             || !ContentManifestWireContract.ValidLocale(locale))
         {
@@ -119,17 +143,20 @@ internal static partial class NativeContentCatalogManifestSource
                     OptionalSemanticValue(semantic, "character_or_pool"),
                     OptionalSemanticValue(semantic, "rarity"),
                     OptionalSemanticValue(semantic, "unlock_state") ?? "unknown",
-                    StringList(semantic, "term_references")));
+                    StringList(semantic, "term_references"),
+                    OptionalStringList(semantic, "tags")));
             }
             if (manifestKeys.Count != 0)
                 return false;
 
-            snapshot = new NativeContentIndexSnapshot(manifestId, locale, definitions);
+            capture = new NativeContentIndexCapture(
+                new NativeContentIndexSnapshot(manifestId, locale, definitions),
+                sourceJson);
             return true;
         }
         catch (Exception)
         {
-            snapshot = null!;
+            capture = null!;
             return false;
         }
     }
@@ -182,6 +209,38 @@ internal static partial class NativeContentCatalogManifestSource
         {
             return Array.Empty<string>();
         }
+        var result = new List<string>();
+        foreach (JsonElement value in values.EnumerateArray())
+        {
+            if (result.Count >= MaxIndexListItems)
+                throw new InvalidOperationException("content-index list exceeds its bound");
+            if (value.ValueKind != JsonValueKind.String
+                || value.GetString() is not string text
+                || text.Length == 0
+                || text.IndexOfAny(['\0', '\r', '\n']) >= 0
+                || Encoding.UTF8.GetByteCount(text) > MaxIndexTextBytes)
+            {
+                throw new InvalidOperationException("content-index list value is malformed");
+            }
+            result.Add(text);
+        }
+        return result;
+    }
+
+    private static List<string>? OptionalStringList(string? json, string name)
+    {
+        if (json is null)
+            return null;
+        if (Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+            throw new InvalidOperationException("content-index list exceeds its bound");
+        using JsonDocument document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty(name, out JsonElement values))
+        {
+            return null;
+        }
+        if (values.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException("content-index list is malformed");
         var result = new List<string>();
         foreach (JsonElement value in values.EnumerateArray())
         {

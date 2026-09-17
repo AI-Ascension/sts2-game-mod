@@ -32,3 +32,6 @@ jobs:
 
       - name: Enforce repository policy
         run: cargo run --locked --package repo-policy -- --strict
+
+      - name: Validate pinned game-information responses
+        run: cargo build --locked --bin game_information_schema_validate --manifest-path experiments/managed-rust-interop/native/Cargo.toml && target/debug/game_information_schema_validate < protocol-artifact/game-information-query-v1/golden/capabilities-response.json && target/debug/game_information_schema_validate < protocol-artifact/game-information-query-v1/golden/static-page-1-response.json

@@ -1,0 +1,43 @@
+name: Game information query conformance
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  managed-native:
+    name: Managed/native query conformance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 9.0.317
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+
+      - name: Build native query library and canonical validator
+        run: |
+          cargo build --locked --lib --bin game_information_schema_validate --manifest-path experiments/managed-rust-interop/native/Cargo.toml
+          test -f target/debug/libai_ascension_sts2_game_mod_native.so
+
+      - name: Build managed query probe
+        run: dotnet build experiments/managed-rust-interop/live-game-information-tests/LiveGameInformationProbe.csproj --configuration Release -p:DefaultItemExcludes='**/obj/**'
+
+      - name: Run managed/native query conformance
+        run: |
+          GAME_INFORMATION_SCHEMA_VALIDATOR="$PWD/target/debug/game_information_schema_validate" \
+            DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 dotnet run --project experiments/managed-rust-interop/live-game-information-tests/LiveGameInformationProbe.csproj \
+            --configuration Release --no-build -- "$PWD/target/debug/libai_ascension_sts2_game_mod_native.so"

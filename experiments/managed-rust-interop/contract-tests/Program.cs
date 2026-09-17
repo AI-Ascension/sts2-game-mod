@@ -87,6 +87,11 @@ namespace AiAscension.Sts2GameMod.Runtime
                 || response.RootElement.GetProperty("generation").GetUInt64() != initial + 1
                 || response.RootElement.GetProperty("effect_witness").GetProperty("generation").GetUInt64() != initial + 1)
                 throw new InvalidOperationException("valid action acceptance");
+            var unavailableQuery = ProcessRuntimeWork(new RuntimeWork(
+                RuntimeRequestKindGameInformationQuery, context, ""));
+            if (unavailableQuery.Status != 503
+                || unavailableQuery.Response != "{\"error_code\":\"query_probe_unavailable\"}")
+                throw new InvalidOperationException("game-information callback dispatch");
             var stale = ProcessRuntimeWork(new RuntimeWork(2, context, wire));
             Console.WriteLine(stale.Response);
             if (stale.Status != 409 || _hostCalls != 1)
