@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.Json;
 
 namespace AiAscension.Sts2GameMod.Runtime;
@@ -132,8 +133,8 @@ public static partial class ModEntry
             || definitionKind.GetString() != "card")
             return (400, GameInformationError(context.CorrelationId, query, "malformed",
                 "definition_fence_mismatch"));
-        if (!TryReadLiveCardBinding(context, snapshot.RunId, snapshot.ContentManifest,
-                snapshot.Epoch, snapshot))
+        if (!TryReadCurrentLiveCardBinding(context, snapshot.RunId, snapshot.ContentManifest,
+                snapshot))
             return (409, GameInformationError(context.CorrelationId, query, "stale_snapshot",
                 "lookup_binding_mismatch"));
         object definition = definitionRef.Clone();
@@ -151,8 +152,17 @@ public static partial class ModEntry
             ["total_count"] = 1, ["total_count_known"] = true, ["coverage"] = "complete",
             ["cursor_binding"] = null, ["limits"] = query.GetProperty("limits").Clone(),
             ["ordering"] = new Dictionary<string, object?> { ["algorithm"] = "identity_bytes", ["deterministic"] = true, ["direction"] = "ascending", ["key"] = "instance_ref" },
-            ["accounting"] = new Dictionary<string, int> { ["item_count"] = 1, ["item_bytes"] = 4096, ["payload_bytes"] = 4096, ["page_bytes"] = 8192, ["text_bytes"] = 4096 }
         };
+        int itemBytes = Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(item));
+        int payloadBytes = Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(new[] { item }));
+        int textBytes = LiveTextBytes(fields);
+        int pageBytes = Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(page));
+        if (!LimitsAllow(query.GetProperty("limits"), itemBytes, payloadBytes, pageBytes, textBytes))
+            return (413, GameInformationError(context.CorrelationId, query, "result_limit_exceeded",
+                "requested_page_limit_exceeded"));
+        page["accounting"] = new Dictionary<string, int> { ["item_count"] = 1,
+            ["item_bytes"] = itemBytes, ["payload_bytes"] = payloadBytes,
+            ["page_bytes"] = pageBytes, ["text_bytes"] = textBytes };
         return (200, JsonSerializer.Serialize(new Dictionary<string, object?>
         {
             ["protocol_version"] = GameInformationProtocol, ["schema_digest"] = GameInformationDigest,
@@ -161,6 +171,28 @@ public static partial class ModEntry
             ["result"] = new Dictionary<string, object?> { ["page"] = page, ["read_only"] = true, ["result_generation"] = snapshot.StateGeneration, ["parent_observation"] = query.GetProperty("parent_observation").Clone() }
         }));
     }
+
+    private static int LiveTextBytes(IEnumerable<Dictionary<string, object?>> fields)
+    {
+        int total = 0;
+        foreach (Dictionary<string, object?> field in fields)
+            if (field["value"] is string text)
+                total = checked(total + Encoding.UTF8.GetByteCount(text));
+        return total;
+    }
+
+    private static bool LimitsAllow(JsonElement limits, int itemBytes, int payloadBytes,
+        int pageBytes, int textBytes) =>
+        limits.ValueKind == JsonValueKind.Object
+        && limits.TryGetProperty("item_bytes", out JsonElement itemLimit)
+        && limits.TryGetProperty("page_bytes", out JsonElement pageLimit)
+        && limits.TryGetProperty("page_items", out JsonElement itemCount)
+        && limits.TryGetProperty("text_bytes", out JsonElement textLimit)
+        && itemLimit.TryGetInt32(out int requestedItem) && requestedItem >= itemBytes
+        && pageLimit.TryGetInt32(out int requestedPage) && requestedPage >= pageBytes
+        && itemCount.TryGetInt32(out int requestedItems) && requestedItems >= 1
+        && textLimit.TryGetInt32(out int requestedText) && requestedText >= textBytes
+        && payloadBytes <= requestedPage;
 
     private static bool InstanceMatches(JsonElement value, LiveCardCapturedSnapshot snapshot) =>
         value.ValueKind == JsonValueKind.Object
@@ -179,6 +211,27 @@ public static partial class ModEntry
         && valueGeneration == snapshot.StateGeneration
         && value.TryGetProperty("instance_ref", out JsonElement instance)
         && InstanceMatches(instance, snapshot);
+
+    // Query v1 deliberately has no LBR authority epoch.  This checks the current association
+    // stored by the lookup-binding owner, so a selector can never substitute a snapshot epoch
+    // for gateway/harness authority.
+    private static bool TryReadCurrentLiveCardBinding(RuntimeContext context, string runId,
+        string contentManifestId, LiveCardCapturedSnapshot snapshot)
+    {
+        LiveCardBindingAssociation? binding = _liveCardBinding;
+        return binding is not null
+            && binding.InstanceId == context.InstanceId
+            && binding.CallerId == context.CallerId
+            && binding.SessionId == context.SessionId
+            && binding.LeaseId == context.LeaseId
+            && binding.LeaseEpoch == ParseEpoch(context.LeaseEpoch)
+            && binding.RunId == runId
+            && binding.ContentManifestId == contentManifestId
+            && binding.NativeRunId == snapshot.RunId
+            && binding.SourceIncarnation == snapshot.SourceIncarnation
+            && binding.SourceEpoch <= snapshot.Epoch
+            && binding.SourceGeneration <= snapshot.StateGeneration;
+    }
 
     private static Dictionary<string, object?> LiveField(string name, LiveCardCapturedCard card,
         string instanceId)
