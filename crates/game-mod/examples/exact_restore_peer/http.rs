@@ -14,7 +14,7 @@ use sts2_game_mod::{
 use super::config::Config;
 use super::fixture::PeerApplier;
 use super::http_wire::{MAX_RECOVERY_FRAME, Request, read_request, write_response};
-use super::recovery::{RECOVERY_PATH, lease_response, recovery_response};
+use super::recovery::{RECOVERY_PATH, lease_response, recovery_response, valid_lease_request};
 
 const EXACT_PREFIX: &str = "/v1/exact-restore/";
 
@@ -214,6 +214,9 @@ impl PeerState {
             kind,
             "lease_install_request" | "lease_renew_request" | "lease_revoke_request"
         ) {
+            if !valid_lease_request(&frame) {
+                return (403, Vec::new());
+            }
             let response = lease_response(&frame, &self.current_owner());
             if kind == "lease_install_request" {
                 self.update_owner_from_grant(&frame["payload"]["grant"]);

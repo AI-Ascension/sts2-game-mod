@@ -94,19 +94,52 @@ pub(crate) fn lease_response(request: &Value, owner: &ExactRestoreCurrentOwner) 
     serde_json::to_vec(&frame).unwrap_or_default()
 }
 
+pub(crate) fn valid_lease_request(request: &Value) -> bool {
+    let kind = request["kind"].as_str().unwrap_or_default();
+    let capability = request["auth"]["capability"].as_str().unwrap_or_default();
+    let domain = match kind {
+        "lease_install_request" => "host-lease-control/v1/lease-install-request",
+        "lease_renew_request" => "host-lease-control/v1/lease-renew-request",
+        "lease_revoke_request" => "host-lease-control/v1/lease-revoke-request",
+        _ => return false,
+    };
+    if request["contract"].as_str() != Some(LEASE_CONTRACT)
+        || request["schema_digest"].as_str() != Some(LEASE_SCHEMA)
+        || request["auth"]["proof"].as_str().is_none()
+        || capability != kind.trim_end_matches("_request")
+        || request["payload"]["installation_id"].as_str().is_none()
+        || request["payload"]["grant_digest"].as_str().is_none()
+        || request["payload"]["grant"].is_null()
+    {
+        return false;
+    }
+    let Some(secret) = std::env::var("STS2_RUNTIME_HOST_LEASE_KEY")
+        .ok()
+        .and_then(|value| decode_hex(&value))
+    else {
+        return false;
+    };
+    proof_for_domain(request, &secret, domain)
+        == request["auth"]["proof"].as_str().unwrap_or_default()
+}
+
 fn proof_for_frame(frame: &Value, secret: &[u8]) -> String {
+    let domain = match frame["kind"].as_str().unwrap_or_default() {
+        "lease_renew_response" => "host-lease-control/v1/lease-renew-ack",
+        "lease_revoke_response" => "host-lease-control/v1/lease-revoke-ack",
+        _ => "host-lease-control/v1/lease-install-ack",
+    };
+    proof_for_domain(frame, secret, domain)
+}
+
+fn proof_for_domain(frame: &Value, secret: &[u8], domain: &str) -> String {
     let mut protected = frame.clone();
     let Some(auth) = protected["auth"].as_object_mut() else {
         return String::new();
     };
     auth.remove("proof");
     let canonical = canonical(&protected);
-    let mut message = b"host-lease-control/v1/lease-install-ack".to_vec();
-    if frame["kind"] == "lease_renew_response" {
-        message = b"host-lease-control/v1/lease-renew-ack".to_vec();
-    } else if frame["kind"] == "lease_revoke_response" {
-        message = b"host-lease-control/v1/lease-revoke-ack".to_vec();
-    }
+    let mut message = domain.as_bytes().to_vec();
     message.push(0);
     message.extend(canonical);
     hex(&hmac(secret, &message))
