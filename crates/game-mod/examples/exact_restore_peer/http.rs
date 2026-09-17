@@ -16,6 +16,7 @@ use super::fixture::PeerApplier;
 use super::http_wire::{MAX_RECOVERY_FRAME, Request, read_request, write_response};
 use super::recovery::{RECOVERY_PATH, lease_response, recovery_response, valid_lease_request};
 use super::runtime_v3::RuntimeV3State;
+use super::runtime_v3_recovery::runtime_operation_response;
 
 const EXACT_PREFIX: &str = "/v1/exact-restore/";
 
@@ -228,6 +229,12 @@ impl PeerState {
                 self.update_owner_from_grant(&frame["payload"]["grant"]);
             }
             return (200, response);
+        }
+        if matches!(
+            kind,
+            "operation_intent_request" | "operation_dispatch_request"
+        ) {
+            return runtime_operation_response(&frame, &self.current_owner(), &mut self.runtime_v3);
         }
         (400, Vec::new())
     }

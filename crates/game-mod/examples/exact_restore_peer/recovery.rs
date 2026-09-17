@@ -7,8 +7,9 @@ use sha2::{Digest, Sha256};
 use sts2_game_mod::{ExactRestoreCurrentOwner, ExactRestoreOwnerFence};
 
 pub(crate) const RECOVERY_PATH: &str = "/api/v1/runtime/recovery";
-const RECOVERY_CONTRACT: &str = "watchdog-recovery-v1";
-const RECOVERY_SCHEMA: &str = "fb934d3157485aaf6e13e6ebbb213ec8a14c7fc6f5eeebc06b7a22c1f0009217";
+pub(crate) const RECOVERY_CONTRACT: &str = "watchdog-recovery-v1";
+pub(crate) const RECOVERY_SCHEMA: &str =
+    "fb934d3157485aaf6e13e6ebbb213ec8a14c7fc6f5eeebc06b7a22c1f0009217";
 const LEASE_CONTRACT: &str = "watchdog-host-lease-control-v1";
 const LEASE_SCHEMA: &str = "e22faf0f7d3cd313a007b65e52058b3c255153d5778dd8124055c283adf977f9";
 
@@ -234,18 +235,18 @@ fn hex_digit(value: u8) -> Option<u8> {
     }
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn timestamp() -> String {
+pub(crate) fn timestamp() -> String {
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64);
     format!("2026-09-17T00:00:{:02}.000Z", (millis / 1000) % 60)
 }
 
-fn uuid() -> String {
+pub(crate) fn uuid() -> String {
     static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
     format!(
         "aaaaaaaa-aaaa-4aaa-8aaa-{:012x}",
