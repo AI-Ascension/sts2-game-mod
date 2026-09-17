@@ -115,23 +115,28 @@ pub(super) fn project(
                     other => return Err(other.to_string()),
                 }
             }
-            let page = reader
-                .list(&ContentListQuery {
-                    locale,
-                    scope,
-                    filters: ContentQueryFilters {
-                        entity_kind: Some(input.entity_kind.clone()),
-                        ..ContentQueryFilters::default()
-                    },
-                    limit: 64,
-                    continuation: None,
+            // `get` above performs the authoritative scope check. Build the summary directly
+            // from the immutable index so exact lookup does not depend on the first paged list
+            // (valid definitions can occur after the reader's 64-item page bound).
+            let value = reader
+                .index()
+                .definitions()
+                .find(|definition| {
+                    definition.reference.entity_kind == input.entity_kind
+                        && Some(definition.reference.namespaced_id.as_str())
+                            == input.namespaced_id.as_deref()
                 })
-                .map_err(|error| error.to_string())?;
-            let value = page
-                .entries
-                .into_iter()
-                .find(|value| {
-                    value.reference.namespaced_id == input.namespaced_id.clone().unwrap_or_default()
+                .map(|definition| sts2_game_mod::ContentDefinitionSummary {
+                    reference: definition.reference.clone(),
+                    origin: definition.origin.clone(),
+                    semantic_revision: definition.semantic_revision.clone(),
+                    localized_text_revision: definition.localized_text_revision.clone(),
+                    display_name: definition.display_name.clone(),
+                    character_or_pool: definition.character_or_pool.clone(),
+                    rarity: definition.rarity.clone(),
+                    unlock_state: definition.unlock_state,
+                    detail_capabilities: definition.detail_capabilities.clone(),
+                    term_references: definition.term_references.clone(),
                 })
                 .ok_or_else(|| "not_found".to_owned())?;
             Ok((

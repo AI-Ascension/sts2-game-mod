@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using AiAscension.Sts2GameMod.Runtime;
 
@@ -86,6 +87,24 @@ internal static class ProbeHelpers
         if (expected == 200)
             Check(response.Contains("\"kind\":\"query_response\"", StringComparison.Ordinal),
                 $"{message} has query response envelope");
+    }
+
+    internal static string CorruptAccounting(string response, string field)
+    {
+        int accounting = response.IndexOf("\"accounting\"", StringComparison.Ordinal);
+        int property = response.IndexOf($"\"{field}\":", accounting, StringComparison.Ordinal);
+        if (accounting < 0 || property < 0)
+            throw new InvalidOperationException($"accounting field {field} is missing");
+        int valueStart = property + field.Length + 3;
+        int valueEnd = valueStart;
+        while (valueEnd < response.Length && char.IsDigit(response[valueEnd]))
+            valueEnd++;
+        if (valueStart == valueEnd)
+            throw new InvalidOperationException($"accounting field {field} is not numeric");
+        int value = int.Parse(response[valueStart..valueEnd], CultureInfo.InvariantCulture);
+        return string.Concat(response.AsSpan(0, valueStart),
+            (value + 1).ToString(CultureInfo.InvariantCulture),
+            response.AsSpan(valueEnd));
     }
 
 }

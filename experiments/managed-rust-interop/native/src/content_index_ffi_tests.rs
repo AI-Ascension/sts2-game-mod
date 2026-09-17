@@ -216,3 +216,45 @@ fn locked_definition_has_typed_scope_behavior() {
     let output: Output = must(serde_json::from_slice(&body), "reference output");
     assert_eq!(output.items[0].namespaced_id, "ironclad:locked");
 }
+
+#[test]
+fn exact_lookup_reaches_definitions_beyond_list_page() {
+    let mut fixture: serde_json::Value = must(serde_json::from_slice(&snapshot()), "snapshot");
+    let Some(definitions) = fixture
+        .get_mut("definitions")
+        .and_then(serde_json::Value::as_array_mut)
+    else {
+        std::process::abort();
+    };
+    for index in 5..70 {
+        definitions.push(serde_json::json!({
+            "entity_kind": "card",
+            "namespaced_id": format!("ironclad:card-{index:03}"),
+            "semantic_inputs": "{\"unlock_state\":\"unlocked\"}",
+            "localized_text": format!("{{\"title\":\"Card {index}\"}}"),
+            "origin": {"package_id":"base","package_version":"1"},
+            "override_chain": []
+        }));
+    }
+    if let Some(count) = fixture
+        .get_mut("registry_definition_counts")
+        .and_then(|value| value.get_mut("card"))
+    {
+        *count = serde_json::json!(70);
+    } else {
+        std::process::abort();
+    }
+    let source = must(serde_json::to_vec(&fixture), "large snapshot");
+    let query = must(
+        serde_json::to_vec(&serde_json::json!({
+            "operation": "get", "literal": null, "entity_kind": "card",
+            "namespaced_id": "ironclad:card-069", "limit": 1, "cursor": null,
+            "scope": "public", "binding_key": "binding:large-get"
+        })),
+        "large get query",
+    );
+    let (status, body) = run(&source, &query);
+    assert_eq!(status, STATUS_OK);
+    let output: Output = must(serde_json::from_slice(&body), "large get output");
+    assert_eq!(output.items[0].namespaced_id, "ironclad:card-069");
+}

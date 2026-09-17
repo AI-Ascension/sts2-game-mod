@@ -120,6 +120,10 @@ ProbeHelpers.Check(firstPage.GetProperty("accounting").GetProperty("item_count")
 CanonicalValidation.ExpectCanonicalReject(
     firstResponse.Replace("\"item_count\":2", "\"item_count\":3", StringComparison.Ordinal),
     "canonical validator rejects inconsistent item accounting");
+foreach (string accountingField in new[] { "item_bytes", "payload_bytes", "page_bytes", "text_bytes" })
+    CanonicalValidation.ExpectCanonicalReject(
+        ProbeHelpers.CorruptAccounting(firstResponse, accountingField),
+        $"canonical validator rejects inconsistent {accountingField} accounting");
 string staticManifestId = firstPage.GetProperty("items")[0]
     .GetProperty("definition_ref").GetProperty("content_manifest_id").GetString()!;
 string nextCursor = firstPage.GetProperty("next_cursor").GetString()!;

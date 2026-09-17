@@ -35,7 +35,10 @@ public static partial class ModEntry
             });
         }
         JsonElement limits = query.GetProperty("limits");
-        int itemBytes = items.Sum(item => Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(item)));
+        int itemBytes = items
+            .Select(item => Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(item)))
+            .DefaultIfEmpty()
+            .Max();
         int payloadBytes = Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(items));
         int textBytes = StaticTextBytes(items);
         var page = new Dictionary<string, object?>
