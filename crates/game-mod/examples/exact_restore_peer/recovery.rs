@@ -243,6 +243,31 @@ pub(crate) fn digest(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
 
+pub(crate) fn digest_value(value: &Value) -> String {
+    digest(value.as_str().unwrap_or_default().as_bytes())
+}
+
+#[cfg(test)]
+pub(crate) fn valid_ticket_window(ticket: &Value) -> bool {
+    let issued = ticket["issued_at"]
+        .as_str()
+        .and_then(crate::http::parse_timestamp_millis);
+    let expires = ticket["expires_at"]
+        .as_str()
+        .and_then(crate::http::parse_timestamp_millis);
+    matches!((issued, expires), (Some(issued), Some(expires)) if expires > issued)
+}
+
+#[cfg(test)]
+pub(crate) fn valid_effect_digest(witness: &Value) -> bool {
+    witness["effect_digest"].as_str().is_some_and(|digest| {
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    })
+}
+
 pub(crate) fn timestamp() -> String {
     timestamp_after_seconds(0)
 }

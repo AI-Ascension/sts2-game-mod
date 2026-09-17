@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use sts2_game_mod::ExactRestoreCurrentOwner;
 
 use super::recovery::{
-    RECOVERY_CONTRACT, RECOVERY_SCHEMA, digest, timestamp, timestamp_after_seconds, uuid,
+    RECOVERY_CONTRACT, RECOVERY_SCHEMA, digest_value, timestamp, timestamp_after_seconds, uuid,
 };
 use super::runtime_v3::{RuntimeV3State, STATE_ID};
 
@@ -98,13 +98,7 @@ pub(crate) fn runtime_operation_response(
             operation_frame(request, host_status, host_operation),
         );
     }
-    let effect_digest = digest(
-        pending["action"]["canonical_json_b64"]
-            .as_str()
-            .unwrap_or_default()
-            .as_bytes(),
-    );
-    let issued_at = timestamp();
+    let effect_digest = digest_value(&pending["action"]["canonical_json_b64"]);
     let ticket = json!({
         "ticket_id": uuid(),
         "operation_id": operation_id,
@@ -114,7 +108,7 @@ pub(crate) fn runtime_operation_response(
         "lease_epoch": pending["original_context"]["lease_epoch"],
         "host_fence_id": owner.fence.host_fence_id(),
         "state": "SETTLED",
-        "issued_at": issued_at,
+        "issued_at": timestamp(),
         "expires_at": timestamp_after_seconds(5),
     });
     let witness = json!({
@@ -237,6 +231,7 @@ fn error_json(code: &str) -> Vec<u8> {
 mod tests {
     use super::*;
     use crate::config::TransportConfig;
+    use crate::recovery::{valid_effect_digest, valid_ticket_window};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn state() -> (RuntimeV3State, TransportConfig, std::path::PathBuf) {
@@ -395,6 +390,8 @@ mod tests {
         assert_eq!(first["payload"]["result"]["status"], "SETTLED");
         let ticket = first["payload"]["operation"]["ticket"].clone();
         let witness = first["payload"]["operation"]["witness"].clone();
+        assert!(valid_ticket_window(&ticket));
+        assert!(valid_effect_digest(&witness));
 
         let mut reopened = RuntimeV3State::open(transport, path.clone()).expect("reopen");
         let (status, body) = runtime_operation_response(&dispatch, &owner, &mut reopened);
