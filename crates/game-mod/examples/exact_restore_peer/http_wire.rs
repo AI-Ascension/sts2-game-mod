@@ -36,7 +36,7 @@ pub(crate) fn read_request(stream: &mut TcpStream) -> Result<Request, String> {
     let mut words = request_line.split_whitespace();
     let method = words.next().ok_or("missing HTTP method")?.to_owned();
     let path = words.next().ok_or("missing HTTP path")?.to_owned();
-    if words.next().is_some() {
+    if words.next() != Some("HTTP/1.1") || words.next().is_some() {
         return Err(String::from("invalid request line"));
     }
     let mut headers = BTreeMap::new();
@@ -89,4 +89,46 @@ pub(crate) fn write_response(
         .write_all(head.as_bytes())
         .and_then(|_| stream.write_all(body))
         .map_err(|error| format!("write response: {error}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+    use std::net::TcpListener;
+    use std::thread;
+
+    use super::read_request;
+
+    fn exchange(request_line: &str) -> Result<super::Request, String> {
+        let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| error.to_string())?;
+        let address = listener.local_addr().map_err(|error| error.to_string())?;
+        let request_line = request_line.to_owned();
+        let client = thread::spawn(move || {
+            let mut stream =
+                std::net::TcpStream::connect(address).map_err(|error| error.to_string())?;
+            let request = format!("{request_line}\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n");
+            stream
+                .write_all(request.as_bytes())
+                .map_err(|error| error.to_string())
+        });
+        let (mut server, _) = listener.accept().map_err(|error| error.to_string())?;
+        let parsed = read_request(&mut server);
+        client
+            .join()
+            .map_err(|_| String::from("client panicked"))??;
+        parsed
+    }
+
+    #[test]
+    fn accepts_standard_http11_request_line_over_tcp() {
+        let request = exchange("POST /api/v1/runtime/recovery HTTP/1.1").expect("request");
+        assert_eq!(request.method, "POST");
+        assert_eq!(request.path, "/api/v1/runtime/recovery");
+    }
+
+    #[test]
+    fn rejects_wrong_http_version_and_extra_tokens_over_tcp() {
+        assert!(exchange("POST /api/v1/runtime/recovery HTTP/1.0").is_err());
+        assert!(exchange("POST /api/v1/runtime/recovery HTTP/1.1 extra").is_err());
+    }
 }
