@@ -121,6 +121,7 @@ public static partial class ModEntry
             && !ContentManifestWireContract.ValidIdentity("unknown build"),
             "content-manifest game build uses the protocol identity token boundary");
         CheckNativeContentManifestKnownInputs();
+        CheckCanonicalContentIndexSource();
         nint boundedOutput = Marshal.AllocHGlobal(4096);
         try
         {
