@@ -2,8 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::expect_used)]
-
+    use std::error::Error;
     use sts2_game_mod::{
         ContentCatalogSnapshot, ContentCatalogSource, ContentDefinitionInput,
         ContentManifestProducer, ContentOriginInput, ContentPackageInput, ContentSourceError,
@@ -19,7 +18,7 @@ mod tests {
     }
 
     #[test]
-    fn semantic_inputs_change_revisions_without_id_or_type_changes() {
+    fn semantic_inputs_change_revisions_without_id_or_type_changes() -> Result<(), Box<dyn Error>> {
         let snapshot = ContentCatalogSnapshot {
             generation_before: 17,
             generation_after: 17,
@@ -52,23 +51,16 @@ mod tests {
             ],
         };
         let producer =
-            ContentManifestProducer::new("sts2-game-mod-modeldb-card-v1", vec!["card".to_owned()])
-                .expect("producer");
-        let first = producer
-            .produce(&Fixture(snapshot.clone()))
-            .expect("first manifest");
-        let stable = producer
-            .produce(&Fixture(snapshot.clone()))
-            .expect("stable manifest");
+            ContentManifestProducer::new("sts2-game-mod-modeldb-card-v1", vec!["card".to_owned()])?;
+        let first = producer.produce(&Fixture(snapshot.clone()))?;
+        let stable = producer.produce(&Fixture(snapshot.clone()))?;
         assert_eq!(first.inventory_revision, stable.inventory_revision);
 
         let mut changed_card = snapshot.clone();
         changed_card.definitions[0].semantic_inputs =
             "{\"canonical_vars\":{\"damage\":{\"base_value\":7,\"string_value\":\"seven\"}}}"
                 .to_owned();
-        let changed_card_manifest = producer
-            .produce(&Fixture(changed_card))
-            .expect("changed card manifest");
+        let changed_card_manifest = producer.produce(&Fixture(changed_card))?;
         assert_ne!(
             first.inventory_revision,
             changed_card_manifest.inventory_revision
@@ -76,9 +68,7 @@ mod tests {
 
         let mut changed_relic = snapshot.clone();
         changed_relic.definitions[1].semantic_inputs = "{\"rarity\":\"Uncommon\"}".to_owned();
-        let changed_relic_manifest = producer
-            .produce(&Fixture(changed_relic))
-            .expect("changed relic manifest");
+        let changed_relic_manifest = producer.produce(&Fixture(changed_relic))?;
         assert_ne!(
             first.inventory_revision,
             changed_relic_manifest.inventory_revision
@@ -87,13 +77,12 @@ mod tests {
         let mut changed_badge = snapshot;
         changed_badge.definitions[2].semantic_inputs =
             "{\"should_receive_combat_hooks\":true}".to_owned();
-        let changed_badge_manifest = producer
-            .produce(&Fixture(changed_badge))
-            .expect("changed badge manifest");
+        let changed_badge_manifest = producer.produce(&Fixture(changed_badge))?;
         assert_ne!(
             first.inventory_revision,
             changed_badge_manifest.inventory_revision
         );
+        Ok(())
     }
 
     fn definition(kind: &str, id: &str, semantic: &str) -> ContentDefinitionInput {

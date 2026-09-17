@@ -187,9 +187,10 @@ pub unsafe extern "C" fn sts2_game_mod_content_manifest_produce(
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::error::Error;
 
     #[test]
-    fn ffi_produces_canonical_manifest_for_bounded_owner_snapshot() {
+    fn ffi_produces_canonical_manifest_for_bounded_owner_snapshot() -> Result<(), Box<dyn Error>> {
         let input = serde_json::to_vec(&json!({
             "generation_before": 11,
             "generation_after": 11,
@@ -221,8 +222,7 @@ mod tests {
                 }
             ],
             "adapter_compatibility": "sts2-game-mod-modeldb-card-v1"
-        }))
-        .expect("fixture serializes");
+        }))?;
         let correlation = b"corr-ffi";
         let mut output = vec![0_u8; 16 * 1024 * 1024];
         let mut output_length = 0;
@@ -240,21 +240,16 @@ mod tests {
             )
         };
         assert_eq!(status, 200);
-        let codec =
-            sts2_protocol::GameInformationContentManifestV1Codec::new().expect("pinned schema");
-        let envelope = codec
-            .decode(&output[..output_length])
-            .expect("producer output validates");
+        let codec = sts2_protocol::GameInformationContentManifestV1Codec::new()?;
+        let envelope = codec.decode(&output[..output_length])?;
         assert_eq!(envelope["correlation_id"], "corr-ffi");
         assert_eq!(envelope["kind"], "content_manifest_response");
         assert_eq!(envelope["manifest"]["families"][1]["entity_kind"], "relic");
         assert_eq!(envelope["manifest"]["families"][1]["handled"], false);
-        assert_eq!(
-            envelope["manifest"]["definitions"]
-                .as_array()
-                .unwrap()
-                .len(),
-            2
-        );
+        let Some(definitions) = envelope["manifest"]["definitions"].as_array() else {
+            return Err("manifest definitions are not an array".into());
+        };
+        assert_eq!(definitions.len(), 2);
+        Ok(())
     }
 }
