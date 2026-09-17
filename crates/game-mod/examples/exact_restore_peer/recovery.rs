@@ -67,8 +67,16 @@ pub(crate) fn lease_response(request: &Value, owner: &ExactRestoreCurrentOwner) 
         "lease_epoch": lease["lease_epoch"],
         "host_install_generation": 1,
         "recorded_at": timestamp(),
-        "renew_sequence": if kind == "lease_install_request" { Value::Null } else { payload["renew_sequence"].clone() },
-        "expires_at": lease["expires_at"],
+        "renew_sequence": if kind == "lease_install_request" || kind == "lease_revoke_request" {
+            Value::Null
+        } else {
+            payload["renew_sequence"].clone()
+        },
+        "expires_at": if kind == "lease_revoke_request" {
+            Value::Null
+        } else {
+            lease["expires_at"].clone()
+        },
     });
     let mut frame = json!({
         "contract": LEASE_CONTRACT,
@@ -295,5 +303,41 @@ mod tests {
             response["payload"]["fence"]["host_fence_id"],
             owner.fence.host_fence_id()
         );
+    }
+
+    #[test]
+    fn revoke_ack_omits_renewal_and_expiry() {
+        let request = json!({
+            "kind": "lease_revoke_request",
+            "actor": {"principal_id": "77777777-7777-4777-8777-777777777777"},
+            "auth": {"capability": "lease_revoke"},
+            "correlation_id": "88888888-8888-4888-8888-888888888888",
+            "payload": {
+                "installation_id": "99999999-9999-4999-8999-999999999999",
+                "grant_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "grant": {"boot": {}, "fence": {}, "lease": {}}
+            }
+        });
+        let owner = ExactRestoreCurrentOwner {
+            fence: ExactRestoreOwnerFence::new(
+                "11111111-1111-4111-8111-111111111111".into(),
+                "22222222-2222-4222-8222-222222222222".into(),
+                "33333333-3333-4333-8333-333333333333".into(),
+                "44444444-4444-4444-8444-444444444444".into(),
+                3,
+                "55555555-5555-4555-8555-555555555555".into(),
+                7,
+                "66666666-6666-4666-8666-666666666666".into(),
+                8,
+                "session:fixture".into(),
+                1_900_000_000_000,
+            )
+            .expect("owner"),
+            observed_at_millis: 1_800_000_000_000,
+        };
+        let response: Value =
+            serde_json::from_slice(&lease_response(&request, &owner)).expect("response");
+        assert!(response["payload"]["ack"]["renew_sequence"].is_null());
+        assert!(response["payload"]["ack"]["expires_at"].is_null());
     }
 }

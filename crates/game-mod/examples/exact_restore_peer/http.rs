@@ -142,11 +142,7 @@ impl PeerState {
         let mut body = response.body;
         if kind == "exact_restore_lookup_request" && self.lookup_unknown_left {
             self.lookup_unknown_left = false;
-            if let Ok(mut value) = serde_json::from_slice::<Value>(&body) {
-                value["payload"]["result"] = Value::String(String::from("UNKNOWN"));
-                value["payload"]["state"] = Value::String(String::from("UNKNOWN"));
-                body = serde_json::to_vec(&value).unwrap_or(body);
-            }
+            body = lookup_unknown_body(body);
         }
         (response.status, body)
     }
@@ -280,6 +276,18 @@ impl PeerState {
     }
 }
 
+fn lookup_unknown_body(body: Vec<u8>) -> Vec<u8> {
+    let Ok(mut value) = serde_json::from_slice::<Value>(&body) else {
+        return body;
+    };
+    value["payload"]["result"] = Value::String(String::from("UNKNOWN"));
+    value["payload"]["state"] = Value::String(String::from("UNKNOWN"));
+    if let Some(payload) = value["payload"].as_object_mut() {
+        payload.remove("receipt");
+    }
+    serde_json::to_vec(&value).unwrap_or(body)
+}
+
 fn parse_timestamp_millis(value: &str) -> Option<u64> {
     let year: u64 = value.get(0..4)?.parse().ok()?;
     let month: u64 = value.get(5..7)?.parse().ok()?;
@@ -320,7 +328,7 @@ fn current_millis() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_timestamp_millis;
+    use super::{lookup_unknown_body, parse_timestamp_millis};
 
     #[test]
     fn timestamp_parser_handles_millisecond_precision() {
@@ -328,5 +336,21 @@ mod tests {
             parse_timestamp_millis("2026-09-17T00:00:00.123Z"),
             Some(1_789_603_200_123)
         );
+    }
+
+    #[test]
+    fn lookup_unknown_clears_restore_receipt() {
+        let body = serde_json::to_vec(&serde_json::json!({
+            "payload": {
+                "result": "RESTORE_VERIFIED",
+                "state": "RESTORE_VERIFIED",
+                "receipt": {"operation_id": "receipt"}
+            }
+        }))
+        .expect("fixture");
+        let value: serde_json::Value =
+            serde_json::from_slice(&lookup_unknown_body(body)).expect("response");
+        assert_eq!(value["payload"]["state"], "UNKNOWN");
+        assert!(value["payload"].get("receipt").is_none());
     }
 }
