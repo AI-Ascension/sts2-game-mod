@@ -8,7 +8,10 @@ use serde_json::{Value, json};
 const MAX_PENDING_OPERATIONS: usize = 16;
 const MAX_PENDING_BYTES: u64 = 64 * 1024;
 
-pub(crate) fn load(path: &Path) -> Result<BTreeMap<String, Value>, String> {
+pub(crate) fn load(
+    path: &Path,
+    settled_operation_ids: &std::collections::BTreeSet<String>,
+) -> Result<BTreeMap<String, Value>, String> {
     if !path.exists() {
         return Ok(BTreeMap::new());
     }
@@ -37,6 +40,20 @@ pub(crate) fn load(path: &Path) -> Result<BTreeMap<String, Value>, String> {
         let operation_id = item["operation_id"]
             .as_str()
             .ok_or_else(|| String::from("runtime-v3 pending operation_id is missing"))?;
+        match item["state"].as_str() {
+            None => {}
+            Some("REJECTED" | "UNKNOWN")
+                if item["ticket"].is_null() && item["witness"].is_null() => {}
+            Some("SETTLED")
+                if item["ticket"].is_object()
+                    && item["witness"].is_object()
+                    && settled_operation_ids.contains(operation_id) => {}
+            _ => {
+                return Err(String::from(
+                    "runtime-v3 pending operation state is invalid",
+                ));
+            }
+        }
         if pending
             .insert(operation_id.to_owned(), item.clone())
             .is_some()
@@ -55,10 +72,11 @@ pub(crate) fn remember(
     operation_id: &str,
     operation: Value,
 ) -> Result<bool, String> {
-    if pending.len() >= MAX_PENDING_OPERATIONS && !pending.contains_key(operation_id) {
+    let mut next = pending.clone();
+    if next.len() >= MAX_PENDING_OPERATIONS && !next.contains_key(operation_id) {
         return Err(String::from("runtime-v3 pending ledger is full"));
     }
-    if let Some(existing) = pending.get(operation_id) {
+    if let Some(existing) = next.get(operation_id) {
         if !identity_matches(existing, &operation) {
             return Err(String::from("runtime-v3 pending operation conflict"));
         }
@@ -66,8 +84,9 @@ pub(crate) fn remember(
             return Ok(false);
         }
     }
-    let inserted = pending.insert(operation_id.to_owned(), operation).is_none();
-    persist(pending, path)?;
+    let inserted = next.insert(operation_id.to_owned(), operation).is_none();
+    persist(&next, path)?;
+    *pending = next;
     Ok(inserted)
 }
 

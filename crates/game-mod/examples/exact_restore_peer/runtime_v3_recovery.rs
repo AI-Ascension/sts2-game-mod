@@ -335,4 +335,79 @@ mod tests {
                 .contains("conflict")
         );
     }
+
+    #[test]
+    fn host_mux_replays_settled_witness_after_restart_without_second_effect() {
+        let (mut runtime, transport, path) = state();
+        let fence = sts2_game_mod::ExactRestoreOwnerFence::new(
+            "11111111-1111-4111-8111-111111111111".into(),
+            "22222222-2222-4222-8222-222222222222".into(),
+            "33333333-3333-4333-8333-333333333333".into(),
+            "44444444-4444-4444-8444-444444444444".into(),
+            3,
+            "55555555-5555-4555-8555-555555555555".into(),
+            7,
+            "66666666-6666-4666-8666-666666666666".into(),
+            8,
+            "77777777-7777-4777-8777-777777777777".into(),
+            1_900_000_000_000,
+        )
+        .expect("owner");
+        let owner = sts2_game_mod::ExactRestoreCurrentOwner {
+            fence,
+            observed_at_millis: 1_800_000_000_000,
+        };
+        let mut pending = operation();
+        pending["original_context"]["deployment_id"] = json!(owner.fence.deployment_id());
+        pending["original_context"]["instance_id"] = json!(owner.fence.instance_id());
+        pending["original_context"]["instance_incarnation"] =
+            json!(owner.fence.instance_incarnation());
+        pending["original_context"]["boot_id"] = json!(owner.fence.boot_id());
+        pending["original_context"]["authority_generation"] =
+            json!(owner.fence.authority_generation());
+        pending["original_context"]["lease_id"] = json!(owner.fence.lease_id());
+        pending["original_context"]["lease_epoch"] = json!(owner.fence.lease_epoch());
+        let request = json!({
+            "kind": "operation_intent_request",
+            "correlation_id": "88888888-8888-4888-8888-888888888888",
+            "actor": {"principal_id": "77777777-7777-4777-8777-777777777777"},
+            "payload": {"operation": pending}
+        });
+        let (status, _) = runtime_operation_response(&request, &owner, &mut runtime);
+        assert_eq!(status, 200);
+        let dispatch = json!({
+            "kind": "operation_dispatch_request",
+            "correlation_id": "99999999-9999-4999-8999-999999999999",
+            "actor": {"principal_id": "77777777-7777-4777-8777-777777777777"},
+            "payload": {"operation": {
+                "operation_id": "operation-1",
+                "payload_digest": "sha256:payload",
+                "original_context": request["payload"]["operation"]["original_context"]
+            }}
+        });
+        let (status, body) = runtime_operation_response(&dispatch, &owner, &mut runtime);
+        assert_eq!(status, 200);
+        let first: Value = serde_json::from_slice(&body).expect("settled response");
+        assert_eq!(first["payload"]["result"]["status"], "SETTLED");
+        let ticket = first["payload"]["operation"]["ticket"].clone();
+        let witness = first["payload"]["operation"]["witness"].clone();
+
+        let mut reopened = RuntimeV3State::open(transport, path.clone()).expect("reopen");
+        let (status, body) = runtime_operation_response(&dispatch, &owner, &mut reopened);
+        assert_eq!(status, 200);
+        let duplicate: Value = serde_json::from_slice(&body).expect("duplicate response");
+        assert_eq!(duplicate["payload"]["result"]["status"], "DUPLICATE");
+        assert_eq!(duplicate["payload"]["operation"]["ticket"], ticket);
+        assert_eq!(duplicate["payload"]["operation"]["witness"], witness);
+
+        let mut conflict = dispatch;
+        conflict["payload"]["operation"]["payload_digest"] = json!("sha256:changed");
+        let (status, _) = runtime_operation_response(&conflict, &owner, &mut reopened);
+        assert_eq!(status, 409);
+        let ledger: Value = serde_json::from_slice(
+            &std::fs::read(path.join("runtime-v3-effects.json")).expect("ledger"),
+        )
+        .expect("ledger json");
+        assert_eq!(ledger["action_count"], 1);
+    }
 }

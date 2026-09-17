@@ -110,7 +110,9 @@ impl RuntimeV3State {
             } else {
                 BTreeMap::new()
             };
-        let pending_operations = super::runtime_v3_pending::load(&pending_path)?;
+        let settled_operation_ids = operations.keys().cloned().collect();
+        let pending_operations =
+            super::runtime_v3_pending::load(&pending_path, &settled_operation_ids)?;
         let generation = operations
             .values()
             .next()
