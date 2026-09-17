@@ -12,6 +12,39 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 internal static partial class NativeContentCatalogManifestSource
 {
+    internal static readonly Dictionary<string, string> KnownFamilyCategories =
+        new(StringComparer.Ordinal)
+        {
+            ["AllCards"] = "card",
+            ["AllCardPools"] = "card_pool",
+            ["AllSharedCardPools"] = "card_pool",
+            ["AllCharacterCardPools"] = "card_pool",
+            ["AllCharacters"] = "character",
+            ["AllSharedEvents"] = "event",
+            ["AllAncients"] = "ancient",
+            ["AllSharedAncients"] = "ancient",
+            ["AllEvents"] = "event",
+            ["Monsters"] = "monster",
+            ["AllEncounters"] = "encounter",
+            ["AllPotions"] = "potion",
+            ["AllPotionPools"] = "potion_pool",
+            ["AllCharacterPotionPools"] = "potion_pool",
+            ["AllCharacterRelicPools"] = "relic_pool",
+            ["AllSharedPotionPools"] = "potion_pool",
+            ["AllPowers"] = "power",
+            ["AllRelics"] = "relic",
+            ["AllRelicPools"] = "relic_pool",
+            ["CharacterRelicPools"] = "relic_pool",
+            ["AllSharedRelicPools"] = "relic_pool",
+            ["Orbs"] = "orb",
+            ["Acts"] = "act",
+            ["Achievements"] = "achievement",
+            ["GoodModifiers"] = "modifier",
+            ["BadModifiers"] = "modifier",
+            ["DebugAfflictions"] = "affliction",
+            ["DebugEnchantments"] = "enchantment"
+        };
+
     private static Dictionary<(string Category, string Entry), CardModel> ReadCardsByIdentity()
     {
         CardModel[] cards = ModelDb.AllCards.ToArray();
@@ -25,8 +58,8 @@ internal static partial class NativeContentCatalogManifestSource
     }
 
     private static bool SameCardReferences(
-        IReadOnlyDictionary<(string Category, string Entry), CardModel> left,
-        IReadOnlyDictionary<(string Category, string Entry), CardModel> right) =>
+        Dictionary<(string Category, string Entry), CardModel> left,
+        Dictionary<(string Category, string Entry), CardModel> right) =>
         left.Count == right.Count
         && left.All(pair => right.TryGetValue(pair.Key, out CardModel? value)
             && ReferenceEquals(pair.Value, value));
@@ -50,7 +83,7 @@ internal static partial class NativeContentCatalogManifestSource
         }
     }
 
-    private static IReadOnlyDictionary<string, int> ReadIndependentFamilyCounts()
+    private static Dictionary<string, int> ReadIndependentFamilyCounts()
     {
         string[] properties =
         {
@@ -63,13 +96,17 @@ internal static partial class NativeContentCatalogManifestSource
             "BadModifiers", "DebugAfflictions", "DebugEnchantments"
         };
         var seen = new HashSet<AbstractModel>(ReferenceComparer.Instance);
-        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var counts = KnownFamilyCategories.Values
+            .Distinct(StringComparer.Ordinal)
+            .ToDictionary(value => value, _ => 0, StringComparer.Ordinal);
         foreach (string name in properties)
         {
             PropertyInfo? property = typeof(ModelDb).GetProperty(
                 name, BindingFlags.Public | BindingFlags.Static);
-            if (property?.GetValue(null) is not IEnumerable values)
-                continue;
+            if (property is null)
+                throw new InvalidOperationException($"host ModelDb family property unavailable: {name}");
+            if (property.GetValue(null) is not IEnumerable values)
+                throw new InvalidOperationException($"host ModelDb family property is not enumerable: {name}");
             foreach (object value in values)
             {
                 if (value is not AbstractModel model || !seen.Add(model))
@@ -88,17 +125,7 @@ internal static partial class NativeContentCatalogManifestSource
     private static Dictionary<string, object?> GenericDefinition(
         NativeContentCatalogOwnerObservation.Definition definition)
     {
-        string semantic = JsonSerializer.Serialize(new Dictionary<string, object?>
-        {
-            ["id_category"] = definition.EntityKind,
-            ["id_entry"] = definition.NamespacedId,
-            ["runtime_type"] = definition.RuntimeType,
-            ["category_type"] = definition.CategoryType,
-            ["is_canonical"] = definition.IsCanonical,
-            ["is_mutable"] = definition.IsMutable,
-            ["category_sorting_id"] = definition.CategorySortingId,
-            ["entry_sorting_id"] = definition.EntrySortingId
-        });
+        string semantic = NativeContentCatalogManifestSourceHelpers.SemanticInputs(definition);
         if (System.Text.Encoding.UTF8.GetByteCount(semantic) > MaxSemanticBytes)
             throw new InvalidOperationException("model semantic inputs exceed source bounds");
         return new Dictionary<string, object?>
@@ -106,7 +133,7 @@ internal static partial class NativeContentCatalogManifestSource
             ["entity_kind"] = definition.EntityKind,
             ["namespaced_id"] = definition.NamespacedId,
             ["semantic_inputs"] = semantic,
-            ["localized_text"] = null,
+            ["localized_text"] = NativeContentCatalogManifestSourceHelpers.LocalizedText(definition),
             ["origin"] = new Dictionary<string, object?>
             {
                 ["package_id"] = null,

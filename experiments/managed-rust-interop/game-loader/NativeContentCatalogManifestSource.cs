@@ -32,7 +32,7 @@ internal static partial class NativeContentCatalogManifestSource
             definition.EntityKind == "card"
                 ? CardDefinition(cards[(definition.EntityKind, definition.NamespacedId)])
                 : GenericDefinition(definition)).ToArray();
-        string[] firstSemantic = definitions.Select(JsonSerializer.Serialize).ToArray();
+        string[] firstSemantic = definitions.Select(value => JsonSerializer.Serialize(value)).ToArray();
         Dictionary<(string Category, string Entry), CardModel> afterCards =
             ReadCardsByIdentity();
         NativeContentCatalogOwnerObservation after =
@@ -42,6 +42,7 @@ internal static partial class NativeContentCatalogManifestSource
         IReadOnlyDictionary<string, int> independentAfter = ReadIndependentFamilyCounts();
         EnsureCountsMatch(after.RegistryDefinitionCounts, independentAfter);
         if (after.Generation != owner.Generation
+            || !owner.HasSameReferences(after)
             || !SamePackages(known, knownAfter)
             || !SameCardReferences(cards, afterCards))
         {
@@ -52,7 +53,7 @@ internal static partial class NativeContentCatalogManifestSource
                 definition.EntityKind == "card"
                     ? CardDefinition(afterCards[(definition.EntityKind, definition.NamespacedId)])
                     : GenericDefinition(definition))
-            .Select(JsonSerializer.Serialize)
+            .Select(value => JsonSerializer.Serialize(value))
             .ToArray();
         if (!firstSemantic.SequenceEqual(secondSemantic, StringComparer.Ordinal))
             throw new InvalidOperationException("catalog semantics changed during extraction");
@@ -95,6 +96,7 @@ internal static partial class NativeContentCatalogManifestSource
         {
             ["id_category"] = category,
             ["id_entry"] = entry,
+            ["semantic_scope"] = "typed-card-v2",
             ["is_canonical"] = card.IsCanonical,
             ["is_mutable"] = card.IsMutable,
             ["category_sorting_id"] = card.CategorySortingId,
@@ -102,8 +104,10 @@ internal static partial class NativeContentCatalogManifestSource
             ["type"] = card.Type.ToString(),
             ["rarity"] = card.Rarity.ToString(),
             ["target_type"] = card.TargetType.ToString(),
-            ["canonical_energy_cost"] = card.CanonicalEnergyCost,
-            ["has_energy_cost_x"] = card.HasEnergyCostX,
+            ["canonical_energy_cost"] =
+                NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(card, "CanonicalEnergyCost"),
+            ["has_energy_cost_x"] =
+                NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(card, "HasEnergyCostX"),
             ["base_replay_count"] = card.BaseReplayCount,
             ["base_star_cost"] = card.BaseStarCost,
             ["canonical_star_cost"] = card.CanonicalStarCost,
@@ -112,9 +116,13 @@ internal static partial class NativeContentCatalogManifestSource
             ["is_upgradable"] = card.IsUpgradable,
             ["can_be_generated_in_combat"] = card.CanBeGeneratedInCombat,
             ["can_be_generated_by_modifiers"] = card.CanBeGeneratedByModifiers,
-            ["canonical_vars"] = card.CanonicalVars?.ToString(),
-            ["has_single_turn_retain"] = card.HasSingleTurnRetain,
-            ["has_single_turn_sly"] = card.HasSingleTurnSly,
+            ["canonical_vars"] = NativeContentCatalogManifestSourceHelpers.CanonicalDynamicVars(
+                NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(card, "CanonicalVars")),
+            ["has_single_turn_retain"] =
+                NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(
+                    card, "HasSingleTurnRetain"),
+            ["has_single_turn_sly"] =
+                NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(card, "HasSingleTurnSly"),
             ["gains_block"] = card.GainsBlock,
             ["orb_evoke_type"] = card.OrbEvokeType.ToString(),
             ["is_removable"] = card.IsRemovable,

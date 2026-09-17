@@ -13,7 +13,7 @@ public static partial class ModEntry
         RuntimeContext context,
         BootstrapRequest request,
         LiveCardCapturedSnapshot snapshot,
-        IReadOnlyList<LiveCardCapturedCard> cards)
+        List<LiveCardCapturedCard> cards)
     {
         var visible = new List<Dictionary<string, object?>>(cards.Count);
         string? parentEntityId = null;

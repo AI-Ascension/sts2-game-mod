@@ -64,10 +64,13 @@ explicit limitations. This is source evidence, not a complete installed-process 
 The managed source now serializes one bounded owner DTO and calls the internal native
 `sts2_game_mod_content_manifest_produce` ABI. Rust converts that DTO into the canonical
 `ContentManifestProducer` and schema-validating wire codec; its focused fixture produces and
-decodes a successful manifest envelope. The supported projection is `card` with family-specific
-canonical fields and localized title/description, while every other observed registry family is
-included as an explicitly unhandled inventory family. The exact host route remains unverified
-until the addon can run in the authorized STS2 process.
+decodes a successful manifest envelope. Cards use a typed semantic scope with canonical dynamic
+variable values; relics, potions, and powers use typed field scopes. Families without an explicit
+typed source mapping fail closed before producing a manifest; pools, characters, events, ancients,
+monsters, encounters, orbs, acts, achievements, modifiers, afflictions, and enchantments use
+explicit typed scopes where their stable host getters are available. They are never represented
+by an ID-only hash. The exact host route remains unverified until the addon can run in the
+authorized STS2 process.
 
 The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable until a versioned
 mapping is agreed. The managed DTO is intended to be mapped by that owner; it is not a protocol

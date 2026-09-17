@@ -75,11 +75,10 @@ internal sealed partial class LiveCombatSource
     {
         RequireThread();
         _liveCardRegistry.Invalidate();
-        _liveCardBinding = null;
     }
 
     private static bool AddCards(
-        ICollection<LiveCardCaptureInput> output,
+        List<LiveCardCaptureInput> output,
         IEnumerable<CardModel> cards,
         LiveCardZone zone,
         Player owner,

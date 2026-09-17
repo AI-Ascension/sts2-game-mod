@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using MegaCrit.Sts2.Core.Models;
@@ -24,16 +25,32 @@ internal sealed class NativeContentCatalogOwnerObservation
     private NativeContentCatalogOwnerObservation(
         IReadOnlyList<Definition> definitions,
         IReadOnlyDictionary<string, int> registryDefinitionCounts,
-        ulong generation)
+        ulong generation,
+        IReadOnlyDictionary<(string Category, string Entry), AbstractModel> references)
     {
         Definitions = definitions;
         RegistryDefinitionCounts = registryDefinitionCounts;
         Generation = generation;
+        References = references;
     }
 
     internal IReadOnlyList<Definition> Definitions { get; }
     internal IReadOnlyDictionary<string, int> RegistryDefinitionCounts { get; }
     internal ulong Generation { get; }
+    internal IReadOnlyDictionary<(string Category, string Entry), AbstractModel> References { get; }
+
+    internal bool HasSameReferences(NativeContentCatalogOwnerObservation other)
+    {
+        if (References.Count != other.References.Count)
+            return false;
+        foreach ((string Category, string Entry) key in References.Keys)
+        {
+            if (!other.References.TryGetValue(key, out AbstractModel? value)
+                || !ReferenceEquals(References[key], value))
+                return false;
+        }
+        return true;
+    }
 
     internal static NativeContentCatalogOwnerObservation Capture()
     {
@@ -58,7 +75,7 @@ internal sealed class NativeContentCatalogOwnerObservation
             throw new InvalidOperationException("host ModelDb registry changed during observation");
 
         return new NativeContentCatalogOwnerObservation(
-            before.Definitions, before.Counts, before.Fingerprint);
+            before.Definitions, before.Counts, before.Fingerprint, before.References);
     }
 
     private static RegistryRead ReadRegistry(Dictionary<ModelId, AbstractModel> registry)
@@ -67,7 +84,9 @@ internal sealed class NativeContentCatalogOwnerObservation
         if (beforeCount <= 0 || beforeCount > MaxEntries)
             throw new InvalidOperationException("host ModelDb registry is not ready");
         var definitions = new List<Definition>(beforeCount);
-        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var counts = NativeContentCatalogManifestSource.KnownFamilyCategories.Values
+            .Distinct(StringComparer.Ordinal)
+            .ToDictionary(value => value, _ => 0, StringComparer.Ordinal);
         var references = new Dictionary<(string Category, string Entry), AbstractModel>();
         var identities = new HashSet<(string Category, string Entry)>();
         int ownedBytes = 0;
@@ -104,6 +123,7 @@ internal sealed class NativeContentCatalogOwnerObservation
                     entry,
                     runtimeTypeName,
                     categoryTypeName,
+                    pair.Value,
                     pair.Value.IsCanonical,
                     pair.Value.IsMutable,
                     pair.Value.CategorySortingId,
@@ -165,6 +185,7 @@ internal sealed class NativeContentCatalogOwnerObservation
         string NamespacedId,
         string RuntimeType,
         string CategoryType,
+        AbstractModel Model,
         bool IsCanonical,
         bool IsMutable,
         int CategorySortingId,
