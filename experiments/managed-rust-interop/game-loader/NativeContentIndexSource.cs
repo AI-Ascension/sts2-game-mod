@@ -227,7 +227,7 @@ internal static partial class NativeContentCatalogManifestSource
         return result;
     }
 
-    private static IReadOnlyList<string>? OptionalStringList(string? json, string name)
+    private static List<string>? OptionalStringList(string? json, string name)
     {
         if (json is null)
             return null;

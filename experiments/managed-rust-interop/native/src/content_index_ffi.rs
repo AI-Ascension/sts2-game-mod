@@ -112,6 +112,12 @@ struct CursorState {
     tags: BTreeMap<(String, String), Option<Vec<String>>>,
 }
 
+type BuiltIndex = (
+    ContentManifest,
+    sts2_game_mod::ContentIndex,
+    BTreeMap<(String, String), Option<Vec<String>>>,
+);
+
 fn cursors() -> &'static Mutex<HashMap<String, CursorState>> {
     static CURSORS: OnceLock<Mutex<HashMap<String, CursorState>>> = OnceLock::new();
     CURSORS.get_or_init(|| Mutex::new(HashMap::new()))
@@ -128,16 +134,7 @@ fn retain_cursor(token: String, state: CursorState) {
     }
 }
 
-fn build_index(
-    input: InputSnapshot,
-) -> Result<
-    (
-        ContentManifest,
-        sts2_game_mod::ContentIndex,
-        BTreeMap<(String, String), Option<Vec<String>>>,
-    ),
-    String,
-> {
+fn build_index(input: InputSnapshot) -> Result<BuiltIndex, String> {
     let tags = input
         .definitions
         .iter()
