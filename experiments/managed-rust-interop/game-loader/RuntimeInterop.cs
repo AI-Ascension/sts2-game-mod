@@ -26,6 +26,7 @@ public static partial class ModEntry
     private const int RuntimeRequestKindLookupBinding = 22;
     private const int RuntimeRequestKindContentManifest = 23;
     private const int RuntimeRequestKindLiveObservationBootstrap = 24;
+    private const int RuntimeRequestKindGameInformationQuery = 25;
     private const int RuntimeTooManyRequests = 429;
     private const int RuntimeAccepted = 200;
     private const int RuntimeRejected = 409;

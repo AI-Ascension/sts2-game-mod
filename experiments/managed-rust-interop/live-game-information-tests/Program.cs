@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -220,6 +222,21 @@ string staticSearch = Request("search", "static", requestedStaticManifest, "en-U
         namespaced_ids = Array.Empty<string>()
     });
 ExpectStatus(staticSearch, 200, "static search folds display-name text");
+string[] selectedNamespacedIds = ["ironclad:strike"];
+string staticIdFilter = Request("list", "static", requestedStaticManifest, "en-US", 4,
+    ["display_name"], filters: new
+    {
+        definition_refs = Array.Empty<object>(),
+        display_name = (string?)null,
+        instance_ids = Array.Empty<string>(),
+        namespaced_ids = selectedNamespacedIds
+    });
+(int idFilterStatus, string idFilterResponse) = ModEntry.Invoke(staticIdFilter);
+Check(idFilterStatus == 200, "static list applies namespaced-id filter");
+using JsonDocument idFilterDocument = JsonDocument.Parse(idFilterResponse);
+Check(idFilterDocument.RootElement.GetProperty("result").GetProperty("page")
+    .GetProperty("items")[0].GetProperty("definition_ref").GetProperty("namespaced_id")
+    .GetString() == "ironclad:strike", "static id filter returns selected definition");
 
 string staticGet = Request("get", "static", requestedStaticManifest, "en-US", 1,
     ["display_name", "description", "source_id"], target: new

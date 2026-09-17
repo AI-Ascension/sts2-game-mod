@@ -4,5 +4,11 @@
     <Compile Include="../game-loader/LiveCardSnapshotSource.cs" Link="LiveCardSnapshotSource.cs" />
     <Compile Include="../game-loader/LiveCardBindingAssociation.cs" Link="LiveCardBindingAssociation.cs" />
     <Compile Include="../game-loader/LiveGameInformationQueryAdapter.cs" Link="LiveGameInformationQueryAdapter.cs" />
+    <Compile Include="../game-loader/GameInformationValidationAdapter.cs" Link="GameInformationValidationAdapter.cs" />
+    <Compile Include="../game-loader/GameInformationResponseAdapter.cs" Link="GameInformationResponseAdapter.cs" />
+    <Compile Include="../game-loader/StaticContentQueryAdapter.cs" Link="StaticContentQueryAdapter.cs" />
+    <Compile Include="../game-loader/StaticContentResponseAdapter.cs" Link="StaticContentResponseAdapter.cs" />
+    <Compile Include="../game-loader/StaticSelectionAdapter.cs" Link="StaticSelectionAdapter.cs" />
+    <Compile Include="../game-loader/LiveContentQueryAdapter.cs" Link="LiveContentQueryAdapter.cs" />
   </ItemGroup>
 </Project>
