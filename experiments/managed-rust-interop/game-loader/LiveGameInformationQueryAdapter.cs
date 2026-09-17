@@ -56,7 +56,8 @@ public static partial class ModEntry
         string? rendered_description,
         string? character_or_pool,
         string? rarity,
-        string unlock_state);
+        string unlock_state,
+        string[]? tags);
 
     private sealed record NativeCorePage(
         string manifest_id,
@@ -472,7 +473,7 @@ public static partial class ModEntry
                     new NativeContentIndexDefinition(
                         value.entity_kind, value.namespaced_id, value.display_name,
                         value.aliases, value.rendered_description, value.character_or_pool,
-                        value.rarity, value.unlock_state, Array.Empty<string>())).ToArray();
+                        value.rarity, value.unlock_state, Array.Empty<string>(), value.tags)).ToArray();
                 JsonElement? cursorBinding = page.final_page ? null : WithoutCursor(query);
                 response = BuildStaticResponse(
                     context, query, page.manifest_id, values, page.total_count,
@@ -636,8 +637,11 @@ public static partial class ModEntry
                 availability = value.Rarity is null ? "not_observable" : "available";
                 break;
             case "tags":
-                kind = "text_list"; fieldValue = value.Aliases.ToArray();
-                availability = "available"; reason = null; break;
+                kind = "text_list"; fieldValue = value.Tags?.ToArray();
+                availability = value.Tags is null ? "not_observable" : "available";
+                if (availability == "available")
+                    reason = null;
+                break;
             case "source_id":
                 fieldValue = value.NamespacedId; availability = "available"; reason = null; break;
             case "cost":

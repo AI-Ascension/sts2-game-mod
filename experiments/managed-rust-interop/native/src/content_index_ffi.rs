@@ -88,6 +88,7 @@ struct OutputItem {
     character_or_pool: Option<String>,
     rarity: Option<String>,
     unlock_state: String,
+    tags: Option<Vec<String>>,
 }
 
 struct Source {
@@ -108,6 +109,7 @@ struct CursorState {
     continuation: sts2_game_mod::ContentContinuation,
     manifest_id: String,
     binding_key: String,
+    tags: BTreeMap<(String, String), Option<Vec<String>>>,
 }
 
 fn cursors() -> &'static Mutex<HashMap<String, CursorState>> {
@@ -128,7 +130,27 @@ fn retain_cursor(token: String, state: CursorState) {
 
 fn build_index(
     input: InputSnapshot,
-) -> Result<(ContentManifest, sts2_game_mod::ContentIndex), String> {
+) -> Result<
+    (
+        ContentManifest,
+        sts2_game_mod::ContentIndex,
+        BTreeMap<(String, String), Option<Vec<String>>>,
+    ),
+    String,
+> {
+    let tags = input
+        .definitions
+        .iter()
+        .map(|definition| {
+            Ok((
+                (
+                    definition.entity_kind.clone(),
+                    definition.namespaced_id.clone(),
+                ),
+                optional_string_list(&definition.semantic_inputs, "tags")?,
+            ))
+        })
+        .collect::<Result<BTreeMap<_, _>, String>>()?;
     let parsed = input
         .definitions
         .iter()
@@ -219,7 +241,7 @@ fn build_index(
     )
     .produce(&manifest, &Source { snapshot })
     .map_err(|error| error.to_string())?;
-    Ok((manifest, index))
+    Ok((manifest, index, tags))
 }
 
 struct SourceManifest {
@@ -290,11 +312,32 @@ fn to_index_input(definition: &InputDefinition) -> Result<ContentIndexDefinition
     })
 }
 
+fn optional_string_list(json: &str, name: &str) -> Result<Option<Vec<String>>, String> {
+    let value: Value = serde_json::from_str(json).map_err(|_| "semantic".to_owned())?;
+    let Some(field) = value.get(name) else {
+        return Ok(None);
+    };
+    let Some(values) = field.as_array() else {
+        return Err(format!("{name} is not an array"));
+    };
+    values
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| format!("{name} contains a non-string"))
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
 fn project(
     mut reader: ContentIndexReader,
     input: &InputQuery,
     manifest_id: &str,
     continuation: Option<sts2_game_mod::ContentContinuation>,
+    tags: &BTreeMap<(String, String), Option<Vec<String>>>,
 ) -> Result<(Output, Option<CursorState>), String> {
     let locale =
         ContentQueryLocale::new(reader.index().locale()).map_err(|error| error.to_string())?;
@@ -319,7 +362,7 @@ fn project(
                 items: page
                     .entries
                     .into_iter()
-                    .map(|value| output_item(&reader, value))
+                    .map(|value| output_item(&reader, value, tags))
                     .collect(),
                 total_count: page.total,
                 final_page: next.is_none(),
@@ -330,6 +373,7 @@ fn project(
                 continuation,
                 manifest_id: manifest_id.to_owned(),
                 binding_key: input.binding_key.clone(),
+                tags: tags.clone(),
             });
             Ok((output, state))
         }
@@ -353,7 +397,7 @@ fn project(
                 items: page
                     .entries
                     .into_iter()
-                    .map(|value| output_item(&reader, value.summary))
+                    .map(|value| output_item(&reader, value.summary, tags))
                     .collect(),
                 total_count: page.total,
                 final_page: next.is_none(),
@@ -364,6 +408,7 @@ fn project(
                 continuation,
                 manifest_id: manifest_id.to_owned(),
                 binding_key: input.binding_key.clone(),
+                tags: tags.clone(),
             });
             Ok((output, state))
         }
@@ -405,7 +450,7 @@ fn project(
             Ok((
                 Output {
                     manifest_id: manifest_id.to_owned(),
-                    items: vec![output_item(&reader, value)],
+                    items: vec![output_item(&reader, value, tags)],
                     total_count: 1,
                     final_page: true,
                     next_cursor: None,
@@ -432,12 +477,14 @@ fn summary(value: sts2_game_mod::ContentDefinitionSummary) -> OutputItem {
             ContentUnlockState::Unknown => "unknown",
         }
         .to_owned(),
+        tags: None,
     }
 }
 
 fn output_item(
     reader: &ContentIndexReader,
     value: sts2_game_mod::ContentDefinitionSummary,
+    tags: &BTreeMap<(String, String), Option<Vec<String>>>,
 ) -> OutputItem {
     let Some(definition) = reader.index().definitions().find(|definition| {
         definition.reference.entity_kind == value.reference.entity_kind
@@ -462,6 +509,13 @@ fn output_item(
             ContentUnlockState::Unknown => "unknown",
         }
         .to_owned(),
+        tags: tags
+            .get(&(
+                definition.reference.entity_kind.clone(),
+                definition.reference.namespaced_id.clone(),
+            ))
+            .cloned()
+            .flatten(),
     }
 }
 
@@ -498,12 +552,14 @@ fn run(input: &[u8], query: &[u8]) -> (i32, Vec<u8>) {
         if state.binding_key != query.binding_key {
             return (409, br#"{"error_code":"stale_cursor"}"#.to_vec());
         }
-        match project(
-            state.reader,
-            &query,
-            &state.manifest_id,
-            Some(state.continuation),
-        ) {
+        let CursorState {
+            reader,
+            continuation,
+            manifest_id,
+            tags,
+            ..
+        } = state;
+        match project(reader, &query, &manifest_id, Some(continuation), &tags) {
             Ok((output, next)) => {
                 if let Some(next) = next
                     && let Some(cursor) = &output.next_cursor
@@ -522,14 +578,14 @@ fn run(input: &[u8], query: &[u8]) -> (i32, Vec<u8>) {
             br#"{"error_code":"query_snapshot_malformed"}"#.to_vec(),
         );
     };
-    let Ok((manifest, index)) = build_index(snapshot) else {
+    let Ok((manifest, index, tags)) = build_index(snapshot) else {
         return (
             STATUS_UNAVAILABLE,
             br#"{"error_code":"query_index_unavailable"}"#.to_vec(),
         );
     };
     let manifest_id = manifest.inventory_revision.clone();
-    match project(index.reader(), &query, &manifest_id, None) {
+    match project(index.reader(), &query, &manifest_id, None, &tags) {
         Ok((output, next)) => {
             if let Some(next) = next
                 && let Some(cursor) = &output.next_cursor

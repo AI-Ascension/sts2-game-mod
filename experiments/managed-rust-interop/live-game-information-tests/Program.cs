@@ -152,13 +152,17 @@ NativeContentCatalogManifestSource.ControlledSnapshot = new NativeContentIndexSn
     new[]
     {
         new NativeContentIndexDefinition("card", "ironclad:bash", "Bash",
-            Array.Empty<string>(), "Deal damage", null, "attack", "unlocked", Array.Empty<string>()),
+            Array.Empty<string>(), "Deal damage", null, "attack", "unlocked",
+            Array.Empty<string>(), null),
         new NativeContentIndexDefinition("card", "ironclad:defend", "Defend",
-            new[] { "Guard" }, null, null, null, "unlocked", Array.Empty<string>()),
+            new[] { "Guard" }, null, null, null, "unlocked",
+            Array.Empty<string>(), null),
         new NativeContentIndexDefinition("card", "ironclad:strike", "Strike",
-            new[] { "Hit" }, "Deal damage", null, "attack", "unlocked", Array.Empty<string>()),
+            new[] { "Hit" }, "Deal damage", null, "attack", "unlocked",
+            Array.Empty<string>(), null),
         new NativeContentIndexDefinition("card", "ironclad:hidden", "Hidden",
-            Array.Empty<string>(), null, null, null, "unknown", Array.Empty<string>())
+            Array.Empty<string>(), null, null, null, "unknown",
+            Array.Empty<string>(), null)
     });
 if (args.Length > 0)
     ModEntry.SetNativeLibraryForTest(NativeLibrary.Load(args[0]));

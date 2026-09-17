@@ -20,7 +20,8 @@ internal sealed record NativeContentIndexDefinition(
     string? CharacterOrPool,
     string? Rarity,
     string UnlockState,
-    IReadOnlyList<string> TermReferences);
+    IReadOnlyList<string> TermReferences,
+    IReadOnlyList<string>? Tags);
 
 /// <summary>
 /// Immutable content-index source capture. ManifestId and definitions are derived from one
@@ -142,7 +143,8 @@ internal static partial class NativeContentCatalogManifestSource
                     OptionalSemanticValue(semantic, "character_or_pool"),
                     OptionalSemanticValue(semantic, "rarity"),
                     OptionalSemanticValue(semantic, "unlock_state") ?? "unknown",
-                    StringList(semantic, "term_references")));
+                    StringList(semantic, "term_references"),
+                    OptionalStringList(semantic, "tags")));
             }
             if (manifestKeys.Count != 0)
                 return false;
@@ -207,6 +209,38 @@ internal static partial class NativeContentCatalogManifestSource
         {
             return Array.Empty<string>();
         }
+        var result = new List<string>();
+        foreach (JsonElement value in values.EnumerateArray())
+        {
+            if (result.Count >= MaxIndexListItems)
+                throw new InvalidOperationException("content-index list exceeds its bound");
+            if (value.ValueKind != JsonValueKind.String
+                || value.GetString() is not string text
+                || text.Length == 0
+                || text.IndexOfAny(['\0', '\r', '\n']) >= 0
+                || Encoding.UTF8.GetByteCount(text) > MaxIndexTextBytes)
+            {
+                throw new InvalidOperationException("content-index list value is malformed");
+            }
+            result.Add(text);
+        }
+        return result;
+    }
+
+    private static IReadOnlyList<string>? OptionalStringList(string? json, string name)
+    {
+        if (json is null)
+            return null;
+        if (Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+            throw new InvalidOperationException("content-index list exceeds its bound");
+        using JsonDocument document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty(name, out JsonElement values))
+        {
+            return null;
+        }
+        if (values.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException("content-index list is malformed");
         var result = new List<string>();
         foreach (JsonElement value in values.EnumerateArray())
         {

@@ -13,7 +13,8 @@ internal sealed record NativeContentIndexDefinition(
     string? CharacterOrPool,
     string? Rarity,
     string UnlockState,
-    IReadOnlyList<string> TermReferences);
+    IReadOnlyList<string> TermReferences,
+    IReadOnlyList<string>? Tags);
 internal sealed record NativeContentIndexSnapshot(
     string ManifestId,
     string Locale,
@@ -48,6 +49,8 @@ internal static partial class NativeContentCatalogManifestSource
             semantic["unlock_state"] = definition.UnlockState;
             if (definition.TermReferences.Count != 0)
                 semantic["term_references"] = definition.TermReferences;
+            if (definition.Tags is not null)
+                semantic["tags"] = definition.Tags;
             var localized = new Dictionary<string, object?>();
             if (definition.DisplayName is not null)
                 localized["title"] = definition.DisplayName;
