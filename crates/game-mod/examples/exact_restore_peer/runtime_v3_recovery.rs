@@ -121,6 +121,7 @@ pub(crate) fn runtime_operation_response(
         "payload_digest": pending["payload_digest"],
         "boot_id": pending["original_context"]["boot_id"],
         "instance_incarnation": pending["original_context"]["instance_incarnation"],
+        "lease_epoch": pending["original_context"]["lease_epoch"],
         "host_fence_id": owner.fence.host_fence_id(),
         "source": "host_game_thread",
         "state_id": STATE_ID,

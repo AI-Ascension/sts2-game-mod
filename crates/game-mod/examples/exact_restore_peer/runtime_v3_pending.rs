@@ -27,6 +27,9 @@ pub(crate) fn load(
         std::fs::read(path).map_err(|error| format!("read runtime-v3 pending ledger: {error}"))?;
     let value: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("parse runtime-v3 pending ledger: {error}"))?;
+    if value["version"] != 1 {
+        return Err(String::from("runtime-v3 pending ledger version is invalid"));
+    }
     let items = value["operations"]
         .as_array()
         .ok_or_else(|| String::from("runtime-v3 pending operations must be an array"))?;
@@ -47,7 +50,8 @@ pub(crate) fn load(
             Some("SETTLED")
                 if item["ticket"].is_object()
                     && item["witness"].is_object()
-                    && settled_operation_ids.contains(operation_id) => {}
+                    && settled_operation_ids.contains(operation_id)
+                    && receipt_identity_matches(item) => {}
             _ => {
                 return Err(String::from(
                     "runtime-v3 pending operation state is invalid",
@@ -115,4 +119,46 @@ fn identity_matches(existing: &Value, candidate: &Value) -> bool {
         && existing["original_context"] == candidate["original_context"]
         && existing["expected_boundary"] == candidate["expected_boundary"]
         && existing["action"] == candidate["action"]
+}
+
+fn receipt_identity_matches(operation: &Value) -> bool {
+    let context = &operation["original_context"];
+    let boundary = &operation["expected_boundary"];
+    let ticket = &operation["ticket"];
+    let witness = &operation["witness"];
+    let matches_common = |value: &Value| {
+        value["operation_id"].as_str() == operation["operation_id"].as_str()
+            && value["payload_digest"].as_str() == operation["payload_digest"].as_str()
+            && value["boot_id"].as_str() == context["boot_id"].as_str()
+            && value["instance_incarnation"].as_str() == context["instance_incarnation"].as_str()
+            && value["lease_epoch"].as_u64() == context["lease_epoch"].as_u64()
+            && value["host_fence_id"]
+                .as_str()
+                .is_some_and(|id| !id.is_empty())
+    };
+    matches_common(ticket)
+        && matches_common(witness)
+        && witness["state_id"] == boundary["state_id"]
+        && witness["generation"] == 1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failed_persist_does_not_mutate_pending_map() {
+        let path = std::env::temp_dir().join(format!(
+            "sts2-runtime-v3-pending-dir-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&path).expect("directory");
+        let mut pending = BTreeMap::new();
+        let operation = json!({"operation_id": "op-1"});
+        let result = remember(&mut pending, &path, "op-1", operation);
+        assert!(result.is_err());
+        assert!(pending.is_empty());
+        let _ = std::fs::remove_file(path.with_extension("json.tmp"));
+        std::fs::remove_dir_all(path).expect("cleanup");
+    }
 }
