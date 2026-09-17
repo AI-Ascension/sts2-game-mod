@@ -28,6 +28,12 @@ or upgrade field rejects the whole capture rather than publishing an incomplete 
 Card collection size, auxiliary collection size, and auxiliary string byte bounds are enforced
 before publication. Unobservable collections are never represented as empty values.
 
+An instance selector now reads the immutable snapshot retained by the preceding authenticated
+lookup-binding read. It does not recapture and advance the source epoch while checking that
+selector. A source invalidation clears the retained snapshot before a new owner observation can
+be admitted. LBR and bootstrap both pass through the existing runtime-v2 owner fence, including
+caller, session, lease, and lease epoch.
+
 ## Evidence and limits
 
 `live-card-source-tests/LiveCardSourceProbe.csproj` exercises source-owned capture with synthetic
@@ -44,6 +50,15 @@ authenticated lookup-binding association matches the current source incarnation 
 handle; the source-owned native run ID remains internal. The explicit invalidation hook is
 available to restore/session owners, while wiring every host lifecycle event remains unverified.
 The current content-manifest producer is unavailable, so no native route success is claimed.
+
+The exact pinned host metadata confirms `ModelDb._contentById` as a private
+`Dictionary<ModelId, AbstractModel>` and exposes `ModelId.Category/Entry`,
+`AbstractModel.IsCanonical/IsMutable` and category/entry sorting fields. The new bounded
+`NativeContentCatalogOwnerObservation` copies those values on the owner thread and groups actual
+registry counts. The same metadata exposes no catalog generation/reload witness, definition
+origin or override chain, or canonical semantic-input reader; those missing fields keep the
+canonical producer fail-closed. This is source evidence, not a complete manifest or live-process
+acceptance claim.
 
 The Rust `LiveCardSource` contract remains owner-local and fixture/unavailable until a versioned
 mapping is agreed. The managed DTO is intended to be mapped by that owner; it is not a protocol

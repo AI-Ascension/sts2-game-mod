@@ -29,6 +29,7 @@ public static partial class ModEntry
         RuntimeContext context,
         string body)
     {
+        BootstrapRequest? parsedRequest = null;
         try
         {
             using JsonDocument document = JsonDocument.Parse(body, new JsonDocumentOptions
@@ -39,9 +40,16 @@ public static partial class ModEntry
             if (!TryReadBootstrapRequest(root, context, out BootstrapRequest request))
                 return (400, LiveBootstrapError(context, null, null, "invalid_request",
                     "request", "bootstrap request is malformed", false));
+            parsedRequest = request;
 
-            LiveCardCapturedSnapshot snapshot = ReadLiveCardSnapshot(
-                context.InstanceId, request.ContentManifestId);
+            if (!TryAuthorizeRuntimeV2Context(context, out _))
+                return (409, LiveBootstrapError(context, request.Scope, request.Selector,
+                    "invalid_binding", "scope", "transport owner is not current", false));
+
+            LiveCardCapturedSnapshot snapshot = request.RequestedInstance is null
+                ? ReadLiveCardSnapshot(context.InstanceId, request.ContentManifestId)
+                : ReadRetainedLiveCardSnapshot(
+                    context.InstanceId, request.ContentManifestId, request.RequestedEpoch);
             if (!snapshot.Available)
                 return (503, LiveBootstrapError(context, request.Scope, request.Selector,
                     "not_observable", "parent_observation",
@@ -74,7 +82,7 @@ public static partial class ModEntry
             Dictionary<string, object?> response = BootstrapResponse(
                 context, request, snapshot, matches);
             string serialized = JsonSerializer.Serialize(response);
-            if (serialized.Length > request.MaxMessageBytes)
+            if (System.Text.Encoding.UTF8.GetByteCount(serialized) > request.MaxMessageBytes)
                 return (413, LiveBootstrapError(context, request.Scope, request.Selector,
                     "invalid_bounds", "limits", "serialized bootstrap exceeds max_message_bytes",
                     false));
@@ -87,7 +95,8 @@ public static partial class ModEntry
         }
         catch (Exception)
         {
-            return (503, LiveBootstrapError(context, null, null, "unavailable",
+            return (503, LiveBootstrapError(context, parsedRequest?.Scope, parsedRequest?.Selector,
+                "unavailable",
                 "parent_observation", "native snapshot source unavailable", true));
         }
     }

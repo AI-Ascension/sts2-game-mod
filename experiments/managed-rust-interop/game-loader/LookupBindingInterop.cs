@@ -27,7 +27,6 @@ public static partial class ModEntry
 
         try
         {
-            LookupBindingManifest manifest = LookupBindingManifest.Read();
             using JsonDocument request = JsonDocument.Parse(body);
             JsonElement root = request.RootElement;
             string locale = context.Locale;
@@ -35,6 +34,11 @@ public static partial class ModEntry
             {
                 return (400, LookupBindingError(context, "malformed"));
             }
+            if (!TryAuthorizeRuntimeV2Context(context, out _))
+            {
+                return (409, LookupBindingError(context, "missing_capability"));
+            }
+            LookupBindingManifest manifest = LookupBindingManifest.Read();
             string bindingId = LookupBindingManifest.Digest(
                 JsonSerializer.Serialize(new SortedDictionary<string, object?>
                 {

@@ -16,8 +16,10 @@ public static partial class ModEntry
     {
         _liveCardBinding = new LiveCardBindingAssociation(
             context.InstanceId,
+            context.CallerId,
             context.SessionId,
             context.LeaseId,
+            ParseEpoch(context.LeaseEpoch),
             StringField(scope, "project_id") ?? string.Empty,
             StringField(scope, "run_id") ?? string.Empty,
             StringField(scope, "episode_id") ?? string.Empty,
@@ -40,8 +42,10 @@ public static partial class ModEntry
         LiveCardBindingAssociation? binding = _liveCardBinding;
         return binding is not null
             && binding.InstanceId == context.InstanceId
+            && binding.CallerId == context.CallerId
             && binding.SessionId == context.SessionId
             && binding.LeaseId == context.LeaseId
+            && binding.LeaseEpoch == ParseEpoch(context.LeaseEpoch)
             && binding.RunId == runId
             && binding.AuthorityEpoch == authorityEpoch
             && binding.ContentManifestId == contentManifestId
@@ -53,8 +57,10 @@ public static partial class ModEntry
 
     private sealed record LiveCardBindingAssociation(
         string InstanceId,
+        string CallerId,
         string SessionId,
         string LeaseId,
+        ulong LeaseEpoch,
         string ProjectId,
         string RunId,
         string EpisodeId,

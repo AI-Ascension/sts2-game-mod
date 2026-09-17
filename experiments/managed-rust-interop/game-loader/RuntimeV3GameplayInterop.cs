@@ -59,6 +59,13 @@ public static partial class ModEntry
         _liveCardSourceReader?.Read(instanceId, contentManifest)
         ?? LiveCardCapturedSnapshot.Unavailable("source_unconfigured");
 
+    internal static LiveCardCapturedSnapshot ReadRetainedLiveCardSnapshot(
+        string instanceId,
+        string contentManifest,
+        ulong epoch) =>
+        _liveCardSourceReader?.ReadRetained(instanceId, contentManifest, epoch)
+        ?? LiveCardCapturedSnapshot.Unavailable("source_unconfigured");
+
     internal static bool HasPendingNonSeededMutation() =>
         HasPendingNonCoopMutation() || HasPendingCoopMutation;
 

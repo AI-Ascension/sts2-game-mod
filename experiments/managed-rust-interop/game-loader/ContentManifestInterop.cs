@@ -37,9 +37,21 @@ public static partial class ModEntry
                 "malformed", "invalid_identity"));
         }
 
-        // Native registry extraction must provide a coherent generation, independent family
-        // totals, and definition provenance before it can call the canonical producer. The
-        // current host adapter has no verified source for those fields, so it fails closed.
+        // Read the owner registry on the host thread before deciding whether the canonical
+        // producer can run. The exact host exposes IDs, type/category metadata, and per-family
+        // counts through ModelDb, but it does not expose a catalog generation, definition
+        // provenance/override chain, or canonical semantic-input reader. The observation is
+        // therefore useful evidence and still fails closed at the producer boundary.
+        try
+        {
+            _ = NativeContentCatalogSnapshot.CaptureKnownInputs();
+            _ = NativeContentCatalogOwnerObservation.Capture();
+        }
+        catch (InvalidOperationException)
+        {
+            // Keep host readiness and source details out of the protocol envelope.
+        }
+
         return (503, ContentManifestError(context.CorrelationId,
             "missing_capability", "source_unavailable"));
     }
