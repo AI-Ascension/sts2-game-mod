@@ -29,7 +29,9 @@ jobs:
         run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
 
       - name: Build native query library and canonical validator
-        run: cargo build --locked --bin game_information_schema_validate --manifest-path experiments/managed-rust-interop/native/Cargo.toml
+        run: |
+          cargo build --locked --lib --bin game_information_schema_validate --manifest-path experiments/managed-rust-interop/native/Cargo.toml
+          test -f target/debug/libai_ascension_sts2_game_mod_native.so
 
       - name: Build managed query probe
         run: dotnet build experiments/managed-rust-interop/live-game-information-tests/LiveGameInformationProbe.csproj --configuration Release -p:DefaultItemExcludes='**/obj/**'
