@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sts2_game_mod::ExactRestoreCurrentOwner;
 
-use super::recovery::{RECOVERY_CONTRACT, RECOVERY_SCHEMA, hex, timestamp, uuid};
+use super::recovery::{
+    RECOVERY_CONTRACT, RECOVERY_SCHEMA, digest, timestamp, timestamp_after_seconds, uuid,
+};
 use super::runtime_v3::{RuntimeV3State, STATE_ID};
 
 pub(crate) fn runtime_operation_response(
@@ -103,6 +104,7 @@ pub(crate) fn runtime_operation_response(
             .unwrap_or_default()
             .as_bytes(),
     );
+    let issued_at = timestamp();
     let ticket = json!({
         "ticket_id": uuid(),
         "operation_id": operation_id,
@@ -112,8 +114,8 @@ pub(crate) fn runtime_operation_response(
         "lease_epoch": pending["original_context"]["lease_epoch"],
         "host_fence_id": owner.fence.host_fence_id(),
         "state": "SETTLED",
-        "issued_at": timestamp(),
-        "expires_at": timestamp(),
+        "issued_at": issued_at,
+        "expires_at": timestamp_after_seconds(5),
     });
     let witness = json!({
         "witness_id": uuid(),
@@ -199,10 +201,6 @@ fn operation_frame(request: &Value, status: &str, operation: Value) -> Vec<u8> {
         },
     });
     serde_json::to_vec(&body).unwrap_or_default()
-}
-
-fn digest(bytes: &[u8]) -> String {
-    format!("sha256:{}", hex(&Sha256::digest(bytes)))
 }
 
 fn decode_base64_no_pad(value: &str) -> Option<Vec<u8>> {
