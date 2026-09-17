@@ -6,6 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using AiAscension.Sts2GameMod.Runtime;
 
+if (args.Length > 0)
+    Environment.SetEnvironmentVariable("REQUIRE_GAME_INFORMATION_SCHEMA_VALIDATOR", "1");
+
 var card = new LiveCardCapturedCard(
     "card-1",
     LiveCardField<string>.Available("ironclad:strike"),

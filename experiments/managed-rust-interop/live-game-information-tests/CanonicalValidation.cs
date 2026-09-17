@@ -12,8 +12,11 @@ static class CanonicalValidation
         string fallback = Path.Combine(Environment.CurrentDirectory, "target", "debug",
             OperatingSystem.IsWindows() ? "game_information_schema_validate.exe" : "game_information_schema_validate");
         string? validator = configured ?? (File.Exists(fallback) ? fallback : null);
-        if (validator is null)
+        if (validator is null && Environment.GetEnvironmentVariable(
+                "REQUIRE_GAME_INFORMATION_SCHEMA_VALIDATOR") != "1")
             return;
+        if (validator is null)
+            throw new InvalidOperationException("canonical schema validator is required but unavailable");
         using var process = Process.Start(new ProcessStartInfo
         {
             FileName = validator,
@@ -38,8 +41,11 @@ static class CanonicalValidation
         string fallback = Path.Combine(Environment.CurrentDirectory, "target", "debug",
             OperatingSystem.IsWindows() ? "game_information_schema_validate.exe" : "game_information_schema_validate");
         validator ??= File.Exists(fallback) ? fallback : null;
-        if (validator is null)
+        if (validator is null && Environment.GetEnvironmentVariable(
+                "REQUIRE_GAME_INFORMATION_SCHEMA_VALIDATOR") != "1")
             return;
+        if (validator is null)
+            throw new InvalidOperationException("canonical schema validator is required but unavailable");
         using var process = Process.Start(new ProcessStartInfo
         {
             FileName = validator, RedirectStandardInput = true, RedirectStandardError = true,
