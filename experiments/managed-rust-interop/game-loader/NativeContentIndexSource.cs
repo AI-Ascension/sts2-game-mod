@@ -154,19 +154,27 @@ internal static partial class NativeContentCatalogManifestSource
         string name,
         Func<JsonElement, string?> reader)
     {
-        if (json is null || Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+        if (json is null)
             return null;
+        if (Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+            throw new InvalidOperationException("content-index value exceeds its bound");
         using JsonDocument document = JsonDocument.Parse(json);
-        return document.RootElement.ValueKind == JsonValueKind.Object
-            && document.RootElement.TryGetProperty(name, out JsonElement value)
-            ? reader(value)
-            : null;
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty(name, out JsonElement value))
+        {
+            return null;
+        }
+        if (value.ValueKind != JsonValueKind.String)
+            throw new InvalidOperationException("content-index value is malformed");
+        return reader(value);
     }
 
     private static IReadOnlyList<string> StringList(string? json, string name)
     {
-        if (json is null || Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+        if (json is null)
             return Array.Empty<string>();
+        if (Encoding.UTF8.GetByteCount(json) > MaxIndexTextBytes)
+            throw new InvalidOperationException("content-index list exceeds its bound");
         using JsonDocument document = JsonDocument.Parse(json);
         if (document.RootElement.ValueKind != JsonValueKind.Object
             || !document.RootElement.TryGetProperty(name, out JsonElement values)
