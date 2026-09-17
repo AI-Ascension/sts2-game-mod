@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/LiveCardSnapshotSource.cs" Link="LiveCardSnapshotSource.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotRegistry.cs" Link="LiveCardSnapshotRegistry.cs" />
+  </ItemGroup>
+</Project>

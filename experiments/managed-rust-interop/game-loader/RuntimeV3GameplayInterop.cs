@@ -11,6 +11,7 @@ public static partial class ModEntry
     private const uint RuntimeRequestKindExpertState = 7;
     private static RuntimeV3GameplaySupport? _runtimeV3Gameplay;
     private static LiveCombatSource? _liveCombatSource;
+    private static LiveCardSourceReadAdapter? _liveCardSourceReader;
     private static RuntimeV4ExpertSupport _runtimeV4Expert = RuntimeV4ExpertSupport.Unconfigured();
     private static RuntimeV4ExpertRestActionSupport _runtimeV4ExpertRest =
         RuntimeV4ExpertRestActionSupport.Unconfigured();
@@ -18,6 +19,7 @@ public static partial class ModEntry
     private static void InitializeRuntimeV3Gameplay()
     {
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.Unconfigured();
+        _liveCardSourceReader = null;
         _runtimeV4Expert = RuntimeV4ExpertSupport.Unconfigured();
         _runtimeV4ExpertRest = RuntimeV4ExpertRestActionSupport.Unconfigured();
     }
@@ -25,6 +27,9 @@ public static partial class ModEntry
     private static void ConfigureRuntimeV3Gameplay(IRuntimeV3HostSource source, IRuntimeV3HostThread thread)
     {
         _liveCombatSource = source as LiveCombatSource;
+        _liveCardSourceReader = _liveCombatSource is null
+            ? null
+            : new LiveCardSourceReadAdapter(_liveCombatSource, thread);
         _runtimeV3Gameplay = RuntimeV3GameplaySupport.WithHost(source, thread,
             operation => !HasPendingNonSeededMutationExcept(operation)
                 && !SeededRunStandardHost.HasPendingMutation);
@@ -42,6 +47,16 @@ public static partial class ModEntry
 
     internal static bool HasPendingNonExpertMutation() =>
         HasPendingNonSeededMutation() || SeededRunStandardHost.HasPendingMutation;
+
+    /// <summary>
+    /// Host-thread source seam used by the negotiated live-card bootstrap/query owner.
+    /// Protocol serialization remains outside this managed source adapter.
+    /// </summary>
+    internal static LiveCardCapturedSnapshot ReadLiveCardSnapshot(
+        string instanceId,
+        string contentManifest) =>
+        _liveCardSourceReader?.Read(instanceId, contentManifest)
+        ?? LiveCardCapturedSnapshot.Unavailable("source_unconfigured");
 
     internal static bool HasPendingNonSeededMutation() =>
         HasPendingNonCoopMutation() || HasPendingCoopMutation;
