@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>AiAscension.Sts2GameMod.CheckpointCoverageReflection</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Signature decoding is shared with the co-op causality probe; both stay metadata-only. -->
+    <Compile Include="../coop-causality-reflection/MetadataNames.cs" Link="MetadataNames.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The operator-supplied host data directory is recorded in the built probe only; it is
+         never committed and the probe never copies, loads, or executes the host assembly. -->
+    <AssemblyMetadata Include="STS2GameDataDir" Value="$(STS2GameDataDir)" />
+  </ItemGroup>
+  <Target Name="ValidateHostAssemblyPath" BeforeTargets="CoreCompile">
+    <Error Condition="'$(STS2GameDataDir)' == ''"
+           Text="Set STS2GameDataDir to the directory containing the exact pinned sts2.dll. This opt-in metadata probe fails closed without it and is not part of hosted CI." />
+    <Error Condition="'$(STS2GameDataDir)' != '' and !Exists('$(STS2GameDataDir)/sts2.dll')"
+           Text="STS2GameDataDir does not contain sts2.dll: $(STS2GameDataDir)" />
+  </Target>
+</Project>
