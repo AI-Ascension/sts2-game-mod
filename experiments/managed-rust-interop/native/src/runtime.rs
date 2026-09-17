@@ -28,6 +28,8 @@ const CALLBACK_COOP_LEGAL_CATALOG: u32 = 21;
 const CALLBACK_LOOKUP_BINDING: u32 = 22;
 const CALLBACK_CONTENT_MANIFEST: u32 = 23;
 const CALLBACK_LIVE_OBSERVATION_BOOTSTRAP: u32 = 24;
+// All fixed game-information query operations share a single managed, read-only adapter.
+const CALLBACK_GAME_INFORMATION_QUERY: u32 = 25;
 const CALLBACK_RUNTIME_MAP: u32 = 14;
 const MAX_RESPONSE_BYTES: usize = 256 * 1024;
 const MAX_CONTENT_MANIFEST_RESPONSE_BYTES: usize = 16 * 1024 * 1024;

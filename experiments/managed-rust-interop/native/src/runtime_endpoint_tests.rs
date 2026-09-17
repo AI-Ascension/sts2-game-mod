@@ -124,6 +124,37 @@ fn v2_and_gameplay_routes_have_distinct_callback_ids() -> std::io::Result<()> {
 }
 
 #[test]
+fn game_information_routes_are_fixed_and_use_the_query_callback() -> std::io::Result<()> {
+    assert_eq!(super::CALLBACK_GAME_INFORMATION_QUERY, 25);
+    for (method, path, body) in [
+        ("GET", "/api/v1/game-information/capabilities", ""),
+        ("POST", "/api/v1/game-information/list", "{}"),
+        ("POST", "/api/v1/game-information/search", "{}"),
+        ("POST", "/api/v1/game-information/get", "{}"),
+        ("POST", "/api/v1/game-information/detail", "{}"),
+        ("POST", "/api/v1/game-information/availability", "{}"),
+    ] {
+        let request = format!(
+            concat!(
+                "{method} {path} HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+                "Content-Type: application/json\r\nContent-Length: {length}\r\n",
+                "X-Sts2-Instance-Id: instance\r\nX-Sts2-Caller-Id: caller\r\n",
+                "X-Sts2-Session-Id: session\r\nX-Sts2-Lease-Id: lease\r\n",
+                "X-Sts2-Lease-Epoch: 1\r\nX-Sts2-Correlation-Id: request\r\n",
+                "X-Sts2-Locale: en-US\r\n\r\n{body}"
+            ),
+            method = method,
+            path = path,
+            length = body.len(),
+            body = body,
+        );
+        let response = exchange(request.as_bytes(), callback_kind_status)?;
+        assert!(response.starts_with("HTTP/1.1 225 "), "{path}: {response}");
+    }
+    Ok(())
+}
+
+#[test]
 fn coop_native_routes_have_disjoint_callback_ids() -> std::io::Result<()> {
     assert_eq!(super::CALLBACK_COOP_OBSERVATION, 16);
     assert_eq!(super::CALLBACK_COOP_ACTION, 17);
