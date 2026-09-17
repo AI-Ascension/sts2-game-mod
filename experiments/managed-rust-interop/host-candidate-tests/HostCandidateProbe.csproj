@@ -31,5 +31,10 @@
     <Compile Include="../game-loader/LookupBindingInterop.cs" />
     <Compile Include="../game-loader/LookupBindingManifest.cs" />
     <Compile Include="../game-loader/NativeContentCatalogSnapshot.cs" />
+    <Compile Include="../game-loader/NativeContentIndexSource.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotSource.cs" />
+    <Compile Include="../game-loader/LiveObservationBootstrapInterop.cs" />
+    <Compile Include="../game-loader/LiveObservationBootstrapWire.cs" />
+    <Compile Include="../game-loader/LiveCardBindingAssociation.cs" />
   </ItemGroup>
 </Project>

@@ -65,6 +65,7 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
             ["OrbModel"] = new[]
                 { "PassiveVal", "EvokeVal", "Title", "Description", "HasSmartDescription" },
             ["ActModel"] = new[] { "Title", "AmbientSfx", "BgMusicOptions", "MusicBankPaths" },
+            ["BadgeModel"] = new[] { "ShouldReceiveCombatHooks" },
             ["AchievementModel"] = Array.Empty<string>(),
             ["ModifierModel"] = new[] { "ClearsPlayerDeck", "Title", "Description" },
             ["AfflictionModel"] = new[]
@@ -107,11 +108,16 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
             semantic["semantic_scope"] = "typed-power-v1";
             AddProperties(semantic, definition.Model, PowerSemanticProperties);
         }
-        else if (AdditionalSemanticProperties.TryGetValue(
-                     definition.Model.GetType().Name, out string[]? properties))
+        else if (definition.Model is BadgeModel)
+        {
+            semantic["semantic_scope"] = "typed-badge-v1";
+            AddProperties(semantic, definition.Model, AdditionalSemanticProperties["BadgeModel"]);
+        }
+        else if (TryAdditionalSemanticProperties(
+                     definition, out string[] properties))
         {
             semantic["semantic_scope"] =
-                $"typed-{definition.Model.GetType().Name.Replace("Model", string.Empty,
+                $"typed-{FamilyTypeName(definition).Replace("Model", string.Empty,
                     StringComparison.Ordinal).ToLowerInvariant()}-v1";
             AddProperties(semantic, definition.Model, properties);
         }
@@ -124,6 +130,36 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
         if (System.Text.Encoding.UTF8.GetByteCount(result) > MaxSemanticBytes)
             throw new InvalidOperationException("model semantic inputs exceed source bounds");
         return result;
+    }
+
+    private static bool TryAdditionalSemanticProperties(
+        NativeContentCatalogOwnerObservation.Definition definition,
+        out string[] properties)
+    {
+        string familyType = FamilyTypeName(definition);
+        if (AdditionalSemanticProperties.TryGetValue(
+                familyType, out string[]? familyProperties))
+        {
+            properties = familyProperties;
+            return true;
+        }
+        if (AdditionalSemanticProperties.TryGetValue(
+                definition.Model.GetType().Name, out string[]? concreteProperties))
+        {
+            properties = concreteProperties;
+            return true;
+        }
+        properties = Array.Empty<string>();
+        return false;
+    }
+
+    private static string FamilyTypeName(
+        NativeContentCatalogOwnerObservation.Definition definition)
+    {
+        int separator = definition.CategoryType.LastIndexOf('.');
+        return separator >= 0
+            ? definition.CategoryType[(separator + 1)..]
+            : definition.CategoryType;
     }
 
     internal static string? LocalizedText(NativeContentCatalogOwnerObservation.Definition definition)

@@ -41,7 +41,7 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     internal static object? ReadOptionalValue(object value, string name)
     {
         PropertyInfo? property = value.GetType().GetProperty(
-            name, BindingFlags.Public | BindingFlags.Instance);
+            name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         return property?.GetValue(value);
     }
 
@@ -49,12 +49,19 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     {
         if (variable is null)
             return null;
+        object? stringValue = ReadOptionalValue(variable, "StringValue");
+        if (stringValue is string text
+            && System.Text.Encoding.UTF8.GetByteCount(text) > MaxValueBytes)
+        {
+            throw new InvalidOperationException("dynamic variable string value exceeds source bounds");
+        }
         return new Dictionary<string, object?>
         {
             ["type"] = variable.GetType().FullName,
             ["name"] = ReadProperty(variable, "Name"),
             ["base_value"] = ReadProperty(variable, "BaseValue"),
-            ["int_value"] = ReadProperty(variable, "IntValue")
+            ["int_value"] = ReadProperty(variable, "IntValue"),
+            ["string_value"] = stringValue
         };
     }
 
@@ -156,7 +163,7 @@ internal static partial class NativeContentCatalogManifestSourceHelpers
     private static object? ReadProperty(object value, string name)
     {
         PropertyInfo property = value.GetType().GetProperty(
-                name, BindingFlags.Public | BindingFlags.Instance)
+                name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             ?? throw new InvalidOperationException(
                 $"host semantic property unavailable: {value.GetType().Name}.{name}");
         object? result = property.GetValue(value);

@@ -165,6 +165,9 @@ public static partial class ModEntry
             || (definition.GetProperty("variant").ValueKind != JsonValueKind.Null
                 && !RuntimeIdentity(StringField(definition, "variant")!)))
             return false;
+        string? definitionVariant = definition.GetProperty("variant").ValueKind == JsonValueKind.Null
+            ? null
+            : StringField(definition, "variant");
 
         JsonElement instance = selector.GetProperty("instance_ref");
         string? requestedInstance = null;
@@ -187,6 +190,7 @@ public static partial class ModEntry
             runId,
             authorityEpoch,
             StringField(definition, "namespaced_id")!,
+            definitionVariant,
             requestedInstance,
             requestedEpoch,
             (int)maxVisibleEntities,
@@ -209,6 +213,14 @@ public static partial class ModEntry
                 || card.DefinitionId.Value != request.DefinitionId
                 || card.DefinitionManifest.Value != request.ContentManifestId)
                 continue;
+            if (request.DefinitionVariant is null)
+            {
+                if (card.UpgradeVariant.Status != LiveCardFieldStatus.NotObserved)
+                    continue;
+            }
+            else if (card.UpgradeVariant.Status != LiveCardFieldStatus.Available
+                || card.UpgradeVariant.Value != request.DefinitionVariant)
+                continue;
             if (request.RequestedInstance is not null
                 && (card.InstanceId != request.RequestedInstance
                     || request.RequestedEpoch != snapshot.Epoch))
@@ -223,6 +235,7 @@ public static partial class ModEntry
         string RunId,
         ulong AuthorityEpoch,
         string DefinitionId,
+        string? DefinitionVariant,
         string? RequestedInstance,
         ulong RequestedEpoch,
         int MaxVisibleEntities,

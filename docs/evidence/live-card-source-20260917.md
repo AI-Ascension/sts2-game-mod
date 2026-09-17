@@ -61,6 +61,23 @@ refusing publication. The source now establishes a bounded before/after owner fi
 supports card-family semantic fields; missing lifecycle provenance and override-chain APIs remain
 explicit limitations. This is source evidence, not a complete installed-process acceptance claim.
 
+The exact host compile used the pinned reference directory and isolated outputs:
+
+```text
+DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 /home/agent/.dotnet/dotnet build \
+  experiments/managed-rust-interop/game-loader/GameLoaderProbe.csproj \
+  --configuration Release \
+  -p:STS2GameDataDir=/tmp/sts2-native79-20260916/host-refs \
+  -p:BaseIntermediateOutputPath=/tmp/sts2-mcp-startup-obj/ \
+  -p:OutputPath=/tmp/sts2-mcp-startup-out/ \
+  -p:DefaultItemExcludes='**/obj/**'
+```
+
+`sts2.dll` SHA-256 is
+`a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`; the build completed with
+zero warnings and zero errors. Earlier baseline-only reporting used a different host reference
+directory and is superseded by this pinned result.
+
 The managed source now serializes one bounded owner DTO and calls the internal native
 `sts2_game_mod_content_manifest_produce` ABI. Rust converts that DTO into the canonical
 `ContentManifestProducer` and schema-validating wire codec; its focused fixture produces and
@@ -68,7 +85,8 @@ decodes a successful manifest envelope. Cards use a typed semantic scope with ca
 variable values; relics, potions, and powers use typed field scopes. Families without an explicit
 typed source mapping fail closed before producing a manifest; pools, characters, events, ancients,
 monsters, encounters, orbs, acts, achievements, modifiers, afflictions, and enchantments use
-explicit typed scopes where their stable host getters are available. They are never represented
+explicit typed scopes where their stable host getters are available, including the exact-host
+`BadgeModels` family through `ShouldReceiveCombatHooks`. They are never represented
 by an ID-only hash. The exact host route remains unverified until the addon can run in the
 authorized STS2 process.
 
@@ -77,3 +95,9 @@ mapping is agreed. The managed DTO is intended to be mapped by that owner; it is
 or gateway capability claim. The adapter returns an unavailable result if the host callback cannot
 complete synchronously. Exact host execution and any native snapshot/restore source remain
 unverified.
+
+`NativeContentCatalogManifestSource.TryCaptureCanonicalContentIndex` provides the query adapter
+with one coherent owner capture shaped like `ContentIndexDefinitionInput`: it returns the native
+`inventory_revision` together with the locale and optional localized/semantic fields copied from
+that same source JSON. Missing optional host values remain explicit unknowns; a definition-key or
+manifest-revision mismatch fails the capture.

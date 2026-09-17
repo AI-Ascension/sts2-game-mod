@@ -4,7 +4,7 @@ using System;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-internal static class NativeContentCatalogManifestSource
+internal static partial class NativeContentCatalogManifestSource
 {
     internal static string CaptureJson() =>
         throw new InvalidOperationException("synthetic host does not provide ModelDb");
