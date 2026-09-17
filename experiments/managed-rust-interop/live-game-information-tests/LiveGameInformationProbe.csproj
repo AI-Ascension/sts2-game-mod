@@ -8,7 +8,6 @@
     <Compile Include="../game-loader/GameInformationResponseAdapter.cs" Link="GameInformationResponseAdapter.cs" />
     <Compile Include="../game-loader/StaticContentQueryAdapter.cs" Link="StaticContentQueryAdapter.cs" />
     <Compile Include="../game-loader/StaticContentResponseAdapter.cs" Link="StaticContentResponseAdapter.cs" />
-    <Compile Include="../game-loader/StaticSelectionAdapter.cs" Link="StaticSelectionAdapter.cs" />
     <Compile Include="../game-loader/LiveContentQueryAdapter.cs" Link="LiveContentQueryAdapter.cs" />
   </ItemGroup>
 </Project>

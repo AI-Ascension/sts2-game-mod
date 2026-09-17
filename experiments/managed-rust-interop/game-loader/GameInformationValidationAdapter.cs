@@ -19,10 +19,14 @@ public static partial class ModEntry
         query = default;
         reason = "invalid_query_envelope";
         if (root.ValueKind != JsonValueKind.Object
+            || !ExactProperties(root, "protocol_version", "schema_digest", "provenance",
+                "correlation_id", "kind", "query", "capabilities", "error", "result")
             || !StringEquals(root, "protocol_version", GameInformationProtocol)
             || !StringEquals(root, "schema_digest", GameInformationDigest)
             || !StringEquals(root, "kind", "query_request")
             || !StringEquals(root, "correlation_id", context.CorrelationId)
+            || !root.TryGetProperty("provenance", out JsonElement provenance)
+            || !ValidProvenance(provenance)
             || !root.TryGetProperty("query", out query)
             || query.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("result", out JsonElement result)
@@ -43,7 +47,10 @@ public static partial class ModEntry
     {
         binding = default;
         reason = "invalid_query_binding";
-        if (!query.TryGetProperty("query_kind", out JsonElement queryKind)
+        if (!ExactProperties(query, "cursor", "detail_level", "query_kind", "entity_kind",
+                "fields", "filters", "limits", "binding", "target", "projection",
+                "parent_observation")
+            || !query.TryGetProperty("query_kind", out JsonElement queryKind)
             || queryKind.ValueKind != JsonValueKind.String
             || queryKind.GetString() is not ("list" or "search" or "get" or "detail" or "availability")
             || !query.TryGetProperty("entity_kind", out JsonElement entityKind)
@@ -66,6 +73,11 @@ public static partial class ModEntry
                 && (cursor.ValueKind != JsonValueKind.String || !ValidCursor(cursor.GetString()!)))
             || !query.TryGetProperty("parent_observation", out JsonElement parent))
             return false;
+        if (parent.ValueKind != JsonValueKind.Null && !ValidParentObservation(parent))
+        {
+            reason = "invalid_parent_observation";
+            return false;
+        }
         if (!query.TryGetProperty("binding", out binding)
             || binding.ValueKind != JsonValueKind.Object
             || !StringEquals(binding, "locale", context.Locale)
@@ -121,7 +133,9 @@ public static partial class ModEntry
     }
 
     private static bool ValidBinding(JsonElement binding) =>
-        (StringEquals(binding, "mode", "static") || StringEquals(binding, "mode", "live"))
+        ExactProperties(binding, "mode", "content_manifest_id", "locale", "visibility_scope",
+            "instance_ref", "snapshot_ref")
+        && (StringEquals(binding, "mode", "static") || StringEquals(binding, "mode", "live"))
         && StringIdentity(binding, "content_manifest_id")
         && StringIdentity(binding, "visibility_scope")
         && binding.TryGetProperty("instance_ref", out _)
@@ -129,6 +143,7 @@ public static partial class ModEntry
 
     private static bool ValidTarget(JsonElement target) =>
         target.ValueKind == JsonValueKind.Object
+        && ExactProperties(target, "definition_ref", "instance_ref")
         && target.TryGetProperty("definition_ref", out JsonElement definition)
         && target.TryGetProperty("instance_ref", out JsonElement instance)
         && (definition.ValueKind == JsonValueKind.Null || ValidDefinitionRef(definition))
@@ -136,6 +151,7 @@ public static partial class ModEntry
 
     private static bool ValidDefinitionRef(JsonElement value) =>
         value.ValueKind == JsonValueKind.Object
+        && ExactProperties(value, "content_manifest_id", "entity_kind", "namespaced_id", "variant")
         && StringIdentity(value, "content_manifest_id")
         && StringEquals(value, "entity_kind", "card")
         && StringIdentity(value, "namespaced_id")
@@ -144,6 +160,7 @@ public static partial class ModEntry
 
     private static bool ValidInstanceRef(JsonElement value) =>
         value.ValueKind == JsonValueKind.Object
+        && ExactProperties(value, "instance_id", "run_id", "epoch", "entity_kind", "entity_id")
         && StringIdentity(value, "instance_id")
         && StringIdentity(value, "run_id")
         && value.TryGetProperty("epoch", out JsonElement epoch)
@@ -154,6 +171,8 @@ public static partial class ModEntry
     private static bool ValidFilters(JsonElement filters)
     {
         if (filters.ValueKind != JsonValueKind.Object
+            || !ExactProperties(filters, "display_name", "namespaced_ids", "definition_refs",
+                "instance_ids")
             || !filters.TryGetProperty("display_name", out JsonElement display)
             || (display.ValueKind != JsonValueKind.Null && !ValidText(display))
             || !ValidIdentityArray(filters, "namespaced_ids")
@@ -201,6 +220,7 @@ public static partial class ModEntry
 
     private static bool ValidLimits(JsonElement limits) =>
         limits.ValueKind == JsonValueKind.Object
+        && ExactProperties(limits, "item_bytes", "page_bytes", "page_items", "text_bytes")
         && limits.TryGetProperty("item_bytes", out JsonElement item)
         && item.TryGetInt32(out int itemValue) && itemValue is >= 1 and <= MaxItemBytes
         && limits.TryGetProperty("page_bytes", out JsonElement page)
@@ -209,5 +229,34 @@ public static partial class ModEntry
         && count.TryGetInt32(out int countValue) && countValue is >= 1 and <= MaxPageItems
         && limits.TryGetProperty("text_bytes", out JsonElement text)
         && text.TryGetInt32(out int textValue) && textValue is >= 1 and <= MaxTextBytes;
+
+    private static bool ValidProvenance(JsonElement provenance) =>
+        provenance.ValueKind == JsonValueKind.Object
+        && ExactProperties(provenance, "artifact", "source", "generator")
+        && StringIdentity(provenance, "artifact")
+        && StringIdentity(provenance, "source")
+        && StringIdentity(provenance, "generator");
+
+    private static bool ValidParentObservation(JsonElement parent) =>
+        parent.ValueKind == JsonValueKind.Object
+        && ExactProperties(parent, "state_generation", "snapshot_ref", "instance_ref")
+        && parent.TryGetProperty("state_generation", out JsonElement generation)
+        && generation.TryGetUInt64(out _)
+        && parent.TryGetProperty("snapshot_ref", out JsonElement snapshot)
+        && snapshot.ValueKind == JsonValueKind.Object
+        && ExactProperties(snapshot, "snapshot_id", "state_generation", "instance_ref")
+        && StringIdentity(snapshot, "snapshot_id")
+        && snapshot.TryGetProperty("state_generation", out JsonElement snapshotGeneration)
+        && snapshotGeneration.TryGetUInt64(out _)
+        && parent.TryGetProperty("instance_ref", out JsonElement instance)
+        && ValidInstanceRef(instance);
+
+    private static bool ExactProperties(JsonElement value, params string[] names)
+    {
+        if (value.ValueKind != JsonValueKind.Object)
+            return false;
+        var allowed = new HashSet<string>(names, StringComparer.Ordinal);
+        return value.EnumerateObject().All(property => allowed.Contains(property.Name));
+    }
 
 }

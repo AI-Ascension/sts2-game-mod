@@ -16,8 +16,18 @@ pub(super) fn project(
         "public" => ContentQueryScope::Public,
         _ => return Err("unsupported_scope".to_owned()),
     };
+    // The core reader currently exposes entity-kind and literal search filters.
+    // Reject additional identity filters at the native boundary instead of
+    // applying them after a paged result (which could produce false empty
+    // final pages when a match is beyond the first page).
+    if !input.namespaced_ids.is_empty() || !input.definition_refs.is_empty() {
+        return Err("unsupported_filter".to_owned());
+    }
     match input.operation.as_str() {
         "list" | "availability" => {
+            if input.literal.is_some() {
+                return Err("unsupported_filter".to_owned());
+            }
             let page = reader
                 .list(&ContentListQuery {
                     locale,
@@ -30,29 +40,17 @@ pub(super) fn project(
                     continuation,
                 })
                 .map_err(|error| error.to_string())?;
-            if (!input.namespaced_ids.is_empty() || !input.definition_refs.is_empty())
-                && page.total > 64
-            {
-                return Err("unsupported_filter".to_owned());
-            }
             let next = page.continuation.clone();
-            let mut entries = page.entries;
-            entries.retain(|value| matches_filters(value, input));
-            let filtered = !input.namespaced_ids.is_empty() || !input.definition_refs.is_empty();
-            let total = if filtered { entries.len() } else { page.total };
+            let entries = page.entries;
             let output = Output {
                 manifest_id: manifest_id.to_owned(),
                 items: entries
                     .into_iter()
                     .map(|value| output_item(&reader, value, tags))
                     .collect(),
-                total_count: total,
-                final_page: filtered || next.is_none(),
-                next_cursor: if filtered {
-                    None
-                } else {
-                    next.as_ref().map(|value| value.token().to_owned())
-                },
+                total_count: page.total,
+                final_page: next.is_none(),
+                next_cursor: next.as_ref().map(|value| value.token().to_owned()),
             };
             let state = next.map(|continuation| CursorState {
                 reader,
@@ -77,29 +75,17 @@ pub(super) fn project(
                     continuation,
                 })
                 .map_err(|error| error.to_string())?;
-            if (!input.namespaced_ids.is_empty() || !input.definition_refs.is_empty())
-                && page.total > 64
-            {
-                return Err("unsupported_filter".to_owned());
-            }
             let next = page.continuation.clone();
-            let mut entries = page.entries;
-            entries.retain(|value| matches_filters(&value.summary, input));
-            let filtered = !input.namespaced_ids.is_empty() || !input.definition_refs.is_empty();
-            let total = if filtered { entries.len() } else { page.total };
+            let entries = page.entries;
             let output = Output {
                 manifest_id: manifest_id.to_owned(),
                 items: entries
                     .into_iter()
                     .map(|value| output_item(&reader, value.summary, tags))
                     .collect(),
-                total_count: total,
-                final_page: filtered || next.is_none(),
-                next_cursor: if filtered {
-                    None
-                } else {
-                    next.as_ref().map(|value| value.token().to_owned())
-                },
+                total_count: page.total,
+                final_page: next.is_none(),
+                next_cursor: next.as_ref().map(|value| value.token().to_owned()),
             };
             let state = next.map(|continuation| CursorState {
                 reader,
@@ -161,29 +147,6 @@ pub(super) fn project(
         }
         _ => Err("unsupported_operation".to_owned()),
     }
-}
-
-fn matches_filters(value: &sts2_game_mod::ContentDefinitionSummary, input: &InputQuery) -> bool {
-    if !input.namespaced_ids.is_empty()
-        && !input
-            .namespaced_ids
-            .contains(&value.reference.namespaced_id)
-    {
-        return false;
-    }
-    input.definition_refs.is_empty()
-        || input.definition_refs.iter().any(|raw| {
-            serde_json::from_str::<Value>(raw)
-                .ok()
-                .is_some_and(|reference| {
-                    reference.get("content_manifest_id").and_then(Value::as_str)
-                        == Some(input.manifest_id.as_str())
-                        && reference.get("entity_kind").and_then(Value::as_str)
-                            == Some(value.reference.entity_kind.as_str())
-                        && reference.get("namespaced_id").and_then(Value::as_str)
-                            == Some(value.reference.namespaced_id.as_str())
-                })
-        })
 }
 
 pub(super) fn summary(value: sts2_game_mod::ContentDefinitionSummary) -> OutputItem {

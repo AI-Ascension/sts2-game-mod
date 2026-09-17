@@ -18,13 +18,12 @@ public static partial class ModEntry
     private const string GameInformationProtocol = "game-information-query-v1";
     private const string GameInformationDigest =
         "376845b0c86b4afcd2c79ffba753eb7e7e416f5410da26b4dae970cfee2221d9";
-    private const int MaxMessageBytes = 262 * 1024;
+    private const int MaxMessageBytes = 256 * 1024;
     private const int MaxCursorBytes = 512;
     private const int MaxPageItems = 128;
     private const int MaxItemBytes = 262144;
     private const int MaxPageBytes = 262144;
     private const int MaxTextBytes = 65536;
-    private const int MaxStaticCursors = 128;
     private static readonly string[] QueryKinds = ["availability", "detail", "get", "list", "search"];
     private static readonly string[] EntityKinds = ["card"];
     private static readonly string[] Levels = ["summary", "standard", "full"];
@@ -32,17 +31,8 @@ public static partial class ModEntry
         ["cost", "description", "display_name", "owner", "rarity", "source_id", "tags"];
     private static readonly string[] InvalidatedBy =
         ["content_change", "epoch_change", "profile_change", "restore", "restart", "run_change"];
-    private static readonly object CursorGate = new();
     private static readonly JsonSerializerOptions NativeJsonOptions =
         new() { PropertyNameCaseInsensitive = true };
-    private static readonly Dictionary<string, StaticCursor> StaticCursors = new(StringComparer.Ordinal);
-    private static ulong _nextStaticCursor;
-
-    private sealed record StaticCursor(
-        string Binding,
-        NativeContentIndexSnapshot Snapshot,
-        IReadOnlyList<NativeContentIndexDefinition> Entries,
-        int Offset);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NativeContentIndexQuery(
@@ -86,7 +76,12 @@ public static partial class ModEntry
                 return Error(context.CorrelationId, null, "malformed", envelopeReason, 400);
             if (!ValidQuery(query, context, out JsonElement binding, out string queryReason))
                 return Error(context.CorrelationId, query,
-                    queryReason == "unsupported_field" ? "unsupported_field" : "malformed",
+                    queryReason switch
+                    {
+                        "unsupported_field" => "unsupported_field",
+                        "unsupported_filter" => "unsupported_filter",
+                        _ => "malformed"
+                    },
                     queryReason, 400);
 
             string mode = binding.GetProperty("mode").GetString()!;

@@ -37,6 +37,9 @@ pub(super) fn run(input: &[u8], query: &[u8]) -> (i32, Vec<u8>) {
         if state.binding_key != query.binding_key {
             return (409, br#"{"error_code":"stale_cursor"}"#.to_vec());
         }
+        if !query.manifest_id.is_empty() && query.manifest_id != state.manifest_id {
+            return (409, br#"{"error_code":"stale_cursor"}"#.to_vec());
+        }
         let CursorState {
             reader,
             continuation,
@@ -70,6 +73,9 @@ pub(super) fn run(input: &[u8], query: &[u8]) -> (i32, Vec<u8>) {
         );
     };
     let manifest_id = manifest.inventory_revision.clone();
+    if !query.manifest_id.is_empty() && query.manifest_id != manifest_id {
+        return (409, br#"{"error_code":"stale_cursor"}"#.to_vec());
+    }
     match projection::project(index.reader(), &query, &manifest_id, None, &tags) {
         Ok((output, next)) => {
             if let Some(next) = next

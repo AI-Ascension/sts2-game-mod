@@ -22,18 +22,10 @@ public static partial class ModEntry
         return JsonSerializer.SerializeToElement(value);
     }
 
-    private static bool TryCaptureStaticIndex(
-        RuntimeContext context, out NativeContentIndexSnapshot snapshot) =>
-        NativeContentCatalogManifestSource.TryCaptureCanonicalContentIndex(
-            context.CorrelationId, context.Locale, out snapshot);
-
     private static bool TryCaptureStaticIndexWithSource(
         RuntimeContext context, out NativeContentIndexCapture capture) =>
         NativeContentCatalogManifestSource.TryCaptureCanonicalContentIndexWithSource(
             context.CorrelationId, context.Locale, out capture);
-
-    private static string Fold(string? value) =>
-        value is null ? string.Empty : value.ToLowerInvariant();
 
     private static bool ValidIdentity(JsonElement value) =>
         value.ValueKind == JsonValueKind.String && ValidIdentity(value.GetString()!);

@@ -33,7 +33,7 @@ fn snapshot() -> Vec<u8> {
                 {"package_id": "base", "package_version": "1", "order": 0}
             ],
             "available_entity_kinds": ["card", "relic"],
-            "registry_definition_counts": {"card": 4, "relic": 0},
+            "registry_definition_counts": {"card": 5, "relic": 0},
             "definitions": [
                 {
                     "entity_kind": "card", "namespaced_id": "ironclad:bash",
@@ -60,6 +60,13 @@ fn snapshot() -> Vec<u8> {
                     "entity_kind": "card", "namespaced_id": "ironclad:hidden",
                     "semantic_inputs": "{\"unlock_state\":\"unknown\"}",
                     "localized_text": "{\"title\":\"Hidden\"}",
+                    "origin": {"package_id":"base","package_version":"1"},
+                    "override_chain": []
+                },
+                {
+                    "entity_kind": "card", "namespaced_id": "ironclad:locked",
+                    "semantic_inputs": "{\"unlock_state\":\"locked\"}",
+                    "localized_text": "{\"title\":\"Locked\"}",
                     "origin": {"package_id":"base","package_version":"1"},
                     "override_chain": []
                 }
@@ -154,4 +161,58 @@ fn exact_unknown_returns_not_found_status() {
     });
     let (status, _) = run(&snapshot(), &unknown);
     assert_eq!(status, 404);
+}
+
+#[test]
+fn identity_filters_refuse_before_pagination() {
+    let filtered = serde_json::to_vec(&serde_json::json!({
+        "operation": "list", "literal": null, "entity_kind": "card",
+        "namespaced_id": null, "namespaced_ids": ["ironclad:locked"],
+        "definition_refs": [], "limit": 1, "cursor": null,
+        "binding_key": "binding:filter"
+    }))
+    .unwrap_or_else(|error| {
+        eprintln!("query serializes: {error}");
+        std::process::abort();
+    });
+    let (status, body) = run(&snapshot(), &filtered);
+    assert_eq!(status, 400);
+    let error_code = serde_json::from_slice::<serde_json::Value>(&body)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("error_code")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        });
+    assert_eq!(error_code.as_deref(), Some("unsupported_filter"));
+}
+
+#[test]
+fn locked_definition_has_typed_scope_behavior() {
+    let public = must(
+        serde_json::to_vec(&serde_json::json!({
+            "operation": "get", "literal": null, "entity_kind": "card",
+            "namespaced_id": "ironclad:locked", "limit": 1, "cursor": null,
+            "scope": "public", "binding_key": "binding:locked"
+        })),
+        "public query serializes",
+    );
+    let (status, body) = run(&snapshot(), &public);
+    assert_eq!(status, 403);
+    let error_code = serde_json::from_slice::<serde_json::Value>(&body)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("error_code")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        });
+    assert_eq!(error_code.as_deref(), Some("denied_scope"));
+    let reference =
+        must(String::from_utf8(public), "query utf8").replace("\"public\"", "\"reference\"");
+    let (status, body) = run(&snapshot(), reference.as_bytes());
+    assert_eq!(status, STATUS_OK);
+    let output: Output = must(serde_json::from_slice(&body), "reference output");
+    assert_eq!(output.items[0].namespaced_id, "ironclad:locked");
 }

@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 sts2-game-mod = { path = "../../../crates/game-mod" }
 serde.workspace = true
 serde_json.workspace = true
+jsonschema.workspace = true
 
 [dev-dependencies]
 sts2-protocol.workspace = true

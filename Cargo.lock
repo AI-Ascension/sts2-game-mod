@@ -663,6 +663,7 @@ version = "0.0.0"
 name = "sts2-game-mod-interop"
 version = "0.0.0"
 dependencies = [
+ "jsonschema",
  "serde",
  "serde_json",
  "sts2-game-mod",

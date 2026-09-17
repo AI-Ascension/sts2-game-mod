@@ -15,13 +15,13 @@ public static partial class ModEntry
         RuntimeContext context,
         JsonElement query,
         string manifestId,
-        IReadOnlyList<NativeContentIndexDefinition> values,
+        NativeContentIndexDefinition[] values,
         int total,
         bool final,
         string? nextCursor,
         JsonElement? cursorBinding)
     {
-        var items = new List<Dictionary<string, object?>>(values.Count);
+        var items = new List<Dictionary<string, object?>>(values.Length);
         foreach (NativeContentIndexDefinition value in values)
         {
             var fields = new List<Dictionary<string, object?>>();

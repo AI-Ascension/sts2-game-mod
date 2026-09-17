@@ -14,74 +14,17 @@ public static partial class ModEntry
     private static (int Status, string Response) ProcessStatic(
         RuntimeContext context, JsonElement query, JsonElement binding)
     {
-        string requestedManifest = binding.GetProperty("content_manifest_id").GetString()!;
         string scope = binding.GetProperty("visibility_scope").GetString()!;
         if (scope != "public" && scope != "reference")
             return Error(context.CorrelationId, query, "denied_scope", "unsupported_visibility_scope", 403);
-
-        string bindingKey = QueryBindingKey(query);
-        string? cursor = query.GetProperty("cursor").ValueKind == JsonValueKind.Null
-            ? null : query.GetProperty("cursor").GetString();
-        if (_nativeLibrary != 0
-            && TryNativeStaticQuery(context, query, binding, out (int Status, string Response) nativeResponse))
-            return nativeResponse;
-        NativeContentIndexSnapshot snapshot;
-        IReadOnlyList<NativeContentIndexDefinition> entries;
-        int offset;
-        if (cursor is null)
-        {
-            if (!TryCaptureStaticIndex(context, out snapshot)
-                || snapshot.ManifestId != requestedManifest
-                || snapshot.Locale != context.Locale)
-                return Error(context.CorrelationId, query, "missing_capability",
-                    "content_index_unavailable", 503);
-            if (!TrySelectStaticEntries(query, snapshot, scope, out entries, out string selectionError))
-                return Error(context.CorrelationId, query,
-                    selectionError is "unknown_id" or "denied_scope" ? selectionError : "malformed",
-                    selectionError, selectionError == "denied_scope" ? 403 : 400);
-            offset = 0;
-        }
-        else
-        {
-            lock (CursorGate)
-            {
-                if (!StaticCursors.Remove(cursor, out StaticCursor? state)
-                    || state.Binding != bindingKey)
-                    return Error(context.CorrelationId, query, "stale_cursor",
-                        "cursor_binding_mismatch", 409);
-                snapshot = state.Snapshot;
-                entries = state.Entries;
-                offset = state.Offset;
-            }
-            if (snapshot.ManifestId != requestedManifest || snapshot.Locale != context.Locale)
-                return Error(context.CorrelationId, query, "stale_cursor",
-                    "cursor_content_mismatch", 409);
-        }
-
-        int pageItems = query.GetProperty("limits").GetProperty("page_items").GetInt32();
-        int end = Math.Min(entries.Count, checked(offset + pageItems));
-        IReadOnlyList<NativeContentIndexDefinition> pageEntries =
-            entries.Skip(offset).Take(end - offset).ToArray();
-        bool final = end >= entries.Count;
-        string? nextCursor = null;
-        JsonElement? cursorBinding = null;
-        if (!final)
-        {
-            lock (CursorGate)
-            {
-                do
-                {
-                    nextCursor = $"static-cursor:{_nextStaticCursor++}";
-                } while (!ValidCursor(nextCursor) || StaticCursors.ContainsKey(nextCursor));
-                if (StaticCursors.Count >= MaxStaticCursors
-                    && StaticCursors.Keys.FirstOrDefault() is string oldest)
-                    StaticCursors.Remove(oldest);
-                StaticCursors[nextCursor] = new StaticCursor(bindingKey, snapshot, entries, end);
-            }
-            cursorBinding = WithoutCursor(query);
-        }
-        return BuildStaticResponse(context, query, snapshot.ManifestId, pageEntries, entries.Count, final,
-            nextCursor, cursorBinding);
+        if (_nativeLibrary == 0)
+            return Error(context.CorrelationId, query, "missing_capability",
+                "content_index_query_unavailable", 503);
+        return TryNativeStaticQuery(context, query, binding,
+            out (int Status, string Response) nativeResponse)
+            ? nativeResponse
+            : Error(context.CorrelationId, query, "missing_capability",
+                "content_index_query_unavailable", 503);
     }
 
     private static bool TryNativeStaticQuery(
@@ -118,6 +61,23 @@ public static partial class ModEntry
                 "detail" => "detail",
                 _ => "list"
             };
+            if (operation is "get" or "detail")
+            {
+                JsonElement targetReference = query.GetProperty("target").GetProperty("definition_ref");
+                if (targetReference.GetProperty("content_manifest_id").GetString()
+                        != capture.Snapshot.ManifestId)
+                {
+                    response = Error(context.CorrelationId, query, "malformed",
+                        "definition_manifest_mismatch", 400);
+                    return true;
+                }
+                if (targetReference.GetProperty("variant").ValueKind != JsonValueKind.Null)
+                {
+                    response = Error(context.CorrelationId, query, "unsupported_filter",
+                        "definition_variant_unavailable", 400);
+                    return true;
+                }
+            }
             JsonElement filters = query.GetProperty("filters");
             string? literal = filters.GetProperty("display_name").ValueKind == JsonValueKind.Null
                 ? null : filters.GetProperty("display_name").GetString();
@@ -179,7 +139,11 @@ public static partial class ModEntry
                 NativeCorePage? page = JsonSerializer.Deserialize<NativeCorePage>(
                     nativeBody, NativeJsonOptions);
                 if (page is null)
-                    return false;
+                {
+                    response = Error(context.CorrelationId, query, "missing_capability",
+                        "malformed_native_query_response", 503);
+                    return true;
+                }
                 if (page.manifest_id != capture.Snapshot.ManifestId)
                 {
                     response = Error(context.CorrelationId, query,
