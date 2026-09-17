@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 namespace AiAscension.Sts2GameMod.Runtime;
 public static partial class ModEntry
 {
@@ -121,6 +122,7 @@ public static partial class ModEntry
             && !ContentManifestWireContract.ValidIdentity("unknown build"),
             "content-manifest game build uses the protocol identity token boundary");
         CheckNativeContentManifestKnownInputs();
+        CheckNativeSemanticSurface();
         nint boundedOutput = Marshal.AllocHGlobal(4096);
         try
         {
@@ -189,5 +191,14 @@ public static partial class ModEntry
         }
         Check(missingBuildRefused,
             "partial native catalog input fails closed when official release version is unavailable");
+    }
+
+    private static void CheckNativeSemanticSurface()
+    {
+        Check(typeof(ModelDb).GetProperty("BadgeModels") is not null
+            && typeof(BadgeModel).GetProperty("ShouldReceiveCombatHooks") is not null,
+            "exact host exposes the badge registry family and its stable semantic field");
+        Check(typeof(StringVar).GetProperty("StringValue") is not null,
+            "exact host exposes canonical dynamic string values");
     }
 }
