@@ -389,6 +389,12 @@ mod tests {
         let (status, body) = runtime_operation_response(&dispatch, &owner, &mut runtime);
         assert_eq!(status, 200);
         let first: Value = serde_json::from_slice(&body).expect("settled response");
+        assert_eq!(first["contract"], RECOVERY_CONTRACT);
+        assert_eq!(first["schema_digest"], RECOVERY_SCHEMA);
+        assert_eq!(first["kind"], "operation_dispatch_response");
+        assert_eq!(first["correlation_id"], dispatch["correlation_id"]);
+        assert_eq!(first["actor"]["role"], "host");
+        assert_eq!(first["auth"]["capability"], "operation_submit");
         assert_eq!(first["payload"]["result"]["status"], "SETTLED");
         let ticket = first["payload"]["operation"]["ticket"].clone();
         let witness = first["payload"]["operation"]["witness"].clone();
