@@ -6,6 +6,11 @@ do not establish release support.
 
 ## Unreleased
 
+- Added `docs/evidence/seeded-run-criterion-evidence-map-20260917.md`, mapping every #79 seeded-run
+  acceptance criterion to its evidence at exact pins (mod `46b1ac6e`, host v0.107.1/`59260271`,
+  protocol `bfe28e45`, harness/gateway/MCP heads, staged guest set); AC1 is `confirmed-source`,
+  native rows remain `unverified-native` behind the interactive Windows/Steam session gate.
+
 - Added the pinned `exact-restore-v1` game-mod consumer with strict frame/schema parsing, bounded
   closure staging, manifest and digest verification, Linux owner-private durable storage, and
   `COMMIT_INTENT` recovery semantics. The production fixed routes return typed unsupported errors
