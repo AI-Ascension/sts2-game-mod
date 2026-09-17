@@ -1,0 +1,4567 @@
+{
+  "schema_version": "checkpoint-coverage-inventory-v1",
+  "evidence": "metadata_only_no_target_assembly_load_or_execution",
+  "semantics": "runtime-unverified",
+  "host": {
+    "assembly_name": "sts2",
+    "sts2_sha256": "a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52",
+    "godot_sharp_sha256": "0e4897ecdfb31456a97c7d8028dfb8d7dbdc632e2f73fc9b438d7b266a139289",
+    "pinned_version": "v0.107.1",
+    "pinned_commit": "59260271",
+    "matches_pinned_build": true
+  },
+  "families": [
+    {
+      "id": "compatibility",
+      "adr": "0037",
+      "row": "Compatibility",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Host save carries \u0060SerializableRun.SchemaVersion/GameMode/Ascension/Modifiers/PlatformType\u0060; build identity comes from \u0060ReleaseInfo\u0060, adapter revision from the mod package (not a host member).",
+      "ordering": "Scalar values; \u0060Modifiers\u0060 and \u0060BadgeModels\u0060 are \u0060IReadOnlyList\u0060 and keep host order.",
+      "restore": "Compatibility is checked, never restored: a differing build, adapter, mode, character, ascension, modifier, or profile tuple rejects the checkpoint (ADR 0042 stays \u0060no_restore_adapter\u0060).",
+      "unknown_policy": "Any missing tuple element rejects capture with \u0060unsupported_coverage\u0060; no default build, mode, or profile is assumed.",
+      "members": [
+        {
+          "item": "game build",
+          "type": "MegaCrit.Sts2.Core.Debug.ReleaseInfo",
+          "member": "Version",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "game build",
+          "type": "MegaCrit.Sts2.Core.Debug.ReleaseInfo",
+          "member": "Commit",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "game build",
+          "type": "MegaCrit.Sts2.Core.Debug.ReleaseInfo",
+          "member": "MainAssemblyHash",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.ModManager",
+          "member": "GetLoadedMods",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IEnumerable\u00601\u003CMegaCrit.Sts2.Core.Modding.Mod\u003E ()",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.Mod",
+          "member": "version",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Debug.SemanticVersion",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.ModManifest",
+          "member": "id",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.ModManifest",
+          "member": "version",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.ModManifest",
+          "member": "affectsGameplay",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "adapter revision (loaded mod identity)",
+          "type": "MegaCrit.Sts2.Core.Modding.ModManifest",
+          "member": "minGameVersion",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "mode",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "GameMode",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "mode",
+          "type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "member": "Standard",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "mode",
+          "type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "member": "Daily",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "mode",
+          "type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "member": "Custom",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "mode",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "IsSingleplayerOrFakeMultiplayer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "character",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Character",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.CharacterModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ascension",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "AscensionLevel",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ascension",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "MaxAscensionWhenRunStarted",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "modifiers",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "Modifiers",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.ModifierModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "modifiers",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "BadgeModels",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.BadgeModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "modifiers",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "ExtraFields",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.ExtraRunFields",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "modifiers",
+          "type": "MegaCrit.Sts2.Core.Runs.ExtraRunFields",
+          "member": "StartedWithNeow",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "UnlockState",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "UnlockState",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "member": "NumberOfRuns",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "member": "_unlockedEpochIds",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CString\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "member": "_encountersSeen",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "CurrentProfileId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Saves.ProgressState",
+          "member": "UniqueId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SchemaVersion",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile compatibility",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "PlatformType",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Platform.PlatformType",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "seed-and-entropy",
+      "adr": "0037",
+      "row": "Seed and entropy",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Host saves the string seed plus one counter per stream (\u0060SerializableRunRngSet.Counters\u0060, \u0060SerializablePlayerRngSet.Counters\u0060), not the four \u0060UInt64\u0060 state words; a checkpoint carries stream seed and counter per \u0060RunRngType\u0060/\u0060PlayerRngType\u0060 and pins the derivation constructor version.",
+      "ordering": "Streams are keyed by enum in \u0060Dictionary\u003CRunRngType,Rng\u003E\u0060; canonical order is the enum ordinal, never dictionary iteration order.",
+      "restore": "Host-owned via \u0060RunRngSet.LoadFromSerializable\u0060 and \u0060Rng.FastForwardCounter\u0060; the mod never writes a cursor (ADR 0040).",
+      "unknown_policy": "A stream whose \u0060Seed\u0060 or \u0060Counter\u0060 cannot be observed rejects capture; \u0060Chaotic\u0060 streams are recorded as present but never certified deterministic.",
+      "members": [
+        {
+          "item": "master seed",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "StringSeed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "master seed",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "master seed",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": ".ctor",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (String)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "derivation version",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": ".ctor",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (MegaCrit.Sts2.Core.Entities.Players.Player, MegaCrit.Sts2.Core.Models.ModelId, UInt32, Int32) ; Void (UInt32, Int32) ; Void (UInt32, String)",
+          "visibility": "public",
+          "detail": "overloads=3"
+        },
+        {
+          "item": "derivation version",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "Splitmix64",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "UInt64 (UInt64\u0026)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "derivation version",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "Reinitialise",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (UInt64)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "Counter",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "_random",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "Chaotic",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "FastForwardCounter",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (Int32)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_s0",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_s1",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_s2",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_s3",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "_rngs",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.RunRngType,MegaCrit.Sts2.Core.Random.Rng\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "member": "_rngs",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType,MegaCrit.Sts2.Core.Random.Rng\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "RNG state/cursor",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "PlayerRng",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet",
+          "member": "Counters",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.RunRngType,Int32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializablePlayerRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializablePlayerRngSet",
+          "member": "Counters",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType,Int32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "ToSerializable",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet ()",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "serialized cursor form",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "LoadFromSerializable",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        }
+      ]
+    },
+    {
+      "id": "campaign",
+      "adr": "0037",
+      "row": "Campaign",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "\u0060SerializableRun.Acts/CurrentActIndex/VisitedMapCoords/MapPointHistory/EventsSeen/PreFinishedRoom\u0060 and \u0060SerializableActMap.Points/StartMapPointCoords/GridWidth/GridHeight\u0060 (loaded through \u0060RunManager.SavedMapsToLoad\u0060).",
+      "ordering": "\u0060Acts\u0060, \u0060VisitedMapCoords\u0060, \u0060MapPointHistory\u0060, and \u0060_currentRooms\u0060 are lists and keep host order; \u0060ActMap.startMapPoints\u0060, \u0060MapPoint.parents/Children\u0060, and \u0060_visitedEventIds\u0060 are hash sets and are sorted canonically by \u0060MapCoord(col,row)\u0060 or \u0060ModelId\u0060 before encoding.",
+      "restore": "Host-owned through the save loader; the mod records \u0060RunLocation\u0060/\u0060MapLocation\u0060 and room \u0060Id\u0060 for identity only.",
+      "unknown_policy": "A null \u0060CurrentMapCoord\u0060, a missing \u0060CurrentRoom\u0060, or a room without a resolvable encounter or event identity rejects capture; no earlier floor is substituted.",
+      "members": [
+        {
+          "item": "act",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "Acts",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.ActModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "act",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "CurrentActIndex",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "act",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "Act",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ActModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "floor",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "ActFloor",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "floor",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "TotalFloor",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "Map",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "Grid",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPoint[,]",
+          "visibility": "family",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "StartingMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "BossMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "SecondBossMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "startMapPoints",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "coord",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapCoord",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "parents",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "Children",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "PointType",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPointType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "Quests",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.AbstractModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapCoord",
+          "member": "col",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.MapCoord",
+          "member": "row",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map topology",
+          "type": "MegaCrit.Sts2.Core.Map.StandardActMap",
+          "member": "_rng",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "VisitedMapCoords",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Map.MapCoord\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "CurrentMapCoord",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CMegaCrit.Sts2.Core.Map.MapCoord\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "CurrentMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "MapPointHistory",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CSystem.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Runs.History.MapPointHistoryEntry\u003E\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "MapLocation",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.MapLocation",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.MapLocation",
+          "member": "actIndex",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "map progress",
+          "type": "MegaCrit.Sts2.Core.Runs.MapLocation",
+          "member": "coord",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CMegaCrit.Sts2.Core.Map.MapCoord\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "CurrentRoom",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "NextRoomId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "CurrentRoomCount",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "_currentRooms",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Rooms.AbstractRoom\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "RunLocation",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RunLocation",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunLocation",
+          "member": "roomId",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "VisitedEventIds",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlySet\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "member": "RoomType",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Rooms.RoomType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "member": "ModelId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "member": "IsPreFinished",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.CombatRoom",
+          "member": "Encounter",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.EncounterModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "room and encounter identity",
+          "type": "MegaCrit.Sts2.Core.Rooms.CombatRoom",
+          "member": "ParentEventId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "Acts",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializableActModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "CurrentActIndex",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "VisitedMapCoords",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Map.MapCoord\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "MapPointHistory",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CSystem.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Runs.History.MapPointHistoryEntry\u003E\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "EventsSeen",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "PreFinishedRoom",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableActMap",
+          "member": "Points",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializableMapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableActMap",
+          "member": "StartMapPointCoords",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Map.MapCoord\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableActMap",
+          "member": "GridWidth",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableActMap",
+          "member": "GridHeight",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "EncounterId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "EventId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "EncounterState",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CString,String\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "SavedMapsToLoad",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CInt32,MegaCrit.Sts2.Core.Saves.Runs.SerializableActMap\u003E",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "player",
+      "adr": "0037",
+      "row": "Player",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "\u0060SerializablePlayer\u0060 carries character, hp, gold, energy, potion-slot count, \u0060Deck\u0060 as \u0060List\u003CSerializableCard\u003E\u0060 (\u0060Id/CurrentUpgradeLevel/Enchantment/Props/FloorAddedToDeck\u0060), \u0060Relics\u0060, \u0060Potions\u0060, and \u0060RelicGrabBag\u0060; combat piles are not part of the host run save.",
+      "ordering": "\u0060CardPile._cards\u0060, \u0060_relics\u0060, \u0060_potionSlots\u0060, \u0060_runPiles\u0060, and the \u0060RelicGrabBag._deques\u0060 values are lists whose order is gameplay-affecting and is retained; \u0060CardModel._keywords/_tags\u0060 are hash sets and are sorted canonically.",
+      "restore": "Host-owned; the mod never constructs a card, relic, or potion (ADR 0042).",
+      "unknown_policy": "A card without a resolvable \u0060Pile\u0060, \u0060Owner\u0060, or upgrade level, or a relic without \u0060Status\u0060, rejects capture; unreadable temporary card values are never encoded as defaults. No key-style resource member exists on this build (\u0060metadata-absent\u0060), so the ADR 0037 \u0060keys\u0060 item has no host closure.",
+      "members": [
+        {
+          "item": "health",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Creature",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "health",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "CurrentHp",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "health",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "MaxHp",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "health",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "Block",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "gold",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Gold",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "keys",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Key",
+          "kind": "no-member-containing",
+          "status": "metadata-absent",
+          "declared_type": null,
+          "visibility": null,
+          "detail": "no field, property, or method name contains the text"
+        },
+        {
+          "item": "keys",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "Key",
+          "kind": "no-member-containing",
+          "status": "metadata-absent",
+          "declared_type": null,
+          "visibility": null,
+          "detail": "no field, property, or method name contains the text"
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Deck",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "member": "_cards",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.CardModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "member": "Cards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.CardModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "member": "Type",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.PileType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "_allCards",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.CardModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "Owner",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "Pile",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CloneOf",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "IsDupe",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "deck instances",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "FloorAddedToDeck",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "upgrades",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CurrentUpgradeLevel",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "upgrades",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "Enchantment",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.EnchantmentModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "upgrades",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "Affliction",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.AfflictionModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "EnergyCost",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CanonicalEnergyCost",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "family",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_energyCost",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardEnergyCost",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_temporaryStarCosts",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.TemporaryCardCost\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CurrentStarCost",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "DynamicVars",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_exhaustOnNextPlay",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_hasSingleTurnRetain",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_hasSingleTurnSly",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_keywords",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardKeyword\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "temporary values",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_tags",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardTag\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Piles",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IEnumerable\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardPile\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "_runPiles",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile[]",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "Hand",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "DrawPile",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "DiscardPile",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "ExhaustPile",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "PlayPile",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "AllPiles",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardPile\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered piles",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "_piles",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Cards.CardPile[]",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "Relics",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.RelicModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "_relics",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.RelicModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "StackCount",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "Status",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Relics.RelicStatus",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "DynamicVars",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "_isWax",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "_isMelted",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relics",
+          "type": "MegaCrit.Sts2.Core.Models.RelicModel",
+          "member": "FloorAddedToDeck",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "RelicGrabBag",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "SharedRelicGrabBag",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "member": "_deques",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Relics.RelicRarity,System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.RelicModel\u003E\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "member": "_rarities",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Relics.RelicRarity\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "member": "_originalRelics",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.RelicModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "relic grab bag (hidden future relics)",
+          "type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "member": "_refreshAllowed",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "PotionSlots",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.PotionModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "_potionSlots",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.PotionModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "MaxPotionCount",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "CanRemovePotions",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Models.PotionModel",
+          "member": "IsQueued",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "potions",
+          "type": "MegaCrit.Sts2.Core.Models.PotionModel",
+          "member": "DynamicVars",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "CharacterId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "CurrentHp",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "MaxHp",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "Gold",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "MaxEnergy",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "MaxPotionSlotCount",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "Deck",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializableCard\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "Relics",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializableRelic\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "Potions",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializablePotion\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer",
+          "member": "RelicGrabBag",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRelicGrabBag",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableCard",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableCard",
+          "member": "CurrentUpgradeLevel",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableCard",
+          "member": "Enchantment",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableEnchantment",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableCard",
+          "member": "Props",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SavedProperties",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableCard",
+          "member": "FloorAddedToDeck",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "combat",
+      "adr": "0037",
+      "row": "Combat",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Combat state is not part of the single-player host run save (\u0060SerializableRoom.EncounterState\u0060 is a string map and \u0060NetFullCombatState\u0060 is a multiplayer carrier); a combat checkpoint must serialize the owned values listed here itself.",
+      "ordering": "\u0060Allies/Enemies/Creatures\u0060, the combat piles, \u0060_powers\u0060, \u0060_orbs\u0060, \u0060_pets\u0060, and \u0060StateLog\u0060 are lists and keep host order; \u0060_playersReadyToEndTurn\u0060 is a hash set.",
+      "restore": "No host-owned combat restore path is observed; ADR 0042 stays \u0060no_restore_adapter\u0060.",
+      "unknown_policy": "Capture is refused unless \u0060CombatManager.IsInProgress\u0060 holds with \u0060PlayerTurnPhase.Play\u0060, an empty \u0060ActionQueueSet\u0060, \u0060ActionExecutor.IsRunning\u0060 false, and no action in \u0060GatheringPlayerChoice\u0060; a \u0060PowerModel._internalData\u0060 (\u0060Object\u0060) that cannot be typed rejects capture.",
+      "members": [
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "TurnNumber",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "Phase",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.PlayerTurnPhase",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.PlayerTurnPhase",
+          "member": "Play",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.PlayerTurnPhase",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.PlayerTurnPhase",
+          "member": "End",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.PlayerTurnPhase",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "RoundNumber",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "CurrentSide",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.CombatSide",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "Encounter",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.EncounterModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Rooms.CombatRoom",
+          "member": "CombatState",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "IsInProgress",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "IsStarting",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "IsEnding",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "IsEnemyTurnStarted",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "EndingPlayerTurnPhaseOne",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "EndingPlayerTurnPhaseTwo",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "IsPaused",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "PlayerActionsDisabled",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "_playersReadyToEndTurn",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Players.Player\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "turn/phase",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "_deferredEndTurnTransition",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Func\u00601\u003CSystem.Threading.Tasks.Task\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "Energy",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "MaxEnergy",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "Stars",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "OrbQueue",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue",
+          "member": "_orbs",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.OrbModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "energy",
+          "type": "MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue",
+          "member": "Capacity",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "Powers",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.PowerModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "_powers",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.PowerModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "Amount",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "_amount",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "_amountOnTurnStart",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "_skipNextDurationTick",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "_internalData",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Object",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "Applier",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "powers",
+          "type": "MegaCrit.Sts2.Core.Models.PowerModel",
+          "member": "Target",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "Enemies",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Creatures.Creature\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "Allies",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Creatures.Creature\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "EscapedCreatures",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Creatures.Creature\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "_nextCreatureId",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.PlayerCombatState",
+          "member": "Pets",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Creatures.Creature\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "CombatId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CUInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "Monster",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "ModelId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "Side",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Combat.CombatSide",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "IsAlive",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "IsStunned",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "member": "MonsterMaxHpBeforeModification",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "NextMove",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MoveState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "MoveStateMachine",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "IsPerformingMove",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "SpawnedThisTurn",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine",
+          "member": "_currentState",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine",
+          "member": "_performedFirstMove",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterMoveStateMachine",
+          "member": "StateLog",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.MonsterState\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "enemies/intents",
+          "type": "MegaCrit.Sts2.Core.MonsterMoves.Intents.AbstractIntent",
+          "member": "AbstractIntent",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "damage modifiers",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "Modifiers",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.ModifierModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "damage modifiers",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "BadgeModels",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Models.BadgeModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "damage modifiers",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "MultiplayerScalingModel",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.Singleton.MultiplayerScalingModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "damage modifiers",
+          "type": "MegaCrit.Sts2.Core.Rooms.CombatRoom",
+          "member": "GoldProportion",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Single",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "ActionQueueSet",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "ActionExecutor",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "IsEmpty",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "NextActionId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "_actionQueues",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CActionQueue\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "_actionsWaitingForResumption",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CActionWaitingForResumption\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "member": "IsRunning",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "member": "IsPaused",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "member": "CurrentlyRunningAction",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "member": "State",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CUInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "member": "OwnerId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "member": "Executing",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending effects",
+          "type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "member": "Finished",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "member": "GatheringPlayerChoice",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "PlayerChoiceSynchronizer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceSynchronizer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext",
+          "member": "_modelStack",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Stack\u00601\u003CMegaCrit.Sts2.Core.Models.AbstractModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CurrentTarget",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Creatures.Creature",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "CurrentPlayIndex",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "selection state",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "_allCards",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.CardModel\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "EncounterState",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CString,String\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "IsPreFinished",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "PreFinishedRoom",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Entities.Multiplayer.NetFullCombatState",
+          "member": "NetFullCombatState",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "non-combat-decisions",
+      "adr": "0037",
+      "row": "Non-combat decisions",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Offers and pending choices are not fully serialized by the host run save (\u0060SerializableRoom.ExtraRewards/EventId\u0060 and \u0060SerializableRun.EventsSeen\u0060 only); a checkpoint must copy the offer values listed here.",
+      "ordering": "\u0060RewardsSet.Rewards\u0060, \u0060CardReward.Cards\u0060, \u0060EventModel.CurrentOptions\u0060, the merchant entry lists, and \u0060RestSiteRoom.Options\u0060 are lists and keep host order.",
+      "restore": "No host-owned restore path for a pending offer is observed; these rows stay \u0060unsupported pending inventory\u0060 in the boundary matrix.",
+      "unknown_policy": "An offer with \u0060_isGenerated\u0060/\u0060IsPopulated\u0060 false, an unresolved \u0060_rngOverride\u0060, a merchant entry without \u0060Cost\u0060, or a pending \u0060PlayerChoiceContext\u0060 rejects capture.",
+      "members": [
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "Rewards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Rewards.Reward\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "Room",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Rooms.AbstractRoom",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "DisallowSkipping",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "_isGenerated",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.Reward",
+          "member": "SuccessfullySelected",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.Reward",
+          "member": "RewardsSetIndex",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.Reward",
+          "member": "_rngOverride",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "family",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "Cards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IEnumerable\u00601\u003CMegaCrit.Sts2.Core.Models.CardModel\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "CanReroll",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "CanSkip",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "Options",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.CardCreationOptions",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "RerollOptions",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.CardCreationOptions",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Rewards.CardReward",
+          "member": "_hasBeenRerolled",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Runs.CardCreationOptions",
+          "member": "Source",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.CardCreationSource",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "card selection offer",
+          "type": "MegaCrit.Sts2.Core.Runs.CardCreationOptions",
+          "member": "RngOverride",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Rooms.CombatRoom",
+          "member": "ExtraRewards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyDictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Players.Player,System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Rewards.Reward\u003E\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "reward offer",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "RewardsSetSynchronizer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Multiplayer.Game.RewardsSetSynchronizer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Rooms.EventRoom",
+          "member": "CanonicalEvent",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Rooms.EventRoom",
+          "member": "LocalMutableEvent",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "CurrentOptions",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Events.EventOption\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "IsFinished",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "Rng",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "DynamicVars",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Localization.DynamicVars.DynamicVarSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "IsDeterministic",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Events.EventOption",
+          "member": "TextKey",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Events.EventOption",
+          "member": "IsLocked",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Events.EventOption",
+          "member": "IsProceed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "event",
+          "type": "MegaCrit.Sts2.Core.Events.EventOption",
+          "member": "WasChosen",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Rooms.MerchantRoom",
+          "member": "Inventories",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory",
+          "member": "CharacterCardEntries",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Merchant.MerchantCardEntry\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory",
+          "member": "ColorlessCardEntries",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Merchant.MerchantCardEntry\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory",
+          "member": "RelicEntries",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory",
+          "member": "PotionEntries",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.Merchant.MerchantPotionEntry\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory",
+          "member": "CardRemovalEntry",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry",
+          "member": "Cost",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry",
+          "member": "IsStocked",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "shop",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.ExtraPlayerFields",
+          "member": "CardShopRemovalsUsed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "rest",
+          "type": "MegaCrit.Sts2.Core.Rooms.RestSiteRoom",
+          "member": "Options",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "rest",
+          "type": "MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption",
+          "member": "OptionId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "rest",
+          "type": "MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption",
+          "member": "IsEnabled",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "rest",
+          "type": "MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption",
+          "member": "Owner",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "visibility": "family",
+          "detail": null
+        },
+        {
+          "item": "rest",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "RestSiteSynchronizer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Multiplayer.Game.RestSiteSynchronizer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "treasure",
+          "type": "MegaCrit.Sts2.Core.Rooms.TreasureRoom",
+          "member": "TreasureRoom",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "treasure",
+          "type": "MegaCrit.Sts2.Core.Entities.TreasureRelicPicking.RelicPickingFight",
+          "member": "rounds",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Entities.TreasureRelicPicking.RelicPickingFightRound\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "treasure",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "TreasureRoomRelicSynchronizer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Multiplayer.Game.TreasureRoomRelicSynchronizer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending choice",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceSynchronizer",
+          "member": "PlayerChoiceSynchronizer",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "pending choice",
+          "type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "member": "GatheringPlayerChoice",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Actions.GameActionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "ExtraRewards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CUInt64,System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializableReward\u003E\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRoom",
+          "member": "EventId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.ModelId",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "EventsSeen",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "persistence-and-identity",
+      "adr": "0037",
+      "row": "Persistence and identity",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "\u0060SerializableRun\u0060 through \u0060SaveManager.SaveRun/LoadRunSave\u0060 (System.Text.Json via \u0060MegaCritSerializerContext\u0060); canonical checkpoint bytes are mod-owned \u0060asc-jcs-state-v1\u0060 (ADR 0054), not a host format.",
+      "ordering": "The identity tuple is fixed by the mod (ADR 0055); host lists keep order and host hash sets are sorted canonically before encoding.",
+      "restore": "Restore stays unsupported (ADR 0042); duplicate admission and the durable-versus-in-memory distinction are mod-owned (ADR 0055).",
+      "unknown_policy": "A missing \u0060RunManager.State\u0060, an uninitialized profile, \u0060IsAbandoned\u0060 or \u0060IsGameOver\u0060 true, or a pending \u0060CurrentRunSaveTask\u0060 rejects capture.",
+      "members": [
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "Instance",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "State",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "IsInProgress",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "IsGameOver",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "IsAbandoned",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "run binding",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "ShouldSave",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "Instance",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "CurrentProfileId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "IsProfileInitialized",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "HasRunSave",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "CurrentRunSaveTask",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.Task",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "profile binding",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "_saveStore",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.ISaveStore",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "session binding",
+          "type": "MegaCrit.Sts2.Core.Entities.Players.Player",
+          "member": "NetId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "session binding",
+          "type": "MegaCrit.Sts2.Core.Context.LocalContext",
+          "member": "NetId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CUInt64\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "session binding",
+          "type": "MegaCrit.Sts2.Core.Entities.Multiplayer.RunSessionState",
+          "member": "Running",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Multiplayer.RunSessionState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "epoch/profile inputs",
+          "type": "MegaCrit.Sts2.Core.Saves.ProgressState",
+          "member": "Epochs",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.IReadOnlyList\u00601\u003CMegaCrit.Sts2.Core.Saves.SerializableEpoch\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "epoch/profile inputs",
+          "type": "MegaCrit.Sts2.Core.Saves.ProgressState",
+          "member": "UniqueId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "epoch/profile inputs",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableEpoch",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "epoch/profile inputs",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableEpoch",
+          "member": "State",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.EpochState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "epoch/profile inputs",
+          "type": "MegaCrit.Sts2.Core.Saves.EpochState",
+          "member": "Obtained",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.EpochState",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "SaveRun",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.Task (MegaCrit.Sts2.Core.Rooms.AbstractRoom, Boolean)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "LoadRunSave",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.ReadSaveResult\u00601\u003CMegaCrit.Sts2.Core.Saves.SerializableRun\u003E ()",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SaveManager",
+          "member": "IncrementNumReloads",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.Task (MegaCrit.Sts2.Core.Saves.SerializableRun, Boolean)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SchemaVersion",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "Players",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.List\u00601\u003CMegaCrit.Sts2.Core.Saves.Runs.SerializablePlayer\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SerializableRng",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SerializableOdds",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunOddsSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SerializableSharedRelicGrabBag",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRelicGrabBag",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SaveTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "StartTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "NumReloads",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "GameMode",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.GameMode",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "saved closure descriptors",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "Ascension",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "ordered canonical bytes (host JSON only; canonical form is mod-owned)",
+          "type": "MegaCrit.Sts2.Core.Saves.MegaCritSerializerContext",
+          "member": "MegaCritSerializerContext",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "notpublic",
+          "detail": null
+        },
+        {
+          "item": "ordered canonical bytes (host JSON only; canonical form is mod-owned)",
+          "type": "MegaCrit.Sts2.Core.Saves.JsonSerializationUtility",
+          "member": "JsonSerializationUtility",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-master-seed",
+      "adr": "0040",
+      "row": "Master seed",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "\u0060SerializableRunRngSet.Seed\u0060 (\u0060String\u0060) beside \u0060RunRngSet.Seed\u0060 (\u0060UInt32\u0060); derivation runs through \u0060RunRngSet..ctor(String)\u0060 and \u0060MegaRandom.Splitmix64\u0060 (algorithm details are not recorded here).",
+      "ordering": "Single value.",
+      "restore": "Host-owned via \u0060RunRngSet.LoadFromSerializable\u0060 and \u0060Rng.FastForwardCounter\u0060; the mod never writes a cursor.",
+      "unknown_policy": "An unreadable seed returns an explicit unavailable capability.",
+      "members": [
+        {
+          "item": "canonical seed",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "StringSeed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "canonical seed",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "derivation",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": ".ctor",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (String)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "derivation",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": ".ctor",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void (MegaCrit.Sts2.Core.Entities.Players.Player, MegaCrit.Sts2.Core.Models.ModelId, UInt32, Int32) ; Void (UInt32, Int32) ; Void (UInt32, String)",
+          "visibility": "public",
+          "detail": "overloads=3"
+        },
+        {
+          "item": "derivation",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "Splitmix64",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "UInt64 (UInt64\u0026)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet",
+          "member": "Seed",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-map-act-generation",
+      "adr": "0040",
+      "row": "Map/act generation",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "One \u0060Int32\u0060 counter per stream in \u0060SerializableRunRngSet.Counters\u0060 / \u0060SerializablePlayerRngSet.Counters\u0060; the xoshiro state words are not serialized by the host.",
+      "ordering": "Streams are keyed by \u0060RunRngType\u0060/\u0060PlayerRngType\u0060; canonical order is the enum ordinal.",
+      "restore": "Host-owned via \u0060RunRngSet.LoadFromSerializable\u0060 and \u0060Rng.FastForwardCounter\u0060; the mod never writes a cursor.",
+      "unknown_policy": "A stream that cannot be read at the boundary fails closed for that build/mode; consumption timing is not certified by metadata.",
+      "members": [
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "UpFront",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "UnknownMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "UpFront",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "UnknownMapPoint",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "first-use boundary (map build)",
+          "type": "MegaCrit.Sts2.Core.Map.StandardActMap",
+          "member": "_rng",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "odds input",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "Odds",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Odds.RunOddsSet",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "odds input",
+          "type": "MegaCrit.Sts2.Core.Odds.RunOddsSet",
+          "member": "UnknownMapPoint",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Odds.UnknownMapPointOdds",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "odds input",
+          "type": "MegaCrit.Sts2.Core.Odds.UnknownMapPointOdds",
+          "member": "Roll",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Rooms.RoomType (System.Collections.Generic.IEnumerable\u00601\u003CMegaCrit.Sts2.Core.Rooms.RoomType\u003E, MegaCrit.Sts2.Core.Runs.IRunState)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "odds input",
+          "type": "MegaCrit.Sts2.Core.Odds.UnknownMapPointOdds",
+          "member": "_nonEventOdds",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Rooms.RoomType,Single\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SerializableOdds",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunOddsSet",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-encounters-enemies-targeting",
+      "adr": "0040",
+      "row": "Encounters/enemies/targeting",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "One \u0060Int32\u0060 counter per stream in \u0060SerializableRunRngSet.Counters\u0060 / \u0060SerializablePlayerRngSet.Counters\u0060; the xoshiro state words are not serialized by the host.",
+      "ordering": "Streams are keyed by \u0060RunRngType\u0060/\u0060PlayerRngType\u0060; canonical order is the enum ordinal.",
+      "restore": "Host-owned via \u0060RunRngSet.LoadFromSerializable\u0060 and \u0060Rng.FastForwardCounter\u0060; the mod never writes a cursor.",
+      "unknown_policy": "A stream that cannot be read at the boundary fails closed for that build/mode; consumption timing is not certified by metadata.",
+      "members": [
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "MonsterAi",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatTargets",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "MonsterAi",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "CombatTargets",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "consumer",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "_rng",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "consumer",
+          "type": "MegaCrit.Sts2.Core.Models.MonsterModel",
+          "member": "_runRng",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "consumer",
+          "type": "MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine.RandomBranchState",
+          "member": "RandomBranchState",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-shuffle-draw-rewards-shops-events",
+      "adr": "0040",
+      "row": "Shuffle/draw/rewards/shops/events",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "One \u0060Int32\u0060 counter per stream in \u0060SerializableRunRngSet.Counters\u0060 / \u0060SerializablePlayerRngSet.Counters\u0060; the xoshiro state words are not serialized by the host. Note: the enum member is \u0060RunRngType.CombatOrbs\u0060 while the accessor is \u0060RunRngSet.CombatOrbGeneration\u0060.",
+      "ordering": "Streams are keyed by \u0060RunRngType\u0060/\u0060PlayerRngType\u0060; canonical order is the enum ordinal.",
+      "restore": "Host-owned via \u0060RunRngSet.LoadFromSerializable\u0060 and \u0060Rng.FastForwardCounter\u0060; the mod never writes a cursor.",
+      "unknown_policy": "A stream that cannot be read at the boundary fails closed for that build/mode; consumption timing is not certified by metadata. A \u0060Reward._rngOverride\u0060 or \u0060CardCreationOptions.RngOverride\u0060 that is set makes the offer\u0027s stream identity explicit; an unresolvable override rejects capture.",
+      "members": [
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "Shuffle",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatCardGeneration",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatPotionGeneration",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatCardSelection",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatEnergyCosts",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "CombatOrbGeneration",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "Niche",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream",
+          "type": "MegaCrit.Sts2.Core.Runs.RunRngSet",
+          "member": "TreasureRoomRelics",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "Shuffle",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "CombatOrbs",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "member": "Niche",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.RunRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream",
+          "type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "member": "Rewards",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream",
+          "type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "member": "Shops",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream",
+          "type": "MegaCrit.Sts2.Core.Random.PlayerRngSet",
+          "member": "Transformations",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "member": "Rewards",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "member": "Shops",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "per-player stream identity",
+          "type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "member": "Transformations",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "offer-scoped override",
+          "type": "MegaCrit.Sts2.Core.Rewards.Reward",
+          "member": "_rngOverride",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "family",
+          "detail": null
+        },
+        {
+          "item": "offer-scoped override",
+          "type": "MegaCrit.Sts2.Core.Runs.CardCreationOptions",
+          "member": "RngOverride",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "offer-scoped override",
+          "type": "MegaCrit.Sts2.Core.Models.EventModel",
+          "member": "Rng",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "debug override",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "DebugForcedTopCardOnNextShuffle",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializablePlayerRngSet",
+          "member": "Counters",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.PlayerRngType,Int32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "serialized form",
+          "type": "MegaCrit.Sts2.Core.Saves.Runs.SerializableRunRngSet",
+          "member": "Counters",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.Dictionary\u00602\u003CMegaCrit.Sts2.Core.Entities.Rngs.RunRngType,Int32\u003E",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-ordering-external-entropy",
+      "adr": "0040",
+      "row": "Ordering and external entropy",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Wall-clock values are saved as \u0060Int64\u0060 (\u0060SaveTime/StartTime/RunTime/WinTime\u0060, \u0060DailyTime\u0060); object IDs are \u0060UInt32\u0060/\u0060Int32\u0060 counters; hash-set contents are saved as lists.",
+      "ordering": "Every hash set listed here has no host-defined order and must be sorted canonically before encoding; task and cancellation members are timing inputs, not state.",
+      "restore": "Not restorable and not part of identity except the daily seed date; the mod records them as declared external inputs.",
+      "unknown_policy": "A checkpoint taken while \u0060_actionCancelToken\u0060, \u0060_executionTask\u0060, or \u0060_deferredEndTurnTransition\u0060 is live is refused as \u0060busy\u0060; an unknown ordering source fails closed.",
+      "members": [
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "_startTime",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "_sessionStartTime",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "DailyTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CSystem.DateTimeOffset\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "RunTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "SaveTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "StartTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int64",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "wall clock",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "DailyTime",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CSystem.DateTimeOffset\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatState",
+          "member": "_nextCreatureId",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "_nextId",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.GameActions.Multiplayer.ActionQueueSet",
+          "member": "NextActionId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "UInt32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "NextRoomId",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.Rewards.RewardsSet",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Int32",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "object IDs",
+          "type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "member": "Id",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Nullable\u00601\u003CUInt32\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member": "_visitedEventIds",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Map.ActMap",
+          "member": "startMapPoints",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "parents",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Map.MapPoint",
+          "member": "Children",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Map.MapPoint\u003E",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Unlocks.UnlockState",
+          "member": "_encountersSeen",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Models.ModelId\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Runs.RelicGrabBag",
+          "member": "_rarities",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Relics.RelicRarity\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_keywords",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardKeyword\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Models.CardModel",
+          "member": "_tags",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Cards.CardTag\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "hash order",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "_playersReadyToEndTurn",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Collections.Generic.HashSet\u00601\u003CMegaCrit.Sts2.Core.Entities.Players.Player\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "async/frame timing",
+          "type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "member": "_actionCancelToken",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.CancellationTokenSource",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "async/frame timing",
+          "type": "MegaCrit.Sts2.Core.GameActions.ActionExecutor",
+          "member": "_queueTaskCompletionSource",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.TaskCompletionSource\u00601\u003CBoolean\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "async/frame timing",
+          "type": "MegaCrit.Sts2.Core.GameActions.GameAction",
+          "member": "_executionTask",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.Task",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "async/frame timing",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatManager",
+          "member": "_deferredEndTurnTransition",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Func\u00601\u003CSystem.Threading.Tasks.Task\u003E",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "async/frame timing",
+          "type": "MegaCrit.Sts2.Core.Combat.CombatStateTracker",
+          "member": "_combatStateChangedDeferredTask",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "System.Threading.Tasks.Task",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "locale",
+          "type": "MegaCrit.Sts2.Core.Localization.LocManager",
+          "member": "Language",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "locale",
+          "type": "MegaCrit.Sts2.Core.Localization.LocManager",
+          "member": "CultureInfo",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.Globalization.CultureInfo",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "locale",
+          "type": "MegaCrit.Sts2.Core.Localization.LocManager",
+          "member": "StringComparer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "System.StringComparer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.UserDataPathProvider",
+          "member": "SavesDir",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "String",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.UserDataPathProvider",
+          "member": "IsRunningModded",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "Boolean",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.ISaveStore",
+          "member": "ReadFile",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "String (String)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.ISaveStore",
+          "member": "GetLastModifiedTime",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "System.DateTimeOffset (String)",
+          "visibility": "public",
+          "detail": "overloads=1"
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "PlatformType",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Platform.PlatformType",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "files",
+          "type": "MegaCrit.Sts2.Core.Saves.SerializableRun",
+          "member": "MapDrawings",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Saves.MapDrawing.SerializableMapDrawings",
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "id": "rng-cosmetic-only",
+      "adr": "0040",
+      "row": "Cosmetic-only randomness",
+      "status": "metadata-observed",
+      "semantics": "runtime-unverified",
+      "serialization": "Not serialized by the host (\u0060Rng.Chaotic\u0060 is a backing property; \u0060MegaRandom..ctor()\u0060 is the unseeded overload).",
+      "ordering": "Not ordered; excluded from identity only after a live run proves it cannot affect gameplay state.",
+      "restore": "Not restorable by design.",
+      "unknown_policy": "Metadata shows these members exist; it cannot show they are gameplay-neutral, so this row stays \u0060unverified\u0060 for the ADR 0040 required finding.",
+      "members": [
+        {
+          "item": "chaotic stream",
+          "type": "MegaCrit.Sts2.Core.Random.Rng",
+          "member": "Chaotic",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Random.Rng",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "unseeded constructor",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": ".ctor",
+          "kind": "method",
+          "status": "metadata-observed",
+          "declared_type": "Void () ; Void (UInt64)",
+          "visibility": "public",
+          "detail": "overloads=2"
+        },
+        {
+          "item": "float increment state",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_incrDouble",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Double",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "float increment state",
+          "type": "MegaCrit.Sts2.Core.Random.MegaRandom",
+          "member": "_incrFloat",
+          "kind": "field",
+          "status": "metadata-observed",
+          "declared_type": "Single",
+          "visibility": "private",
+          "detail": null
+        },
+        {
+          "item": "flavor synchronizer",
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member": "FlavorSynchronizer",
+          "kind": "property",
+          "status": "metadata-observed",
+          "declared_type": "MegaCrit.Sts2.Core.Multiplayer.Game.FlavorSynchronizer",
+          "visibility": "public",
+          "detail": null
+        },
+        {
+          "item": "flavor synchronizer",
+          "type": "MegaCrit.Sts2.Core.Multiplayer.Game.FlavorSynchronizer",
+          "member": "FlavorSynchronizer",
+          "kind": "type",
+          "status": "metadata-observed",
+          "declared_type": null,
+          "visibility": "public",
+          "detail": null
+        }
+      ]
+    }
+  ],
+  "unresolved_family_count": 0,
+  "enumeration_rule": "Every row names one exact host type and member; the full type name, member name, and member kind match ordinally. A row that does not resolve is reported unresolved and is never substituted, relaxed, or omitted, and a family with any unresolved row or no rows fails closed.",
+  "limitation": "Metadata proves that a member exists with a declared type on the hashed assembly. It cannot prove serialization, restore responsibility, ordering, unknown-value handling, RNG consumption, thread affinity, or that a capture is coherent; those stay runtime-unverified until an authorized exact-host run records them. No row is native-verified."
+}

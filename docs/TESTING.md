@@ -96,7 +96,7 @@ The checkpoint payload test is the witness for the closed game-owned `checkpoint
 cargo test --locked --offline --package sts2-game-mod --test checkpoint_payload
 ~~~
 
-The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. None of these tests canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043.
+The selected vectors are copied from protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea` and are synthetic consumer evidence. None of these tests canonicalizes arbitrary input, inspects a proprietary host, proves native field availability, captures an exact game boundary, persists an artifact, or restores one. Native capability remains unavailable until exact-host evidence satisfies ADR 0037 and ADR 0043. The opt-in exact-build coverage metadata probe and its pinned-assembly regressions are documented in [`checkpoint-coverage-reflection/README.md`](../experiments/managed-rust-interop/checkpoint-coverage-reflection/README.md); hosted CI does not run them.
 
 ## Exact-restore source consumer
 

@@ -1,0 +1,11 @@
+<Project>
+  <!-- Import the experiment-wide compiler policy before selecting a per-project external build
+       root. MSBuildProjectExtensionsPath must be fixed before Microsoft.Common.props imports. -->
+  <Import Project="../Directory.Build.props" />
+  <PropertyGroup Condition="'$(ManagedBuildRoot)' != ''">
+    <BaseOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</MSBuildProjectExtensionsPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/bin/**;$(MSBuildProjectDirectory)/obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

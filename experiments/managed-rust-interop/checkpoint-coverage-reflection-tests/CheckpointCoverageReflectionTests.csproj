@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>AiAscension.Sts2GameMod.CheckpointCoverageReflection.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../coop-causality-reflection/MetadataNames.cs" Link="MetadataNames.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/CoverageFamilies*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../checkpoint-coverage-reflection/CoverageInventoryModel.cs" Link="CoverageInventoryModel.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/CoverageResolver.cs" Link="CoverageResolver.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/MetadataTypeIndex.cs" Link="MetadataTypeIndex.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/HostAssemblyPins.cs" Link="HostAssemblyPins.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/CoverageReportWriters.cs" Link="CoverageReportWriters.cs" />
+    <Compile Include="../checkpoint-coverage-reflection/CoverageInventoryCli.cs" Link="CoverageInventoryCli.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="STS2GameDataDir" Value="$(STS2GameDataDir)" />
+  </ItemGroup>
+  <Target Name="ValidateHostAssemblyPath" BeforeTargets="CoreCompile">
+    <Error Condition="'$(STS2GameDataDir)' == ''"
+           Text="Set STS2GameDataDir to the directory containing the exact pinned sts2.dll. These opt-in metadata tests fail closed without it and are not part of hosted CI." />
+    <Error Condition="'$(STS2GameDataDir)' != '' and !Exists('$(STS2GameDataDir)/sts2.dll')"
+           Text="STS2GameDataDir does not contain sts2.dll: $(STS2GameDataDir)" />
+  </Target>
+</Project>
