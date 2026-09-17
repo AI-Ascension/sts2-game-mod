@@ -138,6 +138,7 @@ fn receipt_identity_matches(operation: &Value) -> bool {
     };
     matches_common(ticket, true)
         && matches_common(witness, false)
+        && ticket["host_fence_id"] == witness["host_fence_id"]
         && witness["state_id"] == boundary["state_id"]
         && witness["generation"] == 1
 }
