@@ -214,6 +214,71 @@ fn stale_generation_is_rejected_without_second_effect() {
 }
 
 #[test]
+fn reopened_operation_replays_original_generation_without_second_effect() {
+    let (mut state, transport, path) = fixture();
+    let dispatch = json!({
+        "kind":"dispatch_action_request","correlation_id":"corr-1",
+        "operation_id":"op-reopen","generation":0,"state_id":"combat-1",
+        "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
+    });
+    let (status, _) = state.handle(&request(
+        &transport,
+        "/api/v3/runtime/action",
+        dispatch.clone(),
+        false,
+    ));
+    assert_eq!(status, 200);
+
+    let mut reopened = RuntimeV3State::open(transport.clone(), path.clone()).expect("reopen");
+    let mut retry = dispatch;
+    retry["correlation_id"] = json!("corr-after-restart");
+    let (status, body) =
+        reopened.handle(&request(&transport, "/api/v3/runtime/action", retry, false));
+    assert_eq!(status, 200);
+    let response: Value = serde_json::from_slice(&body).expect("response");
+    assert_eq!(response["correlation_id"], "corr-after-restart");
+    assert_eq!(response["status"], "settled");
+    let ledger: Value = serde_json::from_slice(
+        &std::fs::read(path.join("runtime-v3-effects.json")).expect("ledger"),
+    )
+    .expect("ledger json");
+    assert_eq!(ledger["action_count"], 1);
+    assert_eq!(ledger["operations"][0]["generation"], 0);
+}
+
+#[test]
+fn terminal_successor_rejects_fresh_operation_without_second_effect() {
+    let (mut state, transport, path) = fixture();
+    let dispatch = json!({
+        "kind":"dispatch_action_request","correlation_id":"corr-1",
+        "operation_id":"op-terminal","generation":0,"state_id":"combat-1",
+        "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
+    });
+    state.handle(&request(
+        &transport,
+        "/api/v3/runtime/action",
+        dispatch,
+        false,
+    ));
+    let fresh = json!({
+        "kind":"dispatch_action_request","correlation_id":"corr-2",
+        "operation_id":"op-fresh","generation":1,"state_id":"combat-1",
+        "action":{"action_id":ACTION_ID,"action":{"kind":"end_turn"}}
+    });
+    let (status, body) = state.handle(&request(&transport, "/api/v3/runtime/action", fresh, false));
+    assert_eq!(status, 200);
+    let response: Value = serde_json::from_slice(&body).expect("response");
+    assert_eq!(response["status"], "rejected");
+    assert_eq!(response["error_code"], "stale_generation");
+    let ledger: Value = serde_json::from_slice(
+        &std::fs::read(path.join("runtime-v3-effects.json")).expect("ledger"),
+    )
+    .expect("ledger json");
+    assert_eq!(ledger["action_count"], 1);
+    assert_eq!(ledger["settled_count"], 1);
+}
+
+#[test]
 fn malformed_persisted_ledger_fails_closed() {
     let transport = TransportConfig {
         principal: "harness".into(),

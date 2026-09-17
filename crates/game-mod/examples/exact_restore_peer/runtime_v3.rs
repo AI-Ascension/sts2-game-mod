@@ -40,28 +40,31 @@ struct Operation {
 impl RuntimeV3State {
     pub(crate) fn open(transport: TransportConfig, store_dir: PathBuf) -> Result<Self, String> {
         let store_path = store_dir.join("runtime-v3-effects.json");
-        let operations: BTreeMap<String, Operation> = if store_path.exists() {
-            let bytes = std::fs::read(&store_path)
-                .map_err(|error| format!("read runtime-v3 ledger: {error}"))?;
-            let value: Value = serde_json::from_slice(&bytes)
-                .map_err(|error| format!("decode runtime-v3 ledger: {error}"))?;
-            let items = value["operations"]
-                .as_array()
-                .ok_or_else(|| String::from("runtime-v3 ledger operations must be an array"))?;
-            let action_count = value["action_count"]
-                .as_u64()
-                .ok_or_else(|| String::from("runtime-v3 ledger action_count is missing"))?;
-            let settled_count = value["settled_count"]
-                .as_u64()
-                .ok_or_else(|| String::from("runtime-v3 ledger settled_count is missing"))?;
-            if action_count != items.len() as u64 || settled_count != action_count {
-                return Err(String::from(
-                    "runtime-v3 ledger counters do not match operations",
-                ));
-            }
-            items
-                .iter()
-                .map(|item| {
+        let operations: BTreeMap<String, Operation> =
+            if store_path.exists() {
+                let bytes = std::fs::read(&store_path)
+                    .map_err(|error| format!("read runtime-v3 ledger: {error}"))?;
+                let value: Value = serde_json::from_slice(&bytes)
+                    .map_err(|error| format!("decode runtime-v3 ledger: {error}"))?;
+                let items = value["operations"]
+                    .as_array()
+                    .ok_or_else(|| String::from("runtime-v3 ledger operations must be an array"))?;
+                let action_count = value["action_count"]
+                    .as_u64()
+                    .ok_or_else(|| String::from("runtime-v3 ledger action_count is missing"))?;
+                let settled_count = value["settled_count"]
+                    .as_u64()
+                    .ok_or_else(|| String::from("runtime-v3 ledger settled_count is missing"))?;
+                if items.len() > 1
+                    || action_count != items.len() as u64
+                    || settled_count != action_count
+                {
+                    return Err(String::from(
+                        "runtime-v3 ledger counters do not match operations",
+                    ));
+                }
+                let mut operations = BTreeMap::new();
+                for item in items {
                     let operation_id = item["operation_id"]
                         .as_str()
                         .filter(|value| !value.is_empty())
@@ -75,7 +78,10 @@ impl RuntimeV3State {
                     let generation = item["generation"]
                         .as_u64()
                         .ok_or_else(|| String::from("runtime-v3 ledger generation is missing"))?;
-                    Ok((
+                    if action_id != ACTION_ID || generation != 0 {
+                        return Err(String::from("runtime-v3 ledger operation is invalid"));
+                    }
+                    if operations.insert(
                         operation_id.clone(),
                         Operation {
                             action: json!({"action_id": action_id, "action": {"kind":"end_turn"}}),
@@ -83,13 +89,18 @@ impl RuntimeV3State {
                             generation,
                             response: settled_response("replayed", &transport, &operation_id),
                         },
-                    ))
-                })
-                .collect::<Result<_, String>>()?
-        } else {
-            BTreeMap::new()
-        };
-        let generation = if operations.is_empty() { 0 } else { 1 };
+                    ).is_some() {
+                        return Err(String::from("runtime-v3 ledger has duplicate operation IDs"));
+                    }
+                }
+                operations
+            } else {
+                BTreeMap::new()
+            };
+        let generation = operations
+            .values()
+            .next()
+            .map_or(0, |operation| operation.generation.saturating_add(1));
         Ok(Self {
             transport,
             store_path,
@@ -266,7 +277,7 @@ impl RuntimeV3State {
         let Some(generation) = request["generation"].as_u64() else {
             return json_error_value("runtime_v3_generation_required");
         };
-        if action_id != ACTION_ID || generation != self.generation {
+        if action_id != ACTION_ID || generation != self.generation || self.generation != 0 {
             return rejected_response(&self.transport, request, operation_id, "stale_generation");
         }
         let response = settled_response(
@@ -342,7 +353,7 @@ impl RuntimeV3State {
                     "operation_id": operation_id,
                     "action_id": operation.action_id,
                     "status": "settled",
-                    "generation": 1,
+                    "generation": operation.generation,
                     "effect_kind": EFFECT_KIND
                 })
             })
