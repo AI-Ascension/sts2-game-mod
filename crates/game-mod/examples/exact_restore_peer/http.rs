@@ -312,7 +312,7 @@ fn lookup_unknown_body(body: Vec<u8>) -> Vec<u8> {
     serde_json::to_vec(&value).unwrap_or(body)
 }
 
-fn parse_timestamp_millis(value: &str) -> Option<u64> {
+pub(crate) fn parse_timestamp_millis(value: &str) -> Option<u64> {
     let year: u64 = value.get(0..4)?.parse().ok()?;
     let month: u64 = value.get(5..7)?.parse().ok()?;
     let day: u64 = value.get(8..10)?.parse().ok()?;
