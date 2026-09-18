@@ -92,6 +92,31 @@ internal static class PayloadSchemaTests
         using JsonDocument captured = JsonDocument.Parse(combat.PayloadUtf8.AsSpan().ToArray());
         Program.Check(Canonical(fixture.RootElement) == Canonical(captured.RootElement),
             "the synthetic capture is structurally identical to the pinned valid fixture");
+
+        // Stronger than structural identity: the writer's own bytes must match the canonical
+        // encoding the conformance case pins for this vector. The checked-in fixture file is
+        // pretty-printed, so its length is not the pinned canonical one.
+        JsonElement pinned = PinnedVector("CPV-VALID-STABLE-PLAYER-TURN-COMBAT");
+        byte[] capturedBytes = combat.PayloadUtf8.AsSpan().ToArray();
+        Program.Check(capturedBytes.Length == pinned.GetProperty("canonical_bytes").GetInt32(),
+            "the synthetic capture has the pinned canonical byte length");
+        string blob = "sha256:" + Convert.ToHexStringLower(SHA256.HashData(capturedBytes));
+        Program.Check(blob == pinned.GetProperty("blob_digest").GetString(),
+            "the synthetic capture hashes to the pinned canonical blob digest");
+    }
+
+    /// <summary>The pinned conformance vector with the given id.</summary>
+    private static JsonElement PinnedVector(string id)
+    {
+        using JsonDocument caseDocument = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(Root, "conformance", "cases", "checkpoint-payload-v1.json")));
+        foreach (JsonElement vector in caseDocument.RootElement
+            .GetProperty("valid_vectors").EnumerateArray())
+        {
+            if (vector.GetProperty("id").GetString() == id)
+                return vector.Clone();
+        }
+        throw new InvalidOperationException("pinned vector is missing: " + id);
     }
 
     private static IReadOnlyList<string> ValidateFixture(

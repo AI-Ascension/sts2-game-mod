@@ -216,6 +216,43 @@ internal static class CaptureSeamTests
             "identifier_invalid:relics", "a malformed identifier is refused");
     }
 
+    internal static void CaptureRejectsBoundViolationsAndHostReadFailures()
+    {
+        var host = new SyntheticHost();
+        var source = new CheckpointCaptureSource(host);
+        CheckpointPayloadFamilies families = host.ReadFamilies(Combat);
+        host.Override = families with
+        {
+            PendingEffects = SyntheticHost.Captured(
+                new CheckpointPayloadPendingEffects(null!, Array.Empty<CheckpointPayloadExternalInput>()))
+        };
+        Reject(source.Capture(Combat), CheckpointCaptureRejectionKind.UnsupportedCoverage,
+            "bound_violated:pending_effects", "an unbounded collection is refused");
+
+        host.Override = families with
+        {
+            SeedAndRng = SyntheticHost.Captured(new CheckpointPayloadSeedAndRng(
+                "SYNTHETIC-SEED-0001", "synthetic-derivation-v1",
+                new[]
+                {
+                    new CheckpointPayloadRngStream("synthetic.shuffle", "synthetic-counter-v1", 3,
+                        SyntheticHost.ShuffleStreamTail),
+                    new CheckpointPayloadRngStream("synthetic.shuffle", "synthetic-counter-v1", 4,
+                        SyntheticHost.ShuffleStreamTail)
+                }))
+        };
+        Reject(source.Capture(Combat), CheckpointCaptureRejectionKind.UnsupportedCoverage,
+            "duplicate_stream_id:seed_and_rng", "a duplicate RNG stream id is refused");
+
+        host.Override = null;
+        Reject(new CheckpointCaptureSource(new ThrowingHost(new InvalidOperationException()))
+            .Capture(Combat), CheckpointCaptureRejectionKind.UnsafeBoundary, "host_read_failed",
+            "a host read that throws is a typed refusal, not an escaped exception");
+        Reject(new CheckpointCaptureSource(new ThrowingHost(new FormatException("host read")))
+            .Capture(Combat), CheckpointCaptureRejectionKind.UnsafeBoundary, "host_read_failed",
+            "every host-read exception class is a typed refusal without an artifact");
+    }
+
     internal static void EveryAdvertisedPhaseStillReportsUnavailable()
     {
         IReadOnlyList<CheckpointCaptureCapability> capabilities = CheckpointCaptureSource.Capabilities();

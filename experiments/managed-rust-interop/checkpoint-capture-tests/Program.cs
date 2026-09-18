@@ -17,6 +17,7 @@ internal static class Program
             CaptureSeamTests.CaptureCopiesOwnedBytesAndReleasesHostReferences();
             CaptureSeamTests.CaptureDoesNotAdvanceObservationGenerationOrRng();
             CaptureSeamTests.CaptureRejectsRequiredUnknownAndMisplacedFamilies();
+            CaptureSeamTests.CaptureRejectsBoundViolationsAndHostReadFailures();
             CaptureSeamTests.EveryAdvertisedPhaseStillReportsUnavailable();
             PayloadSchemaTests.ValidatorAgreesWithPinnedConformanceFixtures();
             PayloadSchemaTests.CapturedRecordValidatesAgainstPayloadSchemaV1();
