@@ -114,7 +114,7 @@ internal sealed class SyntheticHost : ICheckpointCaptureHostReader
     private static readonly string[] DeckCardIdentities =
         { "card:1", "card:2", "card:3", "card:4", "card:5" };
 
-    private static readonly ulong[] ShuffleStreamTail = { ulong.MaxValue, 42UL };
+    internal static readonly ulong[] ShuffleStreamTail = { ulong.MaxValue, 42UL };
 
     private static readonly ulong[] EnemyIntentStreamTail = { 9007199254740993UL };
 
@@ -139,4 +139,17 @@ internal sealed class SyntheticHost : ICheckpointCaptureHostReader
             CombatInProgress = false,
             TurnPhase = CheckpointHostTurnPhase.None
         };
+}
+
+/// <summary>A host read that throws must never escape as an untyped exception.</summary>
+internal sealed class ThrowingHost : ICheckpointCaptureHostReader
+{
+    private readonly Exception _exception;
+
+    internal ThrowingHost(Exception exception) => _exception = exception;
+
+    public CheckpointHostSettlementWitness ReadSettlement() => SyntheticHost.QuiescentCombat(1);
+
+    public CheckpointPayloadFamilies ReadFamilies(CheckpointCaptureBoundary boundary) =>
+        throw _exception;
 }

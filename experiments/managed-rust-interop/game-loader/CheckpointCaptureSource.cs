@@ -60,17 +60,28 @@ internal sealed partial class CheckpointCaptureSource
         _inCaptureWindow = true;
         try
         {
-            CheckpointHostSettlementWitness before = _host.ReadSettlement();
-            CheckpointSettlementClassification classification = Classify(before, boundary);
-            if (classification.Settlement != CheckpointSettlement.Quiescent)
-                return Reject(CheckpointCaptureRejectionKind.UnsafeBoundary, boundary,
-                    classification.Settlement, classification.Detail);
+            CheckpointPayloadFamilies families;
+            try
+            {
+                CheckpointHostSettlementWitness before = _host.ReadSettlement();
+                CheckpointSettlementClassification classification = Classify(before, boundary);
+                if (classification.Settlement != CheckpointSettlement.Quiescent)
+                    return Reject(CheckpointCaptureRejectionKind.UnsafeBoundary, boundary,
+                        classification.Settlement, classification.Detail);
 
-            CheckpointPayloadFamilies families = _host.ReadFamilies(boundary);
-            CheckpointHostSettlementWitness after = _host.ReadSettlement();
-            if (before != after)
+                families = _host.ReadFamilies(boundary);
+                if (before != _host.ReadSettlement())
+                    return Reject(CheckpointCaptureRejectionKind.UnsafeBoundary, boundary,
+                        CheckpointSettlement.Unknown, "settlement_changed_inside_window");
+            }
+            catch (Exception)
+            {
+                // Any host read that throws is an unclassifiable settlement, never a partial
+                // capture. The thread guard runs before this window, so its typed refusal is
+                // never swallowed here, and everything below this point reads owned records only.
                 return Reject(CheckpointCaptureRejectionKind.UnsafeBoundary, boundary,
-                    CheckpointSettlement.Unknown, "settlement_changed_inside_window");
+                    CheckpointSettlement.Unknown, "host_read_failed");
+            }
 
             if (!TryValidate(boundary, families, out CheckpointCaptureRejection? rejection))
                 return CheckpointCaptureOutcome.Rejected(rejection);
@@ -78,12 +89,6 @@ internal sealed partial class CheckpointCaptureSource
             var record = new CheckpointPayloadRecord(boundary, families);
             ImmutableArray<byte> bytes = CheckpointCapturePayloadWriter.Write(record);
             return CheckpointCaptureOutcome.Captured(record, bytes);
-        }
-        catch (Exception exception) when (exception is not InvalidOperationException)
-        {
-            // A host read that throws is an unclassifiable settlement, never a partial capture.
-            return Reject(CheckpointCaptureRejectionKind.UnsafeBoundary, boundary,
-                CheckpointSettlement.Unknown, "host_read_failed");
         }
         finally
         {

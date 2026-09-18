@@ -17,8 +17,9 @@ do not establish release support.
   reference after returning, draws no RNG, advances no observation generation and is wired to no route
   or listener, so every boundary stays unavailable. The host-independent probe
   `experiments/managed-rust-interop/checkpoint-capture-tests/` runs in the hosted `managed-source` job
-  and passes 86 checks. Synthetic evidence only; native field availability, ordering and restore
-  semantics remain `runtime-unverified`. Refs #80.
+  and passes 92 checks, including that a quiescent capture is structurally identical to the pinned
+  valid fixture and hashes to that vector's pinned canonical `blob_digest`. Synthetic evidence only;
+  native field availability, ordering and restore semantics remain `runtime-unverified`. Refs #80.
 
 - Added `docs/evidence/seeded-run-criterion-evidence-map-20260917.md`, mapping every #79 seeded-run
   acceptance criterion to its evidence at exact pins (mod `46b1ac6e`, host v0.107.1/`59260271`,
