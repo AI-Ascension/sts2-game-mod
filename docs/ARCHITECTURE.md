@@ -188,6 +188,8 @@ The source-only `checkpoint::admission` controller adds the two remaining owner 
 
 See [ADR 0043](decisions/0043-native-checkpoint-capture-port.md), [ADR 0054](decisions/0054-restricted-canonical-checkpoint-encoder.md), and [ADR 0055](decisions/0055-checkpoint-capture-admission-barrier.md).
 
+The managed `game-loader` carries the host-side half of that seam. `CheckpointCaptureSource` is host-thread-only (an off-thread call throws before any host read), classifies settlement through the same `Quiescent / MidEffect / EnemyExecution / PendingSelectionTransition / Unknown` mapping, and only when the boundary is quiescent and unchanged across the window copies the payload-v1 families into owned records and immutable bytes. A required `unknown` family, a combat family at a settled map choice, an outstanding pending effect, an unbounded collection or a malformed identifier is a typed rejection with no artifact. It holds no host reference after returning, draws no RNG, advances no observation generation, mutates nothing, and is wired to no route or listener, so every boundary stays unavailable; the host member mapping for the live reader comes from the ADR 0037/0040 metadata inventory, and serialization, ordering, restore and unknown-value semantics stay `runtime-unverified`.
+
 ### Exact-restore staging boundary
 
 The game-mod target consumes the pinned `exact-restore-v1` artifact with a strict decoder for canonical JSON, duplicate members, schema digest, and the 16 KiB frame bound. Synthetic fixtures exercise closure verification, bounded staging, commit-intent recovery, and receipts; the Linux private store uses no-follow directory-relative opens, owner-only permissions, a process lock, and digest-derived filenames.

@@ -6,6 +6,20 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the managed host-thread checkpoint capture seam and settlement classifier for #80 item 3.
+  `CheckpointCaptureSource` (with `CheckpointCaptureSource.Settlement.cs` and
+  `CheckpointCaptureSource.Rules.cs`) is host-thread-only, classifies settlement through the same
+  `Quiescent / MidEffect / EnemyExecution / PendingSelectionTransition / Unknown` mapping as the Rust
+  owner gate, copies the `checkpoint-payload-v1` families into owned records and immutable bytes only
+  when the boundary is quiescent and unchanged across the window, and emits typed rejections (never a
+  substituted value) for a required `unknown` family, a combat family at a settled map choice, an
+  outstanding pending effect, an unbounded collection or a malformed identifier. It holds no host
+  reference after returning, draws no RNG, advances no observation generation and is wired to no route
+  or listener, so every boundary stays unavailable. The host-independent probe
+  `experiments/managed-rust-interop/checkpoint-capture-tests/` runs in the hosted `managed-source` job
+  and passes 86 checks. Synthetic evidence only; native field availability, ordering and restore
+  semantics remain `runtime-unverified`. Refs #80.
+
 - Added `docs/evidence/seeded-run-criterion-evidence-map-20260917.md`, mapping every #79 seeded-run
   acceptance criterion to its evidence at exact pins (mod `46b1ac6e`, host v0.107.1/`59260271`,
   protocol `bfe28e45`, harness/gateway/MCP heads, staged guest set); AC1 is `confirmed-source`,

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Host-independent probe for the managed checkpoint capture seam. It links only the
+       host-free production sources and drives the seam through a synthetic reader; it never
+       references sts2.dll or GodotSharp.dll, so it runs in the hosted managed-source job. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>Sts2.GameMod.CheckpointCaptureProbe</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/CheckpointCaptureBoundary.cs" Link="CheckpointCaptureBoundary.cs" />
+    <Compile Include="../game-loader/CheckpointCaptureHostContract.cs" Link="CheckpointCaptureHostContract.cs" />
+    <Compile Include="../game-loader/CheckpointCapturePayloadRecords.cs" Link="CheckpointCapturePayloadRecords.cs" />
+    <Compile Include="../game-loader/CheckpointCapturePayloadWriter.cs" Link="CheckpointCapturePayloadWriter.cs" />
+    <Compile Include="../game-loader/CheckpointCaptureSource.cs" Link="CheckpointCaptureSource.cs" />
+    <Compile Include="../game-loader/CheckpointCaptureSource.Rules.cs" Link="CheckpointCaptureSource.Rules.cs" />
+    <Compile Include="../game-loader/CheckpointCaptureSource.Settlement.cs" Link="CheckpointCaptureSource.Settlement.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../../schemas/checkpoint-payload-v1.schema.json"
+          Link="schemas/checkpoint-payload-v1.schema.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../conformance/cases/checkpoint-payload-v1.json"
+          Link="conformance/cases/checkpoint-payload-v1.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../conformance/fixtures/checkpoint-payload-v1/**/*.json"
+          Link="conformance/fixtures/checkpoint-payload-v1/%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -145,8 +145,8 @@ jobs:
       - name: Run managed seeded-run profile baseline inventory probe
         run: dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
 
-      - name: Run managed profile settings validation probe
-        run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release
+      - name: Run managed profile settings validation and checkpoint capture seam probes
+        run: dotnet run --project experiments/managed-rust-interop/settings-tests/SettingsValidationProbe.csproj --configuration Release && dotnet run --project experiments/managed-rust-interop/checkpoint-capture-tests/CheckpointCaptureProbe.csproj --configuration Release
 
       - name: Run managed runtime queue regressions
         # The queue probe links production managed callback sources to original test doubles.
