@@ -59,6 +59,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0061 | [Owner-local read-only shop inventory, service, and restock reference](0061-shop-reference.md) |
 | 0062 | [Owner-local read-only rest-site and rest-option reference](0062-rest-site-reference.md) |
 | 0063 | [Owner-local read-only selection and candidate reference](0063-selection-reference.md) |
+| 0064 | [Owner-local reference text and public-screen text](0064-reference-text-and-public-screen-text.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
@@ -70,3 +71,8 @@ request on `codex/issue-111-locale-render` was open, so 0060 and 0061 were numbe
 than claiming that identifier; the record has since merged as decision 0059.
 Decision 0017 remains reserved for the bounded Runtime-v3 card proposal retained on a separate
 branch. That reservation does not mean the bounded proposal has merged.
+Decisions 0061, 0062, and 0063 are reserved for the shop, rest-site, and selection reference
+records carried by the open coordinated pull requests on `codex/issue-101-shop-reference-20260919`,
+`codex/issue-102-rest-site-reference-20260919`, and `codex/issue-103-selection-reference-20260919`;
+0064 is numbered above them rather than claiming a reserved identifier. Those reservations do not
+mean the shop, rest-site, or selection reference has merged.

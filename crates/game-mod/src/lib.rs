@@ -25,6 +25,7 @@ mod poc;
 mod potions;
 mod powers;
 mod protocol_artifact;
+mod reference_text;
 mod relics;
 mod rest_site_reference;
 mod retained_map;
@@ -135,6 +136,7 @@ pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
 };
+pub use reference_text::*;
 pub use relics::*;
 pub use rest_site_reference::*;
 pub use retained_map::*;
