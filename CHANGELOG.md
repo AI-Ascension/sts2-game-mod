@@ -55,8 +55,11 @@ do not establish release support.
   fallback chain consulted, the text revision, the effective direction, and an explicit
   `Complete`/`Partial` completeness report. A definition's `(entity_kind, namespaced_id)` identity
   stays byte-identical in every language, so a localized answer never changes which entity it
-  describes. An exhausted fallback chain reports `NotTranslated` rather than an empty string or a
-  zero, an unresolved placeholder stays visible as `UnresolvedPlaceholder(name)` together with the
+  describes. An exhausted fallback chain fails closed with the closed `NotFound` error rather than
+  an empty string or a zero, only the requested plural form then `Other` then `Unknown` is ever
+  consulted (the served form is reported) and an unavailable placeholder value is carried as
+  `LocaleUnavailableReason`, an unresolved placeholder stays visible as
+  `UnresolvedPlaceholder(name)` together with the
   input it needs, and an effect amount is carried verbatim so localization can never silently change
   a number. The declared placeholder set and the set actually used must match; a fallback chain is
   rejected when it is empty, too deep, unordered, unsupported, or cyclic; owner-supplied text is

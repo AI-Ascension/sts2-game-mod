@@ -7,9 +7,9 @@ mod fixture;
 
 use fixture::*;
 use sts2_game_mod::{
-    LOCALE_REFERENCE_MAX_SEGMENTS, LOCALE_REFERENCE_MAX_TEXT_BYTES,
-    LOCALE_REFERENCE_PRODUCER_VERSION, LocaleCatalogError, LocaleCatalogProducer, LocaleDirection,
-    LocaleInput, LocalePluralCategory, LocaleTextSegment,
+    LOCALE_REFERENCE_MAX_FALLBACK_DEPTH, LOCALE_REFERENCE_MAX_SEGMENTS,
+    LOCALE_REFERENCE_MAX_TEXT_BYTES, LOCALE_REFERENCE_PRODUCER_VERSION, LocaleCatalogError,
+    LocaleCatalogProducer, LocaleDirection, LocaleInput, LocalePluralCategory, LocaleTextSegment,
 };
 
 fn produce(
@@ -274,5 +274,100 @@ fn too_many_segments_are_rejected() {
     assert_eq!(
         produce(&manifest, locales(), entries).expect_err("expected an error"),
         LocaleCatalogError::InvalidInput("segments")
+    );
+}
+
+#[test]
+fn a_fallback_chain_with_no_steps_is_rejected() {
+    let manifest = base_manifest();
+    let mut declared = locales();
+    declared[1].fallback = vec![];
+    assert_eq!(
+        produce(&manifest, declared, baseline_entries()).expect_err("expected an error"),
+        LocaleCatalogError::InvalidFallbackChain("empty")
+    );
+}
+
+#[test]
+fn a_fallback_chain_deeper_than_the_limit_is_rejected() {
+    let manifest = base_manifest();
+    let mut declared = locales();
+    declared[1].fallback = vec![DE.to_owned(); LOCALE_REFERENCE_MAX_FALLBACK_DEPTH + 1];
+    assert_eq!(
+        produce(&manifest, declared, baseline_entries()).expect_err("expected an error"),
+        LocaleCatalogError::InvalidFallbackChain("too_deep")
+    );
+}
+
+#[test]
+fn a_fallback_chain_that_does_not_start_at_its_own_locale_is_rejected() {
+    let manifest = base_manifest();
+    let mut declared = locales();
+    declared[1].fallback = vec![AR.to_owned(), EN.to_owned()];
+    assert_eq!(
+        produce(&manifest, declared, baseline_entries()).expect_err("expected an error"),
+        LocaleCatalogError::InvalidFallbackChain("unordered")
+    );
+}
+
+#[test]
+fn a_fallback_chain_naming_an_unsupported_locale_is_rejected() {
+    let manifest = base_manifest();
+    let mut declared = locales();
+    declared[1].fallback = vec![DE.to_owned(), "fr-FR".to_owned(), EN.to_owned()];
+    assert_eq!(
+        produce(&manifest, declared, baseline_entries()).expect_err("expected an error"),
+        LocaleCatalogError::UnsupportedLocale("fr-FR".to_owned())
+    );
+}
+
+#[test]
+fn an_entry_with_no_segments_is_rejected() {
+    let manifest = base_manifest();
+    let entries = vec![entry(
+        "text",
+        "shop_title",
+        EN,
+        LocalePluralCategory::Other,
+        vec![],
+        &[],
+    )];
+    assert_eq!(
+        produce(&manifest, locales(), entries).expect_err("expected an error"),
+        LocaleCatalogError::InvalidInput("empty_segments")
+    );
+}
+
+#[test]
+fn an_empty_text_segment_is_rejected() {
+    let manifest = base_manifest();
+    let entries = vec![entry(
+        "text",
+        "shop_title",
+        EN,
+        LocalePluralCategory::Other,
+        vec![text("")],
+        &[],
+    )];
+    assert_eq!(
+        produce(&manifest, locales(), entries).expect_err("expected an error"),
+        LocaleCatalogError::InvalidInput("empty_text")
+    );
+}
+
+#[test]
+fn an_effect_amount_carrying_executable_presentation_is_rejected() {
+    let manifest = base_manifest();
+    let entries = vec![entry(
+        "card",
+        "strike",
+        EN,
+        LocalePluralCategory::Other,
+        vec![effect("damage", "<script>alert(1)</script>6")],
+        &[],
+    )];
+    assert_eq!(
+        produce(&manifest, locales(), entries).expect_err("expected an error"),
+        LocaleCatalogError::UnsafePresentation("effect_amount")
     );
 }

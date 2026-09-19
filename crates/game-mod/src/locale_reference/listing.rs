@@ -32,8 +32,9 @@ impl LocaleCatalog {
         }
         let locale_signature = query.locale.clone().unwrap_or_else(|| "*".to_owned());
         let query_signature = format!(
-            "locale={locale_signature};kind={}",
-            query.entity_kind.clone().unwrap_or_else(|| "*".to_owned())
+            "locale={locale_signature};kind={};page_size={}",
+            query.entity_kind.clone().unwrap_or_else(|| "*".to_owned()),
+            query.page_size
         );
         let revision_signature = self.revision_signature();
         let filtered: Vec<&EntryKey> = self
@@ -92,7 +93,8 @@ impl LocaleCatalog {
 
     pub(super) fn revision_signature(&self) -> String {
         format!(
-            "{}|{}",
+            "{}|{}|{}",
+            self.binding.producer_version,
             self.binding.manifest.content_set_revision,
             self.binding.manifest.localized_text_revision
         )
@@ -104,7 +106,7 @@ impl LocaleCatalog {
         namespaced_id: &str,
         locale: &str,
         plural: Option<LocalePluralCategory>,
-    ) -> Option<&StoredEntry> {
+    ) -> Option<(&StoredEntry, LocalePluralCategory)> {
         let key_for = |category: LocalePluralCategory| {
             (
                 entity_kind.to_owned(),
@@ -116,17 +118,14 @@ impl LocaleCatalog {
         if let Some(category) = plural
             && let Some(stored) = self.entries.get(&key_for(category))
         {
-            return Some(stored);
+            return Some((stored, category));
         }
         if let Some(stored) = self.entries.get(&key_for(LocalePluralCategory::Other)) {
-            return Some(stored);
+            return Some((stored, LocalePluralCategory::Other));
         }
         if let Some(stored) = self.entries.get(&key_for(LocalePluralCategory::Unknown)) {
-            return Some(stored);
+            return Some((stored, LocalePluralCategory::Unknown));
         }
-        self.entries
-            .range(key_for(LocalePluralCategory::Zero)..=key_for(LocalePluralCategory::Unknown))
-            .next()
-            .map(|(_, stored)| stored)
+        None
     }
 }

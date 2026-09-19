@@ -14,7 +14,8 @@ use super::catalog::{
 };
 use super::model::{
     LocaleCompleteness, LocaleDirection, LocaleEntityReference, LocaleInput,
-    LocalePlaceholderValue, LocaleRenderedSegment, LocaleTextSegment, validate_identity,
+    LocalePlaceholderValue, LocalePluralCategory, LocaleRenderedSegment, LocaleTextSegment,
+    validate_identity,
 };
 use super::normalize::validate_presentation;
 use super::validation::validate_reference_shape;
@@ -147,7 +148,7 @@ impl LocaleCatalog {
         }
         let chain = entry.fallback.clone();
         for (index, tag) in chain.iter().enumerate() {
-            if let Some(stored) = self.find_entry(
+            if let Some((stored, effective_plural)) = self.find_entry(
                 &request.entity_kind,
                 &request.namespaced_id,
                 tag,
@@ -195,11 +196,16 @@ impl LocaleCatalog {
                 let direction = resolved.map_or(LocaleDirection::Unknown, |input| input.direction);
                 let unresolved_placeholders: Vec<String> = unresolved.into_iter().collect();
                 let exact = tag == &request.locale;
-                let completeness = if exact && unresolved_placeholders.is_empty() {
-                    LocaleCompleteness::Complete
-                } else {
-                    LocaleCompleteness::Partial
-                };
+                // A substituted `Unknown` form is not a real plural form, so it is never reported
+                // as complete.  The canonical `Other` fallback stays complete by design.
+                let substituted_unknown = effective_plural == LocalePluralCategory::Unknown
+                    && request.plural != Some(LocalePluralCategory::Unknown);
+                let completeness =
+                    if exact && unresolved_placeholders.is_empty() && !substituted_unknown {
+                        LocaleCompleteness::Complete
+                    } else {
+                        LocaleCompleteness::Partial
+                    };
                 return Ok(LocaleRenderedText {
                     entity_kind: request.entity_kind.clone(),
                     namespaced_id: request.namespaced_id.clone(),
@@ -208,6 +214,7 @@ impl LocaleCatalog {
                     fallback_chain: chain[..=index].to_vec(),
                     direction,
                     text_revision: stored.revision.clone(),
+                    effective_plural,
                     completeness,
                     segments,
                     unresolved_placeholders,

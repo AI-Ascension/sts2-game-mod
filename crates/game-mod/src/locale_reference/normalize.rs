@@ -50,5 +50,6 @@ pub(super) fn validate_effect_amount(kind: &str, amount: &str) -> Result<(), Loc
     {
         return Err(LocaleCatalogError::InvalidInput("effect_amount"));
     }
-    validate_presentation(kind, "effect_kind")
+    validate_presentation(kind, "effect_kind")?;
+    validate_presentation(amount, "effect_amount")
 }

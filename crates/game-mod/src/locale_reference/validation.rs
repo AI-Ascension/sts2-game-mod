@@ -87,6 +87,11 @@ pub(super) fn validate_entry(
     if input.segments.len() > LOCALE_REFERENCE_MAX_SEGMENTS {
         return Err(LocaleCatalogError::InvalidInput("segments"));
     }
+    // An entry with no segments would render as an empty answer, which this boundary never
+    // produces: an absent translation is reported as unavailable, never as nothing.
+    if input.segments.is_empty() {
+        return Err(LocaleCatalogError::InvalidInput("empty_segments"));
+    }
     if input.requires.len() > LOCALE_REFERENCE_MAX_PLACEHOLDERS {
         return Err(LocaleCatalogError::InvalidInput("placeholders"));
     }
@@ -102,7 +107,12 @@ pub(super) fn validate_entry(
     for segment in &input.segments {
         retained += segment.retained_len();
         match segment {
-            LocaleTextSegment::Text(value) => validate_presentation(value, "text")?,
+            LocaleTextSegment::Text(value) => {
+                if value.is_empty() {
+                    return Err(LocaleCatalogError::InvalidInput("empty_text"));
+                }
+                validate_presentation(value, "text")?;
+            }
             LocaleTextSegment::Placeholder(name) => {
                 validate_identity(name, "placeholder")?;
                 if !declared.contains(name.as_str()) {

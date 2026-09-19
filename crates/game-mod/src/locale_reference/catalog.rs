@@ -82,6 +82,8 @@ pub struct LocaleRenderedText {
     pub direction: LocaleDirection,
     /// Revision of the text that supplied this render.
     pub text_revision: String,
+    /// Plural category of the entry that actually supplied this render.
+    pub effective_plural: LocalePluralCategory,
     /// How completely the request was satisfied.
     pub completeness: LocaleCompleteness,
     /// Ordered rendered segments.

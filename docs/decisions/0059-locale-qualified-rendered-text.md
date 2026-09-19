@@ -47,12 +47,17 @@ revisits a locale is not a simple path to the default and "ends at the default" 
 question to ask of it.
 
 `LocaleRenderedText` reports the requested locale, the effective locale that actually supplied the
-text, the exact fallback chain consulted, the effective direction, the text revision, the ordered
-segments, and any declared placeholder that stayed unresolved. `LocaleCompleteness` is `Complete`
-only when the requested locale supplied the text and every declared placeholder resolved; text from
-a fallback locale, or any unresolved placeholder, is `Partial`. An exhausted chain returns
-`LocaleUnavailableReason::NotTranslated` instead of an empty string, a zero, or an invented
-description.
+text, the exact fallback chain consulted, the effective direction, the text revision, the effective
+plural category of the entry that supplied the text, the ordered segments, and any declared
+placeholder that stayed unresolved. `LocaleCompleteness` is `Complete` only when the requested
+locale supplied the text, the served plural category was the one requested (the canonical `Other`
+fallback excepted), and every declared placeholder resolved; text from a fallback locale, a
+substituted `Unknown` plural form, or any unresolved placeholder, is `Partial`. An exhausted chain
+returns the closed `NotFound` error instead of an empty string, a zero, or an invented description,
+and a caller-supplied placeholder with no usable value is carried as
+`LocaleUnavailableReason` rather than collapsed. Only the explicit plural order requested, then
+`Other`, then `Unknown`, is consulted: an entry stored under some other form alone is never
+silently served for a different request.
 
 ### Placeholders and preserved numbers
 

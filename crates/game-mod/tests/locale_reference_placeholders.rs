@@ -199,3 +199,91 @@ fn an_unrecognized_plural_token_is_not_silently_accepted() {
     );
     assert!(LocalePluralCategory::Other.is_fallback_form());
 }
+
+#[test]
+fn a_plural_form_absent_from_every_stored_form_is_not_silently_substituted() {
+    let manifest = base_manifest();
+    let entries = vec![entry(
+        "card",
+        "defend",
+        EN,
+        LocalePluralCategory::Few,
+        vec![text("Gain a few Block.")],
+        &[],
+    )];
+    let catalog = catalog(&manifest, entries);
+    assert_eq!(
+        catalog
+            .render(&plural_request(
+                EN,
+                "card",
+                "defend",
+                Some(LocalePluralCategory::One)
+            ))
+            .expect_err("expected an error"),
+        LocaleCatalogError::NotFound
+    );
+}
+
+#[test]
+fn a_non_plural_request_with_only_a_non_other_form_is_not_silently_substituted() {
+    let manifest = base_manifest();
+    let entries = vec![entry(
+        "card",
+        "defend",
+        EN,
+        LocalePluralCategory::One,
+        vec![text("Gain 1 Block.")],
+        &[],
+    )];
+    let catalog = catalog(&manifest, entries);
+    assert_eq!(
+        catalog
+            .render(&plural_request(EN, "card", "defend", None))
+            .expect_err("expected an error"),
+        LocaleCatalogError::NotFound
+    );
+}
+
+#[test]
+fn the_effective_plural_is_reported_with_the_render() {
+    let manifest = base_manifest();
+    let entries = vec![
+        entry(
+            "card",
+            "defend",
+            EN,
+            LocalePluralCategory::One,
+            vec![text("Gain 1 Block.")],
+            &[],
+        ),
+        entry(
+            "card",
+            "defend",
+            EN,
+            LocalePluralCategory::Other,
+            vec![text("Gain some Block.")],
+            &[],
+        ),
+    ];
+    let catalog = catalog(&manifest, entries);
+    let exact = catalog
+        .render(&plural_request(
+            EN,
+            "card",
+            "defend",
+            Some(LocalePluralCategory::One),
+        ))
+        .expect("one");
+    assert_eq!(exact.effective_plural, LocalePluralCategory::One);
+    assert_eq!(exact.completeness, LocaleCompleteness::Complete);
+    let substituted = catalog
+        .render(&plural_request(
+            EN,
+            "card",
+            "defend",
+            Some(LocalePluralCategory::Few),
+        ))
+        .expect("few");
+    assert_eq!(substituted.effective_plural, LocalePluralCategory::Other);
+}

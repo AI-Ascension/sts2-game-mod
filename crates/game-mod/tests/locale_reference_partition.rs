@@ -268,3 +268,29 @@ fn render_never_mutates_the_catalog_between_concurrent_locales() {
         .expect("english again");
     assert_eq!(english_first, english_second);
 }
+
+#[test]
+fn a_continuation_replayed_with_a_different_page_size_is_rejected() {
+    let manifest = base_manifest();
+    let mut entries = baseline_entries();
+    entries.push(entry(
+        "card",
+        "defend",
+        EN,
+        LocalePluralCategory::Other,
+        vec![text("Gain Block.")],
+        &[],
+    ));
+    let catalog = catalog(&manifest, entries);
+    let token = catalog
+        .page(&query(Some(EN), None, 1), None)
+        .expect("english page")
+        .next
+        .expect("continuation");
+    assert_eq!(
+        catalog
+            .page(&query(Some(EN), None, 2), Some(&token))
+            .expect_err("expected an error"),
+        LocaleCatalogError::InvalidContinuation
+    );
+}
