@@ -54,6 +54,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0056 | [Pinned read-only ModelDb registry probe](0056-pinned-readonly-modeldb-registry-probe.md) |
 | 0057 | [Closed checkpoint payload schema v1 and typed model](0057-checkpoint-payload-schema-v1.md) |
 | 0058 | [Owner-local read-only game settings reference data](0058-settings-reference.md) |
+| 0059 | [Owner-local locale-qualified rendered text, fallback, and text provenance](0059-locale-qualified-rendered-text.md) |
 | 0060 | [Owner-local read-only run configuration reference](0060-run-configuration-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
