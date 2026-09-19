@@ -6,6 +6,23 @@ do not establish release support.
 
 ## Unreleased
 
+- Made the isolated-user-directory refusal actionable on Windows and enforced the launch contract
+  before launch (sts2-game-mod#173). `LiveCombatDemo` refused with the single message "live demo
+  requires its isolated user directory", which named neither the directory the game resolved nor
+  which condition failed, so the failure could not be acted on. The decision now lives in the
+  host-independent `IsolatedUserDirectoryCheck`, whose refusal names both directories and a stable
+  reason token (`isolated_user_dir_unset`, `isolated_user_dir_unresolved`,
+  `isolated_user_dir_mismatch`); `experiments/managed-rust-interop/live-combat-demo.ps1` resolves
+  `override.cfg` plus the launch-scoped `APPDATA` root through the dot-sourceable
+  `live-combat-demo-override.ps1` and refuses a mismatched declaration before the game starts. The
+  source-only `SeededRunIsolatedUserDirProbe` (hosted `managed-source` job) and
+  `live-combat-demo-override-tests.ps1` pin the reason tokens and diagnostics. Also corrects the
+  #173 record: `AIAscensionSTS2GameMod.dll` does contain `STS2_LIVE_COMBAT`, `STS2_LIVE_USER_DIR`
+  and the refusal string; the earlier scan missed them because a UTF-16 search started at an odd
+  byte offset, so the recorded "none of those appear in this build" was a scan artifact, not a
+  missing contract. Source-only evidence; the native seeded campaign remains `unverified-native`.
+  Refs #173.
+
 - Fixed the read-only Steam usability preflight so its classification describes the interactive
   session instead of the caller. `experiments/managed-rust-interop/steam-usability-preflight.ps1`
   read only `HKCU:`, so when the QEMU guest agent launched it in session 0 as a service account it
