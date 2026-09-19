@@ -6,6 +6,18 @@ do not establish release support.
 
 ## Unreleased
 
+- Corrected the run-configuration `seed_blind_cache` so it is derived without seed material, which
+  the field documentation, ADR `0060` and the slice note below already claimed. The seed-blind
+  fingerprint now omits the seed field entirely, so two runs that differ only by seed produce the
+  same seed-blind digest, and whether a seed field is present no longer changes it; the seed-aware
+  `cache` key still varies with the seed, and the `seed_blind` flag keeps the two key spaces
+  un-reusable across scopes. Previously the fingerprint loop walked every `RunFieldKind` including
+  `Seed`, so the visible seed reached the seed-blind parts even though only the trailing explicit
+  seed part was suppressed. Four regressions assert seed-value invariance, reader-accessor
+  invariance, cross-scope non-reuse, and presence invariance; three of them fail against the
+  previous derivation. Source-only evidence; no native or exact-host run is claimed. Refs #182;
+  Refs #105.
+
 - Added the owner-local read-only run configuration reference slice for sts2-game-mod#105. The
   `run_configuration_reference` producer composes the existing content-manifest, locale, and profile
   witness with a closed field inventory of run configuration (run identity, mode, difficulty,

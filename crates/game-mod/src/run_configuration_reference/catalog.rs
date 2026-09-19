@@ -229,12 +229,12 @@ fn bind_definition(
     let revision = input.revision;
     let cache = RunConfigurationCacheKey::new(
         revision,
-        configuration_fingerprint(&fingerprint_parts(input, seed)),
+        configuration_fingerprint(&fingerprint_parts(input, seed, false)),
         false,
     );
     let seed_blind_cache = RunConfigurationCacheKey::new(
         revision,
-        configuration_fingerprint(&fingerprint_parts(input, None)),
+        configuration_fingerprint(&fingerprint_parts(input, None, true)),
         true,
     );
     RunConfigurationDefinition {
@@ -272,9 +272,16 @@ fn bind_modifier(modifier: &RunModifierInput) -> RunModifier {
     }
 }
 
-fn fingerprint_parts(input: &RunConfigurationRecordInput, seed: Option<&str>) -> Vec<String> {
+fn fingerprint_parts(
+    input: &RunConfigurationRecordInput,
+    seed: Option<&str>,
+    seed_blind: bool,
+) -> Vec<String> {
     let mut parts = Vec::new();
     for kind in RunFieldKind::ALL {
+        if seed_blind && kind == RunFieldKind::Seed {
+            continue;
+        }
         let Some(field) = input.fields.iter().find(|field| field.kind == kind) else {
             continue;
         };
