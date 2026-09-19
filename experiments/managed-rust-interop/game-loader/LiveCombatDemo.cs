@@ -28,12 +28,18 @@ internal static class LiveCombatDemo
         if (Environment.GetEnvironmentVariable("STS2_LIVE_COMBAT") != "1") return;
 #if !STS2_COMBAT_DEMO_PROBE && !STS2_VIDEO_MENU_PROBE && !STS2_HAND_CHOICE_PROBE && !STS2_TERMINAL_PROBE
         if (!Campaign)
+        {
+            LaunchContractRefusal.Record(LaunchContractRefusal.CampaignRequiredReason);
             throw new InvalidOperationException("the production live runtime requires campaign mode");
+        }
 #endif
         IsolatedUserDirectoryDecision isolation = IsolatedUserDirectoryCheck.Evaluate(
             OS.GetUserDataDir(), Environment.GetEnvironmentVariable("STS2_LIVE_USER_DIR"));
         if (!isolation.Agreed)
+        {
+            LaunchContractRefusal.Record(isolation.Reason);
             throw new InvalidOperationException(isolation.Diagnostic);
+        }
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                 "STS2_SEED_PROFILE_BASELINE_IDENTITY")))
             SeededRunProfileBaseline.CaptureInitial();

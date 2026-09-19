@@ -25,7 +25,10 @@ internal sealed partial class RuntimeV3GameplaySupport
         {
             return UnknownEnvelope(
                 "dispatch_action_response", correlationId, instanceId, sessionId, leaseId,
-                leaseEpoch, requestGeneration, "host_not_configured_or_invalid_action",
+                leaseEpoch, requestGeneration,
+                // The compound code keeps the never-configured text and names the refusal when the
+                // launch contract was refused, so both gameplay answers agree (sts2-game-mod#185).
+                LaunchContractRefusal.UnconfiguredCode + "_or_invalid_action",
                 "recovery_required", out status, operationId);
         }
         if (operationId is null || stateId is null || requestedAction is null)

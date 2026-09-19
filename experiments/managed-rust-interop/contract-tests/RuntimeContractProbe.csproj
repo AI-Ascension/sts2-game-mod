@@ -8,6 +8,7 @@
     <Compile Include="../game-loader/RuntimeContractValidation.cs" Link="RuntimeContractValidation.cs" />
     <Compile Include="../game-loader/RuntimeInterop.Types.cs" Link="RuntimeInterop.Types.cs" />
     <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" Link="Boundary/%(Filename)%(Extension)" />
+    <Compile Include="../game-loader/LaunchContractRefusal.cs" Link="Boundary/LaunchContractRefusal.cs" />
     <!-- The interop partial is host wiring and is intentionally covered by the host-backed
          probe rather than this runtime-v1 source-only boundary. -->
     <Compile Remove="../game-loader/RuntimeV3GameplayInterop.cs" />
