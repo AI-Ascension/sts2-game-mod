@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../game-loader/RuntimeV2*.cs" />
     <Compile Include="../game-loader/RuntimeV3Gameplay*.cs" Exclude="../game-loader/RuntimeV3GameplayInterop.cs" />
+    <Compile Include="../game-loader/LaunchContractRefusal.cs" />
     <Compile Include="../game-loader/LegalActionCatalog.cs" />
     <Compile Include="../game-loader/PostconditionVerifier.cs" />
     <Compile Include="../game-loader/FairPlayProjection.cs" />

@@ -6,6 +6,21 @@ do not establish release support.
 
 ## Unreleased
 
+- Made a refused launch contract readable by the runtime consumer that needs it for sts2-game-mod#185.
+  A refused contract and a lane that never declared one both answered `host_not_configured`, and the
+  refusal threw before `StartRuntimeServer` ran, so a refused launch produced no listener at all and
+  the reason the isolated-user-directory check already computed reached only `game.log`. A refused
+  launch now starts the listener, skips the profile-touching bootstrap the refusal exists to prevent,
+  and answers `launch_contract_refused_<reason token>` — for example
+  `launch_contract_refused_isolated_user_dir_mismatch` — on the gameplay read and dispatch routes,
+  while a lane that never declared a contract keeps `host_not_configured` and its compound dispatch
+  code unchanged. Only the stable reason token crosses the wire; the diagnostic that names the
+  compared directories stays in `game.log`. Evidence is source-only and executable in the new
+  `SeededRunLaunchContractProbe` (managed-source job), which pins every code as a literal, holds the
+  never-declared answers to their previous values, and proves no directory name reaches a response. The
+  harness still discards the code when it reports `episode requires recovery before policy can
+  continue`, so naming the reason in an episode failure remains a separate sts2-harness change. Native
+  observation of a refused launch on Windows remains unverified. Refs #185.
 - Corrected the run configuration reference slice's seed-blind cache guarantee for
   sts2-game-mod#105. The fingerprint builder walked the closed field inventory and hashed the
   settled value of every kind it found — including `Seed` — so `seed_blind_cache` was seed-derived

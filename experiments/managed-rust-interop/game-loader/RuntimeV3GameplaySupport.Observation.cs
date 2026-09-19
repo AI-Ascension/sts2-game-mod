@@ -91,7 +91,7 @@ internal sealed partial class RuntimeV3GameplaySupport
     {
         observation = null;
         actions = Array.Empty<LegalActionReference>();
-        error = "host_not_configured";
+        error = LaunchContractRefusal.UnconfiguredCode;
         if (_host is null)
         {
             return false;

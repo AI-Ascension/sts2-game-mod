@@ -77,7 +77,12 @@ public static partial class ModEntry
                 _nativeLibrary = candidate;
                 candidate = 0;
                 GD.Print($"{LogPrefix} loaded managed entry point and Rust ABI; ABI={version}; 19+23={sum}");
-                LiveCombatDemo.Initialize();
+                if (LaunchContractDeclined())
+                {
+                    StartRefusedRuntime();
+                    return;
+                }
+
                 InitializeRuntimeV3Gameplay();
                 ConfigureCoopNative(new InstalledNativeCoopHostPort());
                 InitializeRuntimeMapV1();
