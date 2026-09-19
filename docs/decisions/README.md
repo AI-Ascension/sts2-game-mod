@@ -53,6 +53,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0055 | [Checkpoint capture admission barrier and operation ledger](0055-checkpoint-capture-admission-barrier.md) |
 | 0056 | [Pinned read-only ModelDb registry probe](0056-pinned-readonly-modeldb-registry-probe.md) |
 | 0057 | [Closed checkpoint payload schema v1 and typed model](0057-checkpoint-payload-schema-v1.md) |
+| 0058 | [Owner-local locale-qualified rendered text, fallback, and text provenance](0058-locale-qualified-rendered-text.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

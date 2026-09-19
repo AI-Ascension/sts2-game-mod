@@ -6,6 +6,24 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the owner-local `locale_reference` catalog so rendered game text can be read in any
+  supported locale without switching the active game language (sts2-game-mod#111). One request now
+  returns the requested locale, the effective locale that actually supplied the text, the exact
+  fallback chain consulted, the text revision, the effective direction, and an explicit
+  `Complete`/`Partial` completeness report. A definition's `(entity_kind, namespaced_id)` identity
+  stays byte-identical in every language, so a localized answer never changes which entity it
+  describes. An exhausted fallback chain reports `NotTranslated` rather than an empty string or a
+  zero, an unresolved placeholder stays visible as `UnresolvedPlaceholder(name)` together with the
+  input it needs, and an effect amount is carried verbatim so localization can never silently change
+  a number. The declared placeholder set and the set actually used must match; a fallback chain is
+  rejected when it is empty, too deep, unordered, unsupported, or cyclic; owner-supplied text is
+  validated as presentation, so ordinary markup, non-Latin, and right-to-left text are preserved
+  exactly while control characters and script-scheme content are rejected; and a listing
+  continuation is bound to one locale, one catalog revision, and one query. Reading is one-way:
+  there is no setter, no locale switch, no profile or configuration mutation, and no live run read.
+  Source-only evidence; native rendered-text extraction, live run reads, locale switching, and
+  exact-host compatibility remain `unverified-native`. Refs #111.
+
 - Made the isolated-user-directory refusal actionable on Windows and enforced the launch contract
   before launch (sts2-game-mod#173). `LiveCombatDemo` refused with the single message "live demo
   requires its isolated user directory", which named neither the directory the game resolved nor
