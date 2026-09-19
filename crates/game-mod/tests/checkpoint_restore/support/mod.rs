@@ -2,6 +2,7 @@
 
 mod engine;
 mod fixtures;
+mod scratch;
 
 pub(crate) use engine::{
     RecordingApplier, SharedOwner, StoreState, create_engine, current_owner, owner_with_generation,

@@ -348,10 +348,13 @@ pub(crate) struct TestDirectory(pub(crate) std::path::PathBuf);
 #[cfg(target_os = "linux")]
 impl TestDirectory {
     pub(crate) fn new() -> std::io::Result<Self> {
-        let target = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../target")
-            .canonicalize()?;
-        let path = target.join(format!("exact-restore-test-{}", uuid()));
+        let root = super::scratch::scratch_root(
+            std::env::var_os("CARGO_TARGET_DIR").as_deref(),
+            &std::env::current_dir()?,
+        );
+        std::fs::create_dir_all(&root)?;
+        let root = root.canonicalize()?;
+        let path = root.join(format!("exact-restore-test-{}", uuid()));
         std::fs::create_dir(&path)?;
         Ok(Self(path))
     }
