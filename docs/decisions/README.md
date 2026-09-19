@@ -58,6 +58,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0060 | [Owner-local read-only run configuration reference](0060-run-configuration-reference.md) |
 | 0061 | [Owner-local read-only shop inventory, service, and restock reference](0061-shop-reference.md) |
 | 0062 | [Owner-local read-only rest-site and rest-option reference](0062-rest-site-reference.md) |
+| 0063 | [Owner-local read-only selection and candidate reference](0063-selection-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

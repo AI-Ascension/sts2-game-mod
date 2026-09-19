@@ -21,6 +21,31 @@ do not establish release support.
   harness still discards the code when it reports `episode requires recovery before policy can
   continue`, so naming the reason in an episode failure remains a separate sts2-harness change. Native
   observation of a refused launch on Windows remains unverified. Refs #185.
+- Added the owner-local read-only selection and candidate reference slice for sts2-game-mod#103. The
+  `selection_reference` producer composes the existing content-manifest and locale witness with typed
+  selection definitions carrying the parent operation, localized prompt, exact-build kind, the
+  required/minimum/maximum pick rule, ordering and duplicate rules, confirmation and cancellation
+  semantics, and an explicit selector generation, and typed candidates carrying the definition they
+  resolve to, their kind, resolved eligibility with a refusal reason, documented prospective effects,
+  and explicit evidence and visibility labels. Every candidate the host reports is either described
+  by a typed record or named by a coverage record, so a newly audited entry is refused rather than
+  silently omitted; an untyped selector must also name itself and each candidate it presents; a
+  selector whose described candidate resolves to a known definition family may not report itself
+  `Unknown`; a coverage record that names nothing observed is refused; and duplicate selection,
+  candidate, and coverage identities are rejected. A documented prospective effect that would change
+  nothing is refused rather than published, a refused candidate must state why while an offered one
+  carries no refusal, and an impossible required/minimum/maximum rule, a self-closing prompt that
+  also offers an explicit cancel, and a multi-step declaration that contradicts its own next domain
+  are each rejected. Reconciling the picks a caller reports reuses the exact selector-identity fence
+  and reports the remaining count and the candidates still selectable under the duplicate rule, so an
+  early confirmation, a duplicate choice, an out-of-domain or excess pick, and a selector reference
+  bound to another generation are never represented as legal, and a candidate-page continuation is
+  bound to the selector, scope, and pick state it was issued for. The boundary is read-only by
+  construction (`read_catalog(&self)`, no click, confirm, cancel, back, or advance method, no second
+  mutation API), a transient selection action cannot enter the static slice, a hidden or owner-only
+  definition is never returned outside a scope that may observe it, and a fully withheld candidate
+  collection reports itself denied rather than observed empty. Source-only evidence; native selector
+  extraction, live selection behavior, and exact-host compatibility remain unverified. Refs #103.
 - Added the owner-local read-only rest-site and rest-option reference slice for
   sts2-game-mod#102. The `rest_site_reference` producer composes the existing content-manifest and
   locale witness with typed rest-site definitions carrying a localized name and description, and
