@@ -6,6 +6,21 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the owner-local read-only game settings reference slice for sts2-game-mod#110. The
+  `settings_reference` producer composes the existing content-manifest and locale witness with the
+  selected profile and a closed producer version, and exposes allowlisted setting identities,
+  localized labels/descriptions, categories (language, accessibility, input, display, audio,
+  gameplay interaction), levels (global, profile, addon), value types, stored/effective/default
+  values with evidence and read seam, restart requirement, and declared ranges/options. Private and
+  hidden settings must withhold every value and are observable only in the owner scope or in no
+  scope, a run-affecting setting must agree with its `run_configuration` reference in both
+  directions, and unknown, duplicate, or missing definitions, stale profile/locale, unsupported or
+  unavailable families, and malformed or oversized input fail closed. The boundary is read-only by
+  construction (`read_catalog(&self)`, no setter) and two regressions assert identical repeated
+  results plus an exact source-read count, each verified to fail under an isolated mutation.
+  Source-only evidence; native settings extraction and exact-host compatibility remain unverified.
+  Refs #110.
+
 - Made the isolated-user-directory refusal actionable on Windows and enforced the launch contract
   before launch (sts2-game-mod#173). `LiveCombatDemo` refused with the single message "live demo
   requires its isolated user directory", which named neither the directory the game resolved nor

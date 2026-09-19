@@ -32,6 +32,7 @@ mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
 mod save_profile;
+mod settings_reference;
 mod workshop;
 
 pub use act_reference::*;
@@ -183,6 +184,7 @@ pub use save_profile::{
     SaveSlotSummary, SelectionAuthority, SelectionIdempotencyKey, UnavailableSaveProfileHost,
     UserDataIdentity, WorkflowProfileId,
 };
+pub use settings_reference::*;
 pub use workshop::{
     AllowedWorkshopFile, WORKSHOP_LOADER_CONTRACT, WORKSHOP_MANIFEST_SCHEMA_VERSION,
     WORKSHOP_PACKAGE_ID, WorkshopCompatibilityError, WorkshopConsumer, WorkshopContentKind,
