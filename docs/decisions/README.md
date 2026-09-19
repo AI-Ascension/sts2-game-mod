@@ -57,6 +57,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0059 | [Owner-local locale-qualified rendered text, fallback, and text provenance](0059-locale-qualified-rendered-text.md) |
 | 0060 | [Owner-local read-only run configuration reference](0060-run-configuration-reference.md) |
 | 0061 | [Owner-local read-only shop inventory, service, and restock reference](0061-shop-reference.md) |
+| 0062 | [Owner-local read-only rest-site and rest-option reference](0062-rest-site-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

@@ -26,6 +26,7 @@ mod potions;
 mod powers;
 mod protocol_artifact;
 mod relics;
+mod rest_site_reference;
 mod retained_map;
 mod reward_reference;
 mod rng_audit;
@@ -134,6 +135,7 @@ pub use protocol_artifact::{
     POC_SCHEMA_PACKAGE,
 };
 pub use relics::*;
+pub use rest_site_reference::*;
 pub use retained_map::*;
 pub use reward_reference::*;
 pub use rng_audit::{

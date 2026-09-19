@@ -21,6 +21,25 @@ do not establish release support.
   harness still discards the code when it reports `episode requires recovery before policy can
   continue`, so naming the reason in an episode failure remains a separate sts2-harness change. Native
   observation of a refused launch on Windows remains unverified. Refs #185.
+- Added the owner-local read-only rest-site and rest-option reference slice for
+  sts2-game-mod#102. The `rest_site_reference` producer composes the existing content-manifest and
+  locale witness with typed rest-site definitions carrying a localized name and description, and
+  typed options carrying their reported kind, the definition they resolve to, resolved availability
+  and refusal reason, requirements, costs, limits, effects, selection domain with its candidates,
+  documented prospective comparison, and explicit evidence and visibility labels. Every option the
+  host reports is either described by a typed record or named by a coverage record, so a newly
+  audited button is refused rather than silently omitted; an option whose definition resolves to a
+  known family may not report itself `Unknown`; and duplicate site, option, requirement, cost,
+  limit, effect, candidate, and coverage identities are rejected. A documented healing formula keeps
+  its base fraction, flat bonus, and named modifiers separate instead of publishing a folded total,
+  a comparison derives its own completeness rather than claiming it, and an option-set reference
+  from an earlier rest menu is refused rather than answered with current options. The boundary is
+  read-only by construction (`read_catalog(&self)`, no rest, heal, smith, upgrade, transform, mend,
+  or selection method), a transient rest action cannot enter the static slice, a hidden or
+  owner-only definition is never returned outside a scope that may observe it, and a fully withheld
+  collection reports itself denied rather than observed empty. Source-only evidence; native rest
+  extraction, live rest or selection behavior, and exact-host compatibility remain unverified.
+  Refs #102.
 - Added the owner-local read-only shop inventory, service, and restock reference slice for
   sts2-game-mod#101. The `shop_reference` producer composes the existing content-manifest and locale
   witness with typed inventory entries carrying a definition reference, item kind, displayed price
