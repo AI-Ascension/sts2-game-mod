@@ -6,6 +6,19 @@ do not establish release support.
 
 ## Unreleased
 
+- Fixed the read-only Steam usability preflight so its classification describes the interactive
+  session instead of the caller. `experiments/managed-rust-interop/steam-usability-preflight.ps1`
+  read only `HKCU:`, so when the QEMU guest agent launched it in session 0 as a service account it
+  emitted `absent_client` for an installation that was present and running for the logged-in
+  operator; the `#79` native gate was recorded as blocked on that token. It now enumerates `HKCU:`
+  plus every loaded interactive user hive (`S-1-5-21-*`) with unchanged tokens, single-key output
+  and redaction rules. A/B through the guest agent on the same guest at the same instant:
+  previous body `absent_client`, current body `process_present_account_indicated`, with one
+  `Active` console session and `steam` running in session 1 observed independently. The
+  `docs/evidence/seeded-run-criterion-evidence-map-20260917.md` runbook carries the dated
+  correction. Preflight classification only; the native seeded campaign and its receipts remain
+  `unverified-native`. Refs #79.
+
 - Added the managed host-thread checkpoint capture seam and settlement classifier for #80 item 3.
   `CheckpointCaptureSource` (with `CheckpointCaptureSource.Settlement.cs` and
   `CheckpointCaptureSource.Rules.cs`) is host-thread-only, classifies settlement through the same

@@ -170,6 +170,32 @@ interactive-session classifier reporting `interactive_session: not_observed`. Th
 start only after the preflight returns `process_present_account_indicated` and the classifier
 reports an interactive session.
 
+#### Correction — 2026-09-19: the `absent_client` observation was a session-0 false negative
+
+The record above was produced by the QEMU guest agent, which runs in session 0 as a service
+account. Reading `HKCU:` from that vantage reads the service account's hive, which has no Steam
+key, so the script reported `absent_client` for an installation that was present and running for
+the logged-in operator. The classification must describe the interactive session, not the caller.
+The script now enumerates `HKCU:` plus every loaded interactive user hive (`S-1-5-21-*`) and keeps
+the same single-key output contract and redaction rules.
+
+A/B of the two script bodies through the guest agent on the same guest at the same instant
+(2026-09-19):
+
+| Script body | Emitted token |
+| --- | --- |
+| Previous (`HKCU:` only) | `{"state":"absent_client"}` |
+| Current (`HKCU:` + interactive hives) | `{"state":"process_present_account_indicated"}` |
+
+Independently observed by the same bounded, read-only probe: exactly one interactive console
+session in state `Active` (`quser`, logon 2026-09-18 22:51 local) and `steam` running inside it
+(7 matching Steam processes, session 1). Only counts, the session state, and the fixed state token
+were retained; no account names, SIDs, installation paths or process IDs are recorded here.
+
+The `interactive_session: not_observed` result above came from the same session-0 vantage and is
+superseded for this observation. Re-run the preflight immediately before any campaign: a token
+emitted from the caller's hive alone is not evidence about the operator's session.
+
 ### Receipt placeholders (to be filled by the native campaign; all currently `unverified`)
 
 Each receipt is archived under the campaign root's `evidence` child, sanitized (no account names,
