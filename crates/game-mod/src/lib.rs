@@ -35,6 +35,7 @@ mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
 mod save_profile;
+mod selection_reference;
 mod settings_reference;
 mod shop_reference;
 mod workshop;
@@ -191,6 +192,7 @@ pub use save_profile::{
     SaveSlotSummary, SelectionAuthority, SelectionIdempotencyKey, UnavailableSaveProfileHost,
     UserDataIdentity, WorkflowProfileId,
 };
+pub use selection_reference::*;
 pub use settings_reference::*;
 pub use shop_reference::*;
 pub use workshop::{
