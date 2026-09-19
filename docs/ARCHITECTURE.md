@@ -363,6 +363,8 @@ rather than returning a successful empty page. This source-only slice defines no
 native extractor, host ABI, or exact-host compatibility; native act/encounter coverage remains
 unverified.
 
+The owner-local `run_configuration_reference` producer composes the same manifest, locale, and profile witness with a closed field inventory of run configuration: requested-versus-settled and fixed-versus-mutable values, explicit non-values, mode, difficulty, mutability, provenance, sensitivity, visibility, seed policy, and modifier-driven alterations, plus a live binding and configuration fingerprint that bind every read to the run, profile, revision, manifest, and seed scope. The boundary is read-only by construction (`read_catalog(&self)`, no setter), list pages and exact reads are bounded, single-use, and revision-bound, seed-blind scopes stay isolated, and unknown, duplicate, missing, unsupported, unavailable, malformed, or oversized input fails closed; no transport route, native extractor, host ABI, or exact-host compatibility is claimed.
+
 The owner-local `settings_reference` producer composes the same manifest, locale, and profile
 witness with allowlisted game, profile, and addon setting definitions, localized labels, stored-versus-effective and per-profile-versus-global values, restart requirements, ranges and closed option sets, and fail-closed withholding of private and hidden values; a run-affecting setting must agree with its run-configuration reference, a hidden or unknown setting is observable in no scope, no setter exists on the boundary, reads fail closed, and no transport route, native extractor, host ABI, or exact-host compatibility is claimed.
 

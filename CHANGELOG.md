@@ -6,6 +6,21 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the owner-local read-only run configuration reference slice for sts2-game-mod#105. The
+  `run_configuration_reference` producer composes the existing content-manifest, locale, and profile
+  witness with a closed field inventory of run configuration (run identity, mode, difficulty,
+  mutability, provenance, sensitivity, visibility, seed policy, and modifiers) and keeps
+  requested-versus-settled and fixed-versus-mutable values distinct, including explicit non-values
+  for withheld, not-applicable, unsupported, unavailable, and not-observed fields. A live binding and
+  configuration fingerprint bind every read to the manifest, locale, producer identity, revision,
+  profile, and run identity; list pages and exact reads are bounded, single-use, and revision-bound,
+  and a seed-blind scope never observes a seed or a seed-derived value. The boundary is read-only by
+  construction (`read_catalog(&self)`, no setter), and unknown, duplicate, missing, unsupported,
+  unavailable, malformed, or oversized input fails closed. Three regressions assert byte-identical
+  repeated production, an exact source-read count, and unchanged retained definitions, each verified
+  to fail under an isolated mutation. Source-only evidence; native run-configuration extraction and
+  exact-host compatibility remain unverified. Refs #105.
+
 - Added the owner-local read-only game settings reference slice for sts2-game-mod#110. The
   `settings_reference` producer composes the existing content-manifest and locale witness with the
   selected profile and a closed producer version, and exposes allowlisted setting identities,
