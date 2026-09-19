@@ -82,6 +82,21 @@ do not establish release support.
   references, and malformed prices, discounts, stock, or service declarations are rejected.
   Source-only evidence; native shop extraction, live purchase or restock behavior, and exact-host
   compatibility remain unverified. Refs #101.
+- Added the owner-local source-only reference text and public-screen text slice for
+  sts2-game-mod#109. The `reference_text` producer copies the inventoried non-gameplay reference
+  families (tutorial, help, lore, credits, and the public UI text a screen currently displays) and
+  the semantic description of supported public screens into an immutable catalog fenced by the
+  existing content-manifest cursor binding and an owner-local producer version. A family or screen
+  kind the producer cannot project is reported as explicit unsupported scope with the value that
+  could not be supplied, a locked document and a withheld private input keep an explicit reason
+  instead of empty text, markup, non-Latin, and multiline text are preserved verbatim inside
+  per-document and per-screen byte bounds, executable presentation and text shaped as an
+  instruction to its consumer are refused rather than repaired, and a blocking tutorial or message
+  is readable without clicking, confirming, or dismissing it. Listings are family-partitioned with
+  bounded single-use continuations fenced to one family filter, one catalog revision, and one
+  query, and the boundary is read-only by construction (`read_reference(&self)`, no setter).
+  Source-only evidence; native reference-text extraction, live run reads, and exact-host
+  compatibility remain unverified. Refs #109.
 
 - Corrected the run configuration reference slice's seed-blind cache guarantee for
   sts2-game-mod#105. The fingerprint builder walked the closed field inventory and hashed the
