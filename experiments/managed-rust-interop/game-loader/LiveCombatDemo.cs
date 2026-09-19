@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -31,10 +30,10 @@ internal static class LiveCombatDemo
         if (!Campaign)
             throw new InvalidOperationException("the production live runtime requires campaign mode");
 #endif
-        string expected = Environment.GetEnvironmentVariable("STS2_LIVE_USER_DIR") ?? "";
-        if (expected.Length == 0 || !string.Equals(Path.GetFullPath(OS.GetUserDataDir()),
-            Path.GetFullPath(expected), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("live demo requires its isolated user directory");
+        IsolatedUserDirectoryDecision isolation = IsolatedUserDirectoryCheck.Evaluate(
+            OS.GetUserDataDir(), Environment.GetEnvironmentVariable("STS2_LIVE_USER_DIR"));
+        if (!isolation.Agreed)
+            throw new InvalidOperationException(isolation.Diagnostic);
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                 "STS2_SEED_PROFILE_BASELINE_IDENTITY")))
             SeededRunProfileBaseline.CaptureInitial();

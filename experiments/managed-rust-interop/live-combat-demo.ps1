@@ -16,6 +16,7 @@ param(
     [ValidateSet('windowed','fullscreen','borderless','maximized')][string]$WindowMode = 'windowed'
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'live-combat-demo-override.ps1')
 $defaultMaxRuntimeSeconds = if ($RunKind -eq 'campaign') { 3600 } else { 900 }
 if ($MaxRuntimeSeconds -eq 0) { $MaxRuntimeSeconds = $defaultMaxRuntimeSeconds }
 $maximumAllowedRuntimeSeconds = if ($RunKind -eq 'campaign') { 3600 } else { 900 }
@@ -25,7 +26,11 @@ if ($MaxRuntimeSeconds -lt 60 -or $MaxRuntimeSeconds -gt $maximumAllowedRuntimeS
 if ($LogPath.Contains('"') -or $LogPath.Contains("`r") -or $LogPath.Contains("`n")) { throw 'Invalid log path' }
 Add-Type -AssemblyName System.Windows.Forms
 if ($Display -ge [System.Windows.Forms.Screen]::AllScreens.Count) { throw 'Selected display is unavailable' }
-if (-not (Test-Path "$HostDirectory\override.cfg")) { throw 'Isolated override is required' }
+# The declared directory and the directory override.cfg makes the game resolve have to agree
+# before launch. Checking here names both directories and the failed condition; the mod can only
+# report the same disagreement as "live demo requires its isolated user directory" after the game
+# has already started (sts2-game-mod#173).
+$null = Get-IsolatedUserDirectory -HostDirectory $HostDirectory -DeclaredUserDirectory $UserDirectory
 if (Get-Process SlayTheSpire2 -ErrorAction SilentlyContinue) { throw 'Another game is running' }
 if ($CampaignMapBound -and ($RunKind -ne 'campaign' -or $CampaignMode -ne 'standard')) {
     throw 'Campaign map bound requires standard campaign mode'
