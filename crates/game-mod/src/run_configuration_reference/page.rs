@@ -71,6 +71,9 @@ pub struct RunConfigurationSummary {
     /// Whether every required field carries a settled host value.
     pub completeness: RunConfigurationCompleteness,
     /// Cache key that includes seed material when the policy makes the seed visible.
+    ///
+    /// A seed-blind page substitutes the seed-blind key here, so no seed-derived value is
+    /// observable in a seed-blind scope.
     pub cache: RunConfigurationCacheKey,
     /// Cache key computed without seed material.
     pub seed_blind_cache: RunConfigurationCacheKey,

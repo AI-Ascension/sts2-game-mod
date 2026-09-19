@@ -275,6 +275,9 @@ fn bind_modifier(modifier: &RunModifierInput) -> RunModifier {
 fn fingerprint_parts(input: &RunConfigurationRecordInput, seed: Option<&str>) -> Vec<String> {
     let mut parts = Vec::new();
     for kind in RunFieldKind::ALL {
+        if kind == RunFieldKind::Seed {
+            continue;
+        }
         let Some(field) = input.fields.iter().find(|field| field.kind == kind) else {
             continue;
         };

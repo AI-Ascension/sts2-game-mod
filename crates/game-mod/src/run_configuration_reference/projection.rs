@@ -56,12 +56,16 @@ pub(super) fn project(
     let mut projected = definition.clone();
     if scope == RunVisibilityScope::SeedBlind {
         projected.fields.remove(&RunFieldKind::Seed);
+        projected.cache = projected.seed_blind_cache.clone();
     }
     projected
 }
 
-/// Builds the bounded page summary for one definition.
-pub(super) fn summarize(definition: &RunConfigurationDefinition) -> RunConfigurationSummary {
+/// Builds the bounded page summary for one definition under one visibility scope.
+pub(super) fn summarize(
+    definition: &RunConfigurationDefinition,
+    scope: RunVisibilityScope,
+) -> RunConfigurationSummary {
     RunConfigurationSummary {
         reference: definition.reference.clone(),
         live: definition.live.clone(),
@@ -75,7 +79,11 @@ pub(super) fn summarize(definition: &RunConfigurationDefinition) -> RunConfigura
             .filter(|modifier| modifier.state == RunModifierState::Active)
             .count(),
         completeness: definition.completeness.clone(),
-        cache: definition.cache.clone(),
+        cache: if scope == RunVisibilityScope::SeedBlind {
+            definition.seed_blind_cache.clone()
+        } else {
+            definition.cache.clone()
+        },
         seed_blind_cache: definition.seed_blind_cache.clone(),
     }
 }

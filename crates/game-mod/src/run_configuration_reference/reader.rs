@@ -77,7 +77,7 @@ impl RunConfigurationReader {
                     .mode
                     .is_none_or(|mode| mode_of(definition) == Some(mode))
             })
-            .map(summarize)
+            .map(|definition| summarize(definition, query.scope))
             .collect::<Vec<_>>();
         let total = entries.len();
         let end = start.saturating_add(query.limit).min(total);
