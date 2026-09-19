@@ -61,5 +61,8 @@ and references, and the old paths remain redirects. The original 0011 settings r
 historical rather than being silently rewritten to claim the current built-in implementation.
 
 The Runtime-v2 host adapter uses 0016; its old 0014 path is a redirect only.
+Decision 0059 is reserved for the locale-qualified rendered-text record carried by the open
+coordinated pull request on `codex/issue-111-locale-render`; 0060 is numbered above it rather than
+claiming the reserved identifier. That reservation does not mean the locale reference has merged.
 Decision 0017 remains reserved for the bounded Runtime-v3 card proposal retained on a separate
 branch. That reservation does not mean the bounded proposal has merged.

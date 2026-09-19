@@ -64,6 +64,10 @@ seed-blind entry can never be reused for a seed-aware query or the reverse. A de
 that names another revision, run identity, manifest, locale, or profile is rejected as
 `StaleRevision`, `StaleRunIdentity`, or `StaleReference`.
 
+A seed-blind projection or page substitutes the seed-blind key for the seed-aware key, so a
+seed-blind scope observes no seed-derived value at all: seed material enters the seed-aware key only
+through its own explicit part, never through the field walk.
+
 ### Seed policy and RNG state
 
 The visible seed is exposed only under `RunSeedPolicy::Visible`; a withheld or unknown seed stays an

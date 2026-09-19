@@ -6,6 +6,19 @@ do not establish release support.
 
 ## Unreleased
 
+- Corrected the run configuration reference slice's seed-blind cache guarantee for
+  sts2-game-mod#105. The fingerprint builder walked the closed field inventory and hashed the
+  settled value of every kind it found — including `Seed` — so `seed_blind_cache` was seed-derived
+  even though it is flagged `seed_blind`, and a seed-blind page summary still carried the seed-aware
+  key. Two runs identical except for a visible seed therefore produced different `seed_blind_cache`
+  fingerprints, which made the shipped "computed without seed material" and "a seed-blind scope
+  never observes a seed or a seed-derived value" claims false. Known-seed material now enters the
+  seed-aware key only through its own explicit part, and a seed-blind projection or page substitutes
+  the seed-blind key for the seed-aware key. Caught by an independent agent review after the
+  original merge; the fix ships with the regression that failed against the defect
+  (`seed_blind_keys_and_projections_never_carry_seed_material`). Source-only evidence;
+  native run-configuration extraction and exact-host compatibility remain unverified. Refs #105.
+
 - Added the owner-local read-only run configuration reference slice for sts2-game-mod#105. The
   `run_configuration_reference` producer composes the existing content-manifest, locale, and profile
   witness with a closed field inventory of run configuration (run identity, mode, difficulty,
