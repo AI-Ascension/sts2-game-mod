@@ -56,14 +56,15 @@ decision body and do not reserve another identifier. Local link validation check
 | 0058 | [Owner-local read-only game settings reference data](0058-settings-reference.md) |
 | 0059 | [Owner-local locale-qualified rendered text, fallback, and text provenance](0059-locale-qualified-rendered-text.md) |
 | 0060 | [Owner-local read-only run configuration reference](0060-run-configuration-reference.md) |
+| 0061 | [Owner-local read-only shop inventory, service, and restock reference](0061-shop-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
 historical rather than being silently rewritten to claim the current built-in implementation.
 
 The Runtime-v2 host adapter uses 0016; its old 0014 path is a redirect only.
-Decision 0059 is reserved for the locale-qualified rendered-text record carried by the open
-coordinated pull request on `codex/issue-111-locale-render`; 0060 is numbered above it rather than
-claiming the reserved identifier. That reservation does not mean the locale reference has merged.
+Decision 0059 was held for the locale-qualified rendered-text record while its coordinated pull
+request on `codex/issue-111-locale-render` was open, so 0060 and 0061 were numbered above it rather
+than claiming that identifier; the record has since merged as decision 0059.
 Decision 0017 remains reserved for the bounded Runtime-v3 card proposal retained on a separate
 branch. That reservation does not mean the bounded proposal has merged.

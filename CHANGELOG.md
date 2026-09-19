@@ -21,6 +21,24 @@ do not establish release support.
   harness still discards the code when it reports `episode requires recovery before policy can
   continue`, so naming the reason in an episode failure remains a separate sts2-harness change. Native
   observation of a refused launch on Windows remains unverified. Refs #185.
+- Added the owner-local read-only shop inventory, service, and restock reference slice for
+  sts2-game-mod#101. The `shop_reference` producer composes the existing content-manifest and locale
+  witness with typed inventory entries carrying a definition reference, item kind, displayed price
+  and currency, stock state, sale or stacked-discount state, purchase action, and capacity or
+  eligibility restrictions; supported services with their exact-build identity, cost, selection
+  domain, limits, eligibility, and prospective change; static pricing contributors and reference
+  formulas; and restock rules with the inventory generation they produce. An entry whose reported
+  kind contradicts the definition family it resolves to is rejected, so no supported item stays
+  hard-coded `Unknown`; a documented formula stays a formula instead of being folded into an
+  invented total; a blocked reason stays separate from the displayed price; and a stock reference
+  from any other restock generation is refused rather than answered with current stock. The boundary
+  is read-only by construction (`read_catalog(&self)`, no purchase, sale, restock, or gold-spending
+  method), a transient purchase action cannot enter the static slice, reads fail closed, and
+  duplicate entry, service, definition, and contributor identities, dangling or scope-leaking
+  references, and malformed prices, discounts, stock, or service declarations are rejected.
+  Source-only evidence; native shop extraction, live purchase or restock behavior, and exact-host
+  compatibility remain unverified. Refs #101.
+
 - Corrected the run configuration reference slice's seed-blind cache guarantee for
   sts2-game-mod#105. The fingerprint builder walked the closed field inventory and hashed the
   settled value of every kind it found — including `Seed` — so `seed_blind_cache` was seed-derived
