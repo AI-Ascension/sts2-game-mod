@@ -20,6 +20,7 @@ mod event_reference;
 mod field_availability;
 mod glossary;
 pub mod live_card_state;
+mod locale_reference;
 mod poc;
 mod potions;
 mod powers;
@@ -119,6 +120,7 @@ pub use live_card_state::{
     LiveCardProjection, LiveCardQuery, LiveCardReadReference, LiveCardSnapshot, LiveCardSource,
     LiveCardStore, LiveCardUnavailableReason, LiveCardValue, UnavailableLiveCardSource,
 };
+pub use locale_reference::*;
 pub use poc::{
     EffectWitness, POC_MAX_EVIDENCE_RECORDS, POC_MAX_REQUEST_BYTES, PocAction, PocBoundaryRecord,
     PocCoreError, PocCorePort, PocCoreState, PocMessage, PocMessageKind, PocMod, PocModError,
