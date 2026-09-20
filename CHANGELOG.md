@@ -6,6 +6,30 @@ do not establish release support.
 
 ## Unreleased
 
+- Added a source-only asset handle, media, and rendition reference for sts2-game-mod#112. An asset
+  was not reachable as owned data: reading which icons, art, and audio exist for a definition, what
+  each states about its media, or the bytes of a rendition under the installed resource pipeline
+  means resolving a resource path and decoding into engine-owned memory for a live instance, and
+  neither effect is recoverable. `crates/game-mod/src/asset_reference` now copies those values into
+  an immutable catalog fenced by the existing content-manifest cursor, the locale, and an
+  owner-local producer version, with one closed field inventory whose every value states whether it
+  is present, absent, unsupported, or withheld, so an unknown value is never published as a zero or
+  an empty string. An asset is named by an opaque handle that refuses a filesystem path or a URL, a
+  kind that disagrees with its properties is refused, a retrievable asset that states no media
+  properties is refused, and a media type a host could interpret as executable presentation is
+  refused, so a rendition is never markup or script. Rendition bytes live behind a private side
+  table that only the reader's retrieve emits, a metadata-only descriptor carries none, and a
+  rendition that exceeds the stored-byte, dimension, duration, decoded-byte, or decode-ratio bound
+  is refused. A hidden or owner-only asset is never returned outside a scope that may observe it, a
+  handle leased to a passed generation and a handle absent from this catalog are both refused, a
+  page that does not cover every matching asset needs a retained reader and its continuation is
+  single-use and bound to one query and one revision, and the reader has no path resolution, no
+  decode, no install, no extraction, and no mutation, so an asset read cannot change the game.
+  Evidence is source-only: 76 tests over synthetic fixtures assert handle opacity, media and
+  coverage consistency, markup refusal, bounded retrieval, scope and generation enforcement, page
+  and continuation bounds, and read-only production; no native extractor, transport route, or
+  exact-host compatibility is claimed. Refs #112.
+
 - Added a source-only progression reference for sts2-game-mod#108. A profile's progression was not
   reachable as owned data: reading which unlocks and achievements it holds, what gates one it does
   not hold, what it has not yet encountered, which compendium entries it discovered, how far each

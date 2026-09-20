@@ -8,6 +8,7 @@ use sts2_game_mod_http_adapter::{HttpAdapter, HttpPort, HttpRequest, HttpRespons
 
 mod act_reference;
 mod action_reference;
+mod asset_reference;
 mod card_definitions;
 mod character_state;
 mod characters;
@@ -46,6 +47,7 @@ mod workshop;
 
 pub use act_reference::*;
 pub use action_reference::*;
+pub use asset_reference::*;
 pub use card_definitions::*;
 pub use character_state::*;
 pub use characters::*;
