@@ -24,6 +24,12 @@ use `--run-kind demo` with the explicitly built probe and an optional seed (defa
 900 seconds. The fixture retains the older forced weak-encounter behavior and is useful only for
 focused room-entry/replay diagnostics.
 
+The demo names the live episode, and the harness restricts a live episode to the OpenAI Astra
+provider, so `--run-kind demo` needs the Astra provider: the launcher refuses a demo on any other
+bridge before it starts a host, a gateway, or a bridge, and says which restriction refuses it. The
+local bridge's campaign episode is not an alternative for this shape, because the harness refuses a
+campaign episode that also names the combat demo and the two modes take different runners.
+
 The operator must supply a disposable Windows host directory with its own `override.cfg`
 and Godot user directory. Keep proprietary files, logs, saves, and generated addons outside
 this repository. The original Steam installation is not the demo install target.

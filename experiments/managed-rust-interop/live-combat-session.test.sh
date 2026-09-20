@@ -180,7 +180,11 @@ campaign_default_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/ca
 jq -e '.run_kind == "campaign" and .max_runtime_seconds == 3600' \
     "$campaign_default_run/manifest.json" >/dev/null
 
-run_case demo --run-kind demo --seed DEMO1 --max-runtime-seconds 90
+# The demo names the live episode, which the harness restricts to Astra, so the demo shape is
+# driven through the Astra identity. A local bridge is refused up front and is asserted separately
+# below, because its kind is what selects that refusal.
+run_case demo --run-kind demo --seed DEMO1 --max-runtime-seconds 90 \
+    --provider-binary "$fixture_root/bin/provider-astra"
 demo_args="$fixture_root/demo.guardian"
 has_arg '-RunKind' "$demo_args"
 has_arg demo "$demo_args"
@@ -197,7 +201,7 @@ grep -Fx 'STS2_MAX_STEPS=100' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_LIVE_EPISODE=true' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/demo.harness" >/dev/null
 
-run_case demo_default --run-kind demo
+run_case demo_default --run-kind demo --provider-binary "$fixture_root/bin/provider-astra"
 demo_default_args="$fixture_root/demo_default.guardian"
 has_arg '-MaxRuntimeSeconds' "$demo_default_args"
 has_arg 900 "$demo_default_args"
@@ -255,6 +259,35 @@ expect_campaign_episode_refused() {
 }
 
 expect_campaign_episode_refused campaign_without_campaign_episode
+
+# The demo names the live episode unconditionally, and the harness restricts a live episode to the
+# OpenAI Astra provider, so a demo on a local bridge is refused here rather than after a host, a
+# gateway and a bridge have been started for an episode the harness then rejects.
+expect_demo_live_episode_refused() {
+    local label=$1
+    set +e
+    FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
+        FAKE_PROCESS_MARKERS="$fixture_root/$label.processes" \
+        PATH="$fixture_root/bin:$PATH" \
+        bash "$launcher" "${base_args[@]}" --run-kind demo \
+        >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
+    local status=$?
+    set -e
+    [[ $status -eq 2 ]] || {
+        printf 'expected the demo live-episode refusal for %s, got %s\n' "$label" "$status" >&2
+        exit 1
+    }
+    grep -Fx "The combat demo names the live episode, which the pinned harness restricts to the OpenAI Astra provider, so the combat demo cannot run on the 'ollama' provider." \
+        "$fixture_root/$label.err" >/dev/null
+    for process in guardian gateway mcp harness; do
+        ! grep -Fx "$process" "$fixture_root/$label.processes" >/dev/null || {
+            printf 'a refused demo started %s for %s\n' "$process" "$label" >&2
+            exit 1
+        }
+    done
+}
+
+expect_demo_live_episode_refused demo_local_bridge
 
 printf changed > "$fixture_root/host/data_sts2_windows_x86_64/sts2.dll"
 expect_rejected changed_host --run-kind campaign

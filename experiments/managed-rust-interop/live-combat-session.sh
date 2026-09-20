@@ -134,6 +134,16 @@ if [[ "$run_kind" == campaign && "$provider_kind" == ollama ]]; then
         exit 2
     }
 fi
+# A demo run names the live episode, and the harness restricts a live episode to the OpenAI Astra
+# provider, so a demo on any other admitted bridge is accepted here and then refused at harness
+# preflight -- after a host, a gateway and a bridge have been started. Refuse it here first, naming
+# the restriction, rather than spend those resources on a run the harness will reject. The campaign
+# episode is not an alternative for this shape: the harness refuses a campaign episode that also
+# names the combat demo, and the two modes take different runners.
+if [[ "$run_kind" == demo && "$provider_kind" != openai-astra ]]; then
+    printf "The combat demo names the live episode, which the pinned harness restricts to the OpenAI Astra provider, so the combat demo cannot run on the '%s' provider.\n" "$provider_kind" >&2
+    exit 2
+fi
 [[ -f "$host_dir/override.cfg" && -n "$user_dir" && -n "$artifacts" ]] || exit 2
 host_dir=$(realpath -m -- "$host_dir")
 artifacts=$(realpath -m -- "$artifacts")
