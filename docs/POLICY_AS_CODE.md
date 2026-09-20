@@ -37,6 +37,11 @@ policy.toml lists required paths, ignored generated directories, size budgets, a
 exemptions. An exemption must name a real generated, vendored, or reviewed static file and explain
 its durable provenance. Copied implementation source is never eligible.
 
+When `CHANGELOG.md` reaches its preferred size budget, completed entries are moved verbatim into
+[`CHANGELOG-ARCHIVE.md`](CHANGELOG-ARCHIVE.md) instead of being shortened or exempted. The archive
+keeps the entry text and remains reachable through the active file's link, so a removed or renamed
+archive fails DOC002. Trimming entry text to fit the budget loses the record it exists to keep.
+
 Changing policy is a process change. Explain the rule, enforcement effect, migration, reason for
 any exemption, and exact local results. Refactor oversized handwritten files before weakening a
 threshold.

@@ -32,6 +32,7 @@ sts2-game-mod/
 ├── tools/workshop/                  deterministic Workshop staging and fixture checks
 ├── tools/repo-policy/                target-local governance checker
 ├── docs/                             architecture, policy, testing, and decisions
+├── docs/CHANGELOG-ARCHIVE.md         verbatim completed changelog entries moved out of the active file
 └── .github/                          bounded read-only automation
 ~~~
 
