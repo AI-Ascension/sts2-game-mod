@@ -32,6 +32,7 @@ mod retained_map;
 mod reward_reference;
 mod rng_audit;
 mod run_configuration_reference;
+mod run_result_reference;
 mod runtime_map;
 mod runtime_v2;
 mod runtime_v3_gameplay;
@@ -152,6 +153,7 @@ pub use rng_audit::{
     RngStreamProjection, UnavailableRngAudit,
 };
 pub use run_configuration_reference::*;
+pub use run_result_reference::*;
 pub use runtime_map::{
     RUNTIME_MAP_V1_ARTIFACT, RUNTIME_MAP_V1_GENERATOR, RUNTIME_MAP_V1_MAX_BINDINGS,
     RUNTIME_MAP_V1_MAX_EDGES, RUNTIME_MAP_V1_MAX_GENERATION, RUNTIME_MAP_V1_MAX_HISTORY,
