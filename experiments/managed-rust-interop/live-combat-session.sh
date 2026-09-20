@@ -29,6 +29,9 @@ Usage: live-combat-session.sh --host-dir PATH --user-dir WINDOWS_PATH --artifact
 Requires an already prepared disposable host, accepted addon, Windows PowerShell,
 WSL, curl, jq and openssl. Display indexes are zero-based; -1 selects the primary display.
 Omitted video options use saved mod-menu choices, then the first-launch defaults.
+A campaign run names the bounded mode its provider can run: the local ollama bridge names the
+campaign episode and needs no OpenAI Astra provider, while an OpenAI Astra campaign names the
+live episode. The pinned harness must carry STS2_CAMPAIGN_EPISODE for the local campaign shape.
 No installation is performed.
 HELP
 }
@@ -121,6 +124,16 @@ case "$provider_kind:$provider_name:$provider_model" in
     ollama:ollama:gemma4:31b-cloud) ;;
     *) printf 'Unsupported provider identity\n' >&2; exit 2 ;;
 esac
+# A campaign run names the bounded mode its provider can actually run. A local bridge is admitted
+# for a campaign episode, while the live episode stays restricted to Astra, so the campaign shape
+# below cannot name the live episode for ollama. A harness that predates STS2_CAMPAIGN_EPISODE
+# cannot run that shape at all, so refuse it here rather than start a host the harness will reject.
+if [[ "$run_kind" == campaign && "$provider_kind" == ollama ]]; then
+    LC_ALL=C grep -aq 'STS2_CAMPAIGN_EPISODE' "$harness" || {
+        printf '%s\n' 'The pinned harness binary does not carry STS2_CAMPAIGN_EPISODE, so it cannot run the local campaign shape.' >&2
+        exit 2
+    }
+fi
 [[ -f "$host_dir/override.cfg" && -n "$user_dir" && -n "$artifacts" ]] || exit 2
 host_dir=$(realpath -m -- "$host_dir")
 artifacts=$(realpath -m -- "$artifacts")
@@ -325,9 +338,20 @@ export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
 if [[ "$run_kind" == demo ]]; then
     export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true STS2_LIVE_EPISODE=true
+    unset STS2_CAMPAIGN_EPISODE
     export STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
 else
-    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false STS2_LIVE_EPISODE=true
+    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false
+    if [[ "$provider_kind" == ollama ]]; then
+        # The local bridge may not claim the live episode, which the harness restricts to Astra,
+        # so the campaign episode alone is the bounded mode this shape can name. Naming both, or
+        # inheriting one from the caller, states no intent and is refused by the harness.
+        export STS2_CAMPAIGN_EPISODE=true
+        unset STS2_LIVE_EPISODE
+    else
+        export STS2_LIVE_EPISODE=true
+        unset STS2_CAMPAIGN_EPISODE
+    fi
     export STS2_OBJECTIVE='Complete the campaign while preserving HP.' STS2_MAX_STEPS=1024
 fi
 export STS2_EXO_FORWARD_VISIBLE_SEED=true

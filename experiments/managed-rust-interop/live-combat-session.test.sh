@@ -66,8 +66,32 @@ cat > "$fixture_root/bin/harness" <<'EOF'
 #!/usr/bin/env bash
 [[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' harness >> "$FAKE_PROCESS_MARKERS"
 "$STS2_MCP_BINARY"
-printf '%s\n' "STS2_COMBAT_DEMO=${STS2_COMBAT_DEMO:-}" "STS2_MAX_STEPS=${STS2_MAX_STEPS:-}" > "$FAKE_HARNESS_ENV_FILE"
+printf '%s\n' "STS2_COMBAT_DEMO=${STS2_COMBAT_DEMO:-}" "STS2_MAX_STEPS=${STS2_MAX_STEPS:-}" \
+    "STS2_LIVE_EPISODE=${STS2_LIVE_EPISODE:-}" "STS2_CAMPAIGN_EPISODE=${STS2_CAMPAIGN_EPISODE:-}" \
+    > "$FAKE_HARNESS_ENV_FILE"
 printf '%s\n' '{"stage":"defeat"}'
+EOF
+
+# A harness built before the campaign episode existed carries neither the variable nor the mode.
+cat > "$fixture_root/bin/harness-without-campaign-episode" <<'EOF'
+#!/usr/bin/env bash
+[[ -z "${FAKE_PROCESS_MARKERS:-}" ]] || printf '%s\n' harness >> "$FAKE_PROCESS_MARKERS"
+"$STS2_MCP_BINARY"
+printf '%s\n' "STS2_COMBAT_DEMO=${STS2_COMBAT_DEMO:-}" \
+    "STS2_LIVE_EPISODE=${STS2_LIVE_EPISODE:-}" > "$FAKE_HARNESS_ENV_FILE"
+printf '%s\n' '{"stage":"defeat"}'
+EOF
+
+# The OpenAI Astra identity, which the campaign shape still drives through the live episode.
+cat > "$fixture_root/bin/provider-astra" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == --describe ]]; then
+    printf '%s\n' '{"kind":"openai-astra","provider":"openai","model":"gpt-6-astra"}'
+fi
+EOF
+cat > "$fixture_root/bin/codex" <<'EOF'
+#!/usr/bin/env bash
+exit 0
 EOF
 cat > "$fixture_root/bin/powershell" <<'EOF'
 #!/usr/bin/env bash
@@ -133,6 +157,20 @@ campaign_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/campaign.o
 jq -e '.run_kind == "campaign" and .campaign_mode == "standard" and .max_runtime_seconds == 180 and .seed == null' \
     "$campaign_run/manifest.json" >/dev/null
 grep -Fx 'STS2_COMBAT_DEMO=false' "$fixture_root/campaign.harness" >/dev/null
+# The local bridge may not name the live episode, so the campaign shape names the campaign
+# episode alone. Both flags are asserted, because inheriting the other one from the caller is
+# exactly how a campaign ends up in a mode the harness refuses.
+grep -Fx 'STS2_CAMPAIGN_EPISODE=true' "$fixture_root/campaign.harness" >/dev/null
+grep -Fx 'STS2_LIVE_EPISODE=' "$fixture_root/campaign.harness" >/dev/null
+
+run_case campaign_astra --run-kind campaign --campaign-mode standard \
+    --provider-binary "$fixture_root/bin/provider-astra"
+campaign_astra_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/campaign_astra.out")
+jq -e '.run_kind == "campaign" and .campaign_mode == "standard"' \
+    "$campaign_astra_run/manifest.json" >/dev/null
+grep -Fx 'STS2_LIVE_EPISODE=true' "$fixture_root/campaign_astra.harness" >/dev/null
+grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/campaign_astra.harness" >/dev/null
+grep -Fx 'STS2_COMBAT_DEMO=false' "$fixture_root/campaign_astra.harness" >/dev/null
 
 run_case campaign_default --run-kind campaign --campaign-mode standard
 campaign_default_args="$fixture_root/campaign_default.guardian"
@@ -156,6 +194,8 @@ jq -e '.run_kind == "demo" and .campaign_mode == null and .max_runtime_seconds =
     "$demo_run/manifest.json" >/dev/null
 grep -Fx 'STS2_COMBAT_DEMO=true' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_MAX_STEPS=100' "$fixture_root/demo.harness" >/dev/null
+grep -Fx 'STS2_LIVE_EPISODE=true' "$fixture_root/demo.harness" >/dev/null
+grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/demo.harness" >/dev/null
 
 run_case demo_default --run-kind demo
 demo_default_args="$fixture_root/demo_default.guardian"
@@ -184,6 +224,38 @@ expect_rejected duration_overflow --run-kind campaign --max-runtime-seconds 9999
 expect_rejected demo_campaign_mode --run-kind demo --campaign-mode practice --seed DEMO1
 expect_rejected map_demo --run-kind demo --campaign-map
 expect_rejected map_practice --run-kind campaign --campaign-mode practice --seed MAP1 --campaign-map
+
+# A harness that cannot name a campaign episode cannot run the local campaign shape, and saying so
+# is the only useful outcome: the alternative is a host, a gateway and a bridge started for an
+# episode the harness then refuses. The provider is still asked to describe itself, because its
+# kind is what selects the shape.
+expect_campaign_episode_refused() {
+    local label=$1
+    set +e
+    FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
+        FAKE_PROCESS_MARKERS="$fixture_root/$label.processes" \
+        PATH="$fixture_root/bin:$PATH" \
+        bash "$launcher" "${base_args[@]}" --run-kind campaign --campaign-mode standard \
+        --harness-binary "$fixture_root/bin/harness-without-campaign-episode" \
+        >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
+    local status=$?
+    set -e
+    [[ $status -eq 2 ]] || {
+        printf 'expected the campaign episode refusal for %s, got %s\n' "$label" "$status" >&2
+        exit 1
+    }
+    grep -Fx 'The pinned harness binary does not carry STS2_CAMPAIGN_EPISODE, so it cannot run the local campaign shape.' \
+        "$fixture_root/$label.err" >/dev/null
+    for process in guardian gateway mcp harness; do
+        ! grep -Fx "$process" "$fixture_root/$label.processes" >/dev/null || {
+            printf 'a harness without the campaign episode started %s for %s\n' "$process" "$label" >&2
+            exit 1
+        }
+    done
+}
+
+expect_campaign_episode_refused campaign_without_campaign_episode
+
 printf changed > "$fixture_root/host/data_sts2_windows_x86_64/sts2.dll"
 expect_rejected changed_host --run-kind campaign
 
@@ -222,4 +294,4 @@ steam_preflight_source=$(<"$script_dir/steam-usability-preflight.ps1")
     printf '%s\n' 'Steam preflight must not start, stop, or configure Steam.' >&2
     exit 1
 }
-printf 'PASS: campaign/demo guardian wiring, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
+printf 'PASS: campaign/demo guardian wiring, provider-named bounded modes, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
