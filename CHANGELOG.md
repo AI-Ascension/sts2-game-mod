@@ -30,8 +30,11 @@ do not establish release support.
   result, and a hidden or owner-only subject is never disclosed at a scope that may not observe it.
   `ActionCatalogSource::read_catalog` takes `&self` and declares no dispatch method, and regressions
   assert an exact source-read count, byte-identical repeated explanations and previews, and an
-  unchanged retained snapshot. Evidence is source-only and synthetic; a live frame read, native
-  action-registry or consequence extraction, and exact-host comparison remain unverified. Refs #104.
+  unchanged retained snapshot. An identity or text past its byte bound, a preview collection past
+  its local bound, more definitions than the local bound, and a definition past the aggregate
+  retained-byte budget are each refused by name. Evidence is source-only and synthetic; a live frame
+  read, native action-registry or consequence extraction, and exact-host comparison remain
+  unverified. Refs #104.
 - Added a source-only completed-run result and prior-summary reference for sts2-game-mod#107. A
   completed run was not reachable as owned data: reading its outcome, character and configuration,
   reached act and floor, duration, ending deck and inventory, displayed score, and reported

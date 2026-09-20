@@ -116,10 +116,13 @@ explanations and previews, an unchanged retained snapshot, and that a live, inco
 contradictory fence is refused. Rejection fixtures prove the eligibility, target-eligibility,
 refusal-support, cost-contributor, restriction, instance-reference, undeclared-class, uncertain,
 change, dangling-target, dangling-reference, hidden-reference-leak, cross-generation, uncovered
-target, missing-family, family-count, and sanitized-source failures each reject by name. The
-refusal-support, target-eligibility, cost-affordability, restriction, uncertain, changed-nothing,
-undeclared-class, dangling-target, uncovered-target, and cross-generation assertions were each
-verified to fail under an isolated production mutation whose bytes were restored exactly.
+target, missing-family, family-count, sanitized-source, oversized-identity, oversized-text,
+oversized-preview-collection, over-count-definitions, and over-budget-aggregate failures each
+reject by name. The refusal-support, target-eligibility, cost-affordability, restriction, uncertain,
+changed-nothing, undeclared-class, dangling-target, uncovered-target, cross-generation,
+oversized-identity, oversized-text, oversized-preview-collection, over-count-definitions, and
+over-budget-aggregate assertions were each verified to fail under an isolated production mutation
+whose bytes were restored exactly.
 
 These prove deterministic local validation and read-only projection only. Native action-registry
 extraction, a live frame read, real host consequence computation, exact-host comparison, thread

@@ -6,6 +6,8 @@
 mod support;
 
 use sts2_game_mod::{
+    ACTION_MAX_CHANGES, ACTION_MAX_DEFINITION_BYTES, ACTION_MAX_DEFINITIONS,
+    ACTION_MAX_IDENTITY_BYTES, ACTION_MAX_PREVIEWS, ACTION_MAX_TEXT_BYTES,
     ACTION_REFERENCE_ENEMY_KIND, ActionCatalogProducer, ActionDefinitionInput, ActionEligibility,
     ActionEligibilityState, ActionError, ActionField, ActionKind, ActionOmissionKind,
     ActionPreviewClass, ActionPreviewProvenance, ActionReferenceKind, ActionRefusalReason,
@@ -13,8 +15,8 @@ use sts2_game_mod::{
     FailingActionSource, FixtureActionFailure,
 };
 use support::{
-    GENERATION, alpha, blocking, definition, fixture_manifest, instance, manifest, manifest_of,
-    no_text, none, not_observed, omission, produce, refused, snapshot, text,
+    GENERATION, alpha, blocking, change, definition, fixture_manifest, instance, manifest,
+    manifest_of, no_text, none, not_observed, omission, preview, produce, refused, snapshot, text,
 };
 
 /// Produces one catalog and returns the single refusal the producer reported.
@@ -334,4 +336,83 @@ fn a_failing_source_is_sanitized_into_one_explicit_error() {
             ActionCatalogProducer::new().produce(&manifest, &FailingActionSource(failure));
         assert_eq!(produced.expect_err("failed source"), expected);
     }
+}
+
+#[test]
+fn an_action_identity_past_its_byte_bound_is_refused_by_field() {
+    let oversized = definition(
+        &"a".repeat(ACTION_MAX_IDENTITY_BYTES + 1),
+        ActionKind::PlayCard,
+    );
+    assert_eq!(
+        reject(vec![oversized], &["action.alpha"]),
+        ActionError::InvalidInput("action_id")
+    );
+}
+
+#[test]
+fn a_label_past_the_text_bound_is_refused_by_field() {
+    let oversized = alpha_with(|input| {
+        input.label = text(&"l".repeat(ACTION_MAX_TEXT_BYTES + 1));
+    });
+    assert_eq!(
+        reject(vec![oversized], &["action.alpha"]),
+        ActionError::InvalidInput("label")
+    );
+}
+
+#[test]
+fn a_preview_past_a_local_collection_bound_is_refused_by_name() {
+    let mut oversized = alpha();
+    oversized.previews[0].changes = (0..=ACTION_MAX_CHANGES)
+        .map(|index| change(&format!("change.{index}"), "6", "12", 6))
+        .collect();
+    assert_eq!(
+        reject(vec![oversized], &["action.alpha"]),
+        ActionError::InvalidPreview {
+            action_id: "action.alpha".to_owned(),
+            preview_id: "preview.alpha.slime".to_owned(),
+        }
+    );
+}
+
+#[test]
+fn more_definitions_than_the_local_bound_are_refused() {
+    let ids: Vec<String> = (0..=ACTION_MAX_DEFINITIONS)
+        .map(|index| format!("action.overflow{index}"))
+        .collect();
+    let borrows: Vec<&str> = ids.iter().map(String::as_str).collect();
+    let definitions = ids
+        .iter()
+        .map(|action_id| definition(action_id, ActionKind::PlayCard))
+        .collect();
+    assert_eq!(
+        reject(definitions, &borrows),
+        ActionError::InvalidInput("definitions")
+    );
+}
+
+#[test]
+fn an_aggregate_record_bound_is_enforced() {
+    let label = "p".repeat(ACTION_MAX_TEXT_BYTES);
+    let mut oversized = alpha();
+    oversized.previews = (0..ACTION_MAX_PREVIEWS)
+        .map(|index| {
+            let mut record = preview(
+                &format!("preview.alpha.{index}"),
+                ActionPreviewClass::Conditional,
+                None,
+            );
+            record.label = text(&label);
+            record
+        })
+        .collect();
+    let error = reject(vec![oversized], &["action.alpha"]);
+    assert!(
+        matches!(
+            error,
+            ActionError::DefinitionTooLarge { limit, .. } if limit == ACTION_MAX_DEFINITION_BYTES
+        ),
+        "an oversized record is refused rather than truncated: {error:?}"
+    );
 }
