@@ -60,6 +60,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0062 | [Owner-local read-only rest-site and rest-option reference](0062-rest-site-reference.md) |
 | 0063 | [Owner-local read-only selection and candidate reference](0063-selection-reference.md) |
 | 0064 | [Owner-local reference text and public-screen text](0064-reference-text-and-public-screen-text.md) |
+| 0065 | [Owner-local read-only action availability and preview reference](0065-action-preview-reference.md) |
 | 0066 | [Owner-local completed-run result, score, and prior-summary reference](0066-run-result-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
@@ -77,7 +78,6 @@ records carried by the open coordinated pull requests on `codex/issue-101-shop-r
 `codex/issue-102-rest-site-reference-20260919`, and `codex/issue-103-selection-reference-20260919`;
 0064 is numbered above them rather than claiming a reserved identifier. Those reservations do not
 mean the shop, rest-site, or selection reference has merged.
-Decision 0065 is reserved for the action-preview reference record carried by the open coordinated
-pull request on `codex/issue-104-action-preview-20260919`; 0066 is numbered above it rather than
-claiming the reserved identifier, and that reservation does not mean the action-preview reference
-has merged.
+Decision 0065 was held for the action-preview reference record while its coordinated pull request on
+`codex/issue-104-action-preview-20260919` was open, so 0066 was numbered above it rather than
+claiming that identifier; the record has since merged as decision 0065.
