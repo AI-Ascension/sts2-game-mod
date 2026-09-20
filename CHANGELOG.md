@@ -6,6 +6,34 @@ do not establish release support.
 
 ## Unreleased
 
+- Added a source-only progression reference for sts2-game-mod#108. A profile's progression was not
+  reachable as owned data: reading which unlocks and achievements it holds, what gates one it does
+  not hold, what it has not yet encountered, which compendium entries it discovered, how far each
+  character has progressed, and which best records and statistics the host reported means driving
+  the game, and a progression screen is only reachable after a profile is selected and a save is
+  loaded. `crates/game-mod/src/progression_reference` now copies those records into an immutable
+  catalog fenced by the existing content-manifest cursor, the locale, the existing save-profile
+  identity and freshness witness, and an owner-local producer version. Unlocked, locked,
+  undiscovered, not-tracked, unavailable, and unclassified stay six separate states, so an entry
+  that asserts nothing can carry neither a progress nor a best value and a lock always names what
+  gates it; a percentage outside its range is refused rather than clamped, an untracked value is
+  kept out of the result instead of being reported as zero, and one entry states a row for every
+  field in its closed inventory, so a field the source does not project is a declared coverage
+  failure rather than a silently absent key. The six game domains stay distinct from account-scoped
+  data, which is never declared projected or published as progression, and every domain states
+  whether it is projected, unsupported, or unavailable together with the count the source declares,
+  so a domain the source cannot serve is a stated reason rather than an empty result. References
+  resolve against handled manifest families, reads are fenced to one profile revision and one
+  locale, a hidden or owner-only entry is never returned outside a scope that may observe it, and
+  the reader has no unlock, purchase, save-write, or profile-selection entry point. Also fixed a
+  fail-open page trap: `ProgressionCatalog::list` served a fresh reader, so a partial page handed
+  back a continuation no reader could consume; it now refuses a result that does not fit one page
+  with `PartialPageRequiresReader` and names the retained reader as the paging entry point.
+  Evidence is source-only: 56 tests over six suites assert state separation, field-row coverage,
+  domain coverage, reference resolution, scope enforcement, page and continuation bounds, and
+  read-only production, and two of the rules were falsified by mutation; no native extractor,
+  transport route, or exact-host compatibility is claimed. Refs #108.
+
 - Added the owner-local read-only action availability and preview reference slice for
   sts2-game-mod#104. The `action_reference` producer composes the existing content-manifest and
   locale witness with typed legal-action definitions carrying the parent operation, exact-build kind,

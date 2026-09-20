@@ -25,6 +25,7 @@ mod locale_reference;
 mod poc;
 mod potions;
 mod powers;
+mod progression_reference;
 mod protocol_artifact;
 mod reference_text;
 mod relics;
@@ -135,6 +136,7 @@ pub use poc::{
 };
 pub use potions::*;
 pub use powers::*;
+pub use progression_reference::*;
 pub use protocol_artifact::{
     ArtifactError, POC_ARTIFACT, POC_MAX_GENERATION, POC_PROTOCOL_VERSION, POC_SCHEMA_DIGEST,
     POC_SCHEMA_PACKAGE,
