@@ -62,6 +62,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0064 | [Owner-local reference text and public-screen text](0064-reference-text-and-public-screen-text.md) |
 | 0065 | [Owner-local read-only action availability and preview reference](0065-action-preview-reference.md) |
 | 0066 | [Owner-local completed-run result, score, and prior-summary reference](0066-run-result-reference.md) |
+| 0067 | [Owner-local read-only progression reference](0067-progression-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
