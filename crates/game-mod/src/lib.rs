@@ -42,6 +42,7 @@ mod runtime_v2;
 mod runtime_v3_gameplay;
 mod save_profile;
 mod selection_reference;
+mod semantic_event_reference;
 mod settings_reference;
 mod shop_reference;
 mod workshop;
@@ -295,5 +296,6 @@ pub use {
     enemy_intents::*, event_reference::*, field_availability::*, glossary::*, locale_reference::*,
     potions::*, powers::*, progression_reference::*, reference_text::*, relics::*,
     rest_site_reference::*, retained_map::*, reward_reference::*, run_configuration_reference::*,
-    run_result_reference::*, selection_reference::*, settings_reference::*, shop_reference::*,
+    run_result_reference::*, selection_reference::*, semantic_event_reference::*,
+    settings_reference::*, shop_reference::*,
 };

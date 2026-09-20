@@ -65,6 +65,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0067 | [Owner-local read-only progression reference](0067-progression-reference.md) |
 | 0068 | [Owner-local asset handle, media, and rendition reference](0068-asset-reference.md) |
 | 0069 | [Owner-local co-op party and member-state reference](0069-coop-reference.md) |
+| 0070 | [Owner-local semantic event and causal-provenance history](0070-semantic-event-history.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
@@ -90,3 +91,7 @@ claiming that identifier; the record has since merged as decision 0067.
 Decision 0068 was held for the asset reference record while its coordinated pull request on
 `codex/issue-112-asset-reference-20260920` was open, so 0069 is numbered above it rather than
 claiming that identifier; the record has since merged as decision 0068.
+Decision 0070 is held for the semantic event and causal-provenance history record while its
+coordinated pull request on `codex/issue-128-semantic-events-20260920` is open. The harness-owned
+queryable run history remains blocked for full integration and acceptance, so this record covers
+only the game-mod companion vocabulary and claims no query, persistence or indexing capability.
