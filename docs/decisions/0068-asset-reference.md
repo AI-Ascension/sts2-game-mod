@@ -110,7 +110,7 @@ bounded to one entry and one catalog.
 
 ### Read-only by construction
 
-`AssetReadPort::read_catalog(&self, ...)` is the only production seam and `AssetCatalog` exposes no
+`AssetReadPort::read_assets(&self, ...)` is the only production seam and `AssetCatalog` exposes no
 setter. The reader surface offers `list`, `get`, and `retrieve` and nothing else: there is no
 resource-path resolution, no decode into engine memory, no install, no extraction, no execution,
 and no mutation method. `AssetRenditionAuthority` is exactly `NotGranted`, so every published
