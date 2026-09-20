@@ -6,6 +6,20 @@ do not establish release support.
 
 ## Unreleased
 
+- Refused the demo shape on a local bridge for sts2-game-mod#193. The demo shape exported
+  `STS2_LIVE_EPISODE=true` for every provider, and the harness restricts a live episode to the
+  OpenAI Astra provider, so `--run-kind demo` with the ollama bridge started the guardian, gateway,
+  MCP and harness and was only then rejected at harness preflight. The launcher now refuses the
+  demo before any of them start, with a sentence that names the restriction and the provider kind
+  it was given. A demo is not made to work on a local bridge: the harness makes the combat demo and
+  the campaign episode mutually exclusive, so a local demo would have to name the combat demo
+  alone, which also stops the replay capture `STS2_LIVE_EPISODE` enables. Whether that change is
+  wanted is the open product question recorded in sts2-game-mod#193; this refusal is the safe
+  half, and it cannot break a working path because the harness already refused this combination
+  before any effect. Evidence is source-only: `live-combat-session.test.sh` asserts the refusal
+  sentence, that the provider was still asked to describe itself, and that neither the guardian nor
+  the gateway, MCP or harness started, and the case fails when the refusal is removed. Refs #193.
+
 - Added a campaign shape that needs no OpenAI Astra provider for sts2-game-mod#179. Both bounded
   shapes set `STS2_LIVE_EPISODE=true`, campaign mode additionally demanded Astra, and the harness
   restricts a live episode to Astra, so a campaign run had no composed path through this

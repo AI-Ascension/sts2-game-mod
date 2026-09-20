@@ -199,6 +199,16 @@ case "$run_kind" in
         [[ -n "$seed" ]] || seed=AIASCENSIONREPLAY1
         ;;
 esac
+# The demo shape names the live episode for whatever provider it was given, and the harness
+# restricts the live episode to Astra. Without this the demo shape would be admitted and only
+# refused by the harness after the guardian, gateway, MCP and harness had started. This sits with
+# the bounded-mode decisions above so it cannot preempt an argument-level refusal. It is the
+# fail-fast half of the open decision in AI-Ascension/sts2-game-mod#193: a local demo would have to
+# name the combat demo alone, which also stops replay capture and is a separate behavioural change.
+if [[ "$run_kind" == demo && "$provider_kind" != openai-astra ]]; then
+    printf '%s\n' "The demo shape names the live episode, and the harness restricts the live episode to the OpenAI Astra provider, so the ${provider_kind} bridge cannot run the demo." >&2
+    exit 2
+fi
 video_args=()
 [[ -z "$display" ]] || video_args+=(-Display "$display")
 [[ -z "$width" ]] || video_args+=(-Width "$width")
