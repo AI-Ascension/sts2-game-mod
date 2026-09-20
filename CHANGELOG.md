@@ -9,6 +9,35 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added the owner-local semantic event and causal-provenance reference slice for sts2-game-mod#128.
+  What happened in a run was not reachable as owned data, and the obvious substitute — recovering
+  events by comparing two snapshots — is exactly what this slice refuses, because a difference
+  cannot say who caused a change, whether two simultaneous changes were one event or two, or
+  whether a change came from the gameplay the boundary was watching. The
+  `semantic_event_reference` producer composes the existing content-manifest and producer witness
+  with a closed inventory of fourteen authoritative kinds: card play, damage, block, heal, resource
+  change, status and modifier application and removal, pile movement, room transition, choice,
+  offer and purchase. Each record states its own coverage, so a dropped or unsupported interval is
+  disclosed rather than closed by an invented event, a zeroed quantity, or a renumbered sequence; a
+  gap is the same type as an event and keeps its sequence number, the capture window states where
+  capture began, whether history predates it, and every span inside the captured range that is not
+  fully captured, and a captured record inside a declared gap, a gap outside any declared interval,
+  and a window that contradicts where capture began are each refused. A causal parent is either
+  explicitly stated or explicitly absent and the two fields must agree, a kind that admits a cause
+  must state one or its absence while a kind that admits none must omit it, a parent this history
+  does not contain or that does not precede its child is refused rather than kept as unverified
+  causality, a disclosed gap is not a stated cause, and an imported event never states a parent
+  because its causality was settled when it was captured. Sequence order is monotonic and
+  contiguous inside one run, branch, episode and epoch, and two positions from different scopes are
+  not one order. Definition, live-instance, action and event identities stay distinct and opaque, a
+  subject minted in the wrong namespace or aliasing the event or the run it belongs to is refused,
+  and a content reference the manifest does not carry is refused rather than dropped.
+  `SemanticEventSource::read_catalog` takes `&self` and declares no replay, rollback, re-run, or
+  dispatch method, listing is bounded and fenced to one catalog revision, scope and page size
+  through a single-use continuation, and `SemanticHistoryAuthority` is exactly `NotGranted`.
+  Evidence is source-only and synthetic; native event capture, persistence, indexing, a query
+  engine, and exact-host comparison remain unverified, and the harness-owned queryable run history
+  stays blocked for full integration and acceptance. Refs #128.
 - Added the owner-local co-op party and member-state reference slice for sts2-game-mod#106. The
   `coop_reference` producer composes the existing content-manifest and locale witness with one
   party and its members: character identity, health, character-specific resources, relics, potions,
