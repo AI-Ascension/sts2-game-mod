@@ -63,6 +63,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0065 | [Owner-local read-only action availability and preview reference](0065-action-preview-reference.md) |
 | 0066 | [Owner-local completed-run result, score, and prior-summary reference](0066-run-result-reference.md) |
 | 0067 | [Owner-local read-only progression reference](0067-progression-reference.md) |
+| 0068 | [Owner-local asset handle, media, and rendition reference](0068-asset-reference.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
@@ -82,3 +83,6 @@ since merged as decisions 0061, 0062, and 0063.
 Decision 0065 was held for the action-preview reference record while its coordinated pull request on
 `codex/issue-104-action-preview-20260919` was open, so 0066 was numbered above it rather than
 claiming that identifier; the record has since merged as decision 0065.
+Decision 0067 was held for the progression reference record while its coordinated pull request on
+`codex/issue-108-progression-reference-20260920` was open, so 0068 is numbered above it rather than
+claiming that identifier; the record has since merged as decision 0067.
