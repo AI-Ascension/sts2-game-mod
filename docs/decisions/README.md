@@ -74,11 +74,11 @@ request on `codex/issue-111-locale-render` was open, so 0060 and 0061 were numbe
 than claiming that identifier; the record has since merged as decision 0059.
 Decision 0017 remains reserved for the bounded Runtime-v3 card proposal retained on a separate
 branch. That reservation does not mean the bounded proposal has merged.
-Decisions 0061, 0062, and 0063 are reserved for the shop, rest-site, and selection reference
-records carried by the open coordinated pull requests on `codex/issue-101-shop-reference-20260919`,
-`codex/issue-102-rest-site-reference-20260919`, and `codex/issue-103-selection-reference-20260919`;
-0064 is numbered above them rather than claiming a reserved identifier. Those reservations do not
-mean the shop, rest-site, or selection reference has merged.
+Decisions 0061, 0062, and 0063 were held for the shop, rest-site, and selection reference records
+while their coordinated pull requests on `codex/issue-101-shop-reference-20260919`,
+`codex/issue-102-rest-site-reference-20260919`, and `codex/issue-103-selection-reference-20260919`
+were open, so 0064 was numbered above them rather than claiming those identifiers; the records have
+since merged as decisions 0061, 0062, and 0063.
 Decision 0065 was held for the action-preview reference record while its coordinated pull request on
 `codex/issue-104-action-preview-20260919` was open, so 0066 was numbered above it rather than
 claiming that identifier; the record has since merged as decision 0065.
