@@ -28,38 +28,40 @@ internal sealed partial class LiveCombatSource
     {
         try
         {
-            return hostCombat.Enemies
-                .Select((enemy, ordinal) => ProjectEnemySafely(enemy, ordinal))
-                .ToArray();
+            var result = new List<RuntimeV3GameplayEnemy>();
+            var identities = new HashSet<string>(StringComparer.Ordinal);
+            foreach (Creature enemy in hostCombat.Enemies)
+            {
+                if (result.Count >= RuntimeV3GameplayContract.MaxEntities)
+                    throw new InvalidOperationException("enemy collection exceeds its bound");
+                RuntimeV3GameplayEnemy projected = ProjectEnemy(enemy);
+                if (!identities.Add(projected.EnemyId))
+                    throw new InvalidOperationException("enemy identity is duplicated");
+                result.Add(projected);
+            }
+            return result.ToArray();
         }
         catch (Exception)
         {
-            // A host collection can be invalid while a room is transitioning. An empty
-            // snapshot is safer than aborting the complete observation or publishing a
-            // partially enumerated enemy set.
-            return Array.Empty<RuntimeV3GameplayEnemy>();
-        }
-    }
-
-    private static RuntimeV3GameplayEnemy ProjectEnemySafely(Creature enemy, int ordinal)
-    {
-        try
-        {
-            return ProjectEnemy(enemy);
-        }
-        catch (Exception)
-        {
-            // Keep one invalid native object from aborting every other enemy observation.
-            return new RuntimeV3GameplayEnemy(
-                $"enemy:unavailable:{ordinal}", "Unknown", 0, 0,
-                RuntimeV3GameplayIntent.Unknown, 0, 0);
+            // Required enemy facts are all-or-unavailable. Do not publish a partial collection,
+            // invent a dead enemy, or retain host exception details in an inner exception.
+            // The existing observation boundary maps this refusal to its unavailable response.
+            throw new InvalidOperationException("live enemy observation unavailable");
         }
     }
 
     private static RuntimeV3GameplayEnemy ProjectEnemy(Creature enemy)
     {
+        string id = EnemyId(enemy);
+        string name = enemy.Name;
+        int hp = enemy.CurrentHp;
+        int maxHp = enemy.MaxHp;
+        if (!RuntimeV3GameplayContract.IsIdentity(id)
+            || !RuntimeV3GameplayContract.IsText(name)
+            || hp < 0 || maxHp < 0 || maxHp > ushort.MaxValue || hp > maxHp)
+            throw new InvalidOperationException("required enemy facts are invalid");
         RuntimeV3GameplayEnemy unknown = new(
-            EnemyId(enemy), enemy.Name, U16(enemy.CurrentHp), U16(enemy.MaxHp),
+            id, name, (ushort)hp, (ushort)maxHp,
             RuntimeV3GameplayIntent.Unknown, 0, 0);
         if (!TryVisibleIntentSet(enemy, out IReadOnlyList<AbstractIntent> intents,
                 out IReadOnlyList<IReadOnlyList<Creature>> targetSets)) return unknown;

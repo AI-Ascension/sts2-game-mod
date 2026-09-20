@@ -2,9 +2,10 @@
 
 ## Responsibility
 
+Required enemy reads are all-or-unavailable; optional intents may remain unknown. See [ADR 0071](decisions/0071-required-enemy-observation-fidelity.md).
+
 The opt-in live combat composition is documented in [LIVE_COMBAT_DEMO.md](LIVE_COMBAT_DEMO.md).
-Only the host loader references its exact-host source; source-only protocol probes remain
-independent of proprietary host assemblies. The source queues real host actions and observes
+Only the host loader references its exact-host source; source-only protocol probes remain independent of proprietary host assemblies. The source queues real host actions and observes
 their completion through the existing runtime-v3 boundary. The operator session script owns
 process startup and cleanup; model decisions remain in the harness provider port.
 
