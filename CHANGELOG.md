@@ -9,6 +9,39 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added the owner-local co-op party and member-state reference slice for sts2-game-mod#106. The
+  `coop_reference` producer composes the existing content-manifest and locale witness with one
+  party and its members: character identity, health, character-specific resources, relics, potions,
+  powers, special mechanics, the five pile kinds, shared effects with their scopes, and the scaling
+  rules that state how an effect grows with the party. Visibility is a property of the field rather
+  than of the reader, so every row states whether it is present, absent, unsupported, withheld, not
+  permitted, or stale instead of defaulting to zero or an empty collection, and a local-only potion
+  stock or a local-only draw pile or hand is refused for an ally with its kind and visibility
+  intact rather than emptied, so a reader sees that a hand exists and is not its own instead of an
+  empty hand. A party declares exactly one local member, because the local-only fields belong to
+  exactly one member and a second local member would let either read the other's; a value carried
+  by a joining, disconnected or left member has no coherent snapshot and a value whose data lags is
+  not published as current, so both are refused rather than shown with a qualifier a reader might
+  not read; a targeted effect must name a member the party declares while a party-wide or
+  per-member effect must name none, and a scaling rule must match the shape of its own kind instead
+  of publishing one number for a shared pool, a per-member increment and a target-amplified effect.
+  A party identity is opaque, kept disjoint from the instance and run it belongs to, and never the
+  single-player save profile. `CoopCatalogSource::read_catalog` takes `&self` and declares no join,
+  leave, invite, or dispatch method, member listing is bounded and fenced to one catalog revision,
+  locale, party, scope and page size through a single-use continuation, and `CoopReadAuthority` is
+  exactly `NotGranted`. A member carries a membership generation that a rejoin increments and states
+  its readiness for the current public step as one more availability row: a generation repeated
+  within one party is refused, and a member reference minted before a rejoin names a member that no
+  longer exists and is refused as stale rather than resolved against the rejoined member. The
+  party's public context carries the phase it is in, the votes it is taking and the targeting
+  relationships between its members, separate from authority and from any member's private choice: a
+  vote in a phase that admits none, contradicting the party's own phase, repeating an option, or
+  naming a member the party does not carry is refused, as is a targeting relationship that names
+  itself, a stranger, or repeats; a live fence naming another observation epoch is refused with both
+  epochs. An identity or text past its byte bound, a collection past its local bound,
+  and a party past its aggregate retained-byte budget are each refused by name. Evidence is
+  source-only and synthetic; a native party extraction, a live party read, party membership
+  changes, and exact-host comparison remain unverified. Refs #106.
 - Added a source-only asset handle, media, and rendition reference for sts2-game-mod#112. An asset
   was not reachable as owned data: reading which icons, art, and audio exist for a definition, what
   each states about its media, or the bytes of a rendition under the installed resource pipeline
