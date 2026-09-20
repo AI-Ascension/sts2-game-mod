@@ -6,6 +6,32 @@ do not establish release support.
 
 ## Unreleased
 
+- Added the owner-local read-only action availability and preview reference slice for
+  sts2-game-mod#104. The `action_reference` producer composes the existing content-manifest and
+  locale witness with typed legal-action definitions carrying the parent operation, exact-build kind,
+  resolved eligibility, bounded cost contributors, target restrictions, observed targets, and
+  declared previews, and explains why a presented action is or is not available right now:
+  `ActionAvailabilityExplanation` reports the host's own refusal code and reason text together with
+  the identities of the blocking cost contributors and unsatisfied restrictions, so an unmet
+  resource, an invalid or dead target, a full capacity, a disabled option, and a required selection
+  each name the state that produces them, and a refusal token with no state behind it is refused as
+  `InvalidRefusalSupport` rather than republished as a bare disabled label. `ActionPreviewQuery` and
+  `ActionPreviewResult` separate the static frame from the live fence a caller may hold and report
+  the target-specific consequences at one controlled start with an explicit classification, the
+  omitted interactions, and the prerequisites a caller must still re-validate; an exact
+  classification may not name an omission or assumption, a random chain reported as exact is refused
+  by name, a preview approximated by applying and undoing a real action is refused as
+  `SimulatedPreview`, and a consequence that would change nothing is refused rather than published.
+  Every explanation and preview carries `ActionDispatchAuthority::NotGranted` and names a fresh
+  legal-action catalog, epoch, and target validation, a frame from another legal-action generation is
+  refused as `StaleActionReference`, a live, incomplete, or contradictory fence is refused as
+  `MissingLiveFence` or `UnexpectedLiveFence`, a subject the catalog cannot resolve is
+  `NoSupportedPreview` while an undescribed one is answered with an explicitly `Unavailable`-class
+  result, and a hidden or owner-only subject is never disclosed at a scope that may not observe it.
+  `ActionCatalogSource::read_catalog` takes `&self` and declares no dispatch method, and regressions
+  assert an exact source-read count, byte-identical repeated explanations and previews, and an
+  unchanged retained snapshot. Evidence is source-only and synthetic; a live frame read, native
+  action-registry or consequence extraction, and exact-host comparison remain unverified. Refs #104.
 - Added a source-only completed-run result and prior-summary reference for sts2-game-mod#107. A
   completed run was not reachable as owned data: reading its outcome, character and configuration,
   reached act and floor, duration, ending deck and inventory, displayed score, and reported
