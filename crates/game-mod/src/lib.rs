@@ -16,6 +16,7 @@ mod checkpoint;
 pub mod combat_bookkeeping;
 mod content_index;
 mod content_manifest;
+mod coop_reference;
 mod enemies;
 mod enemy_intents;
 mod event_reference;
@@ -290,9 +291,9 @@ impl<H: HostPort> HttpPort for DispatcherPort<'_, H> {
 
 pub use {
     act_reference::*, action_reference::*, asset_reference::*, card_definitions::*,
-    character_state::*, characters::*, content_index::*, enemies::*, enemy_intents::*,
-    event_reference::*, field_availability::*, glossary::*, locale_reference::*, potions::*,
-    powers::*, progression_reference::*, reference_text::*, relics::*, rest_site_reference::*,
-    retained_map::*, reward_reference::*, run_configuration_reference::*, run_result_reference::*,
-    selection_reference::*, settings_reference::*, shop_reference::*,
+    character_state::*, characters::*, content_index::*, coop_reference::*, enemies::*,
+    enemy_intents::*, event_reference::*, field_availability::*, glossary::*, locale_reference::*,
+    potions::*, powers::*, progression_reference::*, reference_text::*, relics::*,
+    rest_site_reference::*, retained_map::*, reward_reference::*, run_configuration_reference::*,
+    run_result_reference::*, selection_reference::*, settings_reference::*, shop_reference::*,
 };
