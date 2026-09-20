@@ -185,6 +185,10 @@ binary to carry `STS2_CAMPAIGN_EPISODE` and refuses the local campaign shape bef
 guardian, gateway, MCP, or harness when it does not. Additional providers are future work and
 require a provider adapter, without changing the game action or replay contracts.
 
+A demo run names the live episode, which the harness restricts to OpenAI Astra, so the launcher
+refuses `--run-kind demo` for any other provider before it starts the guardian, gateway, MCP, or
+harness. The local ollama bridge is admitted for a campaign run only.
+
 During initial isolation setup before the addon loaded, the host wrote two Steam local-cache
 files. Both were restored from the original local saves and byte-checked. Full external
 backups were retained. Steam app cloud sync was disabled; remote cloud state was not verified.

@@ -100,6 +100,7 @@ jobs:
           bash experiments/managed-rust-interop/session-install.test.sh
           bash experiments/managed-rust-interop/live-authorization.test.sh
           bash experiments/managed-rust-interop/live-campaign-trace.test.sh
+          bash experiments/managed-rust-interop/live-combat-session.test.sh
           bash experiments/managed-rust-interop/package-runtime-addon.test.sh
           bash experiments/managed-rust-interop/dev-cycle.test.sh
           bash experiments/managed-rust-interop/session-launcher.sh --self-test
@@ -112,8 +113,7 @@ jobs:
 
       - name: Validate GPU fixture refusal and rollback boundaries
         run: |
-          bash experiments/train-gpu-lifecycle/test-provision.sh
-          bash experiments/train-gpu-lifecycle/test-boot.sh
+          bash experiments/train-gpu-lifecycle/test-provision.sh && bash experiments/train-gpu-lifecycle/test-boot.sh
 
   managed-source:
     name: Managed source-only boundary

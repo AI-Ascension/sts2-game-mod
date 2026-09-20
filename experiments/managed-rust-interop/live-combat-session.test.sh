@@ -180,7 +180,11 @@ campaign_default_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/ca
 jq -e '.run_kind == "campaign" and .max_runtime_seconds == 3600' \
     "$campaign_default_run/manifest.json" >/dev/null
 
-run_case demo --run-kind demo --seed DEMO1 --max-runtime-seconds 90
+# The demo shape names the live episode, which the harness restricts to Astra, so an admitted demo
+# uses the Astra bridge. A local bridge is refused before anything starts (see the refusal case
+# below); it is not a demo provider.
+run_case demo --run-kind demo --seed DEMO1 --max-runtime-seconds 90 \
+    --provider-binary "$fixture_root/bin/provider-astra"
 demo_args="$fixture_root/demo.guardian"
 has_arg '-RunKind' "$demo_args"
 has_arg demo "$demo_args"
@@ -197,7 +201,7 @@ grep -Fx 'STS2_MAX_STEPS=100' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_LIVE_EPISODE=true' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/demo.harness" >/dev/null
 
-run_case demo_default --run-kind demo
+run_case demo_default --run-kind demo --provider-binary "$fixture_root/bin/provider-astra"
 demo_default_args="$fixture_root/demo_default.guardian"
 has_arg '-MaxRuntimeSeconds' "$demo_default_args"
 has_arg 900 "$demo_default_args"
@@ -256,6 +260,42 @@ expect_campaign_episode_refused() {
 
 expect_campaign_episode_refused campaign_without_campaign_episode
 
+# The demo shape names the live episode for whatever provider it was given, and the harness
+# restricts the live episode to Astra, so a local bridge cannot demo. That refusal must arrive
+# before the guardian, gateway, MCP and harness start, and the provider is still asked to describe
+# itself because its kind is what selects the shape.
+expect_demo_provider_refused() {
+    local label=$1
+    set +e
+    FAKE_GUARDIAN_ARGS_FILE="$fixture_root/$label.guardian" \
+        FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
+        FAKE_PROCESS_MARKERS="$fixture_root/$label.processes" \
+        PATH="$fixture_root/bin:$PATH" \
+        bash "$launcher" "${base_args[@]}" --run-kind demo \
+        >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
+    local status=$?
+    set -e
+    [[ $status -eq 2 ]] || {
+        printf 'expected the demo provider refusal for %s, got %s\n' "$label" "$status" >&2
+        exit 1
+    }
+    grep -Fx 'The demo shape names the live episode, and the harness restricts the live episode to the OpenAI Astra provider, so the ollama bridge cannot run the demo.' \
+        "$fixture_root/$label.err" >/dev/null
+    grep -Fx provider "$fixture_root/$label.processes" >/dev/null
+    [[ ! -f "$fixture_root/$label.guardian" ]] || {
+        printf 'a local demo started the guardian for %s\n' "$label" >&2
+        exit 1
+    }
+    for process in guardian gateway mcp harness; do
+        ! grep -Fx "$process" "$fixture_root/$label.processes" >/dev/null || {
+            printf 'a local demo started %s for %s\n' "$process" "$label" >&2
+            exit 1
+        }
+    done
+}
+
+expect_demo_provider_refused demo_local_bridge
+
 printf changed > "$fixture_root/host/data_sts2_windows_x86_64/sts2.dll"
 expect_rejected changed_host --run-kind campaign
 
@@ -294,4 +334,4 @@ steam_preflight_source=$(<"$script_dir/steam-usability-preflight.ps1")
     printf '%s\n' 'Steam preflight must not start, stop, or configure Steam.' >&2
     exit 1
 }
-printf 'PASS: campaign/demo guardian wiring, provider-named bounded modes, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
+printf 'PASS: campaign/demo guardian wiring, provider-named bounded modes, pre-launch refusals for both bounded shapes, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
