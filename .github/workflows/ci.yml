@@ -3,11 +3,9 @@ name: Continuous integration
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
-permissions:
-  contents: read
+permissions: {contents: read}
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -193,6 +191,9 @@ jobs:
           dotnet run --project experiments/managed-rust-interop/opaque-operation-adapter-tests/OpaqueOperationAdapterProbe.csproj --configuration Release
           dotnet run --project experiments/managed-rust-interop/opaque-operation-composition-tests/OpaqueOperationCompositionProbe.csproj --configuration Release
           dotnet run --project experiments/managed-rust-interop/opaque-operation-native-message-tests/OpaqueOperationNativeMessageProbe.csproj --configuration Release
+
+      - name: Run source-linked required enemy observation regressions
+        run: dotnet run --project experiments/managed-rust-interop/enemy-projection-tests/EnemyProjectionProbe.csproj --configuration Release
 
       - name: Record exact-host build precondition
         run: Write-Output "Host-loader build requires an operator-supplied sts2.dll and is not run in CI."

@@ -9,6 +9,12 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Corrected the shared native enemy-read failure path consumed by runtime-v3 and runtime-v4:
+  required read failures, invalid health/identity values, duplicate identities and oversized
+  collections now refuse rather than fabricate empty/dead observations or clamp health. Optional
+  hidden/unavailable intents remain unknown. Added a production-linked managed regression probe
+  and CI entry; native, cross-repository and gameplay acceptance remain unverified. Refs #84; #96.
+
 - Added the owner-local semantic event and causal-provenance reference slice for sts2-game-mod#128.
   What happened in a run was not reachable as owned data, and the obvious substitute — recovering
   events by comparing two snapshots — is exactly what this slice refuses, because a difference
