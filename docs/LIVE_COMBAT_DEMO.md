@@ -175,8 +175,15 @@ already prepared disposable host and records the hashes needed for post-run rest
 Select the harness's `sts2-astra-bridge` as `--provider-binary` to play with OpenAI
 `gpt-6-astra` using an existing Codex login. The launcher reads `--describe` before launch,
 records the provider/model identity, and explicitly inherits only HOME/PATH for this provider.
-The Ollama bridge remains selectable. Additional providers are future work and require a
-provider adapter, without changing the game action or replay contracts.
+The Ollama bridge remains selectable, and a campaign run against it names the campaign episode
+(`STS2_CAMPAIGN_EPISODE=true`) rather than the live episode, which the harness restricts to OpenAI
+Astra; an OpenAI Astra campaign names the live episode as before. That local campaign shape needs
+no OpenAI Astra provider, but it does need a reachable local Ollama daemon, and the pinned
+`gemma4:31b-cloud` model is named as a cloud model, so whether the daemon answers from local
+weights or proxies to Ollama's cloud is unverified. The launcher requires the pinned harness
+binary to carry `STS2_CAMPAIGN_EPISODE` and refuses the local campaign shape before it starts the
+guardian, gateway, MCP, or harness when it does not. Additional providers are future work and
+require a provider adapter, without changing the game action or replay contracts.
 
 During initial isolation setup before the addon loaded, the host wrote two Steam local-cache
 files. Both were restored from the original local saves and byte-checked. Full external

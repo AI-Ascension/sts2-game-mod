@@ -6,6 +6,23 @@ do not establish release support.
 
 ## Unreleased
 
+- Added a campaign shape that needs no OpenAI Astra provider for sts2-game-mod#179. Both bounded
+  shapes set `STS2_LIVE_EPISODE=true`, campaign mode additionally demanded Astra, and the harness
+  restricts a live episode to Astra, so a campaign run had no composed path through this
+  repository's own launcher without that provider. A campaign run against the local ollama bridge
+  now names the campaign episode (`STS2_CAMPAIGN_EPISODE=true`) instead, which the harness admits
+  for a local bridge, so the no-paid-provider slice recorded for sts2-game-mod#79 is reachable here;
+  an OpenAI Astra campaign still names the live episode. Each shape unsets the other flag, because
+  an inherited export naming two modes is exactly what the harness refuses. The launcher also
+  requires the pinned harness binary to carry `STS2_CAMPAIGN_EPISODE` and refuses the local
+  campaign shape before starting anything when it does not, rather than starting a host, gateway
+  and bridge for an episode the harness then rejects. The shape needs a reachable local ollama
+  daemon, and the pinned `gemma4:31b-cloud` model is named as a cloud model, so whether a run
+  answers from local weights or proxies to Ollama's cloud is unverified. Evidence is source-only:
+  `live-combat-session.test.sh` asserts both shapes, the unset flag, and the pre-launch refusal,
+  and its shape assertions fail when the campaign episode naming is removed. Native campaign
+  execution remains unverified. Refs #179.
+
 - Made a refused launch contract readable by the runtime consumer that needs it for sts2-game-mod#185.
   A refused contract and a lane that never declared one both answered `host_not_configured`, and the
   refusal threw before `StartRuntimeServer` ran, so a refused launch produced no listener at all and
