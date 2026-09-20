@@ -6,6 +6,27 @@ do not establish release support.
 
 ## Unreleased
 
+- Added a source-only completed-run result and prior-summary reference for sts2-game-mod#107. A
+  completed run was not reachable as owned data: reading its outcome, character and configuration,
+  reached act and floor, duration, ending deck and inventory, displayed score, and reported
+  statistics through the game's own post-run screen means driving the game, and the summary list is
+  only reachable after a save is loaded. `crates/game-mod/src/run_result_reference` now copies those
+  values into an immutable catalog fenced by the existing content-manifest cursor, the locale, and
+  an owner-local producer version, with one closed field inventory whose every value states whether
+  it is present, absent, unsupported, or withheld, so an unknown value is never published as a zero
+  or an empty collection. The game's own score stays distinct from a harness evaluator score and a
+  synthetic metric, a componentized score must reconcile with its displayed total, a terminal
+  presentation that the host has not persisted as a finalized result is refused rather than read as
+  a settled score, and a partial or unsettled result stays explicitly unavailable. Current results
+  are read through a live fence, prior summaries are listed through single-use continuations bound
+  to one query and one revision, a summary whose older detail the catalog does not carry stays
+  unavailable instead of being reconstructed, a hidden or owner-only record is never returned
+  outside a scope that may observe it, one run identity belongs to one profile, and the reader has
+  no profile selection, no save load, and no run start, so a completed-run read cannot change the
+  game. Evidence is source-only: 46 tests over synthetic fixtures assert score authority,
+  reconciliation, scope enforcement, page and continuation bounds, and read-only production; no
+  native extractor, transport route, or exact-host compatibility is claimed. Refs #107.
+
 - Refused the demo shape on a local bridge for sts2-game-mod#193. The demo shape exported
   `STS2_LIVE_EPISODE=true` for every provider, and the harness restricts a live episode to the
   OpenAI Astra provider, so `--run-kind demo` with the ollama bridge started the guardian, gateway,
