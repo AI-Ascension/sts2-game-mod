@@ -374,7 +374,7 @@ if [[ "$campaign_map" == true ]]; then
     unset STS2_COMBAT_DEMO
     mkdir -p -- "$run/map-artifacts"
     export STS2_MAP_ARTIFACT_ROOT="$run/map-artifacts"
-    export STS2_CAMPAIGN_MAP_BOUND=true
+    export STS2_ENABLE_MAP_CONTEXT=true
     export STS2_LIVE_EPISODE=true STS2_MAP_MODE=graph-image STS2_MAP_RENDERER_BINARY="$map_renderer"
     export STS2_MAP_RENDERER_SHA256="$map_renderer_sha256" STS2_MAX_STEPS=2
     export STS2_RECOVERY_MAX_ATTEMPTS=1 STS2_EXO_TIMEOUT_MILLIS=90000
@@ -382,7 +382,7 @@ if [[ "$campaign_map" == true ]]; then
     export STS2_HARD_CONSTRAINTS_JSON='["Use exactly one host-legal start_run action.","After setup, use exactly one current host-legal select_map_node action.","Stop after the first settled map selection and never enter combat actions, rewards, shops, or events."]'
 else
     unset STS2_MAP_ARTIFACT_ROOT
-    unset STS2_CAMPAIGN_MAP_BOUND
+    unset STS2_ENABLE_MAP_CONTEXT
 fi
 export STS2_REPLAY_TRAJECTORY="$replay"
 manifest_campaign_mode=$campaign_mode
