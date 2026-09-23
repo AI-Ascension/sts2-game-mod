@@ -67,6 +67,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0069 | [Owner-local co-op party and member-state reference](0069-coop-reference.md) |
 | 0070 | [Owner-local semantic event and causal-provenance history](0070-semantic-event-history.md) |
 | 0071 | [Required enemy observation fidelity](0071-required-enemy-observation-fidelity.md) |
+| 0073 | [Host-offered continuation beside `start_run`](0073-host-continue-run-offer.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

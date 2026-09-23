@@ -9,6 +9,16 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added the host-offered `continue_run` producer admission beside `start_run` for
+  sts2-game-mod#172: a compatible saved run could be detected by the native owner, but no mod action
+  could continue it, so every episode abandoned the previous run. The setup-screen offer appends
+  the harness-admitted `{"kind":"continue_run"}` / `{"kind":"continue_run","run_id":...}` shape only
+  when the screen is `Setup`, exactly one `start_run` is offered, and the owner reported a
+  compatible run; an absent or incompatible run adds nothing and an explicit `null` discriminator
+  is refused rather than folded into an absent one. Dispatch reuses the existing admission/receipt
+  lane unchanged and never substitutes `start_run`. Additive producer extension, no frozen-artifact
+  or digest change; native resume evidence (T3) remains unverified.
+
 - Corrected the shared native enemy-read failure path consumed by runtime-v3 and runtime-v4:
   required read failures, invalid health/identity values, duplicate identities and oversized
   collections now refuse rather than fabricate empty/dead observations or clamp health. Optional
