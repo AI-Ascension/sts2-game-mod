@@ -8,7 +8,7 @@
 
 Consume protocol ADR 0012's coordinated continuation revision, including `proceed`,
 `confirm_selection`, and `cancel_selection`. The schema digest is
-`8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63`.
+`daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b`.
 All consumers must migrate together; earlier session envelopes fail closed.
 
 The campaign host adapter projects the visible top reward overlay and card reward selection.
