@@ -5,8 +5,17 @@ This file preserves the completed `## Unreleased` history that was moved out of
 Entries are unchanged from the revision that introduced them; this archive is a verbatim record,
 not a supported release or a second normative changelog.
 
-The archive begins with the guarded Linux x86-64 Workshop lifecycle operator entry and runs back to
-the repository initialization records. Active development continues in `CHANGELOG.md`.
+The archive begins with the most recently retired entries and runs back to the repository
+initialization records. Active development continues in `CHANGELOG.md`.
+
+- Added locked Rust release-provenance tooling for runtime receipts, platform artifact manifests,
+  Workshop staging, and source-distribution policy validation. The tooling and fixture gates pass;
+  publication, installation, and host/runtime compatibility remain separately gated. See ADR 0034.
+
+- Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
+  managed native-library validation, and a checksum-gated install/update/rollback tool with
+  synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
+  separately gated.
 
 - Added a guarded Linux x86-64 Workshop lifecycle operator and empty-item `ISteamUGC::CreateItem`
   helper with exact package/VDF checks, private durable journals, fail-closed unknown outcomes,

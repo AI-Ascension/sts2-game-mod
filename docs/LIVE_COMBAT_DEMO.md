@@ -123,8 +123,9 @@ model decision steps, one read-only recovery attempt, and a 90-second provider d
 option does not resume a save, accepts no seed or replay trajectory, and is preparation for an
 authorized live run; it does not claim campaign completion or a played combat.
 
-The launcher also enables `STS2_CAMPAIGN_MAP_BOUND=true` in the harness. That policy rejects a
-different action kind before dispatch and advances only after runner-verified settlement. Before
+The launcher also enables the harness map-context path with `STS2_ENABLE_MAP_CONTEXT=true`. Its
+hard constraints reject a different action kind before dispatch and advance only after
+runner-verified settlement. Before
 lease cleanup it records a fresh read-only observation without a third model decision. A map
 outside the current map-decision stage is explicitly unavailable in that final capture; the
 earlier image remains historical. The durable `trajectory.jsonl` contains bounded decisions,

@@ -9,6 +9,13 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Fixed the campaign-map launcher so it enables the harness map path. The map branch exported
+  `STS2_CAMPAIGN_MAP_BOUND=true`, which no harness code reads, and never set the harness's real
+  `STS2_ENABLE_MAP_CONTEXT` opt-in, so the map runner/exo path stayed disabled. The launcher now
+  exports `STS2_ENABLE_MAP_CONTEXT=true`, with the matching `docs/LIVE_COMBAT_DEMO.md` correction.
+  Source-only; native map extraction, provider delivery, and navigation remain unverified. Refs
+  AI-Ascension/ascension-map-visualizer#1; #14.
+
 - Added the host-offered `continue_run` producer admission beside `start_run` for
   sts2-game-mod#172: a compatible saved run could be detected by the native owner, but no mod action
   could continue it, so every episode abandoned the previous run. The setup-screen offer appends
@@ -522,12 +529,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   and same-operation unknown reconciliation. Its copied candidate artifact remains unadmitted;
   protocol consumers, live rest settlement, exact-host/package builds, and release compatibility
   remain unverified. See ADR 0036.
-
-- Added locked Rust release-provenance tooling for runtime receipts, platform artifact manifests,
-  Workshop staging, and source-distribution policy validation. The tooling and fixture gates pass;
-  publication, installation, and host/runtime compatibility remain separately gated. See ADR 0034.
-
-- Added explicit Windows/Linux runtime payload selection, platform-specific Workshop allowlists,
-  managed native-library validation, and a checksum-gated install/update/rollback tool with
-  synthetic lifecycle coverage. Workshop publication and exact-host runtime evidence remain
-  separately gated.
