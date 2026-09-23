@@ -68,6 +68,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0070 | [Owner-local semantic event and causal-provenance history](0070-semantic-event-history.md) |
 | 0071 | [Required enemy observation fidelity](0071-required-enemy-observation-fidelity.md) |
 | 0073 | [Host-offered continuation beside `start_run`](0073-host-continue-run-offer.md) |
+| 0074 | [Game-facts handoff inventory](0074-game-facts-handoff-inventory.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
@@ -97,3 +98,6 @@ Decision 0070 is held for the semantic event and causal-provenance history recor
 coordinated pull request on `codex/issue-128-semantic-events-20260920` is open. The harness-owned
 queryable run history remains blocked for full integration and acceptance, so this record covers
 only the game-mod companion vocabulary and claims no query, persistence or indexing capability.
+Decision 0072 has no record in this registry and no note accounting for it; the game-facts handoff
+inventory was therefore numbered 0074 rather than reclaiming an identifier this repository cannot
+explain. Identifying an unrecorded gap is not itself a reservation.
