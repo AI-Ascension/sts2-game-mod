@@ -167,10 +167,11 @@ pub use runtime_v3_gameplay::{
     RuntimeV3GameplayGamePort, RuntimeV3GameplayIdentity, RuntimeV3GameplayLegalAction,
     RuntimeV3GameplayMessage, RuntimeV3GameplayMessageKind, RuntimeV3GameplayMod,
     RuntimeV3GameplayObservation, RuntimeV3GameplayPlayer, RuntimeV3GameplayProvenance,
-    RuntimeV3GameplayRecovery, RuntimeV3GameplayRecoveryKind, RuntimeV3GameplayShopItem,
-    RuntimeV3GameplayState, RuntimeV3GameplayStateKind, RuntimeV3GameplayStatus,
-    RuntimeV3GameplayTransitionWitness, RuntimeV3GameplayValidationError,
-    RuntimeV3GameplayWaitOutcome,
+    RuntimeV3GameplayRecovery, RuntimeV3GameplayRecoveryKind, RuntimeV3GameplayResumableRun,
+    RuntimeV3GameplayResumeOfferError, RuntimeV3GameplayRunCompatibility,
+    RuntimeV3GameplayShopItem, RuntimeV3GameplayState, RuntimeV3GameplayStateKind,
+    RuntimeV3GameplayStatus, RuntimeV3GameplayTransitionWitness, RuntimeV3GameplayValidationError,
+    RuntimeV3GameplayWaitOutcome, offer_continue_run,
 };
 pub use save_profile::{
     BaselineFence, DisposableProvisioningAvailability, FakeSaveProfileHost, HostCompatibility,

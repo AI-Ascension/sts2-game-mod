@@ -4,6 +4,17 @@
 // variants otherwise ignore extra members even with deny_unknown_fields on the enum.
 use super::*;
 
+/// Keeps an omitted field as `None` while refusing an explicit JSON null.
+///
+/// `Option` alone would fold a present `null` into `None`, which would let a caller erase the
+/// distinction the contract keeps for the optional `continue_run` discriminator.
+fn optional_identity<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    serde::Deserialize::deserialize(deserializer).map(Some)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum EnemyIntent {
@@ -130,6 +141,10 @@ pub(super) enum Action {
     Proceed {},
     ConfirmSelection {},
     CancelSelection {},
+    ContinueRun {
+        #[serde(default, deserialize_with = "optional_identity")]
+        run_id: Option<String>,
+    },
 }
 
 impl From<Action> for RuntimeV3GameplayAction {
@@ -152,6 +167,7 @@ impl From<Action> for RuntimeV3GameplayAction {
             Action::Proceed {} => Self::Proceed,
             Action::ConfirmSelection {} => Self::ConfirmSelection,
             Action::CancelSelection {} => Self::CancelSelection,
+            Action::ContinueRun { run_id } => Self::ContinueRun { run_id },
         }
     }
 }

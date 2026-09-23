@@ -114,6 +114,7 @@ impl RuntimeV3GameplayLegalAction {
             RuntimeV3GameplayAction::PlayCard { card_id, target_id } => {
                 [Some(card_id.as_str()), target_id.as_deref()]
             }
+            RuntimeV3GameplayAction::ContinueRun { run_id } => [run_id.as_deref(), None],
             RuntimeV3GameplayAction::EndTurn
             | RuntimeV3GameplayAction::SkipReward
             | RuntimeV3GameplayAction::Rest

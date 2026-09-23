@@ -2,6 +2,7 @@
 
 mod contract;
 mod fake;
+mod resumable;
 mod runtime;
 
 pub use contract::{
@@ -20,5 +21,9 @@ pub use contract::{
 pub use fake::{
     FakeRuntimeV3GameplayGame, RuntimeV3GameplayCompletion, RuntimeV3GameplayGameError,
     RuntimeV3GameplayGamePort,
+};
+pub use resumable::{
+    RuntimeV3GameplayResumableRun, RuntimeV3GameplayResumeOfferError,
+    RuntimeV3GameplayRunCompatibility, offer_continue_run,
 };
 pub use runtime::{RuntimeV3GameplayConfig, RuntimeV3GameplayMod};

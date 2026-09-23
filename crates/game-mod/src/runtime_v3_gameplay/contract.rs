@@ -2,7 +2,9 @@
 
 // Contract mirror: AI-Ascension/sts2-protocol at
 // 82507361890c1bdce6cffeaf7e616d93e53a7d99 (MIT).
-// Local extensions: public envelope base, bounded wait constructor, and identity value.
+// Local extensions: public envelope base, bounded wait constructor, identity value, and the
+// host-offered `continue_run` producer admission (sts2-game-mod#172), an additive producer
+// extension beside `start_run`; the neutral `action_payload` oneOf is already non-exhaustive.
 mod error;
 mod local;
 mod message;
@@ -226,6 +228,15 @@ pub enum RuntimeV3GameplayAction {
     Proceed,
     ConfirmSelection,
     CancelSelection,
+    /// Continues the current compatible resumable run instead of starting a new one.
+    /// The host offers this beside `start_run`; `run_id` is host-owned and optional (absent when
+    /// the screen already determines the run). The producer never accepts a caller-supplied save
+    /// path or run name.
+    ContinueRun {
+        /// Optional host-owned discriminator for the run being resumed.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        run_id: Option<String>,
+    },
 }
 
 /// Host-generated action identity plus its typed semantic payload.
