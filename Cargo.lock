@@ -276,12 +276,40 @@ dependencies = [
  "fraction",
  "getrandom 0.3.4",
  "itoa",
- "jsonschema-regex",
- "jsonschema-value",
+ "jsonschema-regex 0.55.1",
+ "jsonschema-value 0.55.1",
  "num-cmp",
  "num-traits",
  "percent-encoding",
- "referencing",
+ "referencing 0.55.1",
+ "regex",
+ "serde",
+ "serde_json",
+ "strum",
+ "unicode-general-category",
+ "uuid-simd",
+]
+
+[[package]]
+name = "jsonschema"
+version = "0.56.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6a806f80c1f5560431009ce5ec29b59d38f950e0cd7db5f1b8925e6d8104e21"
+dependencies = [
+ "ahash",
+ "bytecount",
+ "data-encoding",
+ "email_address",
+ "fancy-regex",
+ "fraction",
+ "getrandom 0.3.4",
+ "itoa",
+ "jsonschema-regex 0.56.0",
+ "jsonschema-value 0.56.0",
+ "num-cmp",
+ "num-traits",
+ "percent-encoding",
+ "referencing 0.56.0",
  "regex",
  "serde",
  "serde_json",
@@ -300,10 +328,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonschema-regex"
+version = "0.56.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb862addfa7782108933abcf842fe25334523a9df5b89ea4d9620e3dd7b42181"
+dependencies = [
+ "regex-syntax",
+]
+
+[[package]]
 name = "jsonschema-value"
 version = "0.55.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0230ac05e09c6111e96c147b75c390579f5cbd45654b980c68ac60fe17b3f129"
+dependencies = [
+ "ahash",
+ "bytecount",
+ "fraction",
+ "getrandom 0.3.4",
+ "num-cmp",
+ "num-traits",
+ "serde_json",
+ "zmij",
+]
+
+[[package]]
+name = "jsonschema-value"
+version = "0.56.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a05cd404c5ff6e2731dbbf7e290a27417750acfb59e329560a1d0af384c93fb0"
 dependencies = [
  "ahash",
  "bytecount",
@@ -538,6 +591,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "referencing"
+version = "0.56.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3b4a92fac7e28c27de3ad26df2ecb9e652f227b258e845af034052e5b22c96c"
+dependencies = [
+ "ahash",
+ "fluent-uri",
+ "getrandom 0.3.4",
+ "hashbrown",
+ "itoa",
+ "micromap",
+ "parking_lot",
+ "percent-encoding",
+ "serde_json",
+]
+
+[[package]]
 name = "regex"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -669,7 +739,7 @@ name = "sts2-game-mod"
 version = "0.0.0"
 dependencies = [
  "getrandom 0.4.3",
- "jsonschema",
+ "jsonschema 0.56.0",
  "libc",
  "serde",
  "serde_json",
@@ -691,7 +761,7 @@ version = "0.0.0"
 name = "sts2-game-mod-interop"
 version = "0.0.0"
 dependencies = [
- "jsonschema",
+ "jsonschema 0.56.0",
  "serde",
  "serde_json",
  "sts2-game-mod",
@@ -712,7 +782,7 @@ name = "sts2-protocol"
 version = "0.0.0"
 source = "git+https://github.com/AI-Ascension/sts2-protocol.git?rev=9581a1b3de49c08b2d46eba8131f1edf0f686ce3#9581a1b3de49c08b2d46eba8131f1edf0f686ce3"
 dependencies = [
- "jsonschema",
+ "jsonschema 0.55.0",
  "serde",
  "serde_json",
  "sha2",
