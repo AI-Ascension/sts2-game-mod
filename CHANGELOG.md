@@ -9,6 +9,17 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added the source-only `game_facts_reference` owner inventory for sts2-game-mod#207, the proposed
+  handoff that sts2-game-core#13 needs before any authoritative rules lookup. One inventory binds
+  the exact build and mode with the content-manifest witness, the negotiated structured
+  representation, and each supported rule's opaque id, evidence label, and typed inputs, where
+  every input carries its unit and required/conditional/unknown availability. It is closed and
+  fails closed: an empty rule set, a rule with no typed input, a repeated rule or input id, a
+  non-opaque identity, and a combination naming an undeclared rule are refused, and a rule in a
+  declared unsupported combination never reads as an exact claim even when host confirmed. No wire,
+  adapter, or native parity is added; the game-owned extraction adapter and exact-host comparison
+  remain the follow-up. See ADR 0074.
+
 - Fixed the campaign-map launcher so it enables the harness map path. The map branch exported
   `STS2_CAMPAIGN_MAP_BOUND=true`, which no harness code reads, and never set the harness's real
   `STS2_ENABLE_MAP_CONTEXT` opt-in, so the map runner/exo path stayed disabled. The launcher now
@@ -517,15 +528,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build evidence does not establish a live seeded
   run, save isolation, gameplay, or release compatibility; ADR 0031 remains proposed pending host
   verification.
-
-- Added the source-only `runtime-map-v1` read profile with bounded player-visible topology,
-  stable map-scoped identities, exact current legal bindings, generation fencing, and an
-  authenticated `GET /api/map/v1/snapshot` route. Copied map artifacts, native route checks, and
-  managed projection probes pass; live extraction, provider delivery, and navigation remain
-  unverified. See ADR 0035.
-
-- Added the source-only `runtime-v4-expert-rest-action-v1` candidate with authenticated rest-option
-  and selector follow-up routes, typed Smith/Mend catalogs, option-specific completion witnesses,
-  and same-operation unknown reconciliation. Its copied candidate artifact remains unadmitted;
-  protocol consumers, live rest settlement, exact-host/package builds, and release compatibility
-  remain unverified. See ADR 0036.

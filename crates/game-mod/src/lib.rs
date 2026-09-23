@@ -21,6 +21,7 @@ mod enemies;
 mod enemy_intents;
 mod event_reference;
 mod field_availability;
+mod game_facts_reference;
 mod glossary;
 pub mod live_card_state;
 mod locale_reference;
@@ -104,6 +105,14 @@ pub use content_manifest::{
     ContentFamily, ContentManifest, ContentManifestError, ContentManifestProducer,
     ContentManifestWireError, ContentManifestWireResponse, ContentOriginInput, ContentPackage,
     ContentPackageInput, ContentSourceError,
+};
+pub use game_facts_reference::{
+    FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInventory,
+    FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsUnsupportedCombination,
+    GAME_FACTS_MAX_COMBINATION_MEMBERS, GAME_FACTS_MAX_IDENTITY_BYTES,
+    GAME_FACTS_MAX_IDENTITY_SEGMENTS, GAME_FACTS_MAX_INPUTS_PER_RULE, GAME_FACTS_MAX_LABEL_BYTES,
+    GAME_FACTS_MAX_RULES, GAME_FACTS_MAX_UNSUPPORTED_COMBINATIONS,
+    GAME_FACTS_REFERENCE_PRODUCER_VERSION, GameFactsError, is_opaque_facts_identity,
 };
 pub use live_card_state::{
     CardCostAmount, CardCostContributor, CardCostSemantics, CardCostUnknownReason,
