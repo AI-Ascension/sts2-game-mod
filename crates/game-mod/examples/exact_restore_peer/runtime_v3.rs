@@ -13,7 +13,7 @@ use super::http_wire::Request;
 use super::runtime_v3_wire::*;
 
 pub(crate) const SCHEMA_DIGEST: &str =
-    "8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63";
+    "daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b";
 pub(super) const STATE_ID: &str = "00000000-0000-4000-8000-000000000001";
 pub(super) const ACTION_ID: &str = "combat.end-turn";
 pub(super) const EFFECT_KIND: &str = "combat.end-turn_settled";

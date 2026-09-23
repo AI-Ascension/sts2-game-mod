@@ -7,7 +7,7 @@ This is bounded integration evidence, not full campaign completion or full campa
 ## Coordinated contract
 
 The tested candidate uses schema digest
-`8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63` across mod,
+`daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b` across mod,
 gateway, MCP and harness. Protocol PR #14 owns this continuation revision. Gateway PR #14,
 MCP PR #18 and harness PR #23 consume its complete artifact. Earlier revisions fail closed.
 

@@ -27,7 +27,7 @@ pub const RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE: &str = "schemas/runtime-v3-gameplay
 pub const RUNTIME_V3_GAMEPLAY_GENERATOR: &str = "hand-authored";
 /// Filled after the normative schema is written and hashed.
 pub const RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST: &str =
-    "8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63";
+    "daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b";
 /// Maximum exact JSON-safe generation and lease epoch.
 pub const RUNTIME_V3_GAMEPLAY_MAX_GENERATION: u64 = 9_007_199_254_740_991;
 /// Maximum number of actions in one complete host-generated catalog.
