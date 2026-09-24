@@ -143,9 +143,19 @@ internal sealed partial class LiveCombatSource
             && CurrentTreasure() is { } treasure) return TreasureActions(observation, treasure);
         if (observation.State is RuntimeV3GameplayState.Reward or RuntimeV3GameplayState.Selection)
             return RewardActions(observation);
+        if (observation.State == RuntimeV3GameplayState.Setup)
+        {
+            var setup = observation.StateValues.Select(character => new LegalActionReference(
+                $"start_run:{observation.Generation}:{character}",
+                "start_run", character, null, observation.Generation)).ToList();
+            if (LiveCampaignContinuation.Available())
+            {
+                setup.Add(RuntimeV3GameplayContinuation.Create(observation.Generation));
+            }
+            return setup.ToArray();
+        }
         string? kind = observation.State switch
         {
-            RuntimeV3GameplayState.Setup => "start_run",
             RuntimeV3GameplayState.Map => "select_map_node",
             RuntimeV3GameplayState.Event => "event_choice",
             _ => null

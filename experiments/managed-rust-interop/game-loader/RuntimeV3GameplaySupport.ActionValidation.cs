@@ -50,6 +50,7 @@ internal sealed partial class RuntimeV3GameplaySupport
             "shop_remove" or "smith" or "select_card" => "card_id",
             "event_choice" => "choice_id",
             "play_card" => "card_id",
+            "continue_run" => "run_id",
             "end_turn" or "skip_reward" or "rest" or "confirm_victory" or "save_quit" => null,
             "proceed" or "confirm_selection" or "cancel_selection" => null,
             _ => "invalid"
@@ -58,7 +59,22 @@ internal sealed partial class RuntimeV3GameplaySupport
         {
             return false;
         }
-        if (field is null)
+        // A continuation carries its run discriminator only when a specific run must be named, so
+        // the field is admitted but never required and a caller cannot smuggle a save path or an
+        // extra field past the exact field set.
+        if (kind == "continue_run")
+        {
+            if (!HasExactFields(payload, "kind") && !HasExactFields(payload, "kind", "run_id"))
+            {
+                return false;
+            }
+            if (payload.TryGetProperty("run_id", out _)
+                && !TryString(payload, "run_id", out selectedValue))
+            {
+                return false;
+            }
+        }
+        else if (field is null)
         {
             if (!HasExactFields(payload, "kind"))
             {

@@ -67,6 +67,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0069 | [Owner-local co-op party and member-state reference](0069-coop-reference.md) |
 | 0070 | [Owner-local semantic event and causal-provenance history](0070-semantic-event-history.md) |
 | 0071 | [Required enemy observation fidelity](0071-required-enemy-observation-fidelity.md) |
+| 0072 | [Native campaign continuation action](0072-native-campaign-continuation-action.md) |
 | 0073 | [Host-offered continuation beside `start_run`](0073-host-continue-run-offer.md) |
 | 0074 | [Game-facts handoff inventory](0074-game-facts-handoff-inventory.md) |
 
@@ -98,6 +99,7 @@ Decision 0070 is held for the semantic event and causal-provenance history recor
 coordinated pull request on `codex/issue-128-semantic-events-20260920` is open. The harness-owned
 queryable run history remains blocked for full integration and acceptance, so this record covers
 only the game-mod companion vocabulary and claims no query, persistence or indexing capability.
-Decision 0072 has no record in this registry and no note accounting for it; the game-facts handoff
-inventory was therefore numbered 0074 rather than reclaiming an identifier this repository cannot
-explain. Identifying an unrecorded gap is not itself a reservation.
+Decision 0072 was unrecorded when the game-facts handoff inventory was numbered 0074 rather than
+reclaiming an identifier this repository could not then explain. It now holds the native campaign
+continuation action record referenced by `sts2-game-mod#172`; the identifier is claimed by that
+record, not back-filled.

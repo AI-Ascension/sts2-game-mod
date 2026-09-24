@@ -44,6 +44,15 @@ internal sealed record LegalActionReference(
                     return false;
                 }
                 break;
+            // The host names a saved run only when the choice is not already determined, so the
+            // run discriminator is optional rather than required and no target is admitted.
+            case "continue_run":
+                if (TargetId is not null)
+                {
+                    error = "continuation action has an unexpected target";
+                    return false;
+                }
+                break;
             case "end_turn" or "skip_reward" or "rest" or "confirm_victory" or "save_quit":
             case "proceed" or "confirm_selection" or "cancel_selection":
                 if (Value is not null || TargetId is not null)

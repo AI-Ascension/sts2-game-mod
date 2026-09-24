@@ -17,6 +17,7 @@ internal sealed class FakeHost : IRuntimeV3HostSource
     internal bool WrongOperation { get; set; }
     internal bool WrongAction { get; set; }
     internal string ActionKind { get; init; } = "end_turn";
+    internal string ActionId { get; init; } = "combat.end-turn";
     internal List<RuntimeV3GameplayCard> Hand { get; } = new()
     {
         new RuntimeV3GameplayCard("card-1", "Synthetic card", 1, false)
@@ -37,7 +38,11 @@ internal sealed class FakeHost : IRuntimeV3HostSource
 
     public IReadOnlyList<LegalActionReference> LegalActions(RuntimeV3GameplayObservation observation) =>
         ThrowReads ? throw new InvalidOperationException("synthetic unavailable catalog")
-            : new[] { RuntimeV3GameplayFixtures.EndTurn(observation.Generation) with { Kind = ActionKind } };
+            : new[]
+            {
+                RuntimeV3GameplayFixtures.EndTurn(observation.Generation)
+                    with { Kind = ActionKind, ActionId = ActionId }
+            };
 
     public bool Dispatch(RuntimeV3OperationKey operation, LegalActionReference action)
     {

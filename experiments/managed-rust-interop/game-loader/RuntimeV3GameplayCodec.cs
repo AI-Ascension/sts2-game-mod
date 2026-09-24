@@ -152,6 +152,16 @@ internal static class RuntimeV3GameplayCodec
     private static Dictionary<string, object?> ActionObject(LegalActionReference action)
     {
         var value = new Dictionary<string, object?> { ["kind"] = action.Kind };
+        // The continuation discriminator is optional: a single resumable run is named by omitting
+        // the field, and the host never emits a null discriminator because a consumer refuses one.
+        if (action.Kind == "continue_run")
+        {
+            if (action.Value is not null)
+            {
+                value["run_id"] = action.Value;
+            }
+            return value;
+        }
         string? field = action.Kind switch
         {
             "start_run" => "character_id",
