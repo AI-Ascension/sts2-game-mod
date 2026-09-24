@@ -8,6 +8,21 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Corrected the source-only restricted canonical codec to the pinned profile's
+  `CANONICAL_MAX_DEPTH` (64) nesting levels, including tagged numeric objects,
+  and 16 MiB raw-input and canonical-output limits. Encoder writes check remaining bytes before
+  allocation, including escaping expansion. Parser and encoder enforce `^[a-z][a-z0-9_]*$`
+  object keys with typed rejections; all 14 pinned raw rejection vectors are included.
+  Added exact-limit/overflow, typed integer, key grammar, surrogate, and hostile-depth regressions.
+  Source-only; native capture, restore, and host compatibility remain unverified.
+
+- Bounded the source-only restricted canonical codec at `CANONICAL_MAX_DEPTH` nesting levels
+  in both the strict parser and the encoder; deeper inputs are rejected with
+  `CanonicalError::DepthExceeded` instead of exhausting the process stack. Added parser regression
+  coverage for arrays, nulls, booleans, escaped strings, Unicode values versus ASCII keys,
+  safe-integer endpoints, escaped duplicate keys, and the depth boundary. Source-only; native
+  capture, restore, and host compatibility remain unverified.
+
 - Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
   read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
   readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest

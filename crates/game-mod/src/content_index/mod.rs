@@ -3,7 +3,7 @@
 //! Owner-local immutable content inventory and bounded lookup.
 //!
 //! This module is a source-only producer slice. It binds typed metadata to an existing
-//! [`ContentManifest`] and provides deterministic list, literal search, and exact definition
+//! [`ContentManifest`](crate::ContentManifest) and provides deterministic list, literal search, and exact definition
 //! lookup before any transport or native-host integration is negotiated. The names and errors
 //! here are deliberately game-mod-local; they are not a cross-repository wire contract.
 //!
