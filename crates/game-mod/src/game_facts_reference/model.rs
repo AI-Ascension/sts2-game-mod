@@ -79,8 +79,14 @@ pub enum FactsInputAvailability {
     /// The rule needs this input to be stated at all.
     Required,
     /// The input changes the result only for some combinations, which stay disclosed.
+    ///
+    /// Disclosed is not the same as exact: a rule-level exactness query carries no combination
+    /// context, so a conditional input never supports an exact claim on its own.
     Conditional,
     /// The owner does not know whether this input applies here.
+    ///
+    /// An unknown input is the weakest case: because the owner cannot say whether it applies, the
+    /// result cannot be stated exactly.
     Unknown,
 }
 
@@ -96,6 +102,16 @@ impl FactsInputAvailability {
             Self::Conditional => "conditional",
             Self::Unknown => "unknown",
         }
+    }
+
+    /// Returns whether an input with this availability is fully stated for an exact claim.
+    ///
+    /// Only a `Required` input is. A conditional input leaves the result open for combinations
+    /// this inventory does not resolve, and an unknown input leaves it open entirely, so neither
+    /// may back an exact-looking result.
+    #[must_use]
+    pub const fn supports_exact_claim(self) -> bool {
+        matches!(self, Self::Required)
     }
 }
 
@@ -151,6 +167,18 @@ impl FactsRuleEntry {
     #[must_use]
     pub fn input(&self, name: &str) -> Option<&FactsRuleInput> {
         self.inputs.iter().find(|input| input.name == name)
+    }
+
+    /// Returns whether every copied input is fully stated.
+    ///
+    /// A rule copies only inputs it declared; when any of them is conditional or unknown, the
+    /// rule cannot be read as an exact claim, because a consumer would have to guess the missing
+    /// combination context.
+    #[must_use]
+    pub fn inputs_support_exact_claim(&self) -> bool {
+        self.inputs
+            .iter()
+            .all(|input| input.availability.supports_exact_claim())
     }
 }
 

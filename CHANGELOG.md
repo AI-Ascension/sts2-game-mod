@@ -9,6 +9,15 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Made input availability gate exactness in the source-only `game_facts_reference` owner
+  inventory for sts2-game-mod#207. `FactsInputAvailability::supports_exact_claim` and
+  `FactsRuleEntry::inputs_support_exact_claim` now state that only a `required` input is fully
+  stated, and `FactsInventory::is_exact_claim` consults them, so a host-confirmed rule carrying a
+  conditional or unknown input no longer reads as an exact claim. Conditional and unknown status is
+  still disclosed rather than dropped. The test cases moved to `_exactness`/`_validation` siblings
+  with a shared `tests/support/` fixture to stay inside the size budget. Source-only; the extraction
+  adapter and exact-host parity remain the follow-up. Refs #207.
+
 - Added the source-only `game_facts_reference` owner inventory for sts2-game-mod#207, the proposed
   handoff that sts2-game-core#13 needs before any authoritative rules lookup. One inventory binds
   the exact build and mode with the content-manifest witness, the negotiated structured
@@ -519,12 +528,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   `CanonicalError::DepthExceeded` instead of exhausting the process stack. Added parser regression
   coverage for arrays, nulls, booleans, escaped strings, Unicode values versus ASCII keys,
   safe-integer endpoints, escaped duplicate keys, and the depth boundary. Source-only; native
-  capture, restore, and host compatibility remain unverified.
-
-- Added the source/component `seeded-run-v1` native standard adapter with authenticated start and
-  read-only reconciliation routes, selected-context and profile-baseline validation, canonical seed
-  readback, and a `run_started` settlement witness. Its copied protocol artifact is schema digest
-  `5c659f344be78f84e8d783986925d462714f933cac95d18943358992f7d3e2b8`, aligned with protocol main
-  `d3ab5fca7d9d74bb31eeb3e5b343d8024ee44404`. Source/build evidence does not establish a live seeded
-  run, save isolation, gameplay, or release compatibility; ADR 0031 remains proposed pending host
-  verification.

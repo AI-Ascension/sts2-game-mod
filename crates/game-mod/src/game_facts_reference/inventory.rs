@@ -92,14 +92,18 @@ impl FactsInventory {
     /// Returns whether one rule may be read as an exact claim.
     ///
     /// A rule reads as exact only when the owner declares it *and* its own evidence is host
-    /// confirmed *and* it takes part in no unsupported combination. A confirmed rule whose
-    /// interaction with another rule is unrepresented is not exact, so an unsupported interaction
-    /// never returns an exact-looking result.
+    /// confirmed *and* every input it copies is fully stated *and* it takes part in no unsupported
+    /// combination. A confirmed rule whose interaction with another rule is unrepresented is not
+    /// exact, so an unsupported interaction never returns an exact-looking result; likewise a
+    /// confirmed rule carrying a conditional or unknown input is not exact, because that input's
+    /// contribution is not settled by this inventory.
     #[must_use]
     pub fn is_exact_claim(&self, rule_id: &str) -> bool {
         let Some(rule) = self.rule(rule_id) else {
             return false;
         };
-        rule.evidence.supports_exact_claim() && !self.is_unrepresented(rule_id)
+        rule.evidence.supports_exact_claim()
+            && rule.inputs_support_exact_claim()
+            && !self.is_unrepresented(rule_id)
     }
 }

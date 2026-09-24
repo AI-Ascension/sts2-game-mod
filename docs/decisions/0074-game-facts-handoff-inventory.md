@@ -28,8 +28,10 @@ consumer sees a disclosed unknown instead of an invented value.
 
 Each rule records how it is known, using the repository's existing claim labels: `Confirmed`,
 `SourceDerived`, `Proposed`, `Inferred`, or `Unverified`. Only a host-confirmed rule supports an
-exact claim. The inventory also records the combinations it declares it cannot represent exactly;
-a rule that takes part in such a combination never reads as an exact claim even when its own entry
+exact claim, and only when every input it copies is fully stated: a rule-level exactness query
+carries no combination context, so a conditional or explicitly unknown input never reads as exact
+either. The inventory also records the combinations it declares it cannot represent exactly; a
+rule that takes part in such a combination never reads as an exact claim even when its own entry
 is confirmed, so an unsupported interaction never returns an exact-looking result from a simplified
 model.
 
