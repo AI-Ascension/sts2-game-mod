@@ -22,6 +22,7 @@ internal static class Program
         CombatSettlementChecks.Run();
         RewardSkipChecks.Run();
         ContinuationChecks.Run();
+        HostContinuationChecks.Run();
         RunOptionsChecks.Run();
         UnavailableOperationsKeepResponseKind();
         SettledReceiptIsReplayedBeforeAdmission();

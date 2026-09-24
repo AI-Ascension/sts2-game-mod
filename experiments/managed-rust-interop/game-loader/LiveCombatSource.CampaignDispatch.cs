@@ -49,6 +49,17 @@ internal sealed partial class LiveCombatSource
                         && RunManager.Instance.DebugOnlyGetState()?.GameMode == GameMode.Standard);
             effect = "campaign_started";
         }
+        else if (action.Kind == RuntimeV3GameplayContinuation.Kind)
+        {
+            // Only the argument-free continuation is dispatched. Naming a specific run would need
+            // host authority this boundary does not hold, so a discriminated request is refused,
+            // and the resume path itself re-checks the native profile/save guards before mutating.
+            if (action.Value is not null || !LiveCampaignContinuation.Available()) return false;
+            invoke = async () => { await LiveCampaignStart.ResumeAsync(); };
+            postcondition = () => RunManager.Instance.IsInProgress && RunManager.Instance.ShouldSave
+                && RunManager.Instance.DebugOnlyGetState() is { GameMode: GameMode.Standard };
+            effect = "campaign_resumed";
+        }
         else if (action.Kind == "select_map_node" && RunManager.Instance.DebugOnlyGetState() is { } run)
         {
             var point = TravelablePoints().SingleOrDefault(candidate => MapId(candidate, run) == action.Value);
