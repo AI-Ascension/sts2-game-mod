@@ -9,6 +9,17 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Repaired the game-mod crate's one dangling intra-doc link and gated the class durably. The
+  `content_index` module linked a bare `[`ContentManifest`]`, but a bare link resolves only against
+  the file's own scope, and this private module has no `use` statements at all, so the label resolved
+  to nothing while the crate still built, linted and tested green. `ContentManifest` is real — the
+  `pub struct` re-exported at the crate root — so this was a pure scope/path defect, fixed by
+  qualifying the link to `crate::ContentManifest` (the pattern `sts2-harness#474` used for the same
+  class). The durable half is a `cargo doc` step in the Rust job with
+  `RUSTDOCFLAGS="-D rustdoc::broken_intra_doc_links --document-private-items"`, because a default
+  rustdoc run skips this private module entirely; nothing had run `cargo doc`/`rustdoc` before, so no
+  gate owned the class. Documentation and gate only; no code, route, schema or native effect. Refs #220.
+
 - Made input availability gate exactness in the source-only `game_facts_reference` owner
   inventory for sts2-game-mod#207. `FactsInputAvailability::supports_exact_claim` and
   `FactsRuleEntry::inputs_support_exact_claim` now state that only a `required` input is fully
@@ -514,18 +525,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   strict rejection matrix (duplicate keys, floats, exponents, negative zero, unsafe integers,
   invalid keys, trailing text). Synthetic conformance tests pass; native capture, restore, and
   host compatibility remain unverified. See ADR 0054.
-
-- Corrected the source-only restricted canonical codec to the pinned profile's
-  `CANONICAL_MAX_DEPTH` (64) nesting levels, including tagged numeric objects,
-  and 16 MiB raw-input and canonical-output limits. Encoder writes check remaining bytes before
-  allocation, including escaping expansion. Parser and encoder enforce `^[a-z][a-z0-9_]*$`
-  object keys with typed rejections; all 14 pinned raw rejection vectors are included.
-  Added exact-limit/overflow, typed integer, key grammar, surrogate, and hostile-depth regressions.
-  Source-only; native capture, restore, and host compatibility remain unverified.
-
-- Bounded the source-only restricted canonical codec at `CANONICAL_MAX_DEPTH` nesting levels
-  in both the strict parser and the encoder; deeper inputs are rejected with
-  `CanonicalError::DepthExceeded` instead of exhausting the process stack. Added parser regression
-  coverage for arrays, nulls, booleans, escaped strings, Unicode values versus ASCII keys,
-  safe-integer endpoints, escaped duplicate keys, and the depth boundary. Source-only; native
-  capture, restore, and host compatibility remain unverified.

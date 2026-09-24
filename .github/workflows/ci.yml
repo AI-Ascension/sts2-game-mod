@@ -45,8 +45,7 @@ jobs:
         run: sha256sum -c SHA256SUMS
 
       - name: Verify every copied protocol artifact inventory
-        # Discovers every SHA256SUMS under protocol-artifact/ so a profile copied later
-        # (for example runtime-v4-expert or runtime-v4-expert-action) cannot be missed.
+        # Discovers every SHA256SUMS under protocol-artifact/ so a profile copied later cannot be missed.
         run: |
           inventories=$(find protocol-artifact -mindepth 2 -name SHA256SUMS -type f | LC_ALL=C sort)
           test -n "$inventories"
@@ -86,6 +85,9 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
+      - name: Check documentation links
+        run: RUSTDOCFLAGS="-D rustdoc::broken_intra_doc_links --document-private-items" cargo doc --workspace --no-deps --locked
+
       - name: Run Rust tests
         run: cargo test --workspace --all-targets --all-features --locked
 
@@ -110,8 +112,7 @@ jobs:
         run: bash tools/release/test-runtime-lifecycle.sh
 
       - name: Validate GPU fixture refusal and rollback boundaries
-        run: |
-          bash experiments/train-gpu-lifecycle/test-provision.sh && bash experiments/train-gpu-lifecycle/test-boot.sh
+        run: bash experiments/train-gpu-lifecycle/test-provision.sh && bash experiments/train-gpu-lifecycle/test-boot.sh
 
   managed-source:
     name: Managed source-only boundary
