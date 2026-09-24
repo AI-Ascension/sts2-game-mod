@@ -528,3 +528,4 @@ Completed entries that no longer fit this file's preferred size budget are prese
   `CanonicalError::DepthExceeded` instead of exhausting the process stack. Added parser regression
   coverage for arrays, nulls, booleans, escaped strings, Unicode values versus ASCII keys,
   safe-integer endpoints, escaped duplicate keys, and the depth boundary. Source-only; native
+  capture, restore, and host compatibility remain unverified.
