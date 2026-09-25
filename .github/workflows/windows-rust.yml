@@ -49,8 +49,24 @@ jobs:
         # its doc comments. The host doc gate runs on Ubuntu, where rustdoc compiles
         # the same items out, so a broken link inside one is silent there. This runs
         # the host gate's three denies on the target that makes them bite.
-        # Read the verdict from the LOG, not the conclusion: a misspelled deny is an
-        # inert `unknown lint` warning that still exits 0.
+        # The verdict is read from the LOG, not from `$?` alone: a misspelled or
+        # renamed deny is an inert `unknown lint` warning that still exits 0, so a
+        # bare `cargo doc` cannot tell the two apart. The exit code is checked
+        # FIRST so a build failure is never masked by an unexpected output shape.
         env:
           RUSTDOCFLAGS: '-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_links --document-private-items'
-        run: cargo doc --workspace --no-deps --locked --target x86_64-pc-windows-gnu
+        run: |
+          log=$(mktemp)
+          cargo doc --workspace --no-deps --locked --target x86_64-pc-windows-gnu >"$log" 2>&1
+          code=$?
+          if [ "$code" -ne 0 ]; then
+            echo "::error::rustdoc exited $code"
+            cat "$log"
+            exit 1
+          fi
+          if grep -qE '^warning' "$log"; then
+            echo "::error::rustdoc reported a warning; the denies may be inert"
+            grep -E '^warning' "$log"
+            exit 1
+          fi
+          tail -n 3 "$log"
