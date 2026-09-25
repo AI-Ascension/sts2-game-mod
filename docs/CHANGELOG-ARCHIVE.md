@@ -8,6 +8,25 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Added a source-only `checkpoint::admission` controller that orders owner capture work against host
+  mutation and binds one logical operation to one receipt: a settlement barrier refuses host
+  mutation (`Busy`) between boundary validation and snapshotting, unsafe phases stay refused for
+  every producer including the synthetic fixture, a duplicate operation replays its recorded
+  receipt, changed bytes or a changed request under one operation is a conflict, a durable capture
+  whose persistence fails records no receipt, and the ledger is bounded by
+  `CHECKPOINT_ADMISSION_MAX_OPERATIONS`. Rejection variants `Busy`, `UnsupportedCoverage`,
+  `PersistenceFailed`, `OperationConflict`, and `AdmissionLedgerFull` are now produced by owner
+  code. The new owner checkpoint, ledger, and fixture-producer types render redacted `Debug` output
+  instead of private payload bytes or exact digests. Synthetic source tests pass; native capture, restore, and host compatibility remain
+  unverified. See ADR 0055.
+
+- Added a source-only restricted `asc-jcs-state-v1` canonical encoder for game-owned checkpoint
+  payloads: deterministic restricted-key ordering, exact `uint64`/`float64_bits` tagging, domain-separated
+  state/blob identities pinned to protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea7`, and a
+  strict rejection matrix (duplicate keys, floats, exponents, negative zero, unsafe integers,
+  invalid keys, trailing text). Synthetic conformance tests pass; native capture, restore, and
+  host compatibility remain unverified. See ADR 0054.
+
 - Corrected the source-only restricted canonical codec to the pinned profile's
   `CANONICAL_MAX_DEPTH` (64) nesting levels, including tagged numeric objects,
   and 16 MiB raw-input and canonical-output limits. Encoder writes check remaining bytes before
