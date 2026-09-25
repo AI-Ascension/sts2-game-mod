@@ -19,8 +19,10 @@ verification. A green check is not a merge, release, install, deployment, or com
 - policy.yml checks the target policy tool and strict policy from pull requests and main pushes.
 - ci.yml runs Rust format, Clippy, tests, the source-only native interop and co-op probes, and the
   synthetic ephemeral-session launcher checks.
-- windows-rust.yml cross-checks the gnu Windows target with `cargo check --all-targets`, so the
-  `#[cfg(windows)]` items compile in CI even though the repository is built on Linux hosts.
+- windows-rust.yml cross-checks the gnu Windows target with `cargo check --all-targets` under
+  `RUSTFLAGS: -D warnings`, so the `#[cfg(windows)]` items compile in CI even though the repository
+  is built on Linux hosts, and a warning on one of them fails the leg. The deny is not redundant with
+  the host Clippy gate: a warning whose item is gated `target_os = "linux"` is invisible there.
 - The Rust workspace gates include the source-only exact-restore consumer, artifact checksum,
   private-store, and fixed-route refusal regressions. They do not install a restore adapter or run
   a game.

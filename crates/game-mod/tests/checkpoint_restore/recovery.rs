@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde_json::json;
+#[cfg(target_os = "linux")]
 use sts2_game_mod::{ExactRestoreEngine, SecureExactRestoreStore};
 
 use super::support::*;

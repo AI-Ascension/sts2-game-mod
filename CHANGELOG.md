@@ -16,7 +16,9 @@ Completed entries that no longer fit this file's preferred size budget are prese
   (#224). The Windows arm now uses the stable size-plus-modification identity the other non-Unix
   hosts already use, the executable checks are unix-gated, the unix-only `resolve_dotnet` symlink
   test is unix-gated, and a new `windows-rust.yml` job cross-checks
-  `cargo check --workspace --all-targets --target x86_64-pc-windows-gnu`. Closes #224.
+  `cargo check --workspace --all-targets --target x86_64-pc-windows-gnu` under `RUSTFLAGS: -D warnings`,
+  because the host Clippy gate cannot see a warning on a `target_os = "linux"`-gated item and the
+  leg otherwise forgave every warning on the surface it compiled (#226). Closes #224. Refs #226.
 
 - Tightened the `Check documentation links` step to deny `rustdoc::private_intra_doc_links` and
   `rustdoc::redundant_explicit_links` alongside `broken_intra_doc_links`. Both are warn-by-default,
