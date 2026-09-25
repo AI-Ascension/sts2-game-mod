@@ -9,6 +9,15 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Made `sts2-game-mod` compile for the Windows target and added the leg that keeps it that way.
+  `same_state` compared `volume_serial_number`/`file_index`, which are nightly-only, and two
+  `.permissions().mode()` executable checks used the unix-gated `PermissionsExt` unguarded, so
+  `cargo check --target x86_64-pc-windows-gnu` failed while no CI leg built Rust for Windows at all
+  (#224). The Windows arm now uses the stable size-plus-modification identity the other non-Unix
+  hosts already use, the executable checks are unix-gated, the unix-only `resolve_dotnet` symlink
+  test is unix-gated, and a new `windows-rust.yml` job cross-checks
+  `cargo check --workspace --all-targets --target x86_64-pc-windows-gnu`. Closes #224.
+
 - Tightened the `Check documentation links` step to deny `rustdoc::private_intra_doc_links` and
   `rustdoc::redundant_explicit_links` alongside `broken_intra_doc_links`. Both are warn-by-default,
   so the step exited 0 and reported success while a link from a public item to a private one printed

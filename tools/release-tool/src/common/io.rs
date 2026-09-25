@@ -115,11 +115,9 @@ fn same_state(before: &Metadata, after: &Metadata) -> bool {
     }
     #[cfg(windows)]
     {
-        use std::os::windows::fs::MetadataExt;
-        before.volume_serial_number() == after.volume_serial_number()
-            && before.file_index() == after.file_index()
-            && before.file_size() == after.file_size()
-            && before.last_write_time() == after.last_write_time()
+        // The Windows `MetadataExt` identity accessors are unstable, so use the
+        // stable size-plus-modification comparison the other non-Unix hosts use.
+        before.len() == after.len() && before.modified().ok() == after.modified().ok()
     }
     #[cfg(not(any(unix, windows)))]
     {

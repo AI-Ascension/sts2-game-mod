@@ -215,7 +215,7 @@ fn same_filesystem(left: &Identity, right: &Identity) -> bool {
     }
     #[cfg(not(unix))]
     {
-        let _ = right;
+        let _ = (left, right);
         true
     }
 }

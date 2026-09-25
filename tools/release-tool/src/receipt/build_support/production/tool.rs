@@ -42,15 +42,18 @@ pub(super) fn resolve_dotnet(value: &str) -> Result<Tool, String> {
     let resolved = fs::canonicalize(&candidate)
         .map_err(|error| format!("selected dotnet executable cannot be resolved: {error}"))?;
     regular_file_path(&resolved, "dotnet executable")?;
-    if resolved
-        .metadata()
-        .map_err(|error| error.to_string())?
-        .permissions()
-        .mode()
-        & 0o111
-        == 0
+    #[cfg(unix)]
     {
-        return fail("dotnet executable is not executable");
+        if resolved
+            .metadata()
+            .map_err(|error| error.to_string())?
+            .permissions()
+            .mode()
+            & 0o111
+            == 0
+        {
+            return fail("dotnet executable is not executable");
+        }
     }
     let style = if resolved
         .extension()
@@ -97,7 +100,7 @@ pub(super) fn command_output(command: &mut Command, label: &str) -> Result<Strin
     Ok(value)
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     #![allow(clippy::expect_used, clippy::unwrap_used)]
 

@@ -83,15 +83,18 @@ pub(crate) fn production_inputs(
         &repo.join("experiments/managed-rust-interop/build-native-release.sh"),
         "native build helper",
     )?;
-    if helper
-        .metadata()
-        .map_err(|error| error.to_string())?
-        .permissions()
-        .mode()
-        & 0o111
-        == 0
+    #[cfg(unix)]
     {
-        return fail("native build helper is not executable");
+        if helper
+            .metadata()
+            .map_err(|error| error.to_string())?
+            .permissions()
+            .mode()
+            & 0o111
+            == 0
+        {
+            return fail("native build helper is not executable");
+        }
     }
     let native_log = logs.join("native-build.log");
     run_logged(

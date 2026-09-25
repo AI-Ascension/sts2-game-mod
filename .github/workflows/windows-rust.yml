@@ -1,0 +1,34 @@
+name: Windows Rust cross-check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {contents: read}
+
+concurrency:
+  group: windows-rust-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  windows-rust:
+    name: Windows Rust compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+
+      - name: Add the Windows target
+        run: rustup target add x86_64-pc-windows-gnu --toolchain 1.97.1
+
+      - name: Check the Windows target compiles
+        # Cross-checking the gnu target compiles every `#[cfg(windows)]` item,
+        # including test-only modules, without needing a Windows host or linker.
+        run: cargo check --workspace --all-targets --locked --target x86_64-pc-windows-gnu
