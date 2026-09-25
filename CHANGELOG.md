@@ -9,6 +9,16 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Tightened the `Check documentation links` step to deny `rustdoc::private_intra_doc_links` and
+  `rustdoc::redundant_explicit_links` alongside `broken_intra_doc_links`. Both are warn-by-default,
+  so the step exited 0 and reported success while a link from a public item to a private one printed
+  a warning that resolves only because the gate always passes `--document-private-items` — the class
+  `#220` named and `#221` left open. No link is broken at `86cf39b1f`; this is a latent gate gap, so
+  no source file changed and the gate is proven binding rather than repaired. The tightened command
+  exits 0 with zero warnings on the unmodified tree, and exits 101 at `lib.rs:260` when a link to the
+  private `DispatcherPort` is added, where the shipped single-lint command exits 0 with
+  `generated 1 warning`. Documentation and gate only; no code, route, schema or native effect. Refs #222.
+
 - Repaired the game-mod crate's one dangling intra-doc link and gated the class durably. The
   `content_index` module linked a bare `[`ContentManifest`]`, but a bare link resolves only against
   the file's own scope, and this private module has no `use` statements at all, so the label resolved
@@ -506,22 +516,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   re-derives every inventory digest from the checked-in bytes, and pins the four guarantee pairs;
   `tests/checkpoint.rs` asserts the manifest `checksums` key and the 26-vector coverage. Synthetic
   source evidence only; native capture, restore, and host compatibility remain unverified. Refs #80.
-
-- Added a source-only `checkpoint::admission` controller that orders owner capture work against host
-  mutation and binds one logical operation to one receipt: a settlement barrier refuses host
-  mutation (`Busy`) between boundary validation and snapshotting, unsafe phases stay refused for
-  every producer including the synthetic fixture, a duplicate operation replays its recorded
-  receipt, changed bytes or a changed request under one operation is a conflict, a durable capture
-  whose persistence fails records no receipt, and the ledger is bounded by
-  `CHECKPOINT_ADMISSION_MAX_OPERATIONS`. Rejection variants `Busy`, `UnsupportedCoverage`,
-  `PersistenceFailed`, `OperationConflict`, and `AdmissionLedgerFull` are now produced by owner
-  code. The new owner checkpoint, ledger, and fixture-producer types render redacted `Debug` output
-  instead of private payload bytes or exact digests. Synthetic source tests pass; native capture, restore, and host compatibility remain
-  unverified. See ADR 0055.
-
-- Added a source-only restricted `asc-jcs-state-v1` canonical encoder for game-owned checkpoint
-  payloads: deterministic restricted-key ordering, exact `uint64`/`float64_bits` tagging, domain-separated
-  state/blob identities pinned to protocol revision `8a2e66f5d2190a0fca7f146dc3508e8d55515ea7`, and a
-  strict rejection matrix (duplicate keys, floats, exponents, negative zero, unsafe integers,
-  invalid keys, trailing text). Synthetic conformance tests pass; native capture, restore, and
-  host compatibility remain unverified. See ADR 0054.
