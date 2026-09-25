@@ -53,4 +53,15 @@ jobs:
         # inert `unknown lint` warning that still exits 0.
         env:
           RUSTDOCFLAGS: '-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_links --document-private-items'
-        run: cargo doc --workspace --no-deps --locked --target x86_64-pc-windows-gnu
+        run: |
+          set -o pipefail
+          log=target/windows-doc.log
+          status=0
+          cargo doc --workspace --no-deps --locked --target x86_64-pc-windows-gnu 2>&1 | tee "$log" || status=$?
+          errors=$(awk '/^error/{count++} END{print count+0}' "$log")
+          unknown=$(awk '/unknown lint/{count++} END{print count+0}' "$log")
+          warnings=$(awk '/^warning/{count++} END{print count+0}' "$log")
+          documented=$(awk '/^ *Documenting /{count++} END{print count+0}' "$log")
+          expected=$(awk '/^members *= *\[/{f=1} f{print} f&&/\]/{f=0}' Cargo.toml | grep -o '"[^"]*"' | wc -l)
+          echo "windows-doc: exit=$status errors=$errors warnings=$warnings unknown_lints=$unknown documented=$documented expected=$expected"
+          [ "$status" -eq 0 ] && [ "$errors" -eq 0 ] && [ "$warnings" -eq 0 ] && [ "$unknown" -eq 0 ] && [ "$documented" -eq "$expected" ]
