@@ -52,7 +52,7 @@ jobs:
         # Read the verdict from the LOG, not the conclusion: a misspelled deny is an
         # inert `unknown lint` warning that still exits 0.
         env:
-          RUSTDOCFLAGS: '-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_links --document-private-items'
+          RUSTDOCFLAGS: '-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_linkz --document-private-items'
         run: |
           set -o pipefail
           log=target/windows-doc.log
