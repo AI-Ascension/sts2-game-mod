@@ -62,6 +62,10 @@ jobs:
           unknown=$(awk '/unknown lint/{count++} END{print count+0}' "$log")
           warnings=$(awk '/^warning/{count++} END{print count+0}' "$log")
           documented=$(awk '/^ *Documenting /{count++} END{print count+0}' "$log")
-          expected=$(awk '/^members *= *\[/{f=1} f{print} f&&/\]/{f=0}' Cargo.toml | grep -o '"[^"]*"' | wc -l)
+          # Count members with awk, not `grep -o`: a no-match `grep` exits 1, and this block's
+          # `pipefail` would abort the assignment before the counters below ever print. The
+          # `expected -gt 0` floor in the predicate keeps an absent or empty `members` array from
+          # reading as vacuous agreement with a zero `documented`.
+          expected=$(awk '/^[[:space:]]*members[[:space:]]*=[[:space:]]*\[/{f=1} f{n+=gsub(/"[^"]*"/,"&"); if(/\]/) f=0} END{print n+0}' Cargo.toml)
           echo "windows-doc: exit=$status errors=$errors warnings=$warnings unknown_lints=$unknown documented=$documented expected=$expected"
-          [ "$status" -eq 0 ] && [ "$errors" -eq 0 ] && [ "$warnings" -eq 0 ] && [ "$unknown" -eq 0 ] && [ "$documented" -eq "$expected" ]
+          [ "$status" -eq 0 ] && [ "$errors" -eq 0 ] && [ "$warnings" -eq 0 ] && [ "$unknown" -eq 0 ] && [ "$documented" -eq "$expected" ] && [ "$expected" -gt 0 ]
