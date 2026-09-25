@@ -86,7 +86,7 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
       - name: Check documentation links
-        run: RUSTDOCFLAGS="-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_links --document-private-items" cargo doc --workspace --no-deps --locked
+        run: mkdir -p target && set -o pipefail && RUSTDOCFLAGS="-D rustdoc::broken_intra_doc_links -D rustdoc::private_intra_doc_links -D rustdoc::redundant_explicit_links --document-private-items" cargo doc --workspace --no-deps --locked 2>&1 | tee target/doc.log || rc=$?; rc=${rc:-0}; read e u w < <(awk '/^error/{e++} /unknown lint/{u++} /^warning/{w++} END{print e+0, u+0, w+0}' target/doc.log); c=:; echo "doc${c} exit=$rc errors=$e warnings=$w unknown_lints=$u"; [ "$rc" -eq 0 ] && [ "$e" -eq 0 ] && [ "$w" -eq 0 ] && [ "$u" -eq 0 ]
 
       - name: Run Rust tests
         run: cargo test --workspace --all-targets --all-features --locked
