@@ -4,9 +4,11 @@ mod engine;
 mod fixtures;
 mod scratch;
 
+#[cfg(target_os = "linux")]
+pub(crate) use engine::SharedOwner;
 pub(crate) use engine::{
-    RecordingApplier, SharedOwner, StoreState, create_engine, current_owner, owner_with_generation,
-    send, send_blob,
+    RecordingApplier, StoreState, create_engine, current_owner, owner_with_generation, send,
+    send_blob,
 };
 #[cfg(target_os = "linux")]
 pub(crate) use fixtures::TestDirectory;

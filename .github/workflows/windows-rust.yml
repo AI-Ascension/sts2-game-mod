@@ -31,4 +31,9 @@ jobs:
       - name: Check the Windows target compiles
         # Cross-checking the gnu target compiles every `#[cfg(windows)]` item,
         # including test-only modules, without needing a Windows host or linker.
+        # The deny matters as much as the target: the host Clippy gate cannot see a
+        # warning whose item is `target_os = "linux"`-gated, so without it this leg
+        # would compile the Windows surface and forgive every warning on it.
+        env:
+          RUSTFLAGS: -D warnings
         run: cargo check --workspace --all-targets --locked --target x86_64-pc-windows-gnu
