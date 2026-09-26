@@ -103,24 +103,48 @@ pub(super) fn read_request(stream: &mut impl Read) -> Result<Request, u16> {
     })
 }
 
-pub(super) fn headers_are_allowed(headers: &BTreeMap<String, String>) -> bool {
-    headers.keys().all(|name| {
-        matches!(
-            name.as_str(),
-            "authorization"
-                | "content-length"
-                | "content-type"
-                | "host"
-                | "connection"
-                | "x-sts2-instance-id"
-                | "x-sts2-caller-id"
-                | "x-sts2-session-id"
-                | "x-sts2-lease-id"
-                | "x-sts2-lease-epoch"
-                | "x-sts2-correlation-id"
-                | "x-sts2-locale"
-        )
-    })
+// The refusal has to name the header it refused, or an occurrence cannot be
+// attributed without re-running it: a bare `unsupported_header` does not say
+// which request was rejected (AI-Ascension/sts2-game-mod#239, whose sibling
+// gateway site is AI-Ascension/sts2-gateway#113). Only the NAME crosses the
+// boundary -- `authorization` is on the allowlist below and carries a bearer
+// token, so a value must never be echoed. The allowlist itself is unchanged:
+// this names the refusal, it does not widen what is accepted.
+pub(super) fn first_rejected_header(headers: &BTreeMap<String, String>) -> Option<&str> {
+    headers
+        .keys()
+        .map(String::as_str)
+        .find(|name| !header_is_allowed(name))
+}
+
+fn header_is_allowed(name: &str) -> bool {
+    matches!(
+        name,
+        "authorization"
+            | "content-length"
+            | "content-type"
+            | "host"
+            | "connection"
+            | "x-sts2-instance-id"
+            | "x-sts2-caller-id"
+            | "x-sts2-session-id"
+            | "x-sts2-lease-id"
+            | "x-sts2-lease-epoch"
+            | "x-sts2-correlation-id"
+            | "x-sts2-locale"
+    )
+}
+
+pub(super) fn unsupported_header_body(name: &str) -> Vec<u8> {
+    // `serde_json` escapes the name rather than interpolating it raw: the name
+    // comes off the wire, so a crafted header name must not be able to forge
+    // the body. The field name matches the gateway site so one shape is learned
+    // once for both.
+    serde_json::to_vec(&serde_json::json!({
+        "error_code": "unsupported_header",
+        "rejected_header": name,
+    }))
+    .unwrap_or_else(|_| b"{\"error_code\":\"unsupported_header\"}".to_vec())
 }
 
 pub(super) fn safe_header_value(value: &str) -> bool {

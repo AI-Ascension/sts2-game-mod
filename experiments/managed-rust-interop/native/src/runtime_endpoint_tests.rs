@@ -233,3 +233,20 @@ unsafe extern "C" fn invalid_callback(
     unsafe { length.write(capacity + 1) };
     200
 }
+
+#[test]
+fn the_wire_refusal_names_the_rejected_header() -> std::io::Result<()> {
+    // The unit-level cases prove the helper; this one proves the bytes a real
+    // client receives over a real socket, which is the only place the refusal
+    // is actually attributable (AI-Ascension/sts2-game-mod#239).
+    let response = exchange(
+        b"GET /health/ready HTTP/1.1\r\nAuthorization: Bearer synthetic\r\nAccept: application/json\r\n\r\n",
+        invalid_callback,
+    )?;
+    assert!(response.starts_with("HTTP/1.1 400 "), "{response}");
+    assert!(
+        response.ends_with(r#"{"error_code":"unsupported_header","rejected_header":"accept"}"#),
+        "the wire refusal must name the header: {response}"
+    );
+    Ok(())
+}
