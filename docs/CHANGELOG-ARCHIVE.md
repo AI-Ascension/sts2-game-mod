@@ -8,6 +8,24 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Connected the canonical #83 `ContentManifestProducer` to the pinned
+  `game-information-content-manifest-v1` codec and added the authenticated owner route
+  `GET /api/v1/game-information/content-manifest`. Responses preserve `inventory_revision`, omit
+  raw semantic and localized text, map source failures to closed protocol reasons, and refuse
+  whole envelopes above 16 MiB. Native source extraction remains fail-closed with
+  `missing_capability/source_unavailable`; exact-host registry coverage and live delivery are
+  unverified. See ADR 0038.
+
+- Completed the `protocol-artifact/exact-state-v1` consumer witness. `selected-vectors.json` now
+  pins the complete `sts2-protocol` set instead of an 11-positive subset: 26 positives, 2
+  equivalence pairs, and 8 distinctness pairs, including the profile guarantee that absent, null,
+  empty, and explicit unknown values stay distinct. The artifact now carries a `SHA256SUMS`
+  inventory so the existing CI discovery step verifies it like every sibling profile, and its
+  manifest declares `checksums`. `tests/checkpoint_canonical.rs` asserts the coverage counts,
+  re-derives every inventory digest from the checked-in bytes, and pins the four guarantee pairs;
+  `tests/checkpoint.rs` asserts the manifest `checksums` key and the 26-vector coverage. Synthetic
+  source evidence only; native capture, restore, and host compatibility remain unverified. Refs #80.
+
 - Added a source-only `checkpoint::admission` controller that orders owner capture work against host
   mutation and binds one logical operation to one receipt: a settlement barrier refuses host
   mutation (`Busy`) between boundary validation and snapshotting, unsafe phases stay refused for

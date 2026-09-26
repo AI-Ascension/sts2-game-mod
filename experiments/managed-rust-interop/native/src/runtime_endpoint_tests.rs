@@ -47,6 +47,56 @@ fn bounded_connection_preserves_health_authentication() -> std::io::Result<()> {
 }
 
 #[test]
+fn a_refused_header_is_named_and_standard_clients_are_no_longer_refused() -> std::io::Result<()> {
+    // The end-to-end half of the named-header remedy
+    // (AI-Ascension/sts2-game-mod#239). The unit tests in `runtime_http` pin
+    // the helper; this one pins the bytes a client actually receives, which is
+    // where the defect was reported: obs-vm-setup/capture/README.md records a
+    // loopback probe whose urllib `Accept-Encoding` produced
+    // `400 unsupported_header` and left the API looking absent.
+
+    // urllib adds this unprompted, so before the change this exact request
+    // was refused before it ever reached a route.
+    let admitted = exchange(
+        concat!(
+            "GET /health/ready HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+            "Accept-Encoding: identity\r\nAccept: application/json\r\n",
+            "Connection: close\r\n\r\n"
+        )
+        .as_bytes(),
+        invalid_callback,
+    )?;
+    assert!(
+        admitted.starts_with("HTTP/1.1 200 "),
+        "a standard client's negotiation headers must not be refused: {admitted}"
+    );
+
+    // An unlisted header is still refused -- the posture is unchanged -- but
+    // the refusal now says which one, so the next hop is identifiable without
+    // a re-run.
+    let refused = exchange(
+        concat!(
+            "GET /health/ready HTTP/1.1\r\nAuthorization: Bearer synthetic\r\n",
+            "X-Not-Admitted: value\r\n\r\n"
+        )
+        .as_bytes(),
+        invalid_callback,
+    )?;
+    assert!(refused.starts_with("HTTP/1.1 400 "), "{refused}");
+    assert!(
+        refused.contains("\"error_code\":\"unsupported_header\""),
+        "{refused}"
+    );
+    assert!(
+        refused.contains("\"rejected_header\":\"x-not-admitted\""),
+        "the refusal must name the header: {refused}"
+    );
+    // Only the name crosses the boundary; the value is never echoed.
+    assert!(!refused.contains("\"value\""), "{refused}");
+    Ok(())
+}
+
+#[test]
 fn callback_cannot_claim_bytes_beyond_owned_output() -> std::io::Result<()> {
     let response = exchange(
         concat!(

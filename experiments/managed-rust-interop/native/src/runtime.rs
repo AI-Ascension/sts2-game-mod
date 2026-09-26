@@ -55,6 +55,9 @@ mod gameplay_route;
 #[cfg(test)]
 #[path = "runtime_gameplay_route_tests.rs"]
 mod gameplay_route_tests;
+#[cfg(test)]
+#[path = "runtime_header_allowlist_tests.rs"]
+mod header_allowlist_tests;
 #[path = "runtime_http.rs"]
 mod http;
 #[path = "runtime_input.rs"]

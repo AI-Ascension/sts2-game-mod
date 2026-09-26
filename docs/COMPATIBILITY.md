@@ -306,3 +306,36 @@ Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Ex
 retries ignore transport correlation and JSON formatting; run/combat/player replacement
 invalidates generation. This bounded observation is not a complete game-state revision
 or a game-rule parity claim.
+
+## Unsupported-header refusal naming and the negotiation headers
+
+The native interop listener's `unsupported_header` refusal is an additive observability change to
+an existing error, plus a deliberate widening of which headers are admitted. Neither is a route,
+identity, lease, or auth change, and neither establishes any runtime, host, or game effect.
+
+The body was `{"error_code":"unsupported_header"}` and is now
+`{"error_code":"unsupported_header","rejected_header":"<name>"}`:
+
+- `error_code` keeps its exact previous value and the status stays 400, so a consumer that matches
+  on it is unaffected. `rejected_header` is a new sibling field; a consumer that strictly decodes
+  the body into a fixed, non-ignoring field set is incompatible with this revision, and one that
+  matches on `error_code` or ignores unknown fields is not.
+- Only the header **name** crosses the boundary. A value may carry a credential --
+  `authorization` above all -- and a value is never read, copied, or rendered.
+- Unlike the gateway's equivalent refusal, this listener does **not** constrain header names to
+  the RFC 7230 token charset at parse time: `read_request` checks only that a name is non-empty
+  and not a duplicate. The body is therefore serialized through `serde_json` rather than
+  concatenated, so a client-supplied name containing a quote or backslash is escaped as data and
+  cannot introduce a sibling field. That serializer is the only barrier here, which is why it is
+  not optional and why the escaping is pinned by a test.
+- The allow-list **widened** by three names: `accept`, `accept-encoding`, and `idempotency-key`.
+  These are ordinary negotiation headers that standard clients send unprompted -- Python's
+  `urllib` adds `Accept-Encoding` with no way to opt out short of overriding the opener -- and the
+  previous closed list refused them. `obs-vm-setup/capture/README.md` records the cost: a working
+  API returned 400 and its own note concluded "neither result establishes absence of the API."
+  Widening means strictly fewer requests are refused; no previously admitted request changes
+  behavior, and an unlisted header is still refused.
+
+This does not establish that any particular caller introduced an unlisted header, and it does not
+change who may call which route. See AI-Ascension/sts2-game-mod#239 and
+AI-Ascension/sts2-harness#541.

@@ -103,24 +103,60 @@ pub(super) fn read_request(stream: &mut impl Read) -> Result<Request, u16> {
     })
 }
 
-pub(super) fn headers_are_allowed(headers: &BTreeMap<String, String>) -> bool {
-    headers.keys().all(|name| {
-        matches!(
-            name.as_str(),
-            "authorization"
-                | "content-length"
-                | "content-type"
-                | "host"
-                | "connection"
-                | "x-sts2-instance-id"
-                | "x-sts2-caller-id"
-                | "x-sts2-session-id"
-                | "x-sts2-lease-id"
-                | "x-sts2-lease-epoch"
-                | "x-sts2-correlation-id"
-                | "x-sts2-locale"
-        )
-    })
+/// The first header name outside the allow-list, or `None` when every header
+/// is admitted.
+///
+/// The refusal reports the rejected *name* so a caller can tell which hop
+/// introduced it, and so an intermittent refusal is decidable from the run
+/// artifact alone rather than by a re-run (AI-Ascension/sts2-harness#541,
+/// AI-Ascension/sts2-game-mod#239). Only the name crosses this boundary: a
+/// header value may carry a credential -- `authorization` above all -- and a
+/// value is never echoed.
+///
+/// `BTreeMap` iterates in lexicographic key order, so a request carrying more
+/// than one unlisted header always names the same one, and the name is stable
+/// across runs.
+pub(super) fn first_rejected_header(headers: &BTreeMap<String, String>) -> Option<&str> {
+    headers
+        .keys()
+        .map(String::as_str)
+        .find(|name| !header_is_allowed(name))
+}
+
+fn header_is_allowed(name: &str) -> bool {
+    matches!(
+        name,
+        "authorization"
+            | "accept"
+            | "accept-encoding"
+            | "content-length"
+            | "content-type"
+            | "host"
+            | "connection"
+            | "idempotency-key"
+            | "x-sts2-instance-id"
+            | "x-sts2-caller-id"
+            | "x-sts2-session-id"
+            | "x-sts2-lease-id"
+            | "x-sts2-lease-epoch"
+            | "x-sts2-correlation-id"
+            | "x-sts2-locale"
+    )
+}
+
+/// The `unsupported_header` body, naming the rejected header.
+///
+/// The name is serialized through `serde_json` rather than concatenated, so a
+/// name carrying a quote or a backslash cannot terminate the JSON string and
+/// cannot inject a second field. This listener does not constrain header names
+/// to the RFC 7230 token charset at parse time, so the serializer is the only
+/// barrier here and it is not optional.
+pub(super) fn json_unsupported_header(name: &str) -> Vec<u8> {
+    serde_json::to_vec(&serde_json::json!({
+        "error_code": "unsupported_header",
+        "rejected_header": name,
+    }))
+    .unwrap_or_else(|_| b"{\"error_code\":\"unsupported_header\"}".to_vec())
 }
 
 pub(super) fn safe_header_value(value: &str) -> bool {
