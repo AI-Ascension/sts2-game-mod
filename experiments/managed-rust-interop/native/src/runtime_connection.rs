@@ -14,8 +14,8 @@ pub(super) fn handle_connection(
             return http::write_response(stream, status, b"{\"error_code\":\"malformed_request\"}");
         }
     };
-    if !http::headers_are_allowed(&request.headers) {
-        return http::write_response(stream, 400, b"{\"error_code\":\"unsupported_header\"}");
+    if let Some(name) = http::first_rejected_header(&request.headers) {
+        return http::write_response(stream, 400, &http::json_unsupported_header(name));
     }
     if !auth::bearer_token_matches(request.headers.get("authorization"), token) {
         return http::write_response(stream, 401, b"{\"error_code\":\"unauthorized\"}");

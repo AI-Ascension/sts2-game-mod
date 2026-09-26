@@ -9,6 +9,17 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Named the rejected header in the native interop listener's `unsupported_header` refusal, and
+  admitted the negotiation headers standard clients send unprompted. The closed 12-name
+  allow-list at `experiments/managed-rust-interop/native/src/runtime_http.rs:106` refused
+  `Accept-Encoding`, which Python's `urllib` adds automatically; `obs-vm-setup/capture/README.md`
+  records the cost -- a working API returned 400, and that probe concluded "neither result
+  establishes absence of the API" (#239). The body gains a `rejected_header` sibling field and
+  never carries a value. The allow-list **widened** by `accept`, `accept-encoding`, and
+  `idempotency-key`, so strictly fewer requests are refused and an unlisted header is still
+  refused. Header names are not constrained to the RFC 7230 token charset here, so the body is
+  serialized through `serde_json` and a client-supplied name cannot inject a field. See
+  `docs/COMPATIBILITY.md`; the companion gateway change is sts2-gateway#113.
 - Made `sts2-game-mod` compile for the Windows target and added the leg that keeps it that way.
   `same_state` compared `volume_serial_number`/`file_index`, which are nightly-only, and two
   `.permissions().mode()` executable checks used the unix-gated `PermissionsExt` unguarded, so
@@ -509,21 +520,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   adapter are not available. Every existing operation also rechecks its stored full owner fence
   before any phase can disclose progress or touch staged data. Synthetic tests only; native
   restoration remains unsupported. See ADR 0042.
-
-- Connected the canonical #83 `ContentManifestProducer` to the pinned
-  `game-information-content-manifest-v1` codec and added the authenticated owner route
-  `GET /api/v1/game-information/content-manifest`. Responses preserve `inventory_revision`, omit
-  raw semantic and localized text, map source failures to closed protocol reasons, and refuse
-  whole envelopes above 16 MiB. Native source extraction remains fail-closed with
-  `missing_capability/source_unavailable`; exact-host registry coverage and live delivery are
-  unverified. See ADR 0038.
-
-- Completed the `protocol-artifact/exact-state-v1` consumer witness. `selected-vectors.json` now
-  pins the complete `sts2-protocol` set instead of an 11-positive subset: 26 positives, 2
-  equivalence pairs, and 8 distinctness pairs, including the profile guarantee that absent, null,
-  empty, and explicit unknown values stay distinct. The artifact now carries a `SHA256SUMS`
-  inventory so the existing CI discovery step verifies it like every sibling profile, and its
-  manifest declares `checksums`. `tests/checkpoint_canonical.rs` asserts the coverage counts,
-  re-derives every inventory digest from the checked-in bytes, and pins the four guarantee pairs;
-  `tests/checkpoint.rs` asserts the manifest `checksums` key and the 26-vector coverage. Synthetic
-  source evidence only; native capture, restore, and host compatibility remain unverified. Refs #80.
