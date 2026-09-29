@@ -16,9 +16,29 @@ internal static class HostContinuationChecks
     {
         ResumableRunIsDetectedOnlyThroughNativeGuards();
         CatalogAdmitsBothAcceptedShapesAndRefusesTheRest();
+        TheNonConsumingRewardSkipIsNotOffered();
         CodecEmitsOnlyTheAgreedShapes();
         DispatchUsesTheOfferedContinuationAndRefusesTheRest();
         PayloadShapesAreRefusedBeforeAnyMutation();
+    }
+
+    /// <summary>
+    /// The host's own card-reward skip carries
+    /// <c>EndSelectionAndDoNotCompleteReward</c>, so it never consumes the reward and the same
+    /// reward is re-offered forever. The producer must therefore not offer it, and the catalog
+    /// must refuse it even if a stale client submits it. Pure producer logic only: whether the
+    /// game itself would re-offer a human-pressed Skip stays unverified here. See ADR 0075.
+    /// </summary>
+    private static void TheNonConsumingRewardSkipIsNotOffered()
+    {
+        var skip = new LegalActionReference("skip_reward:2", "skip_reward", null, null, 2);
+        Require(!skip.Validate(out _),
+            "a skip_reward action is not part of the offered catalog");
+        Require(!LegalActionCatalog.TryCreate(2, new[] { skip }, out _),
+            "a catalog may not offer the non-consuming reward skip");
+        Require(new LegalActionReference("select_card:2:card:1", "select_card", "card:1", null, 2)
+                .Validate(out _),
+            "taking a card stays a legal action and still consumes the reward");
     }
 
     private static void ResumableRunIsDetectedOnlyThroughNativeGuards()

@@ -8,6 +8,16 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Recorded the exact-build checkpoint coverage inventory from pinned host metadata. The opt-in
+  `experiments/managed-rust-interop/checkpoint-coverage-reflection/` probe resolves every ADR 0037
+  coverage family and every ADR 0040 RNG audit row to concrete host members (type, member, kind,
+  declared type, visibility) on STS2 v0.107.1 / `59260271` (`sts2.dll` SHA-256 `a1f9e653…`)
+  through metadata tables only, fails closed for any unmatched row, and never loads the assembly;
+  `docs/evidence/checkpoint-coverage-inventory-20260917.{md,json}` and the `-rng.md` companion
+  record the result. ADR 0037 and ADR 0040 carry dated amendments upgrading rows from
+  `unverified` to `metadata-observed`; serialization, ordering, restore, and unknown-value semantics
+  stay `runtime-unverified`, no phase is advertised, and hosted CI does not run the probe. Refs #80.
+
 - Added the pinned `exact-restore-v1` game-mod consumer with strict frame/schema parsing, bounded
   closure staging, manifest and digest verification, Linux owner-private durable storage, and
   `COMMIT_INTENT` recovery semantics. The production fixed routes return typed unsupported errors

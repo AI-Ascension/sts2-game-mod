@@ -9,6 +9,18 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Stopped offering `skip_reward` on the card-reward selection screen. The mod never added that
+  alternative; it only recognized the host's own, whose callback is
+  `PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward` -- it ends the selection and
+  explicitly does *not* complete the reward, so the same `reward:5:CardReward` was re-offered
+  indefinitely and the skip path never asserted consumption. The host offers no consuming
+  alternative there, and the only way to complete a card reward is to take a card, which is
+  already offered as `select_card` and does consume it -- so the screen stays actionable and the
+  livelock is removed without a stall. `skip_reward` is also refused in
+  `LegalActionReference.Validate`, leaving it with no producer and no executor. The frozen
+  protocol still decodes the `skip_reward` wire arm; that artifact is owned by `sts2-protocol` and
+  its checksums are deliberately unchanged. Source-only: what the game does when a human presses
+  Skip remains unverified. See ADR 0075 (#171).
 - Fixed the `continue_run` offer gate, which refused every real setup catalog: it required *exactly
   one* `start_run`, but a setup screen offers one per playable character, so the gate returned
   `StartRunNotOffered` and silently restored the `sts2-game-mod#172` symptom it was written to fix.
@@ -510,13 +522,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   with required-unknown rejection, and pinned conformance fixtures with `SHA256SUMS`. Unsupported
   phases have no payload schema and keep the existing typed rejection; no phase is advertised as
   available. Synthetic source evidence only. See ADR 0057. Refs #80.
-
-- Recorded the exact-build checkpoint coverage inventory from pinned host metadata. The opt-in
-  `experiments/managed-rust-interop/checkpoint-coverage-reflection/` probe resolves every ADR 0037
-  coverage family and every ADR 0040 RNG audit row to concrete host members (type, member, kind,
-  declared type, visibility) on STS2 v0.107.1 / `59260271` (`sts2.dll` SHA-256 `a1f9e653…`)
-  through metadata tables only, fails closed for any unmatched row, and never loads the assembly;
-  `docs/evidence/checkpoint-coverage-inventory-20260917.{md,json}` and the `-rng.md` companion
-  record the result. ADR 0037 and ADR 0040 carry dated amendments upgrading rows from
-  `unverified` to `metadata-observed`; serialization, ordering, restore, and unknown-value semantics
-  stay `runtime-unverified`, no phase is advertised, and hosted CI does not run the probe. Refs #80.

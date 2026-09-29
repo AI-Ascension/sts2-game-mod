@@ -20,7 +20,6 @@ internal static class Program
         GameplayReadinessChecks.Run();
         FingerprintChecks.Run();
         CombatSettlementChecks.Run();
-        RewardSkipChecks.Run();
         ContinuationChecks.Run();
         HostContinuationChecks.Run();
         RunOptionsChecks.Run();
