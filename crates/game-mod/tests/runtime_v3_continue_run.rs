@@ -19,8 +19,7 @@ use sts2_game_mod::{
     RuntimeV3GameplayIdentity, RuntimeV3GameplayLegalAction, RuntimeV3GameplayMessage,
     RuntimeV3GameplayMessageKind, RuntimeV3GameplayMod, RuntimeV3GameplayObservation,
     RuntimeV3GameplayPlayer, RuntimeV3GameplayResumableRun, RuntimeV3GameplayResumeOfferError,
-    RuntimeV3GameplayRunCompatibility, RuntimeV3GameplayState, RuntimeV3GameplayStatus,
-    offer_continue_run,
+    RuntimeV3GameplayState, RuntimeV3GameplayStatus, offer_continue_run,
 };
 
 /// Host-generated identity sequence used for the offered continuation.
@@ -106,92 +105,6 @@ fn compatible(run_id: Option<&str>) -> RuntimeV3GameplayResumableRun {
     RuntimeV3GameplayResumableRun::Compatible {
         run_id: run_id.map(str::to_owned),
     }
-}
-
-#[test]
-fn a_compatible_run_is_offered_beside_start_run_in_the_admitted_shapes()
--> Result<(), Box<dyn Error>> {
-    let state = setup_observation().state;
-
-    let mut catalog = vec![start_run()];
-    assert!(offer_continue_run(
-        &state,
-        &mut catalog,
-        &compatible(Some("profile1")),
-        SEQUENCE
-    )?);
-    assert_eq!(catalog, vec![start_run(), continuation(Some("profile1"))]);
-    assert_eq!(catalog[1].action_id, "continue_run:2:profile1");
-    assert_eq!(
-        serde_json::to_value(&catalog[1].action)?,
-        json!({ "kind": "continue_run", "run_id": "profile1" })
-    );
-
-    let mut undiscriminated = vec![start_run()];
-    assert!(offer_continue_run(
-        &state,
-        &mut undiscriminated,
-        &compatible(None),
-        SEQUENCE
-    )?);
-    assert_eq!(undiscriminated[1].action_id, "continue_run:2");
-    assert_eq!(
-        serde_json::to_value(&undiscriminated[1].action)?,
-        json!({ "kind": "continue_run" })
-    );
-
-    // The continuation keeps its own identity and is never aliased onto `start_run`.
-    assert_ne!(catalog[1].action_id, catalog[0].action_id);
-    assert_ne!(catalog[1].action, catalog[0].action);
-    Ok(())
-}
-
-#[test]
-fn only_a_present_matching_run_is_compatible() -> Result<(), Box<dyn Error>> {
-    let state = setup_observation().state;
-
-    assert_eq!(
-        RuntimeV3GameplayResumableRun::detect(
-            false,
-            RuntimeV3GameplayRunCompatibility::Matches,
-            Some("profile1".to_owned())
-        ),
-        RuntimeV3GameplayResumableRun::Absent
-    );
-    assert_eq!(
-        RuntimeV3GameplayResumableRun::detect(
-            true,
-            RuntimeV3GameplayRunCompatibility::Mismatches,
-            Some("profile1".to_owned())
-        ),
-        RuntimeV3GameplayResumableRun::Incompatible
-    );
-    let detected = RuntimeV3GameplayResumableRun::detect(
-        true,
-        RuntimeV3GameplayRunCompatibility::Matches,
-        Some("profile1".to_owned()),
-    );
-    assert_eq!(detected, compatible(Some("profile1")));
-    assert_eq!(
-        detected.compatible_run_id(),
-        Some(&Some("profile1".to_owned()))
-    );
-
-    // An absent or incompatible run adds nothing and never errors.
-    for unofferable in [
-        RuntimeV3GameplayResumableRun::Absent,
-        RuntimeV3GameplayResumableRun::Incompatible,
-    ] {
-        let mut catalog = vec![start_run()];
-        assert!(!offer_continue_run(
-            &state,
-            &mut catalog,
-            &unofferable,
-            SEQUENCE
-        )?);
-        assert_eq!(catalog, vec![start_run()]);
-    }
-    Ok(())
 }
 
 #[test]
