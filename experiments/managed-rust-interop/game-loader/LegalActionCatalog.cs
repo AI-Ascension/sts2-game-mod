@@ -53,7 +53,7 @@ internal sealed record LegalActionReference(
                     return false;
                 }
                 break;
-            case "end_turn" or "skip_reward" or "rest" or "confirm_victory" or "save_quit":
+            case "end_turn" or "rest" or "confirm_victory" or "save_quit":
             case "proceed" or "confirm_selection" or "cancel_selection":
                 if (Value is not null || TargetId is not null)
                 {
