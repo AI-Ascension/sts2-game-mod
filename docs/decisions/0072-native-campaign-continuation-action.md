@@ -1,8 +1,14 @@
 # ADR 0072: Native campaign continuation action
 
-- Status: Proposed; source-linked synthetic checks executed; native resume pending
-- Date: 2026-09-23
+- Status: Accepted; source-linked synthetic checks executed; native resume evidence pending
+- Date: 2026-09-23 (corrected 2026-09-28)
 - Owner: sts2-game-mod
+
+This record and [ADR 0073](0073-host-continue-run-offer.md) originally described the same
+decision in two files. [ADR 0073](0073-host-continue-run-offer.md) is now the single normative
+record; this document is retained as the identifier `sts2-game-mod#172` was first written against
+and holds only the schema-revision provenance that 0073 does not restate. Where the two disagree,
+0073 governs.
 
 ## Requirement and owner
 
@@ -38,14 +44,27 @@ witness: an advanced generation, a non-setup successor state, and the `campaign_
 synchronous failure stays unknown, and a pending receipt fences overlapping operations, so a second
 resume cannot run concurrently.
 
-## Compatibility and exclusions
+## Schema-revision provenance (corrected 2026-09-28)
 
-The change is additive. The normative `runtime-v3-gameplay` schema and its package copy, the
-`SHA256SUMS`/manifest digests, and the Rust contract mirror are **not** changed here: those bytes are
-the protocol-owned shared contract that `sts2-harness` and the watchdog fault-fixture also vendor,
-and the merged consumer admitted the kind without an artifact revision. Adding the `continue_run`
-arm to the schema and repinning the digest is a coordinated protocol-owner action that must land
-with every consumer copy and is out of scope for this lane.
+An earlier revision of this record stated that the normative `runtime-v3-gameplay` schema, its
+package copy, the `SHA256SUMS`/manifest digests and the Rust contract mirror were **not** changed
+and that the schema arm was out of scope. That was wrong on the evidence now on `main`:
+
+- `73979e6` ("mirror the runtime-v3-gameplay `continue_run` schema revision", PR #212) re-vendored
+  the artifact from its producer (`sts2-protocol` PR #61) so the mod-side parser admits
+  `continue_run` under a schema that actually defines the arm.
+- That commit is an **explicit incompatible artifact revision** under ADR 0012. The schema digest
+  moved from `8e99cea36b7ede97532348fd8efe302ca79260895265a7bf14ddf7e006d8ff63` to
+  `daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b`.
+- `continue_run` is now a defined arm in `protocol-artifact/runtime-v3-gameplay/schema.json` and
+  `schemas/runtime-v3-gameplay.schema.json`, with the matching conformance case and golden.
+- The current Rust constant `RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST` is
+  `daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b`, and both
+  `protocol-artifact/runtime-v3-gameplay/SHA256SUMS` entries agree.
+
+The earlier "no frozen byte changed" claim also survived only because ADR 0073 was written first
+and asserted the same false invariant; the two records had to be reconciled against the artifact
+rather than against each other.
 
 This record does not claim a resumed native game or any game effect. Native resumable-run detection
 and native resume evidence remain `unverified` and need the authorized native host.

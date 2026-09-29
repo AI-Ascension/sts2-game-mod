@@ -80,7 +80,7 @@ impl RuntimeV3GameplayResumableRun {
 pub enum RuntimeV3GameplayResumeOfferError {
     /// The screen is not the setup screen that offers `start_run`.
     NotOnSetupScreen,
-    /// The catalog does not offer exactly one `start_run`, so a continuation must not be added.
+    /// The catalog offers no `start_run`, so it is not a setup catalog and no continuation is added.
     StartRunNotOffered,
     /// The composed continuation identity is not a bounded, valid identity.
     InvalidContinuation,
@@ -108,9 +108,15 @@ impl std::error::Error for RuntimeV3GameplayResumeOfferError {}
 ///
 /// The host calls this while composing the setup-screen catalog and reports what its own save
 /// read found. The continuation is appended only when the screen is `Setup`, the catalog already
-/// offers exactly one `start_run`, and the owner reported `Compatible`; an `Absent` or
+/// offers at least one `start_run`, and the owner reported `Compatible`; an `Absent` or
 /// `Incompatible` run adds nothing and returns `Ok(false)`. The host supplies the sequence it
 /// uses for the host-generated identity, which this producer preserves untouched.
+///
+/// The `start_run` count is a "this really is a new-run catalog" check, not a cardinality claim.
+/// A setup screen offers one `start_run` per playable character, so requiring exactly one would
+/// refuse every real multi-character catalog and silently restore the `sts2-game-mod#172`
+/// symptom. Compatibility of the saved run still comes only from the owner, so a catalog with
+/// many characters cannot fabricate a continuation.
 pub fn offer_continue_run(
     state: &RuntimeV3GameplayState,
     offered: &mut Vec<RuntimeV3GameplayLegalAction>,
@@ -124,7 +130,7 @@ pub fn offer_continue_run(
         .iter()
         .filter(|candidate| matches!(candidate.action, RuntimeV3GameplayAction::StartRun { .. }))
         .count();
-    if start_runs != 1 {
+    if start_runs == 0 {
         return Err(RuntimeV3GameplayResumeOfferError::StartRunNotOffered);
     }
     let Some(run_id) = resumable.compatible_run_id() else {

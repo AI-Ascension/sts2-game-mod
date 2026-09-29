@@ -9,6 +9,14 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Fixed the `continue_run` offer gate, which refused every real setup catalog: it required *exactly
+  one* `start_run`, but a setup screen offers one per playable character, so the gate returned
+  `StartRunNotOffered` and silently restored the `sts2-game-mod#172` symptom it was written to fix.
+  The condition is now "a `start_run` is present", which still refuses a catalog that is not a
+  new-run catalog, and compatibility still comes only from the native owner. The two decision
+  records also disagreed with the artifact -- both claimed the schema digest was unchanged, but
+  `73979e6` moved it to `daa21690…` -- so ADR 0073 is now the single normative record and ADR 0072
+  holds only that provenance (#172).
 - Named the rejected header in the native interop listener's `unsupported_header` refusal, and
   admitted the negotiation headers standard clients send unprompted. The closed 12-name
   allow-list at `experiments/managed-rust-interop/native/src/runtime_http.rs:106` refused
@@ -512,11 +520,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   record the result. ADR 0037 and ADR 0040 carry dated amendments upgrading rows from
   `unverified` to `metadata-observed`; serialization, ordering, restore, and unknown-value semantics
   stay `runtime-unverified`, no phase is advertised, and hosted CI does not run the probe. Refs #80.
-
-- Added the pinned `exact-restore-v1` game-mod consumer with strict frame/schema parsing, bounded
-  closure staging, manifest and digest verification, Linux owner-private durable storage, and
-  `COMMIT_INTENT` recovery semantics. The production fixed routes return typed unsupported errors
-  before storage or managed dispatch because the local owner-fence provider and exact-host restore
-  adapter are not available. Every existing operation also rechecks its stored full owner fence
-  before any phase can disclose progress or touch staged data. Synthetic tests only; native
-  restoration remains unsupported. See ADR 0042.
