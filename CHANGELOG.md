@@ -74,6 +74,13 @@ Completed entries that no longer fit this file's preferred size budget are prese
   managed `SeededRunIdentityRedactionProbe` and a client test pairing every refusal with an accepted
   control. Producer-side only, with no schema, digest or pin change and no native admission claimed.
   Refs #79.
+- Made the #79 drive-prefix refusal load-bearing instead of decorative. The client test spelled its
+  Windows drive path with backslashes, which the shared identity alphabet already refuses, so
+  deleting the `has_drive_letter_prefix` rule entirely left the whole suite green — the PR's central
+  security property was untested against regression. The case is now spelled `C:/Users/...`, the one
+  shape the drive-letter rule alone can refuse; removing that rule now fails the suite. Also pinned
+  the bare `.` and `./` as admitted controls by decision, on both sides, so the choice cannot be
+  silently reversed. No behaviour, schema, digest or pin change. Refs #79.
 - Repaired three defects the #79 redaction work introduced, all found by its own managed gate rather
   than by inspection. `SeededRunIdentityRedactionProbe.csproj` had a malformed
   `IntermediateOutputPath` (a start tag with no end tag), so the probe could not load at all;

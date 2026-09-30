@@ -56,6 +56,13 @@ internal static class SeededRunIdentityRedactionProbe
             "op-seed-1",
             "instance:native-test",
             "tenant/instance-1",
+            // A bare `.` and `./` are current-directory path elements, and they are admitted by
+            // decision rather than by oversight. Neither names a host location, so neither
+            // discloses anything, and refusing them would narrow a producer-owned alphabet this
+            // consumer does not own. They are weak identities, not leaks, and pinning them here
+            // keeps the decision from being silently reversed.
+            ".",
+            "./",
         })
         {
             Check(SeededRunOpaqueIdentity.IsOpaqueIdentity(value),

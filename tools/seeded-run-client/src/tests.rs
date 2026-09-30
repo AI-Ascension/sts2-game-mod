@@ -160,8 +160,13 @@ fn no_operator_field_carries_a_host_path_or_email_into_the_body() {
         // Parent-directory hops and scheme separators spell the same thing.
         ("instance_id", format!("profiles/../../home/{SENTINEL}")),
         ("instance_id", format!("file:///home/{SENTINEL}/profile")),
-        // A Windows drive path and a UNC path, which the shared alphabet also spells.
-        ("instance_id", format!("C:\\Users\\{SENTINEL}\\profile")),
+        // A Windows drive path spelled with forward slashes. The shared alphabet admits `/`, so
+        // this shape is the only one the drive-letter rule — not the alphabet, a leading
+        // separator, a `..`, or a `://` — can refuse. It is therefore the case that keeps that
+        // rule load-bearing; a `C:\...` literal is refused by the alphabet alone, which leaves
+        // the drive-letter rule untested and deletable without turning the suite red.
+        ("instance_id", format!("C:/Users/{SENTINEL}/profile")),
+        // A UNC path, which the shared alphabet also spells.
         ("instance_id", format!("\\\\host\\share\\{SENTINEL}")),
         // A bare drive prefix and a bare scheme separator, neither of which has a leading
         // separator, a `..`, or a `://` for the structural rules above to catch.

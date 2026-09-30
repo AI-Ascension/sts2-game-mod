@@ -240,9 +240,12 @@ producer-side only:
 - **Artifact identity** — unchanged, the pinned alphabet. Carries the compatibility identities, the
   composite `context_id`, error codes, and observation phase identities, all of which need `/`.
 - **Opaque identity** — the same alphabet minus the structural sequences that only occur in paths
-  and URIs (leading `/` or `\`, a leading drive-letter colon, `..`, `://`, and a separator-only
-  value). Applied to `instance_id`, `session_id`, `lease_id`, `correlation_id`, `operation_id`, and
-  `profile_baseline.identity`.
+  and URIs (leading `/` or `\`, a leading `:` whether or not it has a drive letter before it, `..`,
+  `://`, and a separator-only value). Applied to `instance_id`, `session_id`, `lease_id`,
+  `correlation_id`, `operation_id`, and `profile_baseline.identity`. A bare `.` and `./` are
+  admitted by decision rather than by oversight: they name the current directory rather than a host
+  location, so they disclose nothing, and refusing them would narrow an alphabet this repository
+  does not own.
 
 This mirrors the save-profile identity check `sts2-gateway` already applies, and the C# loader gate
 mirrors the Rust client so the producer and consumer cannot drift. The opaque class is a strict
