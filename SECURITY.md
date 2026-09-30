@@ -17,6 +17,18 @@ Report vulnerabilities in the managed loader, native ABI, host boundary, local H
 tooling, or packaging documentation. Do not include game binaries, saves, credentials, personal
 paths, or unredacted logs in a report.
 
+## Operator-supplied identities
+
+The `seeded-run-v1` identity pattern admits `.`, `:`, `/` and `-`, which the release-like
+compatibility identities and the composite `context_id` require, and which together also spell a
+POSIX or Windows host path. The operator-supplied runtime identifiers — `instance_id`,
+`session_id`, `lease_id`, `correlation_id`, `operation_id` — and the profile-baseline identity
+never legitimately carry a path, so both the seeded-run client and the loader bound them with the
+stricter opaque grammar: leading separators, drive prefixes, parent-directory hops, and URI
+schemes are refused. This keeps a personal host path out of the request body, the transport
+headers, and the host's run record. It refines the shared alphabet on the producer side, so the
+pinned schema, its digest, and its goldens are unchanged.
+
 ## Reporting
 
 Use a private maintainer security channel when one is configured for the hosted repository. Until

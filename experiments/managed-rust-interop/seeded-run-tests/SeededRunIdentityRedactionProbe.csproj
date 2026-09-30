@@ -5,14 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <OutputPath>bin/StandardAdmissionProbe/$(Configuration)/</OutputPath>
-    <IntermediateOutputPath>obj/StandardAdmissionProbe/$(Configuration)/</IntermediateOutputPath>
+    <OutputPath>bin/IdentityRedactionProbe/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj/IdentityRedactionProbe/$(Configuration)/</IntermediateOutputPath>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="StandardAdmissionProbe.cs" />
+    <Compile Include="SeededRunIdentityRedactionProbe.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
     <Compile Include="../game-loader/SeededRunIdentityContract.cs" />
-    <Compile Include="../game-loader/SeededRunStandardAdmission.cs" />
   </ItemGroup>
 </Project>

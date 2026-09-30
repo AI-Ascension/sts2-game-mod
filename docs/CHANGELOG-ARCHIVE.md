@@ -8,6 +8,57 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Made the isolated-user-directory refusal actionable on Windows and enforced the launch contract
+  before launch (sts2-game-mod#173). `LiveCombatDemo` refused with the single message "live demo
+  requires its isolated user directory", which named neither the directory the game resolved nor
+  which condition failed, so the failure could not be acted on. The decision now lives in the
+  host-independent `IsolatedUserDirectoryCheck`, whose refusal names both directories and a stable
+  reason token (`isolated_user_dir_unset`, `isolated_user_dir_unresolved`,
+  `isolated_user_dir_mismatch`); `experiments/managed-rust-interop/live-combat-demo.ps1` resolves
+  `override.cfg` plus the launch-scoped `APPDATA` root through the dot-sourceable
+  `live-combat-demo-override.ps1` and refuses a mismatched declaration before the game starts. The
+  source-only `SeededRunIsolatedUserDirProbe` (hosted `managed-source` job) and
+  `live-combat-demo-override-tests.ps1` pin the reason tokens and diagnostics. Also corrects the
+  #173 record: `AIAscensionSTS2GameMod.dll` does contain `STS2_LIVE_COMBAT`, `STS2_LIVE_USER_DIR`
+  and the refusal string; the earlier scan missed them because a UTF-16 search started at an odd
+  byte offset, so the recorded "none of those appear in this build" was a scan artifact, not a
+  missing contract. Source-only evidence; the native seeded campaign remains `unverified-native`.
+  Refs #173.
+- Added the managed host-thread checkpoint capture seam and settlement classifier for #80 item 3.
+  `CheckpointCaptureSource` (with `CheckpointCaptureSource.Settlement.cs` and
+  `CheckpointCaptureSource.Rules.cs`) is host-thread-only, classifies settlement through the same
+  `Quiescent / MidEffect / EnemyExecution / PendingSelectionTransition / Unknown` mapping as the Rust
+  owner gate, copies the `checkpoint-payload-v1` families into owned records and immutable bytes only
+  when the boundary is quiescent and unchanged across the window, and emits typed rejections (never a
+  substituted value) for a required `unknown` family, a combat family at a settled map choice, an
+  outstanding pending effect, an unbounded collection or a malformed identifier. It holds no host
+  reference after returning, draws no RNG, advances no observation generation and is wired to no route
+  or listener, so every boundary stays unavailable. The host-independent probe
+  `experiments/managed-rust-interop/checkpoint-capture-tests/` runs in the hosted `managed-source` job
+  and passes 92 checks, including that a quiescent capture is structurally identical to the pinned
+  valid fixture and hashes to that vector's pinned canonical `blob_digest`. Synthetic evidence only;
+  native field availability, ordering and restore semantics remain `runtime-unverified`. Refs #80.
+
+- Added the closed, versioned game-owned checkpoint payload contract `checkpoint-payload-v1`
+  (`schemas/checkpoint-payload-v1.schema.json`, `ascension.checkpoint_payload.v1`) for the three
+  first-release boundaries, a typed `CheckpointPayload` model that lowers to `CanonicalValue` and
+  parses back strictly with typed errors, per-family `captured`/`unknown`/`not_applicable` coverage
+  with required-unknown rejection, and pinned conformance fixtures with `SHA256SUMS`. Unsupported
+  phases have no payload schema and keep the existing typed rejection; no phase is advertised as
+  available. Synthetic source evidence only. See ADR 0057. Refs #80.
+
+- Fixed the read-only Steam usability preflight so its classification describes the interactive
+  session instead of the caller. `experiments/managed-rust-interop/steam-usability-preflight.ps1`
+  read only `HKCU:`, so when the QEMU guest agent launched it in session 0 as a service account it
+  emitted `absent_client` for an installation that was present and running for the logged-in
+  operator; the `#79` native gate was recorded as blocked on that token. It now enumerates `HKCU:`
+  plus every loaded interactive user hive (`S-1-5-21-*`) with unchanged tokens, single-key output
+  and redaction rules. A/B through the guest agent on the same guest at the same instant:
+  previous body `absent_client`, current body `process_present_account_indicated`, with one
+  `Active` console session and `steam` running in session 1 observed independently. The
+  `docs/evidence/seeded-run-criterion-evidence-map-20260917.md` runbook carries the dated
+  correction. Preflight classification only; the native seeded campaign and its receipts remain
+  `unverified-native`. Refs #79.
 - Recorded the exact-build checkpoint coverage inventory from pinned host metadata. The opt-in
   `experiments/managed-rust-interop/checkpoint-coverage-reflection/` probe resolves every ADR 0037
   coverage family and every ADR 0040 RNG audit row to concrete host members (type, member, kind,

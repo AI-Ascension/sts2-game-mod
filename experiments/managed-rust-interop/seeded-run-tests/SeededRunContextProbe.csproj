@@ -5,11 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Every sibling probe project in this directory sets EnableDefaultCompileItems=false and lists its own sources. This one did not, so it glob-absorbed the whole directory and any file added here dragged its siblings in with it: #246's new probe put LaunchContractRefusalProbe's and IsolatedUserDirectoryProbe's private Main methods in this assembly beside this project's own (CS0017), and pulled in the boundary types those probes own through their own projects (CS0103/CS0246). Pinning the compile list restores the sibling invariant, that a probe's sources are declared by its own csproj, so adding a probe here cannot change what any other probe compiles. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="ProtocolSerializationProbe.cs" />
-    <Compile Remove="ProfileBaselineProbe.cs" />
-    <Compile Remove="StandardAdmissionProbe.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+    <Compile Include="../game-loader/SeededRunIdentityContract.cs" />
   </ItemGroup>
 </Project>

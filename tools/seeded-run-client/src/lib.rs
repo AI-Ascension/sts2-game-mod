@@ -8,6 +8,7 @@
 //! digests) are supplied by the operator; this tool does not invent or fabricate them.
 
 pub mod context;
+pub mod identity;
 pub mod request;
 pub mod wire;
 
@@ -15,4 +16,5 @@ pub mod wire;
 mod tests;
 
 pub use context::{CanonicalContext, ClientError, Compatibility, IdentityDigest, ProfileBaseline};
+pub use identity::{is_artifact_identity, is_opaque_identity};
 pub use request::{StartRequest, StartRequestParams, build_start_request};

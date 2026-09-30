@@ -166,7 +166,7 @@ internal sealed record SeededRunStandardRequest(
 {
     internal bool Validate(out string error)
     {
-        if (!SeededRunStandardContract.IsIdentity(OperationId)
+        if (!SeededRunOpaqueIdentity.IsOpaqueIdentity(OperationId)
             || !SeededRunStandardContract.IsSeed(RequestedSeed)
             || RunMode is not ("seeded_training" or "seeded_replay" or "diagnostic")
             || SelectedContext is null
@@ -234,7 +234,7 @@ internal static class SeededRunStandardContract
         out string error)
     {
         if (baseline.Kind is not ("fresh" or "existing")
-            || !IsIdentity(baseline.Identity)
+            || !SeededRunOpaqueIdentity.IsOpaqueIdentity(baseline.Identity)
             || !IsDigest(baseline.Digest))
         {
             error = "profile baseline identity or digest is invalid";
