@@ -55,7 +55,10 @@ internal static class SeededRunOpaqueIdentity
     /// colon-delimited identifier such as <c>instance:native-test</c> admissible. A <c>:</c> with
     /// no letter before it is a scheme or drive separator with its prefix missing, which is the
     /// same shape one hop further along, so it is refused too: only a colon that has an opaque
-    /// identifier <em>before</em> it is admissible.
+    /// identifier <em>before</em> it is admissible. A bare <c>.</c> or <c>./</c> is admitted by
+    /// decision: it names the current directory rather than a host location, so it discloses
+    /// nothing, and refusing it would narrow a producer-owned alphabet this side does not own.
+    /// Mirrors <c>is_opaque_identity</c> in the seeded-run client.
     /// </summary>
     private static bool HasDriveLetterPrefix(string value) =>
         value.Length >= 1
