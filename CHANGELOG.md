@@ -60,6 +60,46 @@ Completed entries that no longer fit this file's preferred size budget are prese
   exits 0 with zero warnings on the unmodified tree, and exits 101 at `lib.rs:260` when a link to the
   private `DispatcherPort` is added, where the shipped single-lint command exits 0 with
   `generated 1 warning`. Documentation and gate only; no code, route, schema or native effect. Refs #222.
+- Closed a data-redaction gap in the seeded-run request surface for sts2-game-mod#79. The pinned
+  `seeded-run-v1` `identity` pattern `^[A-Za-z0-9_.:/-]{1,128}$` is needed by the release-like
+  compatibility identities and the composite `context_id`, but those characters also spell a POSIX
+  or Windows host path, so `instance_id = "/home/operator/sts2/profiles/slot1"` validated and
+  reached the request body and the `x-sts2-instance-id` header. Rather than narrow the shared
+  alphabet (`sts2-protocol`-owned, mirrored into four consumers), the grammar splits by role: an
+  unchanged artifact class for release-like `name/version` identities, and a stricter opaque class
+  for operator-supplied runtime identifiers and profile-baseline identity, refusing leading
+  separators, a bare drive prefix, parent-directory hops and URI schemes. `:` and `/` stay
+  admissible so the co-op producer's `instance:native-test` keeps working. The C# loader gate
+  mirrors the Rust client and the opaque class is a strict subset of the artifact class, pinned by a
+  managed `SeededRunIdentityRedactionProbe` and a client test pairing every refusal with an accepted
+  control. Producer-side only, with no schema, digest or pin change and no native admission claimed.
+  Refs #79.
+- Repaired three defects the #79 redaction work introduced, all found by its own managed gate rather
+  than by inspection. `SeededRunIdentityRedactionProbe.csproj` had a malformed
+  `IntermediateOutputPath` (a start tag with no end tag), so the probe could not load at all;
+  `SeededRunContextProbe.csproj` omitted `EnableDefaultCompileItems=false` unlike every sibling
+  probe project, so it glob-absorbed the whole `seeded-run-tests/` directory and absorbed its
+  siblings' private `Main` methods (CS0017) and boundary types (CS0103/CS0246) — the collision was
+  latent until this branch added a file to that directory, and pinning the compile list restores the
+  invariant that a probe's sources are declared by its own csproj. `IsOpaqueIdentity` also had a
+  CS8602 null dereference, because `IsIdentity` is null-tolerant but the compiler cannot see through
+  that, and it admitted a bare leading `:`, the drive or scheme separator with its prefix missing,
+  which the method's own doc comment already said it refused. The opaque class stays a strict subset
+  of the artifact class: `instance:native-test` and every accepted control still pass. The full
+  managed probe suite, the client tests, clippy and the strict policy gate are green. Source-only;
+  no schema, digest or pin change and no native admission claimed. Refs #79.
+- Repaired the managed seeded-run context gate, which reported green while its own probe did not
+  compile. `SeededRunContextProbe.csproj` was the one seeded-run project that still globbed its
+  directory instead of listing sources, so every sibling probe file in it had to be excluded by
+  hand; two probes added since then never were, so it compiled two entry points and could not build
+  at all, and a new probe here breaks it again. The CI step joined this probe and the
+  standard-admission probe with `;`, so the compile error was discarded and the second probe's exit
+  code decided the step: the gate proved nothing about the context digest it is named for. The
+  project now sets `EnableDefaultCompileItems=false` and names its own sources, like its six
+  siblings, so adding a probe here cannot change what any other probe compiles, and the step joins
+  with `&&` so a failure is not masked. Build and gate wiring only; no probe logic, contract or
+  runtime effect. Refs #79.
+
 
 - Repaired the game-mod crate's one dangling intra-doc link and gated the class durably. The
   `content_index` module linked a bare `[`ContentManifest`]`, but a bare link resolves only against
@@ -465,60 +505,7 @@ Completed entries that no longer fit this file's preferred size budget are prese
   Source-only evidence; native rendered-text extraction, live run reads, locale switching, and
   exact-host compatibility remain `unverified-native`. Refs #111.
 
-- Made the isolated-user-directory refusal actionable on Windows and enforced the launch contract
-  before launch (sts2-game-mod#173). `LiveCombatDemo` refused with the single message "live demo
-  requires its isolated user directory", which named neither the directory the game resolved nor
-  which condition failed, so the failure could not be acted on. The decision now lives in the
-  host-independent `IsolatedUserDirectoryCheck`, whose refusal names both directories and a stable
-  reason token (`isolated_user_dir_unset`, `isolated_user_dir_unresolved`,
-  `isolated_user_dir_mismatch`); `experiments/managed-rust-interop/live-combat-demo.ps1` resolves
-  `override.cfg` plus the launch-scoped `APPDATA` root through the dot-sourceable
-  `live-combat-demo-override.ps1` and refuses a mismatched declaration before the game starts. The
-  source-only `SeededRunIsolatedUserDirProbe` (hosted `managed-source` job) and
-  `live-combat-demo-override-tests.ps1` pin the reason tokens and diagnostics. Also corrects the
-  #173 record: `AIAscensionSTS2GameMod.dll` does contain `STS2_LIVE_COMBAT`, `STS2_LIVE_USER_DIR`
-  and the refusal string; the earlier scan missed them because a UTF-16 search started at an odd
-  byte offset, so the recorded "none of those appear in this build" was a scan artifact, not a
-  missing contract. Source-only evidence; the native seeded campaign remains `unverified-native`.
-  Refs #173.
-
-- Fixed the read-only Steam usability preflight so its classification describes the interactive
-  session instead of the caller. `experiments/managed-rust-interop/steam-usability-preflight.ps1`
-  read only `HKCU:`, so when the QEMU guest agent launched it in session 0 as a service account it
-  emitted `absent_client` for an installation that was present and running for the logged-in
-  operator; the `#79` native gate was recorded as blocked on that token. It now enumerates `HKCU:`
-  plus every loaded interactive user hive (`S-1-5-21-*`) with unchanged tokens, single-key output
-  and redaction rules. A/B through the guest agent on the same guest at the same instant:
-  previous body `absent_client`, current body `process_present_account_indicated`, with one
-  `Active` console session and `steam` running in session 1 observed independently. The
-  `docs/evidence/seeded-run-criterion-evidence-map-20260917.md` runbook carries the dated
-  correction. Preflight classification only; the native seeded campaign and its receipts remain
-  `unverified-native`. Refs #79.
-
-- Added the managed host-thread checkpoint capture seam and settlement classifier for #80 item 3.
-  `CheckpointCaptureSource` (with `CheckpointCaptureSource.Settlement.cs` and
-  `CheckpointCaptureSource.Rules.cs`) is host-thread-only, classifies settlement through the same
-  `Quiescent / MidEffect / EnemyExecution / PendingSelectionTransition / Unknown` mapping as the Rust
-  owner gate, copies the `checkpoint-payload-v1` families into owned records and immutable bytes only
-  when the boundary is quiescent and unchanged across the window, and emits typed rejections (never a
-  substituted value) for a required `unknown` family, a combat family at a settled map choice, an
-  outstanding pending effect, an unbounded collection or a malformed identifier. It holds no host
-  reference after returning, draws no RNG, advances no observation generation and is wired to no route
-  or listener, so every boundary stays unavailable. The host-independent probe
-  `experiments/managed-rust-interop/checkpoint-capture-tests/` runs in the hosted `managed-source` job
-  and passes 92 checks, including that a quiescent capture is structurally identical to the pinned
-  valid fixture and hashes to that vector's pinned canonical `blob_digest`. Synthetic evidence only;
-  native field availability, ordering and restore semantics remain `runtime-unverified`. Refs #80.
-
 - Added `docs/evidence/seeded-run-criterion-evidence-map-20260917.md`, mapping every #79 seeded-run
   acceptance criterion to its evidence at exact pins (mod `46b1ac6e`, host v0.107.1/`59260271`,
   protocol `bfe28e45`, harness/gateway/MCP heads, staged guest set); AC1 is `confirmed-source`,
   native rows remain `unverified-native` behind the interactive Windows/Steam session gate.
-
-- Added the closed, versioned game-owned checkpoint payload contract `checkpoint-payload-v1`
-  (`schemas/checkpoint-payload-v1.schema.json`, `ascension.checkpoint_payload.v1`) for the three
-  first-release boundaries, a typed `CheckpointPayload` model that lowers to `CanonicalValue` and
-  parses back strictly with typed errors, per-family `captured`/`unknown`/`not_applicable` coverage
-  with required-unknown rejection, and pinned conformance fixtures with `SHA256SUMS`. Unsupported
-  phases have no payload schema and keep the existing typed rejection; no phase is advertised as
-  available. Synthetic source evidence only. See ADR 0057. Refs #80.

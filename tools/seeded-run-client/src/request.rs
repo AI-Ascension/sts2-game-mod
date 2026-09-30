@@ -4,8 +4,8 @@ use serde::Serialize;
 
 use crate::context::{
     ARTIFACT, CanonicalContext, ClientError, GENERATOR, PROTOCOL_VERSION, SCHEMA_SOURCE,
-    is_identity,
 };
+use crate::identity::is_opaque_identity;
 
 /// Provenance block required by every seeded-run message.
 #[derive(Clone, Debug, Serialize)]
@@ -106,11 +106,11 @@ pub fn build_start_request(params: &StartRequestParams) -> Result<StartRequest, 
     if !is_digest_value(&params.schema_digest) {
         return Err(ClientError::InvalidField("schema_digest"));
     }
-    if !is_identity(&params.operation_id)
-        || !is_identity(&params.correlation_id)
-        || !is_identity(&params.instance_id)
-        || !is_identity(&params.session_id)
-        || !is_identity(&params.lease_id)
+    if !is_opaque_identity(&params.operation_id)
+        || !is_opaque_identity(&params.correlation_id)
+        || !is_opaque_identity(&params.instance_id)
+        || !is_opaque_identity(&params.session_id)
+        || !is_opaque_identity(&params.lease_id)
     {
         return Err(ClientError::InvalidField("identity"));
     }

@@ -124,13 +124,17 @@ dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRun
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunStandardAdmissionProbe.csproj --configuration Release
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProfileBaselineProbe.csproj --configuration Release
 dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunProtocolSerializationProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/seeded-run-tests/SeededRunIdentityRedactionProbe.csproj --configuration Release
 ~~~
 
 These probes do not load a proprietary host, start a native run, access a real profile/save, or
-establish seed settlement. In particular, the standard-admission probe covers only request-owned
-constraints before host access; it cannot verify native lobby setup. The host-dependent adapter
-remains unverified until a disposable exact host test records canonical seed readback, the
-`run_started` witness, profile isolation, and cleanup.
+establish seed settlement. The standard-admission probe covers only request-owned constraints
+before host access; it cannot verify native lobby setup. `SeededRunIdentityRedactionProbe` is new
+for `sts2-game-mod#79`: it checks the host-path, URI, and e-mail refusals *and* the accepted
+controls, so they cannot be met by a gate that refuses everything, and the client test of the same
+name pins the producer side. It changes no schema or golden; see [`SECURITY.md`](../SECURITY.md).
+`SeededRunContextProbe.csproj` sets `EnableDefaultCompileItems=false` and names its own sources,
+like the other six seeded-run projects, so a probe added here cannot change what another builds.
 
 ## Runtime-map-v1 projection checks
 
@@ -186,8 +190,7 @@ build/package evidence, not a live host result.
 
 Wave 2 claims unit/component coverage for the initialized ports, composition, and fake POC mapping.
 The runtime-v1 host report adds focused host and integration evidence for one exact disposable
-profile; it is not full conformance or a release-support claim.
-
+profile; it is not a release-support claim.
 ## Repeat-seed verification
 
 Run the source-linked controller probe without proprietary assemblies:
@@ -199,13 +202,11 @@ dotnet run --project experiments/managed-rust-interop/replay-tests/ReplayValidat
 It links the production controller against synthetic API-shape fakes and covers unknown/protected
 mode rejection, duplicate queueing, opt-out before the frame or during saving, profile/run changes,
 replacement pending saves, failed saves, one same-seed restart, and sanitized post-cleanup failure.
-It does not establish real host API compatibility, Godot continuation scheduling, save atomicity,
-or the immutability of captured character/act/modifier model objects.
+It does not establish real host API compatibility or save atomicity.
 
 The managed repeat-seed implementation is covered by the exact-host compile command in the host
 evidence section below. Static and build checks establish API shape and fail-closed source paths;
-they do not establish that a game UI click starts a replacement run. The feature-specific runtime
-cases are:
+they do not establish that a game UI click starts a replacement run. The runtime cases are:
 
 | Case | Expected invariant | Current evidence |
 | --- | --- | --- |
@@ -217,8 +218,8 @@ cases are:
 | No later-floor claim | The UI and documentation describe a restart from the seed beginning, not checkpoint restoration | Source/documentation |
 
 The existing generic Runtime-v1/v2 duplicate-operation tests are not repeat-seed evidence. A future
-checkpoint or history-browser feature must add a separate owner-local contract and deterministic
-fixtures rather than extending this seed-only action implicitly.
+checkpoint or history-browser feature must add a separate owner-local contract and fixtures rather
+than extending this seed-only action implicitly.
 
 ## Owner-local field availability fixture
 
@@ -508,22 +509,20 @@ dotnet run --project experiments/managed-rust-interop/host-candidate-tests/HostC
 It links the actual v2 managed candidate files against handwritten synthetic host doubles.
 After the main-safety rebase it also links the production shared callback, lifecycle, network,
 queue and strict v1 contract sources. Candidate requests pass through `ProcessRuntimeWork`;
-combined queue cases check one uncertain dispatch and removal before an expired dispatch.
-It checks semantic replay, identity ownership, run freshness, and uncertain outcomes.
-It does not prove exact-host ABI compatibility or gameplay behavior. CI runs this separately
-from the generic managed ABI and Workshop probes.
+combined queue cases check one uncertain dispatch and removal before an expired dispatch. It
+checks semantic replay, identity ownership, run freshness, and uncertain outcomes. CI runs this
+separately from the generic managed ABI and Workshop probes.
 
 The source review replaced the candidate's state-delta settlement inference. Neither a later turn
 nor changed energy/pile counts proves completion of a particular queued operation. The current
 adapter returns `unknown` after enqueue (including enqueue exceptions), retains its operation and
 blocks further v2 mutations until independent operation-bound completion is available. It does
 not emit a settlement witness from these host adapters. No such host completion binding has yet
-been established; this is an integration blocker, not a successful gameplay result.
+been established; this is an integration blocker.
 
 Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Exact semantic
 retries ignore transport correlation and JSON formatting; run/combat/player replacement
-invalidates generation. This bounded observation is not a complete game-state revision
-or a game-rule parity claim.
+invalidates generation. This is not a complete game-state revision or a game-rule parity claim.
 
 ## Runtime-v3 and co-op checks
 

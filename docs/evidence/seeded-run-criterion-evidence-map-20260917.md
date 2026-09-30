@@ -77,6 +77,7 @@ profile." Current state of that gate is in the section "External gate" below.
 | AC1.d wire authority: request generation and fingerprint are carried unchanged through start/reconcile responses | `SeededRunProtocolSerializationProbe` over `game-loader/SeededRunProtocolSerialization.cs`; 59 checks | `confirmed-source` | confirmed: 59 PASS, exit 0; CI step "Run managed seeded-run serializer generation probe" |
 | AC1.e launcher authority: live authorization and disposable-launcher refusals | `experiments/managed-rust-interop/live-authorization.test.sh`, `session-launcher.test.sh`, `session-launcher.sh --self-test` in CI job "Rust foundation gates" | `confirmed-source` | source-derived here; CI run `35184549562` success. Not rerun for this record |
 | AC1.f "without requiring a game in default CI" | `experiments/managed-rust-interop/managed/ManagedInteropSpike.csproj` and the four seeded-run probe projects carry no host assembly reference; the managed-source CI job runs on `windows-latest` with no `STS2GameDataDir` | `confirmed-source` | source-derived; CI success on `46b1ac6e…`. Nothing remains; the AC1 checkbox in the issue body is simply not ticked |
+| AC1.g operator-identity redaction: no operator-supplied field carries a host path, URI, or e-mail address into the request body, the transport headers, or the host run record | `SeededRunIdentityRedactionProbe` over `game-loader/SeededRunIdentityContract.cs`; the client test `no_operator_field_carries_a_host_path_or_email_into_the_body` over `tools/seeded-run-client/src/identity.rs`. Both pin the refusals *and* the accepted controls (`instance:native-test`, the `name/version` artifact identities, and the composite `context_id`) so the refusals cannot be met by refusing everything | `confirmed-source` | Confirmed by the fix recorded under "Amendment 2026-09-29" below. Closes the gap this record previously left open: the sub-clauses above bound the *context* and the *digest*, but nothing refused an operator-supplied host path in `instance_id`, `session_id`, `lease_id`, `correlation_id`, `operation_id`, or `profile_baseline.identity`, all of which the shared pattern admitted |
 
 ### AC2 — "Authorized native lane proves supported standard setup, canonical seed, causal first state and settled operation at exact pins."
 
@@ -221,6 +222,41 @@ This is external to every repository in the organization. No repository change c
 When it clears, the order is: preflight and classifier, re-pin or rebuild (section above), bounded
 campaign, receipts, independent review of receipts and negative cases, then this record is updated
 row by row from `unverified-native` to the observed result.
+
+## Amendment 2026-09-29 — operator-identity redaction
+
+This record originally read AC1 as fully discharged. That was too strong. AC1.a–AC1.f bound the
+selected context, its canonical digest, the profile-baseline inventory, and the wire generation, but
+no check refused an operator-supplied **host path**. The pinned `seeded-run-v1` `identity` pattern
+is `^[A-Za-z0-9_.:/-]{1,128}$`; that alphabet is required by the release-like compatibility
+identities (`sts2-game/v0.107.1`) and by the composite `context_id`
+(`standard/ironclad/asc0/fresh`), so it is not itself the defect. But it also admits
+`instance_id = "/home/operator/sts2/profiles/slot1"`, and the client serialized that value
+verbatim into the request body and the `x-sts2-instance-id` transport header.
+
+The fix splits the single shared definition into the two classes the values actually form, applied
+producer-side only:
+
+- **Artifact identity** — unchanged, the pinned alphabet. Carries the compatibility identities, the
+  composite `context_id`, error codes, and observation phase identities, all of which need `/`.
+- **Opaque identity** — the same alphabet minus the structural sequences that only occur in paths
+  and URIs (leading `/` or `\`, a leading drive-letter colon, `..`, `://`, and a separator-only
+  value). Applied to `instance_id`, `session_id`, `lease_id`, `correlation_id`, `operation_id`, and
+  `profile_baseline.identity`.
+
+This mirrors the save-profile identity check `sts2-gateway` already applies, and the C# loader gate
+mirrors the Rust client so the producer and consumer cannot drift. The opaque class is a strict
+subset of the artifact class, so no value the loader accepts is one the shared pattern rejects. The
+pinned schema, its digest `5c659f34…`, the goldens, `SHA256SUMS`, and every consumer pin are
+unchanged; no cross-repository contract change is required, and this is not a schema migration.
+
+`:` and `/` remain admissible in the opaque class for real in-tree values — the co-op native
+producer uses `instance:native-test` — so the refinement refuses the *structural* shapes rather
+than the characters. Verified by the loader probe and the client test, each pairing every refusal
+with an accepted control.
+
+What remains unchanged is the native gate below. This amendment is source-only and does not
+establish admission, settlement, or any host effect.
 
 ## Related records
 

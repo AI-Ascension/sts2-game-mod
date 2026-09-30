@@ -3,6 +3,8 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use crate::identity::{is_artifact_identity, is_opaque_identity};
+
 /// Protocol version carried by every seeded-run message.
 pub const PROTOCOL_VERSION: &str = "seeded-run-v1";
 /// Shared artifact identity recorded in provenance.
@@ -99,7 +101,7 @@ impl CanonicalContext {
 
     /// Validates the bounded host contract before a request is built.
     pub fn validate(&self) -> Result<(), ClientError> {
-        if !is_identity(&self.context_id)
+        if !is_artifact_identity(&self.context_id)
             || self.game_mode != "standard"
             || self.character != "ironclad"
             || self.ascension > 20
@@ -118,14 +120,18 @@ impl CanonicalContext {
         {
             return Err(ClientError::InvalidField("selected_context_lists"));
         }
+        // The baseline identity is operator-supplied and names one prepared profile, so it takes
+        // the opaque class: a host path here is always a mistake, never a contract value. The
+        // compatibility identities below are the opposite — release-like `name/version` values —
+        // so they keep the artifact class and its `/`.
         if !matches!(self.profile_baseline.kind.as_str(), "fresh" | "existing")
-            || !is_identity(&self.profile_baseline.identity)
+            || !is_opaque_identity(&self.profile_baseline.identity)
             || !is_digest(&self.profile_baseline.digest)
         {
             return Err(ClientError::InvalidField("profile_baseline"));
         }
         for part in [&self.compatibility.game, &self.compatibility.mod_identity] {
-            if !is_identity(&part.identity) || !is_digest(&part.digest) {
+            if !is_artifact_identity(&part.identity) || !is_digest(&part.digest) {
                 return Err(ClientError::InvalidField("compatibility"));
             }
         }
@@ -133,20 +139,10 @@ impl CanonicalContext {
     }
 }
 
-/// Bounded identity grammar for `seeded-run-v1`.
-#[must_use]
-pub fn is_identity(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 128
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b".:/_-".contains(&byte))
-}
-
 /// Bounded context-text grammar for `seeded-run-v1`.
 #[must_use]
 pub fn is_context_text(value: &str) -> bool {
-    is_identity(value)
+    is_artifact_identity(value)
 }
 
 /// Lowercase SHA-256 digest grammar.

@@ -13,5 +13,6 @@
     <Compile Include="ProfileBaselineProbe.cs" />
     <Compile Include="../game-loader/SeededRunProfileBaseline.cs" />
     <Compile Include="../game-loader/SeededRunStandardContext.cs" />
+    <Compile Include="../game-loader/SeededRunIdentityContract.cs" />
   </ItemGroup>
 </Project>
