@@ -34,6 +34,11 @@ internal sealed partial class LiveCombatSource
 
     private static RuntimeV3GameplayObservation ProjectRestSite(RuntimeV3GameplayObservation observation,
         NRestSiteRoom room) => Surface(observation, RuntimeV3GameplayState.Rest,
+            // Rest options stay identity-only. A rest option is `HealRestSiteOption` or
+            // `SmithRestSiteOption`, and the only field this loader reads off it is `OptionId`; the
+            // displayed label comes from the localization layer this loader does not own. Publishing
+            // a hardcoded label here would be this loader inventing the host's wording, so the entry
+            // stays the bare identifier the harness already admits.
             RestButtons(room).Select(button => button.Option!.OptionId).ToArray(),
             MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal == null);
 

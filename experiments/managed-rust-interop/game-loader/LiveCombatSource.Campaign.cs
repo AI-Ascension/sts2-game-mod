@@ -85,6 +85,11 @@ internal sealed partial class LiveCombatSource
         if (CurrentShop() is { } shop) return ProjectShop(observation, shop);
         NEventOptionButton[] options = EventButtons();
         if (options.Length > 0)
+            // Event options stay identity-only. The only text this loader reads off an option is
+            // `Option.TextKey`, which is a localization key rather than the player-visible label,
+            // so publishing it as `name` would be a translation-table artifact, not the option's
+            // text. The resolved label needs the localization layer this loader does not own, so
+            // the entry stays the bare identifier the harness already admits.
             return Surface(observation, RuntimeV3GameplayState.Event,
                 options.Select(EventId).ToArray(), true);
         return observation;
@@ -96,6 +101,32 @@ internal sealed partial class LiveCombatSource
         State = state, StateValues = values, IsActionable = enabled,
         InputEnabled = enabled, ModalBlocking = !enabled
     };
+
+    /// <summary>
+    /// Publishes an offered set whose entries the host described.
+    ///
+    /// <para>
+    /// <paramref name="identities"/> stays the set of bare identities because the legal-action
+    /// catalog and the dispatch matchers key off it; <paramref name="offered"/> only adds what the
+    /// host actually read. Passing the identities alongside is what keeps the two consistent: an
+    /// entry's <c>choice_id</c> is the identity the action catalog already used, so a provider can
+    /// act on a described entry exactly as it acted on a bare one.
+    /// </para>
+    /// </summary>
+    private static RuntimeV3GameplayObservation Surface(RuntimeV3GameplayObservation observation,
+        RuntimeV3GameplayState state, RuntimeV3GameplayOfferedSet offered, bool enabled)
+    {
+        var identities = new string[offered.Entries.Count];
+        for (int index = 0; index < identities.Length; index++)
+        {
+            identities[index] = offered.Entries[index].ChoiceId;
+        }
+        return observation with
+        {
+            State = state, StateValues = identities, Offered = offered, IsActionable = enabled,
+            InputEnabled = enabled, ModalBlocking = !enabled
+        };
+    }
 
     private static string? CurrentNodeId(RunState run) => run.CurrentMapCoord is { } coord
         ? MapNodeId(run.CurrentActIndex, coord) : null;

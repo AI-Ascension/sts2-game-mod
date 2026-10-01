@@ -32,6 +32,7 @@ internal static class Program
         MalformedNumbersAndDuplicateFieldsAreRejected();
         RecoveryReconcilesScopedReceipts();
         TextBoundsUseUtf8Bytes();
+        OfferedEntryChecks.Run();
         HelpersCompileAndRejectInvalidCoop();
         Console.WriteLine("Runtime-v3 managed request, receipt, and settlement checks passed.");
     }

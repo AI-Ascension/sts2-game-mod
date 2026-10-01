@@ -52,6 +52,27 @@ internal sealed record RuntimeV3GameplayObservation(
     internal string? NodeId { get; init; }
     internal IReadOnlyList<RuntimeV3GameplayShopItem> ShopItems { get; init; } =
         Array.Empty<RuntimeV3GameplayShopItem>();
+    /// <summary>
+    /// The offered set for `Reward`, `Event`, and `Selection`, carrying whatever the host disclosed
+    /// for each entry. A host that disclosed nothing falls back to <see cref="StateValues"/>, so an
+    /// undescribed host emits the same bare identifiers it always did. `Map` and `Rest` are not
+    /// described states — the merged contract keeps both identity-only and no producer discloses
+    /// them — so they keep reading <see cref="StateValues"/> directly.
+    /// </summary>
+    internal RuntimeV3GameplayOfferedSet Offered { get; init; } = RuntimeV3GameplayOfferedSet.Empty;
+
+    /// <summary>
+    /// The offered set actually serialized: the host's described entries when the surface supplied
+    /// any, otherwise the bare identities from <see cref="StateValues"/>.
+    ///
+    /// <para>
+    /// The fallback is what keeps an undescribed host byte-identical to its pre-widening output.
+    /// It is not a defaulting path for *attributes*: it supplies only the identifier the host had
+    /// already put in <see cref="StateValues"/>, and never a name, cost, rarity, or description.
+    /// </para>
+    /// </summary>
+    internal RuntimeV3GameplayOfferedSet OfferedEntries =>
+        Offered.Entries.Count > 0 ? Offered : RuntimeV3GameplayOfferedSet.Identified(StateValues);
     internal bool IsActionable { get; init; }
     internal bool ModalBlocking { get; init; }
     internal bool InputEnabled { get; init; }
@@ -138,6 +159,11 @@ internal sealed record RuntimeV3GameplayObservation(
                 error = "observation state value is invalid";
                 return false;
             }
+        }
+
+        if (!OfferedEntries.Validate(out error))
+        {
+            return false;
         }
 
         error = string.Empty;
