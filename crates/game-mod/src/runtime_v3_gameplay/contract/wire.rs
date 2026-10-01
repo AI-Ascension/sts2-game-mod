@@ -46,6 +46,7 @@ pub(super) enum State {
     Map {
         #[serde(deserialize_with = "required_nullable")]
         node_id: Option<String>,
+        // Identity-only, matching the schema: no producer discloses map options.
         options: Vec<String>,
     },
     Combat {
@@ -53,19 +54,21 @@ pub(super) enum State {
         enemies: Vec<RuntimeV3GameplayEnemy>,
     },
     Reward {
-        options: Vec<String>,
+        options: Vec<super::RuntimeV3GameplayChoice>,
     },
     Shop {
         items: Vec<RuntimeV3GameplayShopItem>,
     },
     Event {
-        choices: Vec<String>,
+        choices: Vec<super::RuntimeV3GameplayChoice>,
     },
     Rest {
+        // Deliberately identity-only, matching the schema: no producer discloses the rest
+        // options, so widening a member nobody populates would be capacity without a producer.
         options: Vec<String>,
     },
     Selection {
-        choices: Vec<String>,
+        choices: Vec<super::RuntimeV3GameplayChoice>,
     },
     Victory {},
     Defeat {

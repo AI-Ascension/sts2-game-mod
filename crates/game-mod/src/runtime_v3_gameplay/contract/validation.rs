@@ -181,9 +181,10 @@ fn validate_state(state: &RuntimeV3GameplayState) -> Result<(), RuntimeV3Gamepla
             }
             Ok(())
         }
-        RuntimeV3GameplayState::Reward { options } | RuntimeV3GameplayState::Rest { options } => {
-            validate_id_list(options)
-        }
+        RuntimeV3GameplayState::Reward { options } => validate_choices(options),
+        // The rest screen's options stay identity-only: no producer discloses that set today, and
+        // widening a member nobody populates is capacity without a producer.
+        RuntimeV3GameplayState::Rest { options } => validate_id_list(options),
         RuntimeV3GameplayState::Shop { items } => {
             if items.len() > RUNTIME_V3_GAMEPLAY_MAX_ENTITIES {
                 return Err(RuntimeV3GameplayValidationError::CollectionBounds);
@@ -194,7 +195,7 @@ fn validate_state(state: &RuntimeV3GameplayState) -> Result<(), RuntimeV3Gamepla
             Ok(())
         }
         RuntimeV3GameplayState::Event { choices }
-        | RuntimeV3GameplayState::Selection { choices } => validate_id_list(choices),
+        | RuntimeV3GameplayState::Selection { choices } => validate_choices(choices),
         RuntimeV3GameplayState::Victory => Ok(()),
         RuntimeV3GameplayState::Defeat { reason } => {
             if reason.as_deref().is_some_and(|value| !valid_text(value)) {

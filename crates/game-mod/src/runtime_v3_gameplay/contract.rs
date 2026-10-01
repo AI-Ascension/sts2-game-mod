@@ -8,7 +8,10 @@
 mod error;
 mod local;
 mod message;
+mod offered_attribute;
+mod offered_entry;
 mod shape;
+mod shop;
 mod validation;
 mod wire;
 
@@ -18,6 +21,10 @@ pub use message::{
     RuntimeV3GameplayContext, RuntimeV3GameplayMessage, RuntimeV3GameplayMessageKind,
     RuntimeV3GameplayProvenance,
 };
+pub use offered_attribute::RUNTIME_V3_GAMEPLAY_MAX_OFFERED_ATTRIBUTE_CHARACTERS;
+pub(crate) use offered_entry::validate_choices;
+pub use offered_entry::{RuntimeV3GameplayChoice, RuntimeV3GameplayOfferedEntry};
+pub use shop::RuntimeV3GameplayShopItem;
 
 /// Versioned fair-play semantic gameplay profile.
 pub const RUNTIME_V3_GAMEPLAY_PROTOCOL_VERSION: &str = "runtime-v3-gameplay";
@@ -29,7 +36,7 @@ pub const RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE: &str = "schemas/runtime-v3-gameplay
 pub const RUNTIME_V3_GAMEPLAY_GENERATOR: &str = "hand-authored";
 /// Filled after the normative schema is written and hashed.
 pub const RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST: &str =
-    "daa216902d3211b9537924105b27e7718dd93dec82969a3c550131a27147c06b";
+    "843e2e546116c8011f378d271406ac2fb4ec0e4c2dedd32dee46cc1500315ad5";
 /// Maximum exact JSON-safe generation and lease epoch.
 pub const RUNTIME_V3_GAMEPLAY_MAX_GENERATION: u64 = 9_007_199_254_740_991;
 /// Maximum number of actions in one complete host-generated catalog.
@@ -120,19 +127,20 @@ pub enum RuntimeV3GameplayState {
         enemies: Vec<RuntimeV3GameplayEnemy>,
     },
     Reward {
-        options: Vec<String>,
+        options: Vec<RuntimeV3GameplayChoice>,
     },
     Shop {
         items: Vec<RuntimeV3GameplayShopItem>,
     },
     Event {
-        choices: Vec<String>,
+        choices: Vec<RuntimeV3GameplayChoice>,
     },
     Rest {
+        // Deliberately identity-only, matching the schema.
         options: Vec<String>,
     },
     Selection {
-        choices: Vec<String>,
+        choices: Vec<RuntimeV3GameplayChoice>,
     },
     Victory,
     Defeat {
@@ -162,15 +170,6 @@ impl RuntimeV3GameplayState {
             Self::Recovery { .. } => RuntimeV3GameplayStateKind::Recovery,
         }
     }
-}
-
-/// Player-visible shop item.
-#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct RuntimeV3GameplayShopItem {
-    pub item_id: String,
-    pub name: String,
-    pub price: u32,
 }
 
 /// Complete ordinary player-visible observation. Legal actions are supplied separately so a
@@ -297,7 +296,7 @@ pub enum RuntimeV3GameplayStatus {
     Cancelled,
 }
 
-fn valid_identity(value: &str) -> bool {
+pub(super) fn valid_identity(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES
         && value
@@ -313,7 +312,7 @@ where
     serde::Deserialize::deserialize(deserializer)
 }
 
-fn valid_text(value: &str) -> bool {
+pub(super) fn valid_text(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES
         && !value.chars().any(char::is_control)
