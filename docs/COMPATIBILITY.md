@@ -27,7 +27,7 @@ coverage, shared protocol adoption, or compatibility with any installed game bui
 
 The content-manifest producer requires independent registry counts for all available families and
 fails closed on missing or mismatched extraction evidence. Its owner adapter pins
-`sts2-protocol` at `9581a1b3de49c08b2d46eba8131f1edf0f686ce3`, validates the complete v1 wire envelope,
+`sts2-protocol` at `24fae515718b58f70db8551c8e93837cbb7b6aa8`, validates the complete v1 wire envelope,
 and enforces a 16 MiB response bound on authenticated
 `GET /api/v1/game-information/content-manifest`. Synthetic producer-to-wire and native route tests
 do not establish an exact-host definition source: the route still returns
