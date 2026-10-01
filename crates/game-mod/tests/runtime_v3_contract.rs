@@ -178,7 +178,7 @@ fn semantic_checks_reject_structurally_valid_contradictions() -> Result<(), Box<
     duplicate["legal_actions"] = json!([action, action]);
     cases.push(duplicate);
     let mut text = state;
-    text["observation"]["visible_seed"] = json!("é".repeat(257));
+    text["observation"]["visible_seed"] = json!("é".repeat(513));
     cases.push(text);
     let mut transition: Value = serde_json::from_str(SETTLED)?;
     transition["transition"]["from_generation"] = transition["transition"]["to_generation"].clone();
