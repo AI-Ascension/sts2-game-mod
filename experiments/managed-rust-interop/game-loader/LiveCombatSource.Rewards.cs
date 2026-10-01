@@ -110,18 +110,8 @@ internal sealed partial class LiveCombatSource
         Node? screen = RewardOverlay();
         bool modal = MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal != null;
         if (screen is NRewardsScreen)
-            // Rewards stay identity-only. `NRewardButton` exposes `RewardsSetIndex` and the reward
-            // type name to this loader, and nothing else player-visible: no title, no rarity, no
-            // description. The game does model those on `Reward` subtypes, but reaching them would
-            // mean reading the static content catalog (see NativeContentCatalogSemantic.cs), which
-            // is reflection over the content manifest and is **not** attached to the shipped host
-            // composition. Emitting from a table nothing in this composition reads would be a
-            // source-only catalog dressed as a producer, and a rarity synthesized from it would
-            // read downstream as an observed fact about this run. So the entry stays bare, which
-            // is exactly what the harness already admits.
             return Surface(observation, RuntimeV3GameplayState.Reward,
-                RewardButtons(screen).Select(RewardId).GroupBy(value => value)
-                    .Where(group => group.Count() == 1).Select(group => group.Key).ToArray(), !modal);
+                RewardSet(screen), !modal);
         if (screen != null && (screen is NCardRewardSelectionScreen || HasCombatChoice(screen)
             || HasEventCardChoice(screen)))
             return Surface(observation, RuntimeV3GameplayState.Selection,

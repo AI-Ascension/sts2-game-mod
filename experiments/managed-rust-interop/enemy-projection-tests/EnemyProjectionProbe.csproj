@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../game-loader/LiveCombatSource.IntentProjection.cs" />
     <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" />
+    <Compile Include="../game-loader/RuntimeV3GameplayOfferedEntry.cs" />
     <Compile Include="../game-loader/RuntimeV3GameplayObservation.cs" />
   </ItemGroup>
 </Project>
