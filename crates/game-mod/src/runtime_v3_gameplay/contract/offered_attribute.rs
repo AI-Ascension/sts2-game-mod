@@ -18,10 +18,8 @@ pub const RUNTIME_V3_GAMEPLAY_MAX_OFFERED_ATTRIBUTE_CHARACTERS: usize = 512;
 /// Validates one host-supplied offered-entry attribute.
 ///
 /// The schema counts these attributes in characters (`maxLength`) and rejects control characters,
-/// so this counts characters too. Every offered attribute is bounded this way rather than by
-/// [`super::RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES`] because that constant is a byte bound for the
-/// fields that were already in the contract, and adopting it here would make the parser stricter
-/// than the schema it is written against.
+/// so this counts characters too, exactly as [`super::RUNTIME_V3_GAMEPLAY_MAX_TEXT_CHARACTERS`]
+/// does for the fields that were already in the contract.
 pub(crate) fn valid_offered_attribute(value: &str) -> bool {
     !value.is_empty()
         && value.chars().count() <= RUNTIME_V3_GAMEPLAY_MAX_OFFERED_ATTRIBUTE_CHARACTERS

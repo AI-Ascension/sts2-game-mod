@@ -12,6 +12,7 @@ mod offered_attribute;
 mod offered_entry;
 mod shape;
 mod shop;
+mod text_bounds;
 mod validation;
 mod wire;
 
@@ -25,6 +26,12 @@ pub use offered_attribute::RUNTIME_V3_GAMEPLAY_MAX_OFFERED_ATTRIBUTE_CHARACTERS;
 pub(crate) use offered_entry::validate_choices;
 pub use offered_entry::{RuntimeV3GameplayChoice, RuntimeV3GameplayOfferedEntry};
 pub use shop::RuntimeV3GameplayShopItem;
+#[allow(deprecated)]
+pub use text_bounds::RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES;
+pub use text_bounds::{
+    RUNTIME_V3_GAMEPLAY_MAX_IDENTITY_BYTES, RUNTIME_V3_GAMEPLAY_MAX_TEXT_CHARACTERS,
+};
+use text_bounds::{valid_identity, valid_text};
 
 /// Versioned fair-play semantic gameplay profile.
 pub const RUNTIME_V3_GAMEPLAY_PROTOCOL_VERSION: &str = "runtime-v3-gameplay";
@@ -43,8 +50,6 @@ pub const RUNTIME_V3_GAMEPLAY_MAX_GENERATION: u64 = 9_007_199_254_740_991;
 pub const RUNTIME_V3_GAMEPLAY_MAX_LEGAL_ACTIONS: usize = 256;
 /// Maximum number of player-visible cards or enemies in one observation.
 pub const RUNTIME_V3_GAMEPLAY_MAX_ENTITIES: usize = 256;
-/// Maximum text/identity field length in bytes.
-pub const RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES: usize = 512;
 
 /// Player-visible lifecycle state. Unknown host states must not be coerced into one of these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -296,24 +301,10 @@ pub enum RuntimeV3GameplayStatus {
     Cancelled,
 }
 
-pub(super) fn valid_identity(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b"._:/-".contains(&byte))
-}
-
 fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
     T: serde::Deserialize<'de>,
 {
     serde::Deserialize::deserialize(deserializer)
-}
-
-pub(super) fn valid_text(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES
-        && !value.chars().any(char::is_control)
 }

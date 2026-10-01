@@ -9,6 +9,15 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Fixed the `runtime-v3-gameplay` text bound to count Unicode characters, as the schema's
+  `maxLength` does, instead of UTF-8 bytes. `valid_text` compared `str::len()` against the 512 limit,
+  so a 512-character non-ASCII name the schema admits was refused. The single byte-named constant is
+  now two accurate ones: `RUNTIME_V3_GAMEPLAY_MAX_TEXT_CHARACTERS` for text and
+  `RUNTIME_V3_GAMEPLAY_MAX_IDENTITY_BYTES` for the ASCII-only identity pattern, which stays a byte
+  bound. Empty and control-character rejection is unchanged, as are the offered-attribute rules, the
+  schema, its digest and every pin. `RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES` remains as a deprecated alias of the legacy value 512 so
+  callers still compile; nothing validates by it. Refs #256.
+
 - Converged the dependency graph onto a single `jsonschema` major. The pinned `sts2-protocol`
   required `=0.55.0`, an exact pin inside a git dependency that is not overridable from here, so
   `0.55.0`/`0.55.1` coexisted with the `0.58.1` the mod uses directly -- two compiled, separately
