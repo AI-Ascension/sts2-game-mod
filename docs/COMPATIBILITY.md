@@ -201,7 +201,7 @@ reproduced in an authorized disposable host. It is not a support claim for gamep
 another host version, another platform, or a valued profile.
 
 The separate `runtime-v3-gameplay` bridge is source-derived and uses the neutral protocol digest
-`843e2e546116c8011f378d271406ac2fb4ec0e4c2dedd32dee46cc1500315ad5`. Its fair-play projection,
+`0ae1d4d1525162da3059c028dcdb70df1d4d2dcf9620c5edd9b543e5f04aacc2`. Its fair-play projection,
 typed catalog checks, host-thread adapter, separate co-op helpers, and postcondition verifier are
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.

@@ -12,7 +12,7 @@ internal static class RuntimeV3GameplayContract
     internal const string Artifact = "sts2-protocol/runtime-v3-gameplay";
     internal const string SchemaSource = "schemas/runtime-v3-gameplay.schema.json";
     internal const string Generator = "hand-authored";
-    internal const string SchemaDigest = "843e2e546116c8011f378d271406ac2fb4ec0e4c2dedd32dee46cc1500315ad5";
+    internal const string SchemaDigest = "0ae1d4d1525162da3059c028dcdb70df1d4d2dcf9620c5edd9b543e5f04aacc2";
     internal const ulong MaxGeneration = 9_007_199_254_740_991;
     internal const int MaxLegalActions = 256;
     internal const int MaxEntities = 256;
