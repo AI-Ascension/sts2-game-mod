@@ -9,6 +9,17 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Converged the dependency graph onto a single `jsonschema` major. The pinned `sts2-protocol`
+  required `=0.55.0`, an exact pin inside a git dependency that is not overridable from here, so
+  `0.55.0`/`0.55.1` coexisted with the `0.58.1` the mod uses directly -- two compiled, separately
+  tested copies of one validator. `sts2-protocol` has since moved to `=0.58.1` (its PR #71), so
+  this repins it to `24fae515` and the lock now holds exactly one major. The split predated the
+  `jsonschema` 0.58.1 bump (#248) and was not a regression from it. The API used here --
+  `GameInformationContentManifestV1Codec` and its 16 MiB message bound -- is byte-unchanged across
+  that range and the vendored `protocol-artifact/` schemas already matched the producer, so no
+  artifact was re-vendored and no wire format, schema or digest changed. No behaviour change, no
+  native admission claimed. Refs #249.
+
 - Stopped offering `skip_reward` on the card-reward selection screen. The mod never added that
   alternative; it only recognized the host's own, whose callback is
   `PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward` -- it ends the selection and
@@ -491,28 +502,4 @@ Completed entries that no longer fit this file's preferred size budget are prese
   Source-only evidence; native settings extraction and exact-host compatibility remain unverified.
   Refs #110.
 
-- Added the owner-local `locale_reference` catalog so rendered game text can be read in any
-  supported locale without switching the active game language (sts2-game-mod#111). One request now
-  returns the requested locale, the effective locale that actually supplied the text, the exact
-  fallback chain consulted, the text revision, the effective direction, and an explicit
-  `Complete`/`Partial` completeness report. A definition's `(entity_kind, namespaced_id)` identity
-  stays byte-identical in every language, so a localized answer never changes which entity it
-  describes. An exhausted fallback chain fails closed with the closed `NotFound` error rather than
-  an empty string or a zero, only the requested plural form then `Other` then `Unknown` is ever
-  consulted (the served form is reported) and an unavailable placeholder value is carried as
-  `LocaleUnavailableReason`, an unresolved placeholder stays visible as
-  `UnresolvedPlaceholder(name)` together with the
-  input it needs, and an effect amount is carried verbatim so localization can never silently change
-  a number. The declared placeholder set and the set actually used must match; a fallback chain is
-  rejected when it is empty, too deep, unordered, unsupported, or cyclic; owner-supplied text is
-  validated as presentation, so ordinary markup, non-Latin, and right-to-left text are preserved
-  exactly while control characters and script-scheme content are rejected; and a listing
-  continuation is bound to one locale, one catalog revision, and one query. Reading is one-way:
-  there is no setter, no locale switch, no profile or configuration mutation, and no live run read.
-  Source-only evidence; native rendered-text extraction, live run reads, locale switching, and
-  exact-host compatibility remain `unverified-native`. Refs #111.
 
-- Added `docs/evidence/seeded-run-criterion-evidence-map-20260917.md`, mapping every #79 seeded-run
-  acceptance criterion to its evidence at exact pins (mod `46b1ac6e`, host v0.107.1/`59260271`,
-  protocol `bfe28e45`, harness/gateway/MCP heads, staged guest set); AC1 is `confirmed-source`,
-  native rows remain `unverified-native` behind the interactive Windows/Steam session gate.

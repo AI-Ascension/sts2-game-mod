@@ -91,7 +91,7 @@ does not authorize putting proprietary content or package bytes into the reposit
 
 ## Integration and limits
 
-The mod pins `sts2-protocol` at `9581a1b3de49c08b2d46eba8131f1edf0f686ce3` and maps the
+The mod pins `sts2-protocol` at `24fae515718b58f70db8551c8e93837cbb7b6aa8` and maps the
 `ContentManifestProducer` result through its schema-validating codec. The fixed owner-local route is
 authenticated `GET /api/v1/game-information/content-manifest` with an empty body and the existing
 instance, caller, session, lease, epoch, correlation, and locale headers. The owner returns the
