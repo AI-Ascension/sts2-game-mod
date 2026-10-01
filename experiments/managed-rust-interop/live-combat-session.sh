@@ -32,6 +32,11 @@ Omitted video options use saved mod-menu choices, then the first-launch defaults
 A campaign run names the bounded mode its provider can run: the local ollama bridge names the
 campaign episode and needs no OpenAI Astra provider, while an OpenAI Astra campaign names the
 live episode. The pinned harness must carry STS2_CAMPAIGN_EPISODE for the local campaign shape.
+A demo run names the bounded mode its provider can run: an OpenAI Astra demo names the live
+episode and records a replay, while a local ollama demo names the combat demo alone and records
+no replay stream, because replay capture follows the admitted live episode. A demo never names the
+campaign episode; the harness refuses the campaign episode together with the combat demo, because
+the two take different runners.
 No installation is performed.
 HELP
 }
@@ -200,15 +205,9 @@ case "$run_kind" in
         ;;
 esac
 # The demo shape names the live episode for whatever provider it was given, and the harness
-# restricts the live episode to Astra. Without this the demo shape would be admitted and only
-# refused by the harness after the guardian, gateway, MCP and harness had started. This sits with
-# the bounded-mode decisions above so it cannot preempt an argument-level refusal. It is the
-# fail-fast half of the open decision in AI-Ascension/sts2-game-mod#193: a local demo would have to
-# name the combat demo alone, which also stops replay capture and is a separate behavioural change.
-if [[ "$run_kind" == demo && "$provider_kind" != openai-astra ]]; then
-    printf '%s\n' "The demo shape names the live episode, and the harness restricts the live episode to the OpenAI Astra provider, so the ${provider_kind} bridge cannot run the demo." >&2
-    exit 2
-fi
+# restricts the live episode to Astra, but a demo run may now name the combat demo alone, so a
+# local bridge is admitted. Which episode each provider kind names is decided in the run-kind
+# branch below, not refused here.
 video_args=()
 [[ -z "$display" ]] || video_args+=(-Display "$display")
 [[ -z "$width" ]] || video_args+=(-Width "$width")
@@ -347,8 +346,21 @@ export STS2_EXO_BRIDGE_BINARY="$provider" STS2_EXO_BRIDGE_ARGS_JSON='[]'
 export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
 if [[ "$run_kind" == demo ]]; then
-    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true STS2_LIVE_EPISODE=true
-    unset STS2_CAMPAIGN_EPISODE
+    export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true
+    if [[ "$provider_kind" == ollama ]]; then
+        # The harness restricts the live episode to Astra, so a local bridge names the combat demo
+        # alone: it stays the explicit bounded mode a local bridge is allowed, and the campaign
+        # episode stays off because the harness refuses a vector naming campaign and combat demo
+        # together. Replay capture follows the admitted live episode rather than the variable, so
+        # this run records no replay stream; trajectory.jsonl is the harness's own stdout and is
+        # unaffected. Naming both episodes, or inheriting one from the caller, states no intent and
+        # is refused by the harness.
+        unset STS2_LIVE_EPISODE
+        unset STS2_CAMPAIGN_EPISODE
+    else
+        export STS2_LIVE_EPISODE=true
+        unset STS2_CAMPAIGN_EPISODE
+    fi
     export STS2_OBJECTIVE='Win this combat while preserving HP.' STS2_MAX_STEPS=100
 else
     export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=false

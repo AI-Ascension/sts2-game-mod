@@ -186,9 +186,22 @@ binary to carry `STS2_CAMPAIGN_EPISODE` and refuses the local campaign shape bef
 guardian, gateway, MCP, or harness when it does not. Additional providers are future work and
 require a provider adapter, without changing the game action or replay contracts.
 
-A demo run names the live episode, which the harness restricts to OpenAI Astra, so the launcher
-refuses `--run-kind demo` for any other provider before it starts the guardian, gateway, MCP, or
-harness. The local ollama bridge is admitted for a campaign run only.
+A demo run names the bounded mode its provider can run, exactly as a campaign run does. An OpenAI
+Astra demo names the live episode and records a replay stream. A local ollama demo names the combat
+demo alone: the harness restricts the live episode to Astra, and it refuses a vector that names the
+campaign episode together with the combat demo, because the two take different runners. The combat
+demo alone is one of the bounded modes a local bridge is allowed to name, alongside the 64-character
+bridge digest the launcher already supplies, so `--run-kind demo` is now admitted on the local
+bridge instead of being refused before anything starts.
+
+That local demo records **no replay stream**. Replay capture follows the admitted live-episode
+decision rather than the `STS2_LIVE_EPISODE` variable, and a local bridge resolves to the standard
+mode, so the gated replay stream and the live-episode diagnostics stay off. This is a consequence of
+naming the combat demo alone, not a defect. The decision and receipt artifact is unaffected:
+`trajectory.jsonl` is the harness's own stdout, not the gated replay stream. An Astra demo is
+unchanged and still records. The demo remains a privileged diagnostic fixture and not campaign
+evidence; this local shape is a source-level wrapper contract only, not a run against a game, host,
+or provider.
 
 During initial isolation setup before the addon loaded, the host wrote two Steam local-cache
 files. Both were restored from the original local saves and byte-checked. Full external
