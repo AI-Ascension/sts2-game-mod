@@ -180,9 +180,9 @@ campaign_default_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/ca
 jq -e '.run_kind == "campaign" and .max_runtime_seconds == 3600' \
     "$campaign_default_run/manifest.json" >/dev/null
 
-# The demo shape names the live episode, which the harness restricts to Astra, so an admitted demo
-# uses the Astra bridge. A local bridge is refused before anything starts (see the refusal case
-# below); it is not a demo provider.
+# The demo shape names the bounded mode its provider can run. An Astra demo names the live episode;
+# a local ollama demo names the combat demo alone, because the harness restricts the live episode
+# to Astra and refuses a vector naming the campaign episode with the combat demo.
 run_case demo --run-kind demo --seed DEMO1 --max-runtime-seconds 90 \
     --provider-binary "$fixture_root/bin/provider-astra"
 demo_args="$fixture_root/demo.guardian"
@@ -200,6 +200,22 @@ grep -Fx 'STS2_COMBAT_DEMO=true' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_MAX_STEPS=100' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_LIVE_EPISODE=true' "$fixture_root/demo.harness" >/dev/null
 grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/demo.harness" >/dev/null
+
+# The missing matrix cell: a demo on the local bridge. Both episode variables are asserted as
+# unset, because inheriting either from the caller is exactly how a demo ends up naming an episode
+# its provider cannot run, which the harness refuses after the host is already running.
+run_case demo_local --run-kind demo --seed DEMO1 --max-runtime-seconds 90
+demo_local_run=$(awk '/^Artifacts: / { print $2; exit }' "$fixture_root/demo_local.out")
+jq -e '.run_kind == "demo" and .max_runtime_seconds == 90 and .seed == "DEMO1"' \
+    "$demo_local_run/manifest.json" >/dev/null
+grep -Fx 'STS2_COMBAT_DEMO=true' "$fixture_root/demo_local.harness" >/dev/null
+grep -Fx 'STS2_MAX_STEPS=100' "$fixture_root/demo_local.harness" >/dev/null
+grep -Fx 'STS2_LIVE_EPISODE=' "$fixture_root/demo_local.harness" >/dev/null
+grep -Fx 'STS2_CAMPAIGN_EPISODE=' "$fixture_root/demo_local.harness" >/dev/null
+# A local bridge is admitted for a demo, so every process the demo needs actually starts.
+for process in guardian provider gateway mcp harness; do
+    grep -Fx "$process" "$fixture_root/demo_local.processes" >/dev/null
+done
 
 run_case demo_default --run-kind demo --provider-binary "$fixture_root/bin/provider-astra"
 demo_default_args="$fixture_root/demo_default.guardian"
@@ -260,42 +276,6 @@ expect_campaign_episode_refused() {
 
 expect_campaign_episode_refused campaign_without_campaign_episode
 
-# The demo shape names the live episode for whatever provider it was given, and the harness
-# restricts the live episode to Astra, so a local bridge cannot demo. That refusal must arrive
-# before the guardian, gateway, MCP and harness start, and the provider is still asked to describe
-# itself because its kind is what selects the shape.
-expect_demo_provider_refused() {
-    local label=$1
-    set +e
-    FAKE_GUARDIAN_ARGS_FILE="$fixture_root/$label.guardian" \
-        FAKE_HARNESS_ENV_FILE="$fixture_root/$label.harness" \
-        FAKE_PROCESS_MARKERS="$fixture_root/$label.processes" \
-        PATH="$fixture_root/bin:$PATH" \
-        bash "$launcher" "${base_args[@]}" --run-kind demo \
-        >"$fixture_root/$label.out" 2>"$fixture_root/$label.err"
-    local status=$?
-    set -e
-    [[ $status -eq 2 ]] || {
-        printf 'expected the demo provider refusal for %s, got %s\n' "$label" "$status" >&2
-        exit 1
-    }
-    grep -Fx 'The demo shape names the live episode, and the harness restricts the live episode to the OpenAI Astra provider, so the ollama bridge cannot run the demo.' \
-        "$fixture_root/$label.err" >/dev/null
-    grep -Fx provider "$fixture_root/$label.processes" >/dev/null
-    [[ ! -f "$fixture_root/$label.guardian" ]] || {
-        printf 'a local demo started the guardian for %s\n' "$label" >&2
-        exit 1
-    }
-    for process in guardian gateway mcp harness; do
-        ! grep -Fx "$process" "$fixture_root/$label.processes" >/dev/null || {
-            printf 'a local demo started %s for %s\n' "$process" "$label" >&2
-            exit 1
-        }
-    done
-}
-
-expect_demo_provider_refused demo_local_bridge
-
 printf changed > "$fixture_root/host/data_sts2_windows_x86_64/sts2.dll"
 expect_rejected changed_host --run-kind campaign
 
@@ -334,4 +314,25 @@ steam_preflight_source=$(<"$script_dir/steam-usability-preflight.ps1")
     printf '%s\n' 'Steam preflight must not start, stop, or configure Steam.' >&2
     exit 1
 }
-printf 'PASS: campaign/demo guardian wiring, provider-named bounded modes, pre-launch refusals for both bounded shapes, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
+# The provider/run-kind matrix this file pins, and what the harness does with each vector.
+#
+#   run kind  provider kind   combat demo  live episode  campaign episode  result
+#   campaign  ollama          false        unset         true             allowed, local
+#   campaign  openai-astra    false        true          unset            allowed, live
+#   demo      ollama          true         unset         unset            allowed, bounded
+#   demo      openai-astra    true         true          unset            allowed, live
+#
+# Refused vectors, none of which this wrapper produces and all of which the harness refuses:
+#
+#   combat demo + campaign episode, by any provider
+#       bounded_mode_named is Err: the two take different runners, so the vector names no intent.
+#   live episode on a provider kind that does not admit it (ollama, typesafe-jev, synthetic)
+#       live admission is refused by capability, not by the variable being set.
+#   no named bounded mode on a local bridge
+#       verify_bridge requires a 64-character digest *and* an explicit bounded mode.
+#
+# This file is wrapper evidence only. It runs no game, host, provider or gateway, and every case
+# uses synthetic fixture binaries that record the environment they were handed. Nothing here is
+# native, host-runtime or provider evidence: a green run says the launcher exports the intended
+# vector and refuses the intended inputs, not that the harness or the game accepts them.
+printf 'PASS: campaign/demo guardian wiring, provider-named bounded modes, campaign pre-launch refusal, manifest identity, bounded argument rejection, and read-only Steam usability preflight\n'
