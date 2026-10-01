@@ -38,9 +38,15 @@ internal sealed partial class LiveCombatSource
             _lastHandDiagnostic = diagnostic;
             GD.Print("[AI-ASCENSION LIVE] hand selection " + diagnostic);
         }
-        string[] choices = HandUpgradeChoices(hand).Select(RewardCardId).ToArray();
-        return Surface(before, RuntimeV3GameplayState.Selection, choices,
-            choices.Length > 0 && NModalContainer.Instance?.OpenModal == null);
+        NHandCardHolder[] holders = HandUpgradeChoices(hand);
+        var offered = new List<RuntimeV3GameplayOfferedEntry>(holders.Length);
+        foreach (NHandCardHolder holder in holders)
+        {
+            offered.Add(RewardCardEntry(holder));
+        }
+        return Surface(before, RuntimeV3GameplayState.Selection,
+            new RuntimeV3GameplayOfferedSet(offered),
+            offered.Count > 0 && NModalContainer.Instance?.OpenModal == null);
     }
 
     private LegalActionReference[] HandChoiceActions(RuntimeV3GameplayObservation observation,

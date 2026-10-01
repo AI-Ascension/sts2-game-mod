@@ -6,7 +6,16 @@ using System.Text.Json;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-/// <summary>Explicit snake-case codec for the neutral fair-play projection.</summary>
+/// <summary>
+/// Explicit snake-case codec for the neutral fair-play projection.
+///
+/// <para>
+/// The offered-set rendering lives beside this file in
+/// <see cref="RuntimeV3GameplayOfferedCodec"/>: it carries the bare-string/object duality that keeps
+/// an undescribed host byte-identical, and it is what a reviewer reads first when asking what this
+/// producer is allowed to disclose.
+/// </para>
+/// </summary>
 internal static class RuntimeV3GameplayCodec
 {
     internal static bool TrySerialize(
@@ -95,16 +104,25 @@ internal static class RuntimeV3GameplayCodec
 
     private static Dictionary<string, object?> StateObject(RuntimeV3GameplayObservation observation)
     {
+        RuntimeV3GameplayOfferedSet offered = observation.OfferedEntries;
         return observation.State switch
         {
             RuntimeV3GameplayState.Setup => new() { ["state"] = "setup", ["characters"] = observation.StateValues },
+            // Map options stay bare identities: this loader reads only `NMapPoint.PointType` off a
+            // travelable point, which is neither player-visible text nor a per-entry attribute, so
+            // there is nothing a described entry could disclose. Its bytes are unchanged.
             RuntimeV3GameplayState.Map => new() { ["state"] = "map", ["node_id"] = observation.NodeId, ["options"] = observation.StateValues },
             RuntimeV3GameplayState.Combat => new() { ["state"] = "combat", ["turn_index"] = observation.TurnIndex, ["enemies"] = Enemies(observation.Enemies) },
-            RuntimeV3GameplayState.Reward => new() { ["state"] = "reward", ["options"] = observation.StateValues },
+            RuntimeV3GameplayState.Reward => new() { ["state"] = "reward", ["options"] = RuntimeV3GameplayOfferedCodec.OfferSet(offered) },
             RuntimeV3GameplayState.Shop => new() { ["state"] = "shop", ["items"] = ShopItems(observation.ShopItems) },
-            RuntimeV3GameplayState.Event => new() { ["state"] = "event", ["choices"] = observation.StateValues },
+            RuntimeV3GameplayState.Event => new() { ["state"] = "event", ["choices"] = RuntimeV3GameplayOfferedCodec.OfferSet(offered) },
+            // Rest options stay bare identities, matching the merged mirror: `state.rest.options` is
+            // `Vec<String>` in the Rust contract and the schema admits only an identity there, and no
+            // producer discloses this set today — `LiveCombatSource.RestSite.cs` reads only
+            // `OptionId` off a rest option. Widening the render alone would emit an object the
+            // mirror refuses, so the bytes are exactly what they were.
             RuntimeV3GameplayState.Rest => new() { ["state"] = "rest", ["options"] = observation.StateValues },
-            RuntimeV3GameplayState.Selection => new() { ["state"] = "selection", ["choices"] = observation.StateValues },
+            RuntimeV3GameplayState.Selection => new() { ["state"] = "selection", ["choices"] = RuntimeV3GameplayOfferedCodec.OfferSet(offered) },
             RuntimeV3GameplayState.Victory => new() { ["state"] = "victory" },
             RuntimeV3GameplayState.Defeat => new() { ["state"] = "defeat", ["reason"] = observation.StateValues.Count == 0 ? null : observation.StateValues[0] },
             RuntimeV3GameplayState.Recovery => new() { ["state"] = "recovery", ["code"] = observation.StateValues.Count == 0 ? "recovery" : observation.StateValues[0] },

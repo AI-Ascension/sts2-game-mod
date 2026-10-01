@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
@@ -52,18 +53,79 @@ internal sealed partial class LiveCombatSource
     private string RewardCardId(NCardHolder holder) => RuntimeV3GameplayChoiceIdentity.Card(
         CardId(holder.CardModel!), holder.CardModel!.Title);
 
+    /// <summary>
+    /// Describes one offered card from what the host card itself exposes.
+    ///
+    /// <para>
+    /// Every attribute read here is one this loader already reads off the same <c>CardModel</c>
+    /// elsewhere: title and the upgraded flag in <c>LiveCombatSource.LiveCards.cs</c>, and rarity
+    /// and rules text through <c>PublicText</c> in
+    /// <c>LiveCombatSource.ExpertProfileReflection.cs</c>. That is what makes these host-supplied
+    /// rather than synthesized: each is a value the host object carries, read by a reader the
+    /// shipped composition already owns, and it is published only when the read returns a value.
+    /// A <c>null</c> read means the host did not supply it and the attribute is omitted — never
+    /// filled with a plausible value, because a defaulted rarity would read downstream as an
+    /// observed fact about this run.
+    /// </para>
+    ///
+    /// <para>
+    /// The <c>choice_id</c> is the same identity <see cref="RewardCardId"/> produces, so a provider
+    /// can act on this described entry exactly as it acted on the bare identifier, and the dispatch
+    /// matchers that compare against <c>RewardCardId</c> keep working unchanged.
+    /// </para>
+    ///
+    /// <para>
+    /// This is an instance method, not a static one: <c>CardId</c> assigns each card a stable
+    /// per-instance identity from the <c>_cardIds</c> mapping. Reading it through
+    /// <see cref="RewardCardId"/> is what guarantees the published <c>choice_id</c> is byte-for-byte
+    /// the identity the action catalog and the dispatch matchers already use.
+    /// </para>
+    /// </summary>
+    private RuntimeV3GameplayOfferedEntry RewardCardEntry(NCardHolder holder)
+    {
+        CardModel card = holder.CardModel!;
+        return RuntimeV3GameplayOfferedEntry.FromCard(
+            RewardCardId(holder),
+            card.Title,
+            card.EnergyCost.GetResolved(),
+            card.IsUpgraded,
+            PublicText(card, "Description"),
+            PublicText(card, "Rarity"));
+    }
+
+    /// <summary>Describes every available reward card on a selection surface.</summary>
+    private RuntimeV3GameplayOfferedSet RewardCardSet(Node screen)
+    {
+        NCardHolder[] holders = AvailableRewardCards(screen);
+        var entries = new List<RuntimeV3GameplayOfferedEntry>(holders.Length);
+        foreach (NCardHolder holder in holders)
+        {
+            entries.Add(RewardCardEntry(holder));
+        }
+        return new RuntimeV3GameplayOfferedSet(entries);
+    }
+
     private RuntimeV3GameplayObservation ProjectRewardOverlay(RuntimeV3GameplayObservation observation)
     {
         Node? screen = RewardOverlay();
         bool modal = MegaCrit.Sts2.Core.Nodes.CommonUi.NModalContainer.Instance?.OpenModal != null;
         if (screen is NRewardsScreen)
+            // Rewards stay identity-only. `NRewardButton` exposes `RewardsSetIndex` and the reward
+            // type name to this loader, and nothing else player-visible: no title, no rarity, no
+            // description. The game does model those on `Reward` subtypes, but reaching them would
+            // mean reading the static content catalog (see NativeContentCatalogSemantic.cs), which
+            // is reflection over the content manifest and is **not** attached to the shipped host
+            // composition. Emitting from a table nothing in this composition reads would be a
+            // source-only catalog dressed as a producer, and a rarity synthesized from it would
+            // read downstream as an observed fact about this run. So the entry stays bare, which
+            // is exactly what the harness already admits.
             return Surface(observation, RuntimeV3GameplayState.Reward,
                 RewardButtons(screen).Select(RewardId).GroupBy(value => value)
                     .Where(group => group.Count() == 1).Select(group => group.Key).ToArray(), !modal);
         if (screen != null && (screen is NCardRewardSelectionScreen || HasCombatChoice(screen)
             || HasEventCardChoice(screen)))
             return Surface(observation, RuntimeV3GameplayState.Selection,
-                AvailableRewardCards(screen).Select(RewardCardId).ToArray(), !modal);
+                RewardCardSet(screen), !modal);
         return observation with { IsActionable = false, InputEnabled = false, ModalBlocking = true };
     }
 
