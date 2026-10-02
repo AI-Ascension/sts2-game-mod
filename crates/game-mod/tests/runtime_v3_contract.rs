@@ -32,10 +32,17 @@ fn canonical_artifact_bytes_and_provenance_match() -> Result<(), Box<dyn Error>>
         "{}",
         String::from_utf8_lossy(&output.stdout)
     );
-    assert_eq!(String::from_utf8(output.stdout)?.lines().count(), 12);
+    // Counted from the manifest rather than hardcoded, so adding a golden does not require editing
+    // this assertion in every consumer that mirrors the artifact.
     let manifest: Value = serde_json::from_str(include_str!(
         "../../../protocol-artifact/runtime-v3-gameplay/manifest.json"
     ))?;
+    let listed_goldens = manifest["goldens"].as_array().map(Vec::len).unwrap_or(0);
+    // Plus the case file, the normative schema, the manifest, and the artifact schema.
+    assert_eq!(
+        String::from_utf8(output.stdout)?.lines().count(),
+        listed_goldens + 4
+    );
     assert_eq!(manifest["schema_digest"], RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST);
     assert_eq!(manifest["artifact"], RUNTIME_V3_GAMEPLAY_ARTIFACT);
     assert_eq!(
