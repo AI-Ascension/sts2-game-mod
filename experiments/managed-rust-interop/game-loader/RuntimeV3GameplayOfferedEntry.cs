@@ -23,13 +23,15 @@ namespace AiAscension.Sts2GameMod.Runtime;
 /// </para>
 ///
 /// <para>
-/// <b>Recorded negative: no host surface populates <see cref="Contents"/>.</b> The harness admits
-/// <c>contents</c> on any Choice and the type below carries it, but <c>NRewardsScreen</c> exposes
-/// only <c>RewardsSetIndex</c> and the reward type name through <c>NRewardButton.Reward</c> — the
-/// cards behind a reward live behind the *next* overlay, whose model is not reachable from this
-/// loader without the source-only content catalog. So <c>contents</c> is supported, serialized, and
-/// validated, and no producer fills it. That is stated here rather than left implicit, because an
-/// unfilled field is otherwise indistinguishable from a missing one.
+/// <see cref="Contents"/> discloses what taking an option would present next, and the shipped
+/// producer fills it for exactly one reward kind. A <c>CardReward</c> discloses the cards it holds,
+/// read from the host's own public <c>CardReward.Cards</c>: the cards the host already holds and
+/// already shows on the very next overlay. Reading that list is not a content-catalog read and not
+/// a peek at an ungenerated reward — it is the same list the player is being shown, which is what
+/// makes reading it legitimate here. Every other reward kind discloses nothing, and its entry stays
+/// the bare identity the harness already admits. Nothing beyond those cards is read or inferred: no
+/// probability, weight, reroll rule, or undisclosed outcome, and the private
+/// <c>Options</c>/<c>RerollOptions</c> and <c>CanReroll</c> are deliberately left untouched.
 /// </para>
 /// </summary>
 internal sealed record RuntimeV3GameplayOfferedEntry(
