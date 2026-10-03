@@ -345,6 +345,19 @@ export STS2_RUNTIME_PROFILE=runtime-v3-gameplay STS2_MCP_BINARY="$mcp"
 export STS2_EXO_BRIDGE_BINARY="$provider" STS2_EXO_BRIDGE_ARGS_JSON='[]'
 export STS2_EXO_REVISION
 STS2_EXO_REVISION=$(sha256sum "$provider"); STS2_EXO_REVISION=${STS2_EXO_REVISION%% *}
+# Every shape this wrapper launches runs on a locally launched provider bridge, so it is on the
+# raw-wire lane. STS2_EXO_ADMISSION is fail-closed to the reviewed envelope when unset, and that
+# envelope demands a complete inspected deployment identity -- STS2_EXO_PACKAGE_PATH plus twelve
+# more declared digests and the per-request identifiers -- which only the packaged Exo executor
+# supplies. This wrapper has no package artifact to locate and no inspected descriptor to admit, so
+# the envelope refused the run at settings assembly with "STS2_EXO_PACKAGE_DIGEST is required",
+# before the bridge, gateway, MCP or game were touched. Naming the raw-wire acknowledgement is the
+# documented contract for these bridges (harness ADR 0031 and docs/exo-compatibility.md) rather
+# than a loosening of it: it is an explicit statement that the bridge is not envelope-admitted, and
+# the Astra lane's live-episode capability is unaffected because that lane never required the
+# envelope. Placeholder digests are deliberately not declared; enveloped admission compares them
+# against the bytes it inspects and refuses a mismatch.
+export STS2_EXO_ADMISSION=legacy
 if [[ "$run_kind" == demo ]]; then
     export STS2_PROVIDER_KIND="$provider_kind" STS2_COMBAT_DEMO=true
     if [[ "$provider_kind" == ollama ]]; then

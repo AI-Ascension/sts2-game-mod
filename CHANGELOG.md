@@ -9,6 +9,18 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Named the raw-wire admission in the live-session wrapper. Every shape it launches runs on a local
+  provider bridge, but it left `STS2_EXO_ADMISSION` unset, so the harness was fail-closed to the
+  reviewed envelope and refused the run during settings assembly with
+  `STS2_EXO_PACKAGE_DIGEST is required` — before the bridge, gateway, MCP or game were touched. That
+  envelope demands a complete inspected deployment identity only the packaged Exo executor
+  supplies, so it was never this wrapper's contract. It now sets `STS2_EXO_ADMISSION=legacy` (harness
+  ADR 0031): an explicit acknowledgement that the bridge is not envelope-admitted, not an admission.
+  No placeholder digests are declared, since enveloped admission compares declarations against
+  inspected bytes. The Astra lane's live-episode capability never depended on the envelope and is
+  unchanged. Verified against locally built harness `ab7f121`. No game, host or provider run is
+  claimed. Refs #260, Refs #193.
+
 - Fixed the `runtime-v3-gameplay` text bound to count Unicode characters, as the schema's
   `maxLength` does, instead of UTF-8 bytes. `valid_text` compared `str::len()` against the 512 limit,
   so a 512-character non-ASCII name the schema admits was refused. The single byte-named constant is
@@ -510,5 +522,3 @@ Completed entries that no longer fit this file's preferred size budget are prese
   results plus an exact source-read count, each verified to fail under an isolated mutation.
   Source-only evidence; native settings extraction and exact-host compatibility remain unverified.
   Refs #110.
-
-
