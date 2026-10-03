@@ -186,6 +186,18 @@ binary to carry `STS2_CAMPAIGN_EPISODE` and refuses the local campaign shape bef
 guardian, gateway, MCP, or harness when it does not. Additional providers are future work and
 require a provider adapter, without changing the game action or replay contracts.
 
+The launcher names the raw-wire admission explicitly with `STS2_EXO_ADMISSION=legacy`, because every
+shape it launches runs on a locally launched provider bridge. The harness is fail-closed to the
+reviewed envelope when that variable is unset, and the envelope demands a complete inspected
+deployment identity — a package locator, twelve declared digests, and three per-request
+identifiers — that only the packaged Exo executor supplies. Without the acknowledgement the run
+was refused during settings assembly, before the bridge, gateway, MCP, or game were touched, so
+the envelope was never the contract this launcher could meet. `legacy` is an explicit statement
+that the bridge is not envelope-admitted rather than an admission; the Astra lane's live-episode
+capability does not depend on the envelope and is unchanged. The launcher does not declare
+placeholder digests: enveloped admission compares declared digests against inspected bytes and
+refuses a mismatch.
+
 A demo run names the bounded mode its provider can run, exactly as a campaign run does. An OpenAI
 Astra demo names the live episode and records a replay stream. A local ollama demo names the combat
 demo alone: the harness restricts the live episode to Astra, and it refuses a vector that names the
