@@ -40,6 +40,10 @@ fn player() -> RuntimeV3GameplayPlayer {
         deck: Vec::new(),
         discard: Vec::new(),
         exhaust: Vec::new(),
+        relics: None,
+        potions: None,
+        potion_slots: None,
+        max_potion_slots: None,
     }
 }
 

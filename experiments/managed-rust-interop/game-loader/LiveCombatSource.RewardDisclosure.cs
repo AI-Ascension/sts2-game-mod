@@ -41,7 +41,7 @@ internal sealed partial class LiveCombatSource
     /// problem this change exists to remove.
     /// </para>
     /// </summary>
-    private RuntimeV3GameplayOfferedSet RewardSet(Node screen)
+    private static RuntimeV3GameplayOfferedSet RewardSet(Node screen)
     {
         NRewardButton[] buttons = RewardButtons(screen);
         var pairs = new (string Identity, NRewardButton Button)[buttons.Length];
@@ -64,7 +64,7 @@ internal sealed partial class LiveCombatSource
     /// Discloses what taking one reward would present, for the reward kinds whose pending choice the
     /// host already holds here, and discloses nothing for the kinds it does not.
     /// </summary>
-    private IReadOnlyList<RuntimeV3GameplayOfferedContent>? RewardContents(NRewardButton button)
+    private static List<RuntimeV3GameplayOfferedContent>? RewardContents(NRewardButton button)
     {
         if (button.Reward is not CardReward cardReward) return null;
         var contents = new List<RuntimeV3GameplayOfferedContent>();

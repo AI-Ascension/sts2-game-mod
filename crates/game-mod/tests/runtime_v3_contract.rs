@@ -5,7 +5,7 @@ use std::{error::Error, path::Path, process::Command};
 use sts2_game_mod::{
     RUNTIME_V3_GAMEPLAY_ARTIFACT, RUNTIME_V3_GAMEPLAY_GENERATOR, RUNTIME_V3_GAMEPLAY_SCHEMA_DIGEST,
     RUNTIME_V3_GAMEPLAY_SCHEMA_SOURCE, RuntimeV3GameplayAction, RuntimeV3GameplayEnemyIntent,
-    RuntimeV3GameplayMessage, RuntimeV3GameplayState,
+    RuntimeV3GameplayMessage, RuntimeV3GameplayPotionTargetMode, RuntimeV3GameplayState,
 };
 
 const STATE: &str =
@@ -17,6 +17,9 @@ const DISPATCH: &str = include_str!(
 );
 const SETTLED: &str = include_str!(
     "../../../protocol-artifact/runtime-v3-gameplay/golden/dispatch-action-settled.json"
+);
+const DESCRIBED_BELT: &str = include_str!(
+    "../../../protocol-artifact/runtime-v3-gameplay/golden/state-response-described-belt.json"
 );
 
 #[test]
@@ -75,6 +78,7 @@ fn canonical_artifact_bytes_and_provenance_match() -> Result<(), Box<dyn Error>>
         include_str!(
             "../../../protocol-artifact/runtime-v3-gameplay/golden/state-response-described-offer.json"
         ),
+        DESCRIBED_BELT,
     ] {
         let message: RuntimeV3GameplayMessage = serde_json::from_str(golden)?;
         message.validate()?;
@@ -83,6 +87,107 @@ fn canonical_artifact_bytes_and_provenance_match() -> Result<(), Box<dyn Error>>
             serde_json::from_str::<Value>(golden)?
         );
     }
+    Ok(())
+}
+
+#[test]
+fn described_belt_golden_round_trips_through_the_shipped_contract() -> Result<(), Box<dyn Error>> {
+    let message: RuntimeV3GameplayMessage = serde_json::from_str(DESCRIBED_BELT)?;
+    message.validate()?;
+    let observation = message.observation.as_ref().ok_or("missing observation")?;
+    let player = &observation.player;
+    assert_eq!(player.hand[0].description.as_deref(), Some("Gain 8 Block."));
+    let relics = player.relics.as_ref().ok_or("missing observed relics")?;
+    assert_eq!(
+        relics[0].description.as_deref(),
+        Some("Heal 2 HP at the end of each turn.")
+    );
+    assert_eq!(relics[1].description, None);
+    let potions = player.potions.as_ref().ok_or("missing observed potions")?;
+    assert_eq!(
+        potions[0].target_mode,
+        Some(RuntimeV3GameplayPotionTargetMode::AnyEnemy)
+    );
+    assert_eq!(
+        potions[2].target_mode,
+        Some(RuntimeV3GameplayPotionTargetMode::Unknown)
+    );
+    assert_eq!(player.potion_slots, Some(3));
+    assert_eq!(player.max_potion_slots, Some(3));
+    let actions = message
+        .legal_actions
+        .as_ref()
+        .ok_or("missing legal actions")?;
+    assert!(matches!(
+        actions[1].action,
+        RuntimeV3GameplayAction::UsePotion { ref potion_id, target_id: Some(ref target_id) }
+            if potion_id == "potion:1:Fire" && target_id == "enemy-1"
+    ));
+    assert!(matches!(
+        actions[2].action,
+        RuntimeV3GameplayAction::DiscardPotion { ref potion_id }
+            if potion_id == "potion:3:Unknown"
+    ));
+    assert_eq!(serde_json::to_string(&message)?, DESCRIBED_BELT.trim());
+    Ok(())
+}
+
+#[test]
+fn optional_player_attributes_distinguish_absent_from_empty_and_reject_null()
+-> Result<(), Box<dyn Error>> {
+    let mut message: Value = serde_json::from_str(STATE)?;
+    {
+        let player = message["observation"]["player"]
+            .as_object()
+            .ok_or("expected player")?;
+        assert!(!player.contains_key("relics"));
+        assert!(!player.contains_key("potions"));
+    }
+    let absent: RuntimeV3GameplayMessage = serde_json::from_value(message.clone())?;
+    let absent_player = &absent
+        .observation
+        .as_ref()
+        .ok_or("missing observation")?
+        .player;
+    assert!(absent_player.relics.is_none());
+    assert!(absent_player.potions.is_none());
+    assert!(
+        serde_json::to_value(&absent)?["observation"]["player"]
+            .get("relics")
+            .is_none()
+    );
+
+    {
+        let player = message["observation"]["player"]
+            .as_object_mut()
+            .ok_or("expected player")?;
+        player.insert("relics".to_owned(), json!([]));
+        player.insert("potions".to_owned(), json!([]));
+        player.insert("potion_slots".to_owned(), json!(0));
+    }
+    let empty: RuntimeV3GameplayMessage = serde_json::from_value(message.clone())?;
+    let empty_player = &empty
+        .observation
+        .as_ref()
+        .ok_or("missing observation")?
+        .player;
+    assert_eq!(empty_player.relics.as_ref().map(Vec::len), Some(0));
+    assert_eq!(empty_player.potions.as_ref().map(Vec::len), Some(0));
+    assert_eq!(empty_player.potion_slots, Some(0));
+    let encoded_empty = serde_json::to_value(&empty)?;
+    assert_eq!(encoded_empty["observation"]["player"]["relics"], json!([]));
+
+    for field in ["relics", "potions", "potion_slots", "max_potion_slots"] {
+        let mut invalid = message.clone();
+        invalid["observation"]["player"][field] = Value::Null;
+        assert!(
+            serde_json::from_value::<RuntimeV3GameplayMessage>(invalid).is_err(),
+            "{field}"
+        );
+    }
+    let mut invalid_card: Value = serde_json::from_str(DESCRIBED_BELT)?;
+    invalid_card["observation"]["player"]["hand"][0]["description"] = Value::Null;
+    assert!(serde_json::from_value::<RuntimeV3GameplayMessage>(invalid_card).is_err());
     Ok(())
 }
 

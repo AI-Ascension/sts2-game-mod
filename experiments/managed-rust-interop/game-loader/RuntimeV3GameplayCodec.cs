@@ -73,8 +73,9 @@ internal static class RuntimeV3GameplayCodec
         return true;
     }
 
-    private static Dictionary<string, object?> PlayerObject(RuntimeV3GameplayPlayer player) =>
-        new()
+    private static Dictionary<string, object?> PlayerObject(RuntimeV3GameplayPlayer player)
+    {
+        var result = new Dictionary<string, object?>
         {
             ["hp"] = player.Hp,
             ["max_hp"] = player.MaxHp,
@@ -85,19 +86,62 @@ internal static class RuntimeV3GameplayCodec
             ["discard"] = Cards(player.Discard),
             ["exhaust"] = Cards(player.Exhaust)
         };
+        if (player.Relics is not null) result["relics"] = Relics(player.Relics);
+        if (player.Potions is not null) result["potions"] = Potions(player.Potions);
+        if (player.PotionSlots is { } slots) result["potion_slots"] = slots;
+        if (player.MaxPotionSlots is { } maxSlots) result["max_potion_slots"] = maxSlots;
+        return result;
+    }
 
     private static List<Dictionary<string, object?>> Cards(IReadOnlyList<RuntimeV3GameplayCard> cards)
     {
         var result = new List<Dictionary<string, object?>>(cards.Count);
         foreach (RuntimeV3GameplayCard card in cards)
         {
-            result.Add(new Dictionary<string, object?>
+            var value = new Dictionary<string, object?>
             {
                 ["card_id"] = card.CardId,
                 ["name"] = card.Name,
                 ["cost"] = card.Cost,
                 ["upgraded"] = card.Upgraded
-            });
+            };
+            if (card.Description is not null) value["description"] = card.Description;
+            result.Add(value);
+        }
+        return result;
+    }
+
+    private static List<Dictionary<string, object?>> Relics(IReadOnlyList<RuntimeV3GameplayRelic> relics)
+    {
+        var result = new List<Dictionary<string, object?>>(relics.Count);
+        foreach (RuntimeV3GameplayRelic relic in relics)
+        {
+            var value = new Dictionary<string, object?>
+            {
+                ["relic_id"] = relic.RelicId,
+                ["name"] = relic.Name
+            };
+            if (relic.Description is not null) value["description"] = relic.Description;
+            result.Add(value);
+        }
+        return result;
+    }
+
+    private static List<Dictionary<string, object?>> Potions(IReadOnlyList<RuntimeV3GameplayPotion> potions)
+    {
+        var result = new List<Dictionary<string, object?>>(potions.Count);
+        foreach (RuntimeV3GameplayPotion potion in potions)
+        {
+            var value = new Dictionary<string, object?>
+            {
+                ["potion_id"] = potion.PotionId,
+                ["name"] = potion.Name
+            };
+            if (potion.Slot is { } slot) value["slot"] = slot;
+            if (potion.Usable is { } usable) value["usable"] = usable;
+            if (potion.TargetMode is { } targetMode) value["target_mode"] = targetMode;
+            if (potion.Description is not null) value["description"] = potion.Description;
+            result.Add(value);
         }
         return result;
     }
@@ -187,6 +231,7 @@ internal static class RuntimeV3GameplayCodec
             "choose_reward" => "reward_id",
             "shop_purchase" => "item_id",
             "shop_remove" or "smith" or "select_card" => "card_id",
+            "use_potion" or "discard_potion" => "potion_id",
             "event_choice" => "choice_id",
             "play_card" => "card_id",
             _ => null
@@ -195,7 +240,7 @@ internal static class RuntimeV3GameplayCodec
         {
             value[field] = action.Value;
         }
-        if (action.Kind == "play_card")
+        if (action.Kind is "play_card" or "use_potion")
         {
             value["target_id"] = action.TargetId;
         }

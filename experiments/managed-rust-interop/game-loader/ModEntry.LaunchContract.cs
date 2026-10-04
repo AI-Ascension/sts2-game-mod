@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using System;
+using Godot;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 

@@ -30,17 +30,6 @@ Completed entries that no longer fit this file's preferred size budget are prese
   schema, its digest and every pin. `RUNTIME_V3_GAMEPLAY_MAX_TEXT_BYTES` remains as a deprecated alias of the legacy value 512 so
   callers still compile; nothing validates by it. Refs #256.
 
-- Converged the dependency graph onto a single `jsonschema` major. The pinned `sts2-protocol`
-  required `=0.55.0`, an exact pin inside a git dependency that is not overridable from here, so
-  `0.55.0`/`0.55.1` coexisted with the `0.58.1` the mod uses directly -- two compiled, separately
-  tested copies of one validator. `sts2-protocol` has since moved to `=0.58.1` (its PR #71), so
-  this repins it to `24fae515` and the lock now holds exactly one major. The split predated the
-  `jsonschema` 0.58.1 bump (#248) and was not a regression from it. The API used here --
-  `GameInformationContentManifestV1Codec` and its 16 MiB message bound -- is byte-unchanged across
-  that range and the vendored `protocol-artifact/` schemas already matched the producer, so no
-  artifact was re-vendored and no wire format, schema or digest changed. No behaviour change, no
-  native admission claimed. Refs #249.
-
 - Stopped offering `skip_reward` on the card-reward selection screen. The mod never added that
   alternative; it only recognized the host's own, whose callback is
   `PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward` -- it ends the selection and
@@ -53,6 +42,16 @@ Completed entries that no longer fit this file's preferred size budget are prese
   protocol still decodes the `skip_reward` wire arm; that artifact is owned by `sts2-protocol` and
   its checksums are deliberately unchanged. Source-only: what the game does when a human presses
   Skip remains unverified. See ADR 0075 (#171).
+- Completed the Runtime-v3 player observation producer for the already-delivered protocol PR #80
+  fields: held-card descriptions, actual host-owned relics and potions, potion descriptions and
+  target/usability values when available, and belt/max capacity. Host-unavailable values remain
+  absent while observed-empty inventories remain empty. Updated the Rust contract mirror, managed
+  codec, and action consumer for the shipped potion action shapes without changing the artifact or
+  digest. Regression coverage runs the real projection source against synthetic host models and
+  serializes it through the managed codec; reward-entry contents and fail-closed `skip_reward`
+behavior remain covered. The full managed loader builds with zero warnings/errors against the
+installed STS2 v0.107.1 host after a separately signed prerequisite repair; no game launch or
+native acceptance is claimed. The added potion action cases are consumer payload compatibility only; Runtime-v3 does not offer or dispatch them. See `docs/COMPATIBILITY.md` and `docs/TESTING.md`. Refs #171.
 - Fixed the `continue_run` offer gate, which refused every real setup catalog: it required *exactly
   one* `start_run`, but a setup screen offers one per playable character, so the gate returned
   `StartRunNotOffered` and silently restored the `sts2-game-mod#172` symptom it was written to fix.

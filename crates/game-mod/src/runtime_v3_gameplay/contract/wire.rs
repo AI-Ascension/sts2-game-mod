@@ -118,6 +118,14 @@ pub(super) enum Action {
         #[serde(deserialize_with = "required_nullable")]
         target_id: Option<String>,
     },
+    UsePotion {
+        potion_id: String,
+        #[serde(deserialize_with = "required_nullable")]
+        target_id: Option<String>,
+    },
+    DiscardPotion {
+        potion_id: String,
+    },
     EndTurn {},
     ChooseReward {
         reward_id: String,
@@ -156,6 +164,14 @@ impl From<Action> for RuntimeV3GameplayAction {
             Action::StartRun { character_id } => Self::StartRun { character_id },
             Action::SelectMapNode { node_id } => Self::SelectMapNode { node_id },
             Action::PlayCard { card_id, target_id } => Self::PlayCard { card_id, target_id },
+            Action::UsePotion {
+                potion_id,
+                target_id,
+            } => Self::UsePotion {
+                potion_id,
+                target_id,
+            },
+            Action::DiscardPotion { potion_id } => Self::DiscardPotion { potion_id },
             Action::EndTurn {} => Self::EndTurn,
             Action::ChooseReward { reward_id } => Self::ChooseReward { reward_id },
             Action::SkipReward {} => Self::SkipReward,

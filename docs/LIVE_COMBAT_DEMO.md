@@ -76,8 +76,8 @@ addon from loading still requires the host's normal mod confirmation and relaunc
 The adapter checks single-player state and the host thread, projects owned values, and
 uses the current host action catalog. Completion requires the exact queued action to finish
 successfully and a visible effect. Unknown outcomes reconcile under the same operation ID.
-Seed visibility is intentional. Card descriptions, powers and enemy intent details are
-not yet projected; the current intent value is explicitly unknown.
+Seed visibility is intentional. Held-card descriptions are now projected from host-visible text;
+powers and enemy intent details remain unprojected, with intent explicitly unknown.
 
 Confirmed on 2026-09-05 with host v0.107.1 (59260271): the Rust Ollama bridge selected
 18 actions, each received a host completion witness, and the combat reached Reward.

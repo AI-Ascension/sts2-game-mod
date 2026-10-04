@@ -171,9 +171,19 @@ internal sealed partial class LiveCombatSource
         }
     }
 
-    private static byte? MaxPotionCount(Player? player) =>
-        player is null || player.MaxPotionCount is < 0 or > byte.MaxValue
-            ? null : (byte)player.MaxPotionCount;
+    private static byte? MaxPotionCount(Player? player)
+    {
+        if (player is null) return null;
+        try
+        {
+            int count = player.MaxPotionCount;
+            return count is >= 0 and <= byte.MaxValue ? (byte)count : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 
     /// <summary>Projects map points currently rendered by the ordinary map screen.</summary>
     private static RuntimeV4ExpertGameplayMapNode[]? VisibleMapNodes()

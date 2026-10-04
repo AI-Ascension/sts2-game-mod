@@ -48,6 +48,7 @@ internal sealed partial class RuntimeV3GameplaySupport
             "choose_reward" => "reward_id",
             "shop_purchase" => "item_id",
             "shop_remove" or "smith" or "select_card" => "card_id",
+            "use_potion" or "discard_potion" => "potion_id",
             "event_choice" => "choice_id",
             "play_card" => "card_id",
             "continue_run" => "run_id",
@@ -81,10 +82,11 @@ internal sealed partial class RuntimeV3GameplaySupport
                 return false;
             }
         }
-        else if (kind == "play_card")
+        else if (kind is "play_card" or "use_potion")
         {
-            if (!HasExactFields(payload, "kind", "card_id", "target_id")
-                || !TryString(payload, "card_id", out selectedValue)
+            string valueField = kind == "play_card" ? "card_id" : "potion_id";
+            if (!HasExactFields(payload, "kind", valueField, "target_id")
+                || !TryString(payload, valueField, out selectedValue)
                 || !TryOptionalString(payload, "target_id", out targetId))
             {
                 return false;

@@ -8,6 +8,17 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Converged the dependency graph onto a single `jsonschema` major. The pinned `sts2-protocol`
+  required `=0.55.0`, an exact pin inside a git dependency that is not overridable from here, so
+  `0.55.0`/`0.55.1` coexisted with the `0.58.1` the mod uses directly -- two compiled, separately
+  tested copies of one validator. `sts2-protocol` has since moved to `=0.58.1` (its PR #71), so
+  this repins it to `24fae515` and the lock now holds exactly one major. The split predated the
+  `jsonschema` 0.58.1 bump (#248) and was not a regression from it. The API used here --
+  `GameInformationContentManifestV1Codec` and its 16 MiB message bound -- is byte-unchanged across
+  that range and the vendored `protocol-artifact/` schemas already matched the producer, so no
+  artifact was re-vendored and no wire format, schema or digest changed. No behaviour change, no
+  native admission claimed. Refs #249.
+
 - Added the owner-local `locale_reference` catalog so rendered game text can be read in any
   supported locale without switching the active game language (sts2-game-mod#111). One request now
   returns the requested locale, the effective locale that actually supplied the text, the exact

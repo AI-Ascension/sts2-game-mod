@@ -146,17 +146,6 @@ internal sealed partial class LiveCombatSource : IRuntimeV3HostSource, IRuntimeV
         return result with { StateId = $"live:{_generation}", Generation = _generation };
     }
 
-    private RuntimeV3GameplayPlayer ProjectPlayer(Player? player, PlayerCombatState? combat) => new(
-        U16(player?.Creature.CurrentHp ?? 0), U16(player?.Creature.MaxHp ?? 0),
-        (byte)Math.Clamp(combat?.Energy ?? 0, 0, 255), (uint)Math.Max(player?.Gold ?? 0, 0),
-        ProjectCards(combat?.Hand.Cards), ProjectCards(player?.Deck.Cards),
-        ProjectCards(combat?.DiscardPile.Cards), ProjectCards(combat?.ExhaustPile.Cards));
-
-    private RuntimeV3GameplayCard[] ProjectCards(IEnumerable<CardModel>? cards) =>
-        cards?.Select(card => new RuntimeV3GameplayCard(CardId(card), card.Title,
-            (byte)Math.Clamp(card.EnergyCost.GetResolved(), 0, 255), card.IsUpgraded)).ToArray()
-        ?? Array.Empty<RuntimeV3GameplayCard>();
-
     private string CardId(CardModel card)
     {
         if (!_cardIds.TryGetValue(card, out string? id))

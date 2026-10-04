@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/LiveCombatSource.PlayerObservation.cs" Link="LiveCombatSource.PlayerObservation.cs" />
+    <Compile Include="../game-loader/LiveCombatSource.ExpertProfileReflection.cs" Link="LiveCombatSource.ExpertProfileReflection.cs" />
+    <Compile Include="../game-loader/RuntimeV3GameplayContract.cs" Link="RuntimeV3GameplayContract.cs" />
+    <Compile Include="../game-loader/RuntimeV3GameplayObservation.cs" Link="RuntimeV3GameplayObservation.cs" />
+    <Compile Include="../game-loader/RuntimeV3GameplayOfferedEntry.cs" Link="RuntimeV3GameplayOfferedEntry.cs" />
+    <Compile Include="../game-loader/RuntimeV4ExpertGameplayObservation.cs" Link="RuntimeV4ExpertGameplayObservation.cs" />
+    <Reference Include="sts2">
+      <HintPath>$(STS2GameDataDir)/sts2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(STS2GameDataDir)/GodotSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="ValidateHostAssemblyPath" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(STS2GameDataDir)' == ''" Text="Set STS2GameDataDir to the directory containing sts2.dll." />
+    <Error Condition="'$(STS2GameDataDir)' != '' and !Exists('$(STS2GameDataDir)/sts2.dll')"
+           Text="STS2GameDataDir does not contain sts2.dll: $(STS2GameDataDir)" />
+  </Target>
+</Project>

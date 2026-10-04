@@ -553,30 +553,31 @@ callback kind 15 for both rest admission and operation lookup while retaining ca
 The actual managed Runtime-v3 handler is compiled and exercised without host assemblies:
 
 ~~~text
-dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release
+dotnet run --project experiments/managed-rust-interop/gameplay-tests/RuntimeV3ValidationProbe.csproj --configuration Release -p:ManagedBuildRoot=/tmp/sts2-game-mod-build
 ~~~
 
-The probe links production source and supplies only a synthetic host and queue. It
-covers discovering a newer generation, exact-generation mutation/catalog fencing,
-settled and pending receipt replay, payload conflicts, session/epoch isolation,
-unrelated transitions remaining unknown, operation/action-bound completion, delayed
-completion polling, queue-time generation checks, and malformed numeric/duplicate
-fields. CI runs it with the pinned .NET SDK and warnings as errors. These are
-managed component results, not licensed-host gameplay evidence.
+The probe compiles production handlers against a synthetic host and queue. It checks generation
+and catalog fences, receipt replay/conflicts, identity/epoch isolation, operation-bound settlement,
+scoped reconciliation, invalid fields, and co-op/semantic helpers. CI uses the pinned .NET SDK with
+warnings as errors; these are managed component results, not licensed-host gameplay evidence.
 
-The probe also covers read-only scoped reconciliation of delayed completion and
-terminal rejection, immutable receipt snapshots, UTF-8 text bounds, invalid co-op
-enums, and the scoped semantic combat helper. It compiles all host-independent
-managed gameplay helpers rather than only the envelope handler.
+The `#171` probe links the actual held-card/relic/potion projection to synthetic host models, checks unavailable versus observed-empty values, and serializes them with the Runtime-v3 codec. Potion action cases exercise only the shipped payload shapes in Rust/managed consumers; the Runtime-v3 host legal-action producer and dispatcher do not add potion actions.
+`PlayerObservationHostCompatProbe` and the later `GameLoaderProbe` compile against supplied host
+assemblies without loading the game; pins and results are in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
-`--emit-contract-frames` emits fifteen deterministic JSON lines from the actual
-managed handler for independent canonical-protocol validation, including accepted,
-unknown, settled and rejected receipt paths. The captured frames were decoded and
-validated with protocol commit `82507361890c1bdce6cffeaf7e616d93e53a7d99` in the
-organization review. This is cross-language message evidence, not network or host evidence.
+~~~text
+dotnet run --project experiments/managed-rust-interop/player-observation-tests/PlayerObservationProbe.csproj --configuration Release -p:ManagedBuildRoot=/tmp/sts2-game-mod-build
+dotnet build experiments/managed-rust-interop/player-observation-host-compat-tests/PlayerObservationHostCompatProbe.csproj --configuration Release -p:STS2GameDataDir="<operator-supplied-host-data>" -p:ManagedBuildRoot=/tmp/sts2-game-mod-build
+~~~
 
-The checked-in `protocol-artifact/runtime-v3-gameplay` copy, matching source schema
-and conformance case preserve the producer's exact eight-file checksum inventory.
+These source and assembly-build checks do not establish native gameplay; a
+disposable-profile observation is still required.
+
+`--emit-contract-frames` emits fifteen deterministic handler frames across accepted,
+unknown, settled and rejected receipts; organization review validated them with protocol commit
+`82507361890c1bdce6cffeaf7e616d93e53a7d99`. This is cross-language, not host or network evidence.
+
+The checked-in `protocol-artifact/runtime-v3-gameplay` copy, schema and conformance case preserve the exact thirteen-file inventory, including the described-belt golden.
 `runtime_v3_contract` tests hash those bytes, validate every golden and reject
 missing nullable fields, unknown tagged fields, duplicate discriminators, invalid
 provenance, stale digests and cross-field contradictions. Rust recovery tests also

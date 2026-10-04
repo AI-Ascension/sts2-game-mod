@@ -26,6 +26,10 @@ fn observation() -> RuntimeV3GameplayObservation {
             deck: Vec::new(),
             discard: Vec::new(),
             exhaust: Vec::new(),
+            relics: None,
+            potions: None,
+            potion_slots: None,
+            max_potion_slots: None,
         },
         state: RuntimeV3GameplayState::Combat {
             turn_index: 1,
