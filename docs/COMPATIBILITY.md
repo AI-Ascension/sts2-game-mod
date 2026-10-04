@@ -206,6 +206,46 @@ typed catalog checks, host-thread adapter, separate co-op helpers, and postcondi
 covered by source/build tests. Exact target assembly compatibility, host legality, full-run effect
 settlement, and multiplayer behavior remain `unverified`.
 
+The `#171` player-observation producer now carries host-disclosed held-card, relic, and potion
+descriptions, the host's currently held inventories, belt capacity, and maximum potion capacity.
+Unavailable collections or values stay absent; a successfully observed empty inventory stays
+empty. The Runtime-v3 consumer mirror accepts the delivered `sts2-protocol` PR #80 artifact at
+digest `0ae1d4d1525162da3059c028dcdb70df1d4d2dcf9620c5edd9b543e5f04aacc2`; this does not change
+the schema or its digest. The source-linked synthetic producer seam and managed codec tests pass.
+The added `use_potion` and `discard_potion` action shapes are Rust/managed payload compatibility
+only: Runtime-v3 still does not offer or dispatch potion actions. Actual potion mutation remains in
+the separate Runtime-v4 expert path and is outside this producer change.
+Installed v0.107.1 metadata confirms public `CardModel.Description`, `RelicModel.DynamicDescription`,
+and `PotionModel.DynamicDescription` are `LocString` values with public parameterless
+`GetFormattedText(): string`; potion usability is a public Boolean `PassesCustomUsabilityCheck`.
+`Player.PotionSlots` is a public `IReadOnlyList<PotionModel>`, while `MaxPotionCount` is a public
+`Int32`; `GetPotionSlotIndex(PotionModel)` returns the host slot index. The existing expert helper
+counts non-null entries in `PotionSlots` for occupied count, so V3 uses the list length for observed
+belt size and reads `MaxPotionCount` separately.
+
+On 2026-10-04, the full Release `GameLoaderProbe` compiled against the installed Windows x86-64
+STS2 v0.107.1 host (`release_info` commit `59260271`). The referenced `sts2.dll` product version is
+`0.1.0+59260271157f76a2896f0eab5bc6ea1245d8b314`, SHA-256
+`A1F9E653F1E28E4076558FEE1E60D218619CB7E057B887C6417F62C62C6D7A52`; `GodotSharp.dll` is
+`4.5.1+f62fdbde15035c5576dad93e586201f4d41ef0cb`, SHA-256
+`0E4897ECDFB31456A97C7D8028DFB8D7DBDC632E2F73FC9B438D7B266A139289`. The build completed with
+zero warnings and zero errors after a separately signed, behavior-preserving prerequisite repair:
+two missing namespace imports and the actual CA1822/CA1859 fixes in reward disclosure. On the
+unchanged base `af93719765859b9e8791d1478ae8b4a09123afa8`, the same loader build failed with
+`CS0103` (`GD` missing) in `ModEntry.LaunchContract.cs:23`, `CS0246` (`List<>` missing) in
+`LiveCombatSource.HandChoice.cs:42`, and `CA1822`/`CA1859` at
+`LiveCombatSource.RewardDisclosure.cs:67`.
+
+An installed STS2 v0.99.1 assembly pair was also inspected. Its `sts2.dll` product version is
+`0.1.0+7ac1f450a64da4851710db715a4f267c2617cbd0`, SHA-256
+`B7A9895340F9ED5CD11EB5D45B18604ECE41C875F82F45F502B85F6B18D6D1CF`; its GodotSharp identity
+and hash match the v0.107.1 installation. The clean-base full-loader build against v0.99.1 fails
+because that older API lacks `NCombatPileCardSelectScreen` used by
+`LiveCombatSource.CombatChoice.cs:63` and `MapLocation` used by the installed co-op effect-hook
+and synchronizer sources. This target has not been broadened to that older API. These assembly
+builds and synthetic checks do not establish load smoke or gameplay; native disposable-profile
+validation remains outstanding.
+
 The additive `runtime-v4-expert` (digest `0ee034d5da83f34e9fa0ba23038738d56ef8cfccb1c6e752af3ab63d212c8e42`)
 and `runtime-v4-expert-action` (digest `393318bda8c3522c0ecbacc78b95471a9f4dc3f825169d2048f4c74a7b7f2929`)
 copies under `protocol-artifact/` are byte-identical to current `sts2-protocol` main

@@ -17,6 +17,7 @@ internal static class HostContinuationChecks
         ResumableRunIsDetectedOnlyThroughNativeGuards();
         CatalogAdmitsBothAcceptedShapesAndRefusesTheRest();
         TheNonConsumingRewardSkipIsNotOffered();
+        PotionActionsUseTheDeliveredTypedShapes();
         CodecEmitsOnlyTheAgreedShapes();
         DispatchUsesTheOfferedContinuationAndRefusesTheRest();
         PayloadShapesAreRefusedBeforeAnyMutation();
@@ -39,6 +40,30 @@ internal static class HostContinuationChecks
         Require(new LegalActionReference("select_card:2:card:1", "select_card", "card:1", null, 2)
                 .Validate(out _),
             "taking a card stays a legal action and still consumes the reward");
+    }
+
+    private static void PotionActionsUseTheDeliveredTypedShapes()
+    {
+        var use = new LegalActionReference(
+            "potion:2:fire:enemy:1", "use_potion", "potion:fire", "enemy:1", 2);
+        var discard = new LegalActionReference(
+            "potion:2:murky:discard", "discard_potion", "potion:murky", null, 2);
+        Require(use.Validate(out _) && discard.Validate(out _),
+            "the delivered Runtime-v3 potion action forms validate");
+        Require(LegalActionCatalog.TryCreate(2, new[] { use, discard }, out _),
+            "the host catalog admits the delivered potion action forms");
+
+        RuntimeV3GameplayObservation observation = RuntimeV3GameplayFixtures.CombatObservation(2);
+        Require(RuntimeV3GameplayCodec.TrySerialize(observation, new[] { use, discard },
+            out string json, out string error), "the potion action catalog serializes: " + error);
+        using JsonDocument document = JsonDocument.Parse(json);
+        JsonElement actions = document.RootElement.GetProperty("legal_actions");
+        Require(actions[0].GetProperty("action").GetProperty("potion_id").GetString() == "potion:fire"
+            && actions[0].GetProperty("action").GetProperty("target_id").GetString() == "enemy:1",
+            "use_potion carries its potion identity and required target field");
+        Require(actions[1].GetProperty("action").GetProperty("potion_id").GetString() == "potion:murky"
+            && !actions[1].GetProperty("action").TryGetProperty("target_id", out _),
+            "discard_potion carries only its potion identity");
     }
 
     private static void ResumableRunIsDetectedOnlyThroughNativeGuards()

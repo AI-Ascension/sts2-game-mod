@@ -104,7 +104,11 @@ internal sealed class RuntimeV3GameplayHost
                 Hand = new List<RuntimeV3GameplayCard>(observation.Player.Hand).AsReadOnly(),
                 Deck = new List<RuntimeV3GameplayCard>(observation.Player.Deck).AsReadOnly(),
                 Discard = new List<RuntimeV3GameplayCard>(observation.Player.Discard).AsReadOnly(),
-                Exhaust = new List<RuntimeV3GameplayCard>(observation.Player.Exhaust).AsReadOnly()
+                Exhaust = new List<RuntimeV3GameplayCard>(observation.Player.Exhaust).AsReadOnly(),
+                Relics = observation.Player.Relics is null
+                    ? null : new List<RuntimeV3GameplayRelic>(observation.Player.Relics).AsReadOnly(),
+                Potions = observation.Player.Potions is null
+                    ? null : new List<RuntimeV3GameplayPotion>(observation.Player.Potions).AsReadOnly()
             },
             StateValues = new List<string>(observation.StateValues).AsReadOnly(),
             Enemies = new List<RuntimeV3GameplayEnemy>(observation.Enemies).AsReadOnly(),

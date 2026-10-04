@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup Condition="'$(ManagedBuildRoot)' != ''">
+    <BaseOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</MSBuildProjectExtensionsPath>
+  </PropertyGroup>
+</Project>

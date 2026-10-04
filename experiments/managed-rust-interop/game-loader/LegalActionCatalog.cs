@@ -30,10 +30,18 @@ internal sealed record LegalActionReference(
         switch (Kind)
         {
             case "start_run" or "select_map_node" or "choose_reward" or "shop_purchase"
-                or "shop_remove" or "smith" or "event_choice" or "select_card":
+                or "shop_remove" or "smith" or "event_choice" or "select_card"
+                or "discard_potion":
                 if (Value is null || TargetId is not null)
                 {
                     error = "argument action is missing its typed value or has an unexpected target";
+                    return false;
+                }
+                break;
+            case "use_potion":
+                if (Value is null)
+                {
+                    error = "use_potion action is missing its potion identity";
                     return false;
                 }
                 break;

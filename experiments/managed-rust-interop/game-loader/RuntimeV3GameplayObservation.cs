@@ -9,7 +9,21 @@ internal sealed record RuntimeV3GameplayCard(
     string CardId,
     string Name,
     byte Cost,
-    bool Upgraded);
+    bool Upgraded,
+    string? Description = null);
+
+internal sealed record RuntimeV3GameplayRelic(
+    string RelicId,
+    string Name,
+    string? Description = null);
+
+internal sealed record RuntimeV3GameplayPotion(
+    string PotionId,
+    string Name,
+    byte? Slot = null,
+    bool? Usable = null,
+    string? TargetMode = null,
+    string? Description = null);
 
 internal sealed record RuntimeV3GameplayEnemy(
     string EnemyId,
@@ -33,7 +47,11 @@ internal sealed record RuntimeV3GameplayPlayer(
     IReadOnlyList<RuntimeV3GameplayCard> Hand,
     IReadOnlyList<RuntimeV3GameplayCard> Deck,
     IReadOnlyList<RuntimeV3GameplayCard> Discard,
-    IReadOnlyList<RuntimeV3GameplayCard> Exhaust);
+    IReadOnlyList<RuntimeV3GameplayCard> Exhaust,
+    IReadOnlyList<RuntimeV3GameplayRelic>? Relics = null,
+    IReadOnlyList<RuntimeV3GameplayPotion>? Potions = null,
+    byte? PotionSlots = null,
+    byte? MaxPotionSlots = null);
 
 /// <summary>
 /// A managed observation assembled from ordinary player-visible signals. It intentionally has no
@@ -114,7 +132,9 @@ internal sealed record RuntimeV3GameplayObservation(
             foreach (RuntimeV3GameplayCard card in cards)
             {
                 if (!RuntimeV3GameplayContract.IsIdentity(card.CardId)
-                    || !RuntimeV3GameplayContract.IsText(card.Name))
+                    || !RuntimeV3GameplayContract.IsText(card.Name)
+                    || card.Description is not null
+                        && !RuntimeV3GameplayContract.IsPublishableText(card.Description))
                 {
                     error = "observation card projection is invalid";
                     return false;
@@ -192,6 +212,48 @@ internal sealed record RuntimeV3GameplayObservation(
             {
                 error = "observation shop projection is invalid";
                 return false;
+            }
+        }
+
+        if (Player.Relics is { } relics)
+        {
+            if (relics.Count > RuntimeV3GameplayContract.MaxEntities)
+            {
+                error = "observation relic collection exceeds its bound";
+                return false;
+            }
+            foreach (RuntimeV3GameplayRelic relic in relics)
+            {
+                if (!RuntimeV3GameplayContract.IsIdentity(relic.RelicId)
+                    || !RuntimeV3GameplayContract.IsPublishableText(relic.Name)
+                    || relic.Description is not null
+                        && !RuntimeV3GameplayContract.IsPublishableText(relic.Description))
+                {
+                    error = "observation relic projection is invalid";
+                    return false;
+                }
+            }
+        }
+
+        if (Player.Potions is { } potions)
+        {
+            if (potions.Count > RuntimeV3GameplayContract.MaxEntities)
+            {
+                error = "observation potion collection exceeds its bound";
+                return false;
+            }
+            foreach (RuntimeV3GameplayPotion potion in potions)
+            {
+                if (!RuntimeV3GameplayContract.IsIdentity(potion.PotionId)
+                    || !RuntimeV3GameplayContract.IsPublishableText(potion.Name)
+                    || potion.TargetMode is not null
+                        and not ("self" or "any_enemy" or "all_enemies" or "none" or "unknown")
+                    || potion.Description is not null
+                        && !RuntimeV3GameplayContract.IsPublishableText(potion.Description))
+                {
+                    error = "observation potion projection is invalid";
+                    return false;
+                }
             }
         }
 

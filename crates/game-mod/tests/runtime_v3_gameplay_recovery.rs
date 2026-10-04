@@ -78,6 +78,10 @@ fn runtime(proof: Rc<Cell<u8>>, reads_fail: Rc<Cell<bool>>) -> RuntimeV3Gameplay
             deck: vec![],
             discard: vec![],
             exhaust: vec![],
+            relics: None,
+            potions: None,
+            potion_slots: None,
+            max_potion_slots: None,
         },
         state: RuntimeV3GameplayState::Combat {
             turn_index: 1,
