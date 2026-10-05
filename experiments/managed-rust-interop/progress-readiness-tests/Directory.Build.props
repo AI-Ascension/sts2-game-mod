@@ -1,0 +1,10 @@
+<Project>
+  <!-- Import shared managed settings before selecting a separate task-owned output root. -->
+  <Import Project="../Directory.Build.props" />
+  <PropertyGroup Condition="'$(ManagedBuildRoot)' != ''">
+    <BaseOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(ManagedBuildRoot)/$(MSBuildProjectName)/obj/</MSBuildProjectExtensionsPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/bin/**;$(MSBuildProjectDirectory)/obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

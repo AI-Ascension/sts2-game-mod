@@ -64,6 +64,10 @@
       <HintPath>$(STS2GameDataDir)/GodotSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(STS2GameDataDir)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <Target Name="ValidateHostAssemblyPath" BeforeTargets="ResolveReferences">
@@ -71,5 +75,7 @@
            Text="Set STS2GameDataDir to the directory containing sts2.dll." />
     <Error Condition="'$(STS2GameDataDir)' != '' and !Exists('$(STS2GameDataDir)/sts2.dll')"
            Text="STS2GameDataDir does not contain sts2.dll: $(STS2GameDataDir)" />
+    <Error Condition="'$(STS2GameDataDir)' != '' and !Exists('$(STS2GameDataDir)/0Harmony.dll')"
+           Text="STS2GameDataDir does not contain the host-provided 0Harmony.dll required by the pinned readiness observer." />
   </Target>
 </Project>

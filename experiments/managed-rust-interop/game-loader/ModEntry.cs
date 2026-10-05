@@ -83,6 +83,8 @@ public static partial class ModEntry
                     return;
                 }
 
+                InitializeProgressReadiness();
+
                 InitializeRuntimeV3Gameplay();
                 ConfigureCoopNative(new InstalledNativeCoopHostPort());
                 InitializeRuntimeMapV1();

@@ -8,6 +8,21 @@ not a supported release or a second normative changelog.
 The archive begins with the most recently retired entries and runs back to the repository
 initialization records. Active development continues in `CHANGELOG.md`.
 
+- Added the owner-local read-only game settings reference slice for sts2-game-mod#110. The
+  `settings_reference` producer composes the existing content-manifest and locale witness with the
+  selected profile and a closed producer version, and exposes allowlisted setting identities,
+  localized labels/descriptions, categories (language, accessibility, input, display, audio,
+  gameplay interaction), levels (global, profile, addon), value types, stored/effective/default
+  values with evidence and read seam, restart requirement, and declared ranges/options. Private and
+  hidden settings must withhold every value and are observable only in the owner scope or in no
+  scope, a run-affecting setting must agree with its `run_configuration` reference in both
+  directions, and unknown, duplicate, or missing definitions, stale profile/locale, unsupported or
+  unavailable families, and malformed or oversized input fail closed. The boundary is read-only by
+  construction (`read_catalog(&self)`, no setter) and two regressions assert identical repeated
+  results plus an exact source-read count, each verified to fail under an isolated mutation.
+  Source-only evidence; native settings extraction and exact-host compatibility remain unverified.
+  Refs #110.
+
 - Converged the dependency graph onto a single `jsonschema` major. The pinned `sts2-protocol`
   required `=0.55.0`, an exact pin inside a git dependency that is not overridable from here, so
   `0.55.0`/`0.55.1` coexisted with the `0.58.1` the mod uses directly -- two compiled, separately
