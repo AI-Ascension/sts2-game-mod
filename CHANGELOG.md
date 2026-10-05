@@ -9,6 +9,11 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added an internal profile-progress readiness observer for the pinned v0.107.1 host lifecycle.
+  It remains unavailable until an observed ProcessFrame owner thread and a verified lifecycle load
+  agree on the same profile/progress generation. The source-linked synthetic probe is not native
+  readiness or seeded-run acceptance evidence. See ADR 0076.
+
 - Named the raw-wire admission in the live-session wrapper. Every shape it launches runs on a local
   provider bridge, but it left `STS2_EXO_ADMISSION` unset, so the harness was fail-closed to the
   reviewed envelope and refused the run during settings assembly with
@@ -506,18 +511,3 @@ native acceptance is claimed. The added potion action cases are consumer payload
   repeated production, an exact source-read count, and unchanged retained definitions, each verified
   to fail under an isolated mutation. Source-only evidence; native run-configuration extraction and
   exact-host compatibility remain unverified. Refs #105.
-
-- Added the owner-local read-only game settings reference slice for sts2-game-mod#110. The
-  `settings_reference` producer composes the existing content-manifest and locale witness with the
-  selected profile and a closed producer version, and exposes allowlisted setting identities,
-  localized labels/descriptions, categories (language, accessibility, input, display, audio,
-  gameplay interaction), levels (global, profile, addon), value types, stored/effective/default
-  values with evidence and read seam, restart requirement, and declared ranges/options. Private and
-  hidden settings must withhold every value and are observable only in the owner scope or in no
-  scope, a run-affecting setting must agree with its `run_configuration` reference in both
-  directions, and unknown, duplicate, or missing definitions, stale profile/locale, unsupported or
-  unavailable families, and malformed or oversized input fail closed. The boundary is read-only by
-  construction (`read_catalog(&self)`, no setter) and two regressions assert identical repeated
-  results plus an exact source-read count, each verified to fail under an isolated mutation.
-  Source-only evidence; native settings extraction and exact-host compatibility remain unverified.
-  Refs #110.

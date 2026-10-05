@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ProgressReadinessProbeTests.cs" />
+    <Compile Include="ProgressReadinessNestedLoadProbe.cs" />
+    <Compile Include="ProgressReadinessHostPinProbe.cs" />
+    <Compile Include="ProgressReadinessPatchBindingProbe.cs" />
+    <Compile Include="../game-loader/ProgressReadinessState.cs" />
+    <Compile Include="../game-loader/ProgressReadinessState.Publication.cs" />
+    <Compile Include="../game-loader/ProgressReadinessCallbacks.cs" />
+    <Compile Include="../game-loader/ProgressReadinessRegistration.cs" />
+    <Compile Include="../game-loader/ProgressReadinessHostPin.cs" />
+  </ItemGroup>
+</Project>

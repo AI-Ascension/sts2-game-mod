@@ -21,8 +21,7 @@ and observed stability interval, not content-loading completion.
 ## Purpose
 
 Tests must prove observable boundary invariants without requiring a game whenever possible.
-Host-dependent evidence runs only in an authorized disposable environment and records its exact
-inputs, outputs, cleanup, and evidence level.
+Host-dependent evidence runs only in an authorized disposable environment and records its exact inputs, outputs, cleanup, and evidence level.
 
 ## Foundation commands
 
@@ -643,3 +642,7 @@ multiplayer compatibility.
 The proposed package receipt and disposable two-peer trace procedure is documented in
 [`COOP_TWO_PEER_SETUP.md`](COOP_TWO_PEER_SETUP.md). It is deliberately an operator procedure,
 not a runtime claim or authorization to alter an installation.
+
+## Profile progress readiness observer
+
+See the [source-linked managed probe commands, coverage, and evidence limits](../experiments/managed-rust-interop/progress-readiness-tests/README.md).

@@ -71,6 +71,7 @@ decision body and do not reserve another identifier. Local link validation check
 | 0073 | [Host-offered continuation beside `start_run`](0073-host-continue-run-offer.md) |
 | 0074 | [Game-facts handoff inventory](0074-game-facts-handoff-inventory.md) |
 | 0075 | [A non-consuming reward skip is not offered](0075-reward-skip-not-offered.md) |
+| 0076 | [Observe profile progress through the host lifecycle](0076-host-progress-readiness-observer.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains

@@ -95,6 +95,15 @@ that proprietary file. The recorded load-smoke uses the operator's installed hos
 storing or distributing it. No support claim is made for beta builds, earlier versions, Linux,
 macOS, or another architecture until an exact matrix row and evidence exist.
 
+The internal profile-progress readiness observer is source-linked to the inspected Windows
+v0.107.1 host (`sts2.dll` SHA-256
+`a1f9e653f1e28e4076558fee1e60d218619cb7e057b887c6417f62c62c6d7a52`) and host-provided Harmony
+2.4.2.0 (`0Harmony.dll` SHA-256
+`ef1898322c9f5c86dc1b0758b272a9c440823b4a41ca9a0b82a3aa6b3d206387`). Source registration,
+synthetic reducer checks, and a future exact-host build do not prove that the loader installs these
+hooks before game startup or that a real lifecycle callback establishes readiness. Native readiness
+and seeded-run acceptance remain unverified; see [ADR 0076](decisions/0076-host-progress-readiness-observer.md).
+
 The repeat-seed row is intentionally narrower than general gameplay support. The implementation
 only targets an active single-player Custom run and restarts it from the captured seed beginning.
 It does not support later-floor checkpoints, standard/daily/multiplayer replay, or another host

@@ -26,3 +26,9 @@ dependency on ModConfig-STS2.
 
 The names and assets of Slay the Spire and Slay the Spire 2 remain the property of their respective
 owners. This project is independent and does not grant rights to game files or trademarks.
+
+The managed progress-readiness observer references host-provided Harmony 2.4.2.0 (the installed
+assembly name is `0Harmony`). Upstream Harmony v2.4.2.0 is MIT-licensed by Andreas Pardeike; see
+the [upstream license](https://github.com/pardeike/Harmony/blob/v2.4.2.0/LICENSE). The project
+does not bundle Harmony or claim that the inspected local DLL was compared byte-for-byte with the
+upstream release asset. Operators must supply the exact game data directory at build time.
