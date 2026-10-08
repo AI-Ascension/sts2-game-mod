@@ -57,6 +57,7 @@ the existing experiment directory and is packaged only by the explicit load-smok
 | crates/host | mod | mod composition and managed/host integration seam |
 | crates/http-adapter | mod | mod composition; future owner-local HTTP listener |
 | crates/game-mod | mod | target-local composition and admission boundary |
+| crates/game-mod/src/game_facts_reference/protocol_v1 | mod | typed static mapper; caller-owned evidence, no source authentication |
 | protocol-artifact/poc-v1 | protocol release consumer | inert copied POC artifact and fixtures |
 | protocol-artifact/runtime-v2 | protocol release consumer | inert copied Runtime-v2 artifact and fixtures |
 | protocol-artifact/runtime-map-v1 | protocol release candidate consumer | exact copied map-read artifact; live map acceptance remains unverified |

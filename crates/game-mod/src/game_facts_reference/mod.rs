@@ -22,21 +22,25 @@
 //! Source-only by construction. The inventory is a *proposal* to the owner; it claims no native
 //! parity, no host comparison and no transport. Extracting live facts through game-owned access and
 //! mapping them into core inputs is the follow-up adapter, deliberately not built here.
+//! Inventory, manifest and provenance values remain caller-supplied: local validation proves their
+//! shape and consistency only, not source authenticity or coherent extraction.
 
 mod error;
 mod identity;
 mod inventory;
 mod model;
+mod protocol_v1;
 mod validation;
 
 pub use error::GameFactsError;
 pub use identity::is_opaque_facts_identity;
 pub use inventory::FactsInventory;
 pub use model::{
-    FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsRepresentation,
-    FactsRuleEntry, FactsRuleInput, FactsUnsupportedCombination,
-    GAME_FACTS_MAX_COMBINATION_MEMBERS, GAME_FACTS_MAX_IDENTITY_BYTES,
+    FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInputSource,
+    FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsSourceKind,
+    FactsUnsupportedCombination, GAME_FACTS_MAX_COMBINATION_MEMBERS, GAME_FACTS_MAX_IDENTITY_BYTES,
     GAME_FACTS_MAX_IDENTITY_SEGMENTS, GAME_FACTS_MAX_INPUTS_PER_RULE, GAME_FACTS_MAX_LABEL_BYTES,
     GAME_FACTS_MAX_RULES, GAME_FACTS_MAX_UNSUPPORTED_COMBINATIONS,
     GAME_FACTS_REFERENCE_PRODUCER_VERSION,
 };
+pub use protocol_v1::GameFactsReferenceV1Adapter;

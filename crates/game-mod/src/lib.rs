@@ -106,14 +106,7 @@ pub use content_manifest::{
     ContentManifestWireError, ContentManifestWireResponse, ContentOriginInput, ContentPackage,
     ContentPackageInput, ContentSourceError,
 };
-pub use game_facts_reference::{
-    FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInventory,
-    FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsUnsupportedCombination,
-    GAME_FACTS_MAX_COMBINATION_MEMBERS, GAME_FACTS_MAX_IDENTITY_BYTES,
-    GAME_FACTS_MAX_IDENTITY_SEGMENTS, GAME_FACTS_MAX_INPUTS_PER_RULE, GAME_FACTS_MAX_LABEL_BYTES,
-    GAME_FACTS_MAX_RULES, GAME_FACTS_MAX_UNSUPPORTED_COMBINATIONS,
-    GAME_FACTS_REFERENCE_PRODUCER_VERSION, GameFactsError, is_opaque_facts_identity,
-};
+include!("game_facts_reference/exports.rs");
 pub use live_card_state::{
     CardCostAmount, CardCostContributor, CardCostSemantics, CardCostUnknownReason,
     CardDefinitionLink, CardDefinitionReference, CardExpiration, CardFlags, CardInstanceReference,

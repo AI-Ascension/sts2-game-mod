@@ -19,11 +19,9 @@ sts2-game-mod is the game-facing translation boundary. It adapts the managed loa
 callbacks into owned Rust values, schedules host work on the game main thread, exposes the
 authoritative local HTTP surface, and composes the narrow native seam.
 
-This document records boundaries, the initialized source-level seams, the managed load-smoke
-package, the Runtime-v2 host-adapter candidate, and dependency direction. The Rust source proves
-deterministic port composition plus one local fake `poc-v1` mapping; the managed package separately
-proves loader discovery and the native ABI smoke call in one recorded game version. Runtime-v2 host
-execution remains a separate controlled-host gate.
+The Rust source proves deterministic port composition plus one local fake `poc-v1` mapping; the
+managed package separately proves loader discovery and the native ABI smoke call in one recorded
+game version. Runtime-v2 host execution remains a separate controlled-host gate.
 
 ## Initialized source seam
 
@@ -273,10 +271,11 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 
 ## Protocol and data rules
 
-The owner-local HTTP contract remains separate from the copied POC artifact. The runtime adapter owns
-the bounded `runtime-v1` and frozen Runtime-v2 route/ABI mappings and their sanitized errors; MCP
-envelopes and gateway leases remain outside this repository. Broader gameplay routes, semantics,
-ordering, and versioning require a new project-owned profile and fixtures.
+The owner-local HTTP contract remains separate from copied Protocol artifacts. Runtime-v1 and
+frozen Runtime-v2 route/ABI mappings and sanitized errors stay bounded; MCP envelopes and gateway
+leases remain outside this repository. Broader gameplay routes, semantics, ordering, and versioning
+require a project-owned profile and fixtures. The static mapper targets accepted
+`game-facts-reference-v1`, checks caller-value consistency only, and does not authenticate source origin or coherent extraction; see [ADR 0077](decisions/0077-game-facts-static-protocol-producer.md).
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.
