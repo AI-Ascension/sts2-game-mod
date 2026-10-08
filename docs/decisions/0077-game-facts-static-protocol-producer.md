@@ -37,12 +37,13 @@ members are requested; a subset that hides an interaction leaves affected rules 
 
 ADR 0038 admits ContentManifest.inventory_revision as the content identity. The new manifest-bound
 inventory constructor derives the build and complete owner-local cursor from a supplied
-ContentManifest and privately records inventory_revision; the caller supplies mode separately. The
-adapter compares that recorded identity, build, cursor and request ID against the supplied manifest
-value. ContentManifest has public fields and derives Clone, so this check establishes value
-consistency only. It does not authenticate producer origin, verify a source token, or prove that
-facts and manifest came from one coherent owner read. The caller/source integration owns that
-evidence boundary. Synthetic mapper fixtures do not establish it.
+ContentManifest and privately records inventory_revision and locale; the caller supplies mode
+separately. The adapter compares that recorded identity, build, cursor and request ID against the
+supplied manifest value, and requires the privately captured locale to agree with both the supplied
+manifest and request locale. ContentManifest has public fields and derives Clone, so this check
+establishes caller-value consistency only. It does not authenticate producer origin, verify a source
+token, or prove that facts and manifest came from one coherent owner read. The caller/source
+integration owns that evidence boundary. Synthetic mapper fixtures do not establish it.
 
 Source references are bounded opaque ASCII tokens. They are never opened as paths or included in
 errors. The mapper rejects path-like and exception-shaped tokens and refuses unsupported units
@@ -51,11 +52,11 @@ without aliases or guessed conversion.
 ## Consequences and acceptance limits
 
 The existing FactsInventory::new constructor remains unbound for legacy and synthetic callers.
-The additive new_for_manifest constructor is a consistency helper, not an authenticity token. No
-static positive response from caller-provided synthetic values proves production support. A future
-owner-source integration must supply an agreed rule set, exact ordered inputs and units, real
-per-input provenance, build/mode, and coherent manifest/facts evidence before any production rule
-claim is made.
+The additive new_for_manifest constructor records revision and locale for consistency checks; it is
+not an authenticity token. No static positive response from caller-provided synthetic values proves
+production support. A future owner-source integration must supply an agreed rule set, exact ordered
+inputs and units, real per-input provenance, build/mode, and coherent manifest/facts evidence before
+any production rule claim is made.
 
 Conformance tests use synthetic public manifest values and synthetic source tokens. They verify
 mapping, response byte bounds, refusal semantics, ordering, unsupported interactions, and request echo only.

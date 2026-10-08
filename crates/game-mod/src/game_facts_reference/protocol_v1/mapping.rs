@@ -27,10 +27,14 @@ pub(super) fn map_query(
     let Some(captured_revision) = inventory.captured_inventory_revision() else {
         return Err(ErrorCode::MissingCapability);
     };
+    let Some(captured_locale) = inventory.captured_locale() else {
+        return Err(ErrorCode::MissingCapability);
+    };
     if validate_manifest_binding(manifest).is_err()
         || query.binding.content_manifest_id != manifest.inventory_revision
         || query.binding.locale != manifest.locale
         || captured_revision != manifest.inventory_revision
+        || captured_locale != manifest.locale
         || inventory.build().build_id != manifest.game_build
         || inventory.build().manifest != manifest.cursor_binding()
     {

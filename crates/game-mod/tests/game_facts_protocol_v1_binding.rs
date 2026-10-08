@@ -189,6 +189,49 @@ fn matching_non_default_locale_is_accepted() -> Result<(), String> {
 }
 
 #[test]
+fn captured_inventory_locale_mismatch_returns_invalid_binding() -> Result<(), String> {
+    let captured_manifest = support::manifest();
+    let inventory = inventory(&captured_manifest)?;
+    // Change only locale after capture, leaving the inventory revision and cursor unchanged.
+    let mut supplied_manifest = captured_manifest.clone();
+    supplied_manifest.locale = "fr".to_owned();
+
+    let mut request = support::query(
+        &["resource.block_gain"],
+        &supplied_manifest.inventory_revision,
+        BindingMode::Static,
+    );
+    request
+        .query
+        .as_mut()
+        .ok_or_else(|| "captured-locale query was omitted".to_owned())?
+        .binding
+        .locale = supplied_manifest.locale.clone();
+
+    let response =
+        GameFactsReferenceV1Adapter::respond(&request, Some(&inventory), Some(&supplied_manifest))
+            .map_err(|error| error.to_string())?;
+    GameFactsReferenceV1Codec::validate(&response).map_err(|error| error.to_string())?;
+    validate_response_against_request(&request, &response).map_err(|error| error.to_string())?;
+
+    assert_eq!(response.kind, MessageKind::ErrorResponse);
+    assert_eq!(response.query, request.query);
+    assert_eq!(response.correlation_id, request.correlation_id);
+    let error = response
+        .error
+        .as_ref()
+        .ok_or_else(|| "captured-locale mismatch omitted its typed error".to_owned())?;
+    assert_eq!(error.code, ErrorCode::InvalidBinding);
+    assert_eq!(error.field, None);
+    assert_eq!(
+        error.reason.as_deref(),
+        Some("The supplied content binding does not match this request.")
+    );
+    assert!(!error.retryable);
+    Ok(())
+}
+
+#[test]
 fn consistent_values_echo_complete_manifest_binding_and_query() -> Result<(), String> {
     let manifest = support::manifest();
     let inventory = inventory(&manifest)?;

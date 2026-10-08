@@ -24,6 +24,7 @@ pub struct FactsInventory {
     rules: Vec<FactsRuleEntry>,
     unsupported: Vec<FactsUnsupportedCombination>,
     captured_inventory_revision: Option<String>,
+    captured_locale: Option<String>,
 }
 
 impl FactsInventory {
@@ -38,15 +39,16 @@ impl FactsInventory {
         rules: Vec<FactsRuleEntry>,
         unsupported: Vec<FactsUnsupportedCombination>,
     ) -> Result<Self, GameFactsError> {
-        Self::validated(build, representation, rules, unsupported, None)
+        Self::validated(build, representation, rules, unsupported, None, None)
     }
 
     /// Captures a supplied manifest value for later identity-consistency checks.
     ///
     /// This derives build identity and the owner-local cursor from the value and records its
-    /// inventory revision. Since manifest fields are public, this does not authenticate producer
-    /// origin or prove that facts and manifest came from one coherent source read. The caller owns
-    /// that evidence boundary. The mode is supplied separately because ContentManifest has none.
+    /// inventory revision and locale. Since manifest fields are public, this does not authenticate
+    /// producer origin or prove that facts and manifest came from one coherent source read. The
+    /// caller owns that evidence boundary. The mode is supplied separately because ContentManifest
+    /// has none.
     pub fn new_for_manifest(
         manifest: &ContentManifest,
         mode_id: impl Into<String>,
@@ -66,6 +68,7 @@ impl FactsInventory {
             rules,
             unsupported,
             Some(manifest.inventory_revision.clone()),
+            Some(manifest.locale.clone()),
         )
     }
 
@@ -75,6 +78,7 @@ impl FactsInventory {
         rules: Vec<FactsRuleEntry>,
         unsupported: Vec<FactsUnsupportedCombination>,
         captured_inventory_revision: Option<String>,
+        captured_locale: Option<String>,
     ) -> Result<Self, GameFactsError> {
         validate_inventory(&build, &representation, &rules, &unsupported)?;
         Ok(Self {
@@ -84,11 +88,16 @@ impl FactsInventory {
             rules,
             unsupported,
             captured_inventory_revision,
+            captured_locale,
         })
     }
 
     pub(super) fn captured_inventory_revision(&self) -> Option<&str> {
         self.captured_inventory_revision.as_deref()
+    }
+
+    pub(super) fn captured_locale(&self) -> Option<&str> {
+        self.captured_locale.as_deref()
     }
 
     /// Returns the owner-local producer identity this inventory was built with.
