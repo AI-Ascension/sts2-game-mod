@@ -9,6 +9,11 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added a Rust-only static game-facts adapter for accepted Protocol profile game-facts-reference-v1.
+  It preserves ordered caller-supplied metadata labeled SourceDerived and refuses live, Confirmed, unknown-to-subset, and
+  unbound requests without values. Manifest comparisons prove consistency only; caller evidence,
+  a production owner inventory, exact-host support, and consumer adoption remain unverified. See ADR 0077.
+
 - Added an internal profile-progress readiness observer for the pinned v0.107.1 host lifecycle.
   It remains unavailable until an observed ProcessFrame owner thread and a verified lifecycle load
   agree on the same profile/progress generation. The source-linked synthetic probe is not native

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-//! Fail-closed validation of one owner inventory before it becomes immutable.
+//! Fail-closed validation of caller-supplied inventory values before they become immutable.
 
 use std::collections::BTreeSet;
+
+use crate::ContentManifest;
 
 use super::GameFactsError;
 use super::identity::validate_opaque_identity;
@@ -12,7 +14,7 @@ use super::model::{
     GAME_FACTS_MAX_RULES, GAME_FACTS_MAX_UNSUPPORTED_COMBINATIONS,
 };
 
-/// Validates one owner inventory before it enters an immutable value.
+/// Validates one caller-supplied inventory before it enters an immutable value.
 pub(super) fn validate_inventory(
     build: &FactsBuildBinding,
     representation: &FactsRepresentation,
@@ -69,6 +71,48 @@ fn validate_rule<'a>(
                 name: input.name.clone(),
             });
         }
+        if input
+            .source
+            .as_ref()
+            .is_some_and(|source| !valid_source_reference_token(&source.reference))
+        {
+            return Err(GameFactsError::InvalidInput("source_ref"));
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn valid_source_reference_token(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    !value.is_empty()
+        && bytes.len() <= 128
+        && !bytes
+            .get(..4)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"file"))
+        && !bytes
+            .windows(b"exception".len())
+            .any(|part| part.eq_ignore_ascii_case(b"exception"))
+        && value.split('.').count() <= 8
+        && value.split('.').all(|part| !part.is_empty())
+        && bytes
+            .iter()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(byte))
+        && !value.contains("..")
+}
+
+/// Checks only the representable identity fields of a supplied manifest value.
+pub(super) fn validate_manifest_binding(manifest: &ContentManifest) -> Result<(), GameFactsError> {
+    for (value, field) in [
+        (&manifest.game_build, "build_id"),
+        (&manifest.adapter_compatibility, "adapter_compatibility"),
+        (&manifest.content_set_revision, "content_set_revision"),
+        (&manifest.localized_text_revision, "localized_text_revision"),
+        (&manifest.inventory_revision, "inventory_revision"),
+    ] {
+        validate_opaque_identity(value, field)?;
+    }
+    if manifest.catalog_generation > 9_007_199_254_740_991 {
+        return Err(GameFactsError::InvalidInput("catalog_generation"));
     }
     Ok(())
 }

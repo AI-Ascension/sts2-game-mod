@@ -23,15 +23,16 @@ pub const GAME_FACTS_MAX_UNSUPPORTED_COMBINATIONS: usize = 256;
 /// Maximum rules one unsupported combination may name.
 pub const GAME_FACTS_MAX_COMBINATION_MEMBERS: usize = 16;
 
-/// How strongly one inventory entry's claim is supported.
+/// Caller-supplied label for how strongly one inventory entry's claim is supported.
 ///
 /// These are the repository's claim labels carried as data, so a consumer never has to read a
-/// producer's prose to learn how much a rule is trusted.
+/// producer's prose to learn how much a rule is trusted. The model does not authenticate a label.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum FactsEvidenceStatus {
-    /// Confirmed against an authorized exact-host comparison.
+    /// Caller claims confirmation against an authorized exact-host comparison.
     Confirmed,
-    /// Derived from the owner's own source and content, without a host comparison.
+    /// Caller claims derivation from the owner's source and content, without a host comparison.
+    /// This label is not authenticated by the inventory model or mapper.
     SourceDerived,
     /// Proposed to the owner; not yet agreed.
     Proposed,
@@ -65,8 +66,8 @@ impl FactsEvidenceStatus {
 
     /// Returns whether this status alone supports an exact rule claim.
     ///
-    /// Only a host-confirmed entry does. A source-derived or proposed entry is real evidence, but it
-    /// is not a native comparison, so a consumer must not present it as exact.
+    /// Only the caller's `Confirmed` label passes this classification. The model does not verify
+    /// that label, and SourceDerived or Proposed labels are not native comparisons.
     #[must_use]
     pub const fn supports_exact_claim(self) -> bool {
         matches!(self, Self::Confirmed)
@@ -115,6 +116,26 @@ impl FactsInputAvailability {
     }
 }
 
+/// Caller-supplied claimed category for one copied input's source reference.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum FactsSourceKind {
+    /// The caller identifies the source as GameMod-owned data.
+    GameMod,
+    /// The caller identifies the source as a content-manifest record.
+    ContentManifest,
+}
+
+/// Opaque per-input provenance supplied by the caller.
+///
+/// The inventory validates its shape, but this value does not authenticate its origin.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FactsInputSource {
+    /// Owner source category for the reference.
+    pub kind: FactsSourceKind,
+    /// Opaque token supplied by the caller; local validation cannot verify its origin.
+    pub reference: String,
+}
+
 /// One input a rule copies: an opaque name, the unit it is stated in, and its availability.
 ///
 /// The unit is carried with the name because a quantity without a unit is a prose tag, not a fact.
@@ -126,14 +147,16 @@ pub struct FactsRuleInput {
     pub unit: String,
     /// Whether this input is required, conditional or explicitly unknown.
     pub availability: FactsInputAvailability,
+    /// Optional caller-supplied source reference; presence is not proof of authenticity.
+    pub source: Option<FactsInputSource>,
 }
 
-/// The exact build and mode one inventory was taken from, bound to the content manifest.
+/// Caller-supplied exact-build and mode claims, bound to a content-manifest value.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FactsBuildBinding {
-    /// Opaque build identity the inventory was taken from.
+    /// Caller-supplied opaque build identity claim.
     pub build_id: String,
-    /// Opaque mode identity inside that build.
+    /// Caller-supplied opaque mode identity claim inside that build.
     pub mode_id: String,
     /// Existing content-manifest invalidation witness.
     pub manifest: ContentCursorBinding,
@@ -151,7 +174,7 @@ pub struct FactsRepresentation {
     pub encoding: String,
 }
 
-/// One supported rule: its opaque id, how it is known, and the inputs it copies.
+/// One caller-declared supported rule: its opaque id, evidence label, and copied inputs.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FactsRuleEntry {
     /// Opaque rule id, unique inside its inventory.

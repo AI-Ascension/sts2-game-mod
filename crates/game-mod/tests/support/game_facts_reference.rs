@@ -7,7 +7,7 @@
 
 use sts2_game_mod::{
     ContentCursorBinding, FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability,
-    FactsInventory, FactsRepresentation, FactsRuleEntry, FactsRuleInput,
+    FactsInputSource, FactsInventory, FactsRepresentation, FactsRuleEntry, FactsRuleInput,
     FactsUnsupportedCombination, GameFactsError,
 };
 
@@ -41,6 +41,7 @@ pub fn required_input(name: &str, unit: &str) -> FactsRuleInput {
         name: name.to_owned(),
         unit: unit.to_owned(),
         availability: FactsInputAvailability::Required,
+        source: None,
     }
 }
 
@@ -49,6 +50,19 @@ pub fn input(name: &str, unit: &str, availability: FactsInputAvailability) -> Fa
         name: name.to_owned(),
         unit: unit.to_owned(),
         availability,
+        source: None,
+    }
+}
+
+pub fn source_input(name: &str, unit: &str, reference: &str) -> FactsRuleInput {
+    FactsRuleInput {
+        name: name.to_owned(),
+        unit: unit.to_owned(),
+        availability: FactsInputAvailability::Required,
+        source: Some(FactsInputSource {
+            kind: sts2_game_mod::FactsSourceKind::GameMod,
+            reference: reference.to_owned(),
+        }),
     }
 }
 

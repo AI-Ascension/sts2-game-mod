@@ -27,7 +27,7 @@ coverage, shared protocol adoption, or compatibility with any installed game bui
 
 The content-manifest producer requires independent registry counts for all available families and
 fails closed on missing or mismatched extraction evidence. Its owner adapter pins
-`sts2-protocol` at `24fae515718b58f70db8551c8e93837cbb7b6aa8`, validates the complete v1 wire envelope,
+`sts2-protocol` at `1879e0b00993c9b6d662d1f015ef59d6810d82de`, validates the complete v1 wire envelope,
 and enforces a 16 MiB response bound on authenticated
 `GET /api/v1/game-information/content-manifest`. Synthetic producer-to-wire and native route tests
 do not establish an exact-host definition source: the route still returns
@@ -44,6 +44,24 @@ that a static field read can initialize only the empty registry dictionary, whil
 separately constructs definitions. The report labels its result as a partial registry snapshot and
 does not claim `ModelDb.Init` completion or catalog completeness. These are build/source results
 only; live registry reading and exact-host collection comparison remain pending.
+
+## Game-facts-reference-v1 adapter
+
+The GameMod Rust adapter maps caller-supplied static metadata labeled SourceDerived to accepted
+game-facts-reference-v1 at Protocol merge 1879e0b0, schema digest
+3065a2ff96e6e5af628b3d5cb43b8f2db4232ae4c4dc71324b973419908a2985. Capabilities reports only
+the fixed schema limits and a null snapshot policy; it does not advertise any supported rule.
+Static observations carry no values. Live and static Confirmed requests return MissingCapability;
+IDs absent from the supplied subset do too, because Core membership is unknown here. Binding checks
+compare the requested content revision, manifest identity, build and cursor fields for consistency,
+but ContentManifest is public and cloneable: this does not authenticate its origin or prove coherent
+facts extraction. Synthetic mapper tests do not establish a production inventory, native support,
+exact-host compatibility, or consumer adoption; see ADR 0077.
+
+`FactsRuleInput` gains a public `source` field. Downstream Rust struct-literal callers must add
+`source: None` or provide a source value they have independently established; this is source-breaking
+for struct-literal callers, so source compatibility is not universal. The field adds no route, ABI
+symbol, or Protocol schema change.
 
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
