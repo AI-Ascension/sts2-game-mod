@@ -2,6 +2,8 @@
 
 #![allow(clippy::expect_used, dead_code)]
 
+#[path = "support/enemies_behavior.rs"]
+mod behavior;
 #[path = "support/enemies.rs"]
 mod fixture;
 
