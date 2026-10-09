@@ -4,6 +4,8 @@
 
 #[path = "support/characters.rs"]
 mod fixture;
+#[path = "support/characters_locale_identity.rs"]
+mod locale_identity;
 
 use fixture::{CatalogSource, catalog, definitions, manifest, snapshot};
 use sts2_game_mod::{
