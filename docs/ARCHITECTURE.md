@@ -608,3 +608,5 @@ Runtime-v2 retains one identity fence and one outstanding-mutation exclusion. Ex
 retries ignore transport correlation and JSON formatting; run/combat/player replacement
 invalidates generation. This bounded observation is not a complete game-state revision
 or a game-rule parity claim.
+
+See [ADR 0082](decisions/0082-retained-live-reward-reader.md) for the source-only retained reward reader and its evidence limits.

@@ -17,6 +17,7 @@ mod catalog;
 mod catalog_reader;
 mod definition;
 mod error;
+mod live;
 mod model;
 mod validation;
 
@@ -24,4 +25,5 @@ pub use catalog::{RewardCatalogProducer, RewardCatalogSnapshot, RewardCatalogSou
 pub use catalog_reader::*;
 pub use definition::*;
 pub use error::{RewardCatalogError, RewardSourceError};
+pub use live::*;
 pub use model::*;

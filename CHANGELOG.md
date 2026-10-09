@@ -9,6 +9,11 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added a bounded Rust retained live reward reader with parent-scoped references, static definition
+  resolution, visibility checks, and explicit invalidation. Synthetic tests exercise its source seam;
+  host integration, owner provenance, wire budgets, and consumer adoption remain unverified.
+  See ADR 0082. Refs #100.
+
 - Added a Rust-only static game-facts adapter for accepted Protocol profile game-facts-reference-v1.
   It preserves ordered caller-supplied metadata labeled SourceDerived and refuses live, Confirmed, unknown-to-subset, and
   unbound requests without values. Manifest comparisons prove consistency only; caller evidence,
