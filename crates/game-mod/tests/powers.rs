@@ -4,6 +4,8 @@
 
 #[path = "support/content_index.rs"]
 mod content_fixture;
+#[path = "support/powers_distinct_sources.rs"]
+mod distinct_sources;
 #[path = "support/powers.rs"]
 mod fixture;
 
