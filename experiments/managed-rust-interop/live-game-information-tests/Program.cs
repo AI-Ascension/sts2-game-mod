@@ -73,18 +73,22 @@ ProbeHelpers.ExpectStatus(liveWire.Replace("\"entity_id\":\"card-1\"", "\"entity
     404, "foreign live instance is unknown");
 ProbeHelpers.ExpectStatus(liveWire.Replace("\"entity_kind\":\"card\"", "\"entity_kind\":\"relic\"", StringComparison.Ordinal),
     400, "foreign live entity kind is malformed");
+LiveFieldAvailabilityTests.Run();
 ProbeHelpers.ExpectStatus(liveWire.Replace("\"kind\":\"query_request\"", "\"kind\":\"query_request\",\"kind\":\"query_request\"", StringComparison.Ordinal),
     400, "duplicate key rejected");
 ProbeHelpers.ExpectStatus(liveWire.Replace("\"kind\":\"query_request\"", "\"kind\":\"query_request\",\"unexpected\":1", StringComparison.Ordinal),
     400, "unknown envelope property rejected");
 
+string staticFixtureManifest = args.Length > 0
+    ? "6adc5e6a37034c1037b1c6814423fd119de58d377e7ff1cdb807af9c85b45740"
+    : "manifest";
 NativeContentCatalogManifestSource.ControlledSnapshot = new NativeContentIndexSnapshot(
-    "manifest", "en-US",
+    staticFixtureManifest, "en-US",
     new[]
     {
         new NativeContentIndexDefinition("card", "ironclad:bash", "Bash",
             Array.Empty<string>(), "Deal damage", null, "attack", "unlocked",
-            Array.Empty<string>(), null),
+            Array.Empty<string>(), Array.Empty<string>()),
         new NativeContentIndexDefinition("card", "ironclad:defend", "Defend",
             new[] { "Guard" }, null, null, null, "unlocked",
             Array.Empty<string>(), null),
@@ -98,9 +102,7 @@ NativeContentCatalogManifestSource.ControlledSnapshot = new NativeContentIndexSn
 if (args.Length > 0)
     ModEntry.SetNativeLibraryForTest(NativeLibrary.Load(args[0]));
 
-string requestedStaticManifest = args.Length > 0
-    ? "2e1dbb4bc0ed23a99d0875d1567575bb6fc2978fc0ea0dfdfce7953a57677230"
-    : "manifest";
+string requestedStaticManifest = staticFixtureManifest;
 if (args.Length > 0)
 {
 string staticPageOne = ProbeHelpers.Request("list", "static", requestedStaticManifest, "en-US", 2,
@@ -117,6 +119,19 @@ ProbeHelpers.Check(firstPage.GetProperty("total_count").GetInt32() == 3
 ProbeHelpers.Check(firstPage.GetProperty("accounting").GetProperty("item_count").GetInt32()
     == firstPage.GetProperty("items").GetArrayLength(),
     "static list item accounting matches emitted items");
+bool emptyTagsRemainAvailable = false;
+foreach (JsonElement item in firstPage.GetProperty("items").EnumerateArray())
+{
+    if (item.GetProperty("definition_ref").GetProperty("namespaced_id").GetString() != "ironclad:bash")
+        continue;
+    foreach (JsonElement field in item.GetProperty("fields").EnumerateArray())
+        emptyTagsRemainAvailable |= field.GetProperty("name").GetString() == "tags"
+            && field.GetProperty("availability").GetString() == "available"
+            && field.GetProperty("value").ValueKind == JsonValueKind.Array
+            && field.GetProperty("value").GetArrayLength() == 0;
+}
+ProbeHelpers.Check(emptyTagsRemainAvailable,
+    "static production route preserves a known empty list as available");
 CanonicalValidation.ExpectCanonicalReject(
     firstResponse.Replace("\"item_count\":2", "\"item_count\":3", StringComparison.Ordinal),
     "canonical validator rejects inconsistent item accounting");
@@ -129,6 +144,17 @@ string staticManifestId = firstPage.GetProperty("items")[0]
 string nextCursor = firstPage.GetProperty("next_cursor").GetString()!;
 string staticPageTwo = staticPageOne.Replace("\"cursor\":null",
     $"\"cursor\":\"{nextCursor}\"", StringComparison.Ordinal);
+string oldManifestContinuation = staticPageTwo.Replace($"\"{staticManifestId}\"",
+    "\"2e1dbb4bc0ed23a99d0875d1567575bb6fc2978fc0ea0dfdfce7953a57677230\"",
+    StringComparison.Ordinal);
+(int oldManifestStatus, string oldManifestResponse) = ModEntry.Invoke(oldManifestContinuation);
+ProbeHelpers.Check(oldManifestStatus == 409, "old static manifest continuation is stale");
+CanonicalValidation.ValidateCanonicalResponse(oldManifestResponse, "old static manifest refusal");
+using JsonDocument oldManifestDocument = JsonDocument.Parse(oldManifestResponse);
+JsonElement oldManifestError = oldManifestDocument.RootElement.GetProperty("error");
+ProbeHelpers.Check(oldManifestError.GetProperty("code").GetString() == "stale_cursor"
+    && oldManifestError.GetProperty("reason").GetString() == "cursor_content_mismatch",
+    "old static manifest refusal is a typed cursor mismatch");
 ProbeHelpers.ExpectStatus(staticPageTwo, 200, "static continuation returns final page");
 ProbeHelpers.ExpectStatus(staticPageTwo, 409, "static continuation is single use");
 ProbeHelpers.ExpectStatus(staticPageTwo.Replace($"\"{staticManifestId}\"", "\"foreign\"", StringComparison.Ordinal),

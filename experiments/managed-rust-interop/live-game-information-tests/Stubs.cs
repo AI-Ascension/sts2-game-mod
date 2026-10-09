@@ -88,7 +88,7 @@ internal static partial class NativeContentCatalogManifestSource
         });
         string manifestId = ControlledSnapshot.ManifestId == "reloaded-manifest"
             ? "reloaded-manifest"
-            : "2e1dbb4bc0ed23a99d0875d1567575bb6fc2978fc0ea0dfdfce7953a57677230";
+            : ControlledSnapshot.ManifestId;
         capture = new NativeContentIndexCapture(
             ControlledSnapshot with { ManifestId = manifestId }, sourceJson);
         return true;

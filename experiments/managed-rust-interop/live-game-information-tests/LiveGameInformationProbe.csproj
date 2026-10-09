@@ -9,5 +9,6 @@
     <Compile Include="../game-loader/StaticContentQueryAdapter.cs" Link="StaticContentQueryAdapter.cs" />
     <Compile Include="../game-loader/StaticContentResponseAdapter.cs" Link="StaticContentResponseAdapter.cs" />
     <Compile Include="../game-loader/LiveContentQueryAdapter.cs" Link="LiveContentQueryAdapter.cs" />
+    <Compile Include="../game-loader/LiveContentQueryAdapter.FieldAvailability.cs" Link="LiveContentQueryAdapter.FieldAvailability.cs" />
   </ItemGroup>
 </Project>
