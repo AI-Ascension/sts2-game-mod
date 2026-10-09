@@ -5,6 +5,9 @@
 #[path = "support/character_state_support.rs"]
 mod character_state_support;
 
+#[path = "support/character_state_lifecycle.rs"]
+mod character_state_lifecycle;
+
 use character_state_support::{
     CatalogFixture, catalog, catalog_snapshot, coverage, live_binding, manifest, snapshot, unit,
 };
