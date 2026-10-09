@@ -108,7 +108,17 @@ public static partial class ModEntry
 
         var fields = new List<Dictionary<string, object?>>();
         foreach (JsonElement name in query.GetProperty("fields").EnumerateArray())
-            fields.Add(LiveField(name.GetString()!, card, context.InstanceId));
+        {
+            Dictionary<string, object?>? field = LiveField(name.GetString()!, card,
+                context.InstanceId, out var refusal);
+            if (field is null)
+            {
+                var failure = refusal ?? (Status: 503, Code: "missing_capability",
+                    Reason: "live_field_projection_unavailable");
+                return Error(context.CorrelationId, query, failure.Code, failure.Reason, failure.Status);
+            }
+            fields.Add(field);
+        }
         var item = new Dictionary<string, object?>
         {
             ["definition_ref"] = definitionRef.Clone(),
@@ -168,28 +178,6 @@ public static partial class ModEntry
             if (field["value"] is string text)
                 total = checked(total + Encoding.UTF8.GetByteCount(text));
         return total;
-    }
-
-    private static Dictionary<string, object?> LiveField(
-        string name, LiveCardCapturedCard card, string instanceId)
-    {
-        object? value = null;
-        string kind = "text";
-        string? unit = null;
-        string availability = "not_observable";
-        string? reason = "field_not_observed";
-        if (name == "display_name" && card.Title.Status == LiveCardFieldStatus.Available)
-            { value = card.Title.Value; availability = "available"; reason = null; }
-        else if (name == "cost" && card.ResolvedCost.Status == LiveCardFieldStatus.Available)
-            { value = card.ResolvedCost.Value; kind = "integer"; unit = "count"; availability = "available"; reason = null; }
-        else if (name == "owner" && card.OwnerId.Status == LiveCardFieldStatus.Available)
-            { value = card.OwnerId.Value; availability = "available"; reason = null; }
-        return new Dictionary<string, object?>
-        {
-            ["name"] = name, ["kind"] = kind, ["value"] = value, ["unit"] = unit,
-            ["availability"] = availability, ["reason"] = reason,
-            ["source"] = new Dictionary<string, string> { ["kind"] = "game_mod", ["ref"] = instanceId }
-        };
     }
 
     private static bool InstanceMatches(JsonElement value, LiveCardCapturedSnapshot snapshot) =>
