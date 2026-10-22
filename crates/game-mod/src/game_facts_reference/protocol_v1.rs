@@ -8,7 +8,7 @@
 mod mapping;
 mod responses;
 
-use super::FactsInventory;
+use super::{CoreFactsInventory, FactsInventory};
 use crate::ContentManifest;
 use sts2_protocol::game_facts_reference_v1::{
     GameFactsReferenceV1Codec, GameFactsReferenceV1Rejection as Rejection, Message, MessageKind,
@@ -20,6 +20,22 @@ use sts2_protocol::game_facts_reference_v1::{
 pub struct GameFactsReferenceV1Adapter;
 
 impl GameFactsReferenceV1Adapter {
+    /// Maps only an inventory admitted against the pinned Core input catalog.
+    ///
+    /// This retains every refusal and byte-level mapping of [`Self::respond`]. Catalog agreement
+    /// does not supply missing provenance, authenticate a source, or enable live/Confirmed data.
+    pub fn respond_admitted(
+        request: &Message,
+        inventory: Option<&CoreFactsInventory>,
+        manifest: Option<&ContentManifest>,
+    ) -> Result<Message, Rejection> {
+        Self::respond(
+            request,
+            inventory.map(CoreFactsInventory::as_inventory),
+            manifest,
+        )
+    }
+
     /// Returns the accepted schema limits without advertising any supported rule or live policy.
     pub fn capabilities(correlation_id: &str) -> Result<Message, Rejection> {
         let response = responses::capabilities_response(correlation_id);

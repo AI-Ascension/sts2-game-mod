@@ -274,8 +274,9 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 The owner-local HTTP contract remains separate from copied Protocol artifacts. Runtime-v1 and
 frozen Runtime-v2 route/ABI mappings and sanitized errors stay bounded; MCP envelopes and gateway
 leases remain outside this repository. Broader gameplay routes, semantics, ordering, and versioning
-require a project-owned profile and fixtures. The static mapper targets accepted
-`game-facts-reference-v1`, checks caller-value consistency only, and does not authenticate source origin or coherent extraction; see [ADR 0077](decisions/0077-game-facts-static-protocol-producer.md).
+require a project-owned profile and fixtures. The static mapper targets accepted `game-facts-reference-v1`, checks caller-value consistency only, and does not authenticate source origin or coherent extraction; see [ADR 0077](decisions/0077-game-facts-static-protocol-producer.md).
+
+Optional `CoreFactsInventory` admission checks the pinned pure Core v2 input signatures; `respond_admitted` retains the generic mapper's refusals. This GameMod-to-Core dependency adds no host I/O to Core and establishes no native support or source authenticity; see [ADR 0083](decisions/0083-core-catalog-facts-admission.md).
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.

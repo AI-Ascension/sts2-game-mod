@@ -20,11 +20,12 @@
 //! - Identities are opaque: a filesystem path, a control byte or a traversal segment is refused.
 //!
 //! Source-only by construction. The inventory is a *proposal* to the owner; it claims no native
-//! parity, no host comparison and no transport. Extracting live facts through game-owned access and
-//! mapping them into core inputs is the follow-up adapter, deliberately not built here.
+//! parity or host comparison. The optional [`CoreFactsInventory`] admits static metadata against
+//! Core's ordered input signatures; it does not extract live facts or evaluate those inputs.
 //! Inventory, manifest and provenance values remain caller-supplied: local validation proves their
 //! shape and consistency only, not source authenticity or coherent extraction.
 
+mod core_catalog;
 mod error;
 mod identity;
 mod inventory;
@@ -32,6 +33,7 @@ mod model;
 mod protocol_v1;
 mod validation;
 
+pub use core_catalog::CoreFactsInventory;
 pub use error::GameFactsError;
 pub use identity::is_opaque_facts_identity;
 pub use inventory::FactsInventory;

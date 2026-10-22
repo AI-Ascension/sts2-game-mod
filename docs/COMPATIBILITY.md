@@ -52,11 +52,18 @@ game-facts-reference-v1 at Protocol merge 1879e0b0, schema digest
 3065a2ff96e6e5af628b3d5cb43b8f2db4232ae4c4dc71324b973419908a2985. Capabilities reports only
 the fixed schema limits and a null snapshot policy; it does not advertise any supported rule.
 Static observations carry no values. Live and static Confirmed requests return MissingCapability;
-IDs absent from the supplied subset do too, because Core membership is unknown here. Binding checks
+IDs absent from the supplied subset do too; catalog membership alone cannot supply missing facts. Binding checks
 compare the requested content revision, manifest identity, build and cursor fields for consistency,
 but ContentManifest is public and cloneable: this does not authenticate its origin or prove coherent
 facts extraction. Synthetic mapper tests do not establish a production inventory, native support,
 exact-host compatibility, or consumer adoption; see ADR 0077.
+
+The additive `CoreFactsInventory` and `respond_admitted` entrypoint check supplied metadata against
+the ordered input signatures at Core `5070070784d6b62dabf535a230bcdb46a054e3ef`, rules-reference v2.
+All sixteen catalog signatures are covered by independent synthetic fixtures. This is catalog
+agreement only; it does not promote Core's synthetic evidence or grant live/Confirmed capability.
+Existing generic inventory and mapper calls retain their behavior. The immutable Core pin shares
+the existing locked dependency graph; no frozen artifact or wire bytes change. See ADR 0083.
 
 `FactsRuleInput` gains a public `source` field. Downstream Rust struct-literal callers must add
 `source: None` or provide a source value they have independently established; this is source-breaking
