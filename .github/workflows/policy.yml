@@ -33,6 +33,9 @@ jobs:
       - name: Enforce repository policy
         run: cargo run --locked --package repo-policy -- --strict
 
+      - name: Prepare locked source-bundle tool dependencies
+        run: cargo build --locked --package sts2-release-tool
+
       - name: Verify production-source inventory and reproducibility
         run: SOURCE_DATE_EPOCH=0 bash tools/release/test-source-bundle.sh
 
