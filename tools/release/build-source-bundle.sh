@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$script_dir/source-input-policy.sh"
+
 usage() {
     printf 'usage: %s <version> <platform> <output-directory> [source-revision]\n' "$0" >&2
     printf 'platform is a compatibility label such as windows-x86_64 or linux-x86_64.\n' >&2
@@ -107,12 +110,10 @@ while IFS= read -r -d '' path; do
 done < <(find "$archive_root" \( -type l -o -type b -o -type c -o -type p \) -print0)
 while IFS= read -r -d '' path; do
     relative=${path#"$archive_root/"}
-    case "$relative" in
-        .git/*|target/*|*/target/*|bin/*|*/bin/*|obj/*|*/obj/*|*.dll|*.dylib|*.so|*.pdb|*.save|*.sav|*.sts2profile|.env|.env.*|*/.env|*/.env.*)
-            printf 'unsupported release input in source tree: %s\n' "$relative" >&2
-            exit 1
-            ;;
-    esac
+    if ! source_distribution_path_is_supported "$relative"; then
+        printf 'unsupported release input in source tree: %s\n' "$relative" >&2
+        exit 1
+    fi
 done < <(find "$archive_root" -type f -print0)
 
 policy_sha256=$(sha256sum -- "$policy_file" | cut -d ' ' -f1)
