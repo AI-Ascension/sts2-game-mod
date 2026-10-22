@@ -123,7 +123,10 @@ internal sealed partial class LiveCardSnapshotRegistry
                 card.EffectiveCost,
                 CopyListField(card.Modifiers),
                 CopyListField(card.Flags),
-                CopyMapField(card.EffectParameters)));
+                CopyMapField(card.EffectParameters))
+            {
+                FixedEnergyCost = card.FixedEnergyCost
+            });
         }
 
         if (_epoch == ulong.MaxValue)
