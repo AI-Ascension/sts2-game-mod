@@ -9,6 +9,9 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added immutable Core v2 catalog admission for static game-facts signatures, preserving the generic mapper and its refusals. All sixteen signatures have synthetic tests.
+  Native extraction, parity and downstream adoption remain unverified. See ADR 0083. Refs #278; parent #207 remains open.
+
 - Added a bounded Rust retained live reward reader with parent-scoped references, static definition
   resolution, visibility checks, and explicit invalidation. Synthetic tests exercise its source seam;
   host integration, owner provenance, wire budgets, and consumer adoption remain unverified.
