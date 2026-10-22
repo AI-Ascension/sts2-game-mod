@@ -8,6 +8,13 @@ Cargo dependencies must be locked and reviewed before they are added. Their lice
 requirements belong here or in a generated release notice derived from the exact lockfile. The
 current policy tool has no third-party Cargo dependency.
 
+The game-facts signature adapter imports the MIT-licensed `sts2-game-core` at
+`941939dc75e3305d409340552cb1bd2b0e2f98a5` and `sts2-protocol` at
+`0af77ebb72f8adba75ffafecfcc999fcfc78245d`, both owned by AI-Ascension. No implementation source
+is copied into this repository. The current aligned direct versions of `serde_json` and `sha2`
+are 1.0.154 and 0.11.1 (MIT or Apache-2.0); release notices must follow Cargo.lock rather than
+the historical dependency versions in earlier component records below.
+
 The optional mod-loading operator tool uses the locked `serde`/`serde_json` packages (MIT or
 Apache-2.0) and RustCrypto `sha2` 0.10.9 (MIT or Apache-2.0), with their locked transitive
 dependencies. No dependency implementation is copied into project source. Release notices must
