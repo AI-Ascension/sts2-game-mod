@@ -70,6 +70,16 @@ the existing locked dependency graph; no frozen artifact or wire bytes change. S
 for struct-literal callers, so source compatibility is not universal. The field adds no route, ABI
 symbol, or Protocol schema change.
 
+The separate owned live producer adds `GET /api/v1/game-facts/capabilities` and
+`POST /api/v1/game-facts/query`, read-only callback 26, and the internal
+`sts2_game_mod_game_facts_handle` export. Existing ABI version 2 and structures stay unchanged.
+It copies only fixed-card-cost energy inputs from the retained owner source, with current content,
+profile/run/lease and raw-value freshness checks. Evidence is always SourceDerived; the remaining
+Core rules are explicitly unsupported. Its live policy is an implemented retention contract, not
+source readiness or native qualification. Source-linked controlled-host tests exercise the actual
+managed/native path; proprietary host assembly compatibility, cost parity and downstream adoption
+remain unverified. See [ADR 0084](decisions/0084-owned-live-fixed-card-cost-facts.md).
+
 The owner-local power/status producer and live reader likewise have only Rust source/build/test
 evidence against synthetic manifest-bound snapshots. Their owner/source identities, typed amounts,
 duration/decay rules, visibility states, and epoch fences do not extend the native host matrix or
