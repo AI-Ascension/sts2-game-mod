@@ -68,7 +68,11 @@ internal sealed record LiveCardCaptureInput(
     LiveCardField<int> EffectiveCost,
     LiveCardField<IReadOnlyList<string>> Modifiers,
     LiveCardField<IReadOnlyList<string>> Flags,
-    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters);
+    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters)
+{
+    internal LiveCardField<bool> FixedEnergyCost { get; init; } =
+        LiveCardField<bool>.NotObserved();
+}
 
 /// <summary>Immutable source-owned card record returned by the host-thread capture.</summary>
 internal sealed record LiveCardCapturedCard(
@@ -87,7 +91,11 @@ internal sealed record LiveCardCapturedCard(
     LiveCardField<int> EffectiveCost,
     LiveCardField<IReadOnlyList<string>> Modifiers,
     LiveCardField<IReadOnlyList<string>> Flags,
-    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters);
+    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters)
+{
+    internal LiveCardField<bool> FixedEnergyCost { get; init; } =
+        LiveCardField<bool>.NotObserved();
+}
 
 /// <summary>
 /// One immutable owner-local read fence. The run and snapshot IDs are source-owned lifecycle
@@ -105,6 +113,10 @@ internal sealed record LiveCardCapturedSnapshot(
     bool Available,
     string? UnavailableReason)
 {
+    internal LiveCardField<int> PlayerEnergy { get; init; } =
+        LiveCardField<int>.NotObserved();
+    internal string? ModeId { get; init; }
+
     internal static LiveCardCapturedSnapshot Unavailable(string reason) =>
         new(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 0, 0,
             Array.Empty<LiveCardCapturedCard>(), false, reason);
