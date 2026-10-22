@@ -12,7 +12,9 @@ public static partial class ModEntry
     private static void AssociateLiveCardBinding(
         RuntimeContext context,
         JsonElement scope,
-        LiveCardCapturedSnapshot snapshot)
+        LiveCardCapturedSnapshot snapshot,
+        ulong? catalogGeneration = null,
+        string? catalogLocale = null)
     {
         _liveCardBinding = new LiveCardBindingAssociation(
             context.InstanceId,
@@ -29,7 +31,11 @@ public static partial class ModEntry
             snapshot.RunId,
             snapshot.SourceIncarnation,
             snapshot.Epoch,
-            snapshot.StateGeneration);
+            snapshot.StateGeneration)
+        {
+            CatalogGeneration = catalogGeneration,
+            CatalogLocale = catalogLocale
+        };
     }
 
     private static bool TryReadLiveCardBinding(
@@ -70,5 +76,9 @@ public static partial class ModEntry
         string NativeRunId,
         string SourceIncarnation,
         ulong SourceEpoch,
-        ulong SourceGeneration);
+        ulong SourceGeneration)
+    {
+        internal ulong? CatalogGeneration { get; init; }
+        internal string? CatalogLocale { get; init; }
+    }
 }
