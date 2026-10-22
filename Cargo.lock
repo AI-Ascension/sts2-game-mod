@@ -735,6 +735,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sts2-game-core"
+version = "0.0.0"
+source = "git+https://github.com/AI-Ascension/sts2-game-core.git?rev=5070070784d6b62dabf535a230bcdb46a054e3ef#5070070784d6b62dabf535a230bcdb46a054e3ef"
+dependencies = [
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "sts2-game-mod"
 version = "0.0.0"
 dependencies = [
@@ -744,6 +753,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "sts2-game-core",
  "sts2-game-mod-host",
  "sts2-game-mod-http-adapter",
  "sts2-protocol",
