@@ -9,6 +9,13 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Added optional game-facts signature admission against the pinned pure Core v2 catalog. Unknown
+  rules and changed ordered inputs, units or required flags are refused before the existing static
+  Protocol mapper. The compatible Core/Protocol source pins align serde_json and sha2 without
+  changing frozen schemas, goldens or generic mapper behavior. Authentic extraction, complete rule
+  metadata and consumer adoption remain separate work; no native support is claimed. ADR 0083;
+  Refs #207 and AI-Ascension/sts2-game-core#13.
+
 - Added a bounded Rust retained live reward reader with parent-scoped references, static definition
   resolution, visibility checks, and explicit invalidation. Synthetic tests exercise its source seam;
   host integration, owner provenance, wire budgets, and consumer adoption remain unverified.
@@ -506,18 +513,3 @@ native acceptance is claimed. The added potion action cases are consumer payload
   original merge; the fix ships with the regression that failed against the defect
   (`seed_blind_keys_and_projections_never_carry_seed_material`). Source-only evidence;
   native run-configuration extraction and exact-host compatibility remain unverified. Refs #105.
-
-- Added the owner-local read-only run configuration reference slice for sts2-game-mod#105. The
-  `run_configuration_reference` producer composes the existing content-manifest, locale, and profile
-  witness with a closed field inventory of run configuration (run identity, mode, difficulty,
-  mutability, provenance, sensitivity, visibility, seed policy, and modifiers) and keeps
-  requested-versus-settled and fixed-versus-mutable values distinct, including explicit non-values
-  for withheld, not-applicable, unsupported, unavailable, and not-observed fields. A live binding and
-  configuration fingerprint bind every read to the manifest, locale, producer identity, revision,
-  profile, and run identity; list pages and exact reads are bounded, single-use, and revision-bound,
-  and a seed-blind scope never observes a seed or a seed-derived value. The boundary is read-only by
-  construction (`read_catalog(&self)`, no setter), and unknown, duplicate, missing, unsupported,
-  unavailable, malformed, or oversized input fails closed. Three regressions assert byte-identical
-  repeated production, an exact source-read count, and unchanged retained definitions, each verified
-  to fail under an isolated mutation. Source-only evidence; native run-configuration extraction and
-  exact-host compatibility remain unverified. Refs #105.
