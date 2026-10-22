@@ -4,6 +4,26 @@ set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd "$script_dir/../.." && pwd)
+source "$script_dir/source-input-policy.sh"
+
+for relative in src/bin/tool.rs crates/native/src/bin/tool.rs crates/native/src/bin/tool/module.rs; do
+    source_distribution_path_is_supported "$relative" || {
+        printf 'Rust source entrypoint was refused: %s\n' "$relative" >&2
+        exit 1
+    }
+done
+for relative in bin/tool.rs crates/native/bin/tool.rs target/debug/tool.rs \
+    crates/native/target/tool.rs obj/tool.rs crates/native/obj/tool.rs \
+    src/bin/tool src/bin/tool.dll src/bin/target/tool.rs \
+    bin/src/bin/tool.rs crates/native/src/bin/bin/tool.rs \
+    host.dll host.dylib host.so host.pdb profile.save profile.sav profile.sts2profile \
+    .git/config .env .env.local nested/.env nested/.env.local; do
+    if source_distribution_path_is_supported "$relative"; then
+        printf 'unsupported release input was accepted: %s\n' "$relative" >&2
+        exit 1
+    fi
+done
+
 test_dir=$(mktemp -d -t sts2-source-bundle-test-XXXXXXXX)
 cleanup() {
     rm -rf -- "$test_dir"
@@ -76,6 +96,7 @@ assert manifest["included_content_digest"] == hashlib.sha256(inventory).hexdiges
 assert "experiments/managed-rust-interop/game-loader/RuntimeV3GameplayFixtures.cs" in excluded
 assert (bundle_root / "experiments/managed-rust-interop/game-loader/LiveCombatDemo.cs").is_file()
 assert (bundle_root / "experiments/managed-rust-interop/game-loader/LiveCombatSource.cs").is_file()
+assert (bundle_root / "experiments/managed-rust-interop/native/src/bin/game_information_schema_validate.rs").is_file()
 PY
 
 if (cd "$repo_root" && bash "$script_dir/build-source-bundle.sh" "$version" 'linux/unsafe' "$test_dir/rejected" HEAD); then
