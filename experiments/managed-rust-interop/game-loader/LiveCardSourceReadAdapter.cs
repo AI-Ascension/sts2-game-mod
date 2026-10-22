@@ -14,6 +14,7 @@ internal sealed class LiveCardSourceReadAdapter
     private readonly LiveCombatSource _source;
     private readonly IRuntimeV3HostThread _thread;
     private LiveCardCapturedSnapshot? _retained;
+    private bool _invalidationPending;
 
     internal LiveCardSourceReadAdapter(LiveCombatSource source, IRuntimeV3HostThread thread)
     {
@@ -27,14 +28,22 @@ internal sealed class LiveCardSourceReadAdapter
     /// </summary>
     internal LiveCardCapturedSnapshot Read(string instanceId, string contentManifest)
     {
+        _retained = null;
         if (string.IsNullOrEmpty(instanceId) || string.IsNullOrEmpty(contentManifest))
             return LiveCardCapturedSnapshot.Unavailable("identity_unavailable");
 
         LiveCardCapturedSnapshot? result = null;
         try
         {
-            _thread.Enqueue(() => result = _source.CaptureLiveCardSnapshot(
-                instanceId, contentManifest));
+            _thread.Enqueue(() =>
+            {
+                if (_invalidationPending)
+                {
+                    _source.InvalidateLiveCardSnapshot();
+                    _invalidationPending = false;
+                }
+                result = _source.CaptureLiveCardSnapshot(instanceId, contentManifest);
+            });
         }
         catch (Exception)
         {
@@ -56,25 +65,44 @@ internal sealed class LiveCardSourceReadAdapter
         ulong epoch)
     {
         LiveCardCapturedSnapshot? retained = _retained;
-        return retained is { Available: true }
-            && retained.InstanceId == instanceId
-            && retained.ContentManifest == contentManifest
-            && retained.Epoch == epoch
-            ? retained
-            : LiveCardCapturedSnapshot.Unavailable("stale_snapshot");
+        if (retained is not { Available: true }
+            || retained.InstanceId != instanceId
+            || retained.ContentManifest != contentManifest
+            || retained.Epoch != epoch)
+            return LiveCardCapturedSnapshot.Unavailable("stale_snapshot");
+
+        bool current = false;
+        try
+        {
+            _thread.Enqueue(() => current = _source.IsLiveCardSnapshotCurrent(retained));
+        }
+        catch (Exception)
+        {
+            _retained = null;
+            return LiveCardCapturedSnapshot.Unavailable("host_thread_unavailable");
+        }
+        if (current)
+            return retained;
+        _retained = null;
+        return LiveCardCapturedSnapshot.Unavailable("stale_snapshot");
     }
 
     /// <summary>Invalidates source-owned CardModel occurrence handles on a lifecycle boundary.</summary>
     internal void Invalidate()
     {
+        _retained = null;
+        _invalidationPending = true;
         try
         {
-            _thread.Enqueue(_source.InvalidateLiveCardSnapshot);
-            _retained = null;
+            _thread.Enqueue(() =>
+            {
+                _source.InvalidateLiveCardSnapshot();
+                _invalidationPending = false;
+            });
         }
         catch (Exception)
         {
-            // An unavailable host thread is already fail-closed; no stale snapshot is exposed.
+            // No stale snapshot is exposed. The next successful read first retires old handles.
         }
     }
 }
