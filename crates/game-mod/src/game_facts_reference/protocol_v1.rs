@@ -8,7 +8,7 @@
 mod mapping;
 mod responses;
 
-use super::FactsInventory;
+use super::{CoreFactsInventory, FactsInventory};
 use crate::ContentManifest;
 use sts2_protocol::game_facts_reference_v1::{
     GameFactsReferenceV1Codec, GameFactsReferenceV1Rejection as Rejection, Message, MessageKind,
@@ -20,6 +20,22 @@ use sts2_protocol::game_facts_reference_v1::{
 pub struct GameFactsReferenceV1Adapter;
 
 impl GameFactsReferenceV1Adapter {
+    /// Maps metadata whose ordered rule/input signatures were admitted against pinned Core v2.
+    ///
+    /// This retains every static mapper refusal and evidence label. Core membership does not
+    /// establish a supported native source, and never grants live or Confirmed capability.
+    pub fn respond_core(
+        request: &Message,
+        inventory: Option<&CoreFactsInventory>,
+        manifest: Option<&ContentManifest>,
+    ) -> Result<Message, Rejection> {
+        Self::respond(
+            request,
+            inventory.map(CoreFactsInventory::inventory),
+            manifest,
+        )
+    }
+
     /// Returns the accepted schema limits without advertising any supported rule or live policy.
     pub fn capabilities(correlation_id: &str) -> Result<Message, Rejection> {
         let response = responses::capabilities_response(correlation_id);
