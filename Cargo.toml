@@ -24,6 +24,7 @@ serde_json = "=1.0.151"
 getrandom = "=0.4.3"
 jsonschema = { version = "=0.59.0", default-features = false }
 libc = "=0.2.191"
+sts2-game-core = { git = "https://github.com/AI-Ascension/sts2-game-core.git", rev = "5070070784d6b62dabf535a230bcdb46a054e3ef" }
 sts2-protocol = { git = "https://github.com/AI-Ascension/sts2-protocol.git", rev = "1879e0b00993c9b6d662d1f015ef59d6810d82de" }
 
 [workspace.lints.rust]
