@@ -73,6 +73,9 @@ decision body and do not reserve another identifier. Local link validation check
 | 0075 | [A non-consuming reward skip is not offered](0075-reward-skip-not-offered.md) |
 | 0076 | [Observe profile progress through the host lifecycle](0076-host-progress-readiness-observer.md) |
 | 0077 | [Static game-facts Protocol producer](0077-game-facts-static-protocol-producer.md) |
+| 0082 | [Retained live reward reader](0082-retained-live-reward-reader.md) |
+| 0083 | [Core catalog admission for static game facts](0083-core-catalog-facts-admission.md) |
+| 0084 | [Owned live fixed-card-cost inputs](0084-owned-live-fixed-card-cost-facts.md) |
 
 The Runtime-v2 fake and Workshop decisions formerly both used 0011. Their content is unchanged apart from identifier
 and references, and the old paths remain redirects. The original 0011 settings record remains
