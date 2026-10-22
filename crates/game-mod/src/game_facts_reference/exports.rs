@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pub use game_facts_reference::{
+    CoreFactsAdmissionError, CoreFactsInventory,
     FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInputSource,
     FactsInventory, FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsSourceKind,
     FactsUnsupportedCombination, GAME_FACTS_MAX_COMBINATION_MEMBERS, GAME_FACTS_MAX_IDENTITY_BYTES,
