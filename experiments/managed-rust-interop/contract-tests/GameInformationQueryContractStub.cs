@@ -8,6 +8,10 @@ public static partial class ModEntry
     // production dispatch branch remains compiled and is exercised as an explicit unavailable
     // callback rather than being omitted from the dispatcher fixture.
     private const uint RuntimeRequestKindGameInformationQuery = 25;
+    private const uint RuntimeRequestKindGameFacts = 26;
+
+    private static (int Status, string Response) ProcessGameFactsWork(
+        RuntimeContext _, string __) => (503, "{\"error_code\":\"facts_probe_unavailable\"}");
 
     private static (int Status, string Response) ProcessGameInformationQueryWork(
         RuntimeContext _, string __) => (503, "{\"error_code\":\"query_probe_unavailable\"}");
