@@ -19,16 +19,21 @@
 //!   confirmed.
 //! - Identities are opaque: a filesystem path, a control byte or a traversal segment is refused.
 //!
-//! Source-only by construction. The inventory is a *proposal* to the owner; it claims no native
-//! parity or host comparison. The optional [`CoreFactsInventory`] admits static metadata against
-//! Core's ordered input signatures; it does not extract live facts or evaluate those inputs.
-//! Inventory, manifest and provenance values remain caller-supplied: local validation proves their
-//! shape and consistency only, not source authenticity or coherent extraction.
+//! The generic inventory and optional [`CoreFactsInventory`] admit caller-supplied metadata;
+//! local validation proves consistency and Core signature agreement, not source authenticity.
+//! The separate [`OwnedLiveGameFactsProducer`] maps the production owner's retained live copies
+//! to the accepted facts profile. It reads no host objects itself and evaluates no rule. Its
+//! bridge performs source authorization and freshness checks; constructing equivalent public
+//! source DTOs is not proof of provenance. All emitted observations remain source-derived, with
+//! native parity and exact-host acceptance separately unverified.
 
 mod core_catalog;
 mod error;
 mod identity;
 mod inventory;
+mod live;
+mod live_mapping;
+mod live_source;
 mod model;
 mod protocol_v1;
 mod validation;
@@ -37,6 +42,11 @@ pub use core_catalog::CoreFactsInventory;
 pub use error::GameFactsError;
 pub use identity::is_opaque_facts_identity;
 pub use inventory::FactsInventory;
+pub use live::OwnedLiveGameFactsProducer;
+pub use live_source::{
+    LiveFactsField, LiveFactsFieldStatus, LiveFactsRefusal, OwnedLiveFactsCard,
+    OwnedLiveFactsSnapshot,
+};
 pub use model::{
     FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInputSource,
     FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsSourceKind,
