@@ -25,6 +25,8 @@
 //! Inventory, manifest and provenance values remain caller-supplied: local validation proves their
 //! shape and consistency only, not source authenticity or coherent extraction.
 
+mod core_inventory;
+mod core_inventory_error;
 mod error;
 mod identity;
 mod inventory;
@@ -32,6 +34,8 @@ mod model;
 mod protocol_v1;
 mod validation;
 
+pub use core_inventory::CoreFactsInventory;
+pub use core_inventory_error::CoreFactsAdmissionError;
 pub use error::GameFactsError;
 pub use identity::is_opaque_facts_identity;
 pub use inventory::FactsInventory;
