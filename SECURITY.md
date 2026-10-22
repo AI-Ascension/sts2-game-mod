@@ -38,6 +38,14 @@ the owner. ContentManifest is publicly constructible and cloneable; manifest and
 checks establish consistency only. The caller owns authenticity and coherent-snapshot evidence.
 Errors use fixed bounded text and never include caller tokens, paths, or host exceptions.
 
+The owned live facts route separately requires the existing bearer-authenticated listener and
+retained runtime lease/run association. Canonical admission precedes selector reads. The owner
+rechecks profile, native run, occurrence, generation and raw values across current catalog capture;
+queue or freshness failure clears retention. Only the owner's selected card energy inputs cross
+the boundary, with bounded opaque source hashes. No host objects, profile IDs, seeds, native
+exceptions, filesystem lookup or action execution are exposed. Public source DTO construction is
+not source authentication. See [ADR 0084](docs/decisions/0084-owned-live-fixed-card-cost-facts.md).
+
 ## Reporting
 
 Use a private maintainer security channel when one is configured for the hosted repository. Until
