@@ -75,7 +75,8 @@ public static partial class ModEntry
                 context.InstanceId, manifest.ContentManifestId);
             if (liveSnapshot.Available)
             {
-                AssociateLiveCardBinding(context, root, liveSnapshot);
+                AssociateLiveCardBinding(context, root, liveSnapshot,
+                    manifest.CatalogGeneration, manifest.Locale);
             }
             if (root.GetProperty("operation").GetString() == "discovery")
             {
