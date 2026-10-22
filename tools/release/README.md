@@ -9,6 +9,15 @@ full Git tree identity and records the policy hash, excluded paths, included pat
 content digest. The archive is suitable for Windows and Linux source distribution; it is not a native
 game addon and does not promote host, Workshop, or gameplay compatibility.
 
+When adding, removing, or renaming tracked files, review each path for the exact policy in the same
+change. Keep the existing production-addon diagnostic exclusions; source-only regression fixtures,
+protocol vectors, and build/provenance tooling may remain included without becoming runtime claims.
+Do not generate a permissive directory rule or admit host binaries, captured state, credentials, or
+build output. Ordinary pull-request and main-branch CI runs `test-source-bundle.sh` so an unreviewed
+path or non-reproducible archive fails before a source-release workflow is requested.
+The artifact guard permits reviewed Rust `src/bin/*.rs` entrypoint/module sources while continuing
+to reject generated `bin`, `target`, and `obj` trees, including such ancestors around a source path.
+
 Build the two platform-labelled archives from a clean checkout:
 
 ```text
