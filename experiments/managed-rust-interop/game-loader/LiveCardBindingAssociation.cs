@@ -29,7 +29,8 @@ public static partial class ModEntry
             snapshot.RunId,
             snapshot.SourceIncarnation,
             snapshot.Epoch,
-            snapshot.StateGeneration);
+            snapshot.StateGeneration,
+            context.Locale);
     }
 
     private static bool TryReadLiveCardBinding(
@@ -70,5 +71,6 @@ public static partial class ModEntry
         string NativeRunId,
         string SourceIncarnation,
         ulong SourceEpoch,
-        ulong SourceGeneration);
+        ulong SourceGeneration,
+        string Locale);
 }

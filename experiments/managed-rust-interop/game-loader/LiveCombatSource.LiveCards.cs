@@ -24,46 +24,31 @@ internal sealed partial class LiveCombatSource
         string contentManifest)
     {
         RequireThread();
+        bool captured = false;
+        _liveCardFence = null;
         try
         {
-            RunManager manager = RunManager.Instance;
-            if (!manager.IsInProgress || manager.DebugOnlyGetState() is not { } run)
+            LiveCardHostFence fence = ReadLiveCardFence(contentManifest);
+            LiveCardCapturedSnapshot snapshot = _liveCardRegistry.Capture(
+                instanceId, fence.Run, fence.RunKey, contentManifest, fence.Generation,
+                fence.Cards) with
             {
-                _liveCardRegistry.Invalidate();
-                return LiveCardCapturedSnapshot.Unavailable("run_not_active");
-            }
-
-            Player? player = CurrentPlayer();
-            if (player is null)
-            {
-                _liveCardRegistry.Invalidate();
-                return LiveCardCapturedSnapshot.Unavailable("player_source_unavailable");
-            }
-
-            ulong stateGeneration = Observe().Generation;
-            var cards = new List<LiveCardCaptureInput>();
-            if (player.PlayerCombatState is { } combat)
-            {
-                if (!AddCards(cards, combat.Hand.Cards, LiveCardZone.Hand, player,
-                        contentManifest)
-                    || !AddCards(cards, combat.DiscardPile.Cards, LiveCardZone.Discard, player,
-                        contentManifest)
-                    || !AddCards(cards, combat.ExhaustPile.Cards, LiveCardZone.Exhaust, player,
-                        contentManifest))
-                    return LiveCardCapturedSnapshot.Unavailable("card_count_exceeded");
-            }
-            if (!AddCards(cards, player.Deck.Cards, LiveCardZone.Deck, player, contentManifest))
-                return LiveCardCapturedSnapshot.Unavailable("card_count_exceeded");
-
-            string runKey = $"{run.GameMode}|{run.Rng.StringSeed}|"
-                + $"{player.NetId.ToString(CultureInfo.InvariantCulture)}";
-            return _liveCardRegistry.Capture(
-                instanceId, run, runKey, contentManifest, stateGeneration, cards);
+                Energy = fence.Energy,
+                ModeId = fence.ModeId,
+                Locale = fence.Locale,
+                ManifestWitness = fence.ManifestWitness
+            };
+            captured = snapshot.Available;
+            if (captured) _liveCardFence = fence;
+            return snapshot;
         }
         catch (Exception)
         {
-            _liveCardRegistry.Invalidate();
             return LiveCardCapturedSnapshot.Unavailable("host_snapshot_unavailable");
+        }
+        finally
+        {
+            if (!captured) InvalidateLiveCardSnapshot();
         }
     }
 
@@ -74,6 +59,7 @@ internal sealed partial class LiveCombatSource
     internal void InvalidateLiveCardSnapshot()
     {
         RequireThread();
+        _liveCardFence = null;
         _liveCardRegistry.Invalidate();
     }
 
@@ -89,10 +75,8 @@ internal sealed partial class LiveCombatSource
         {
             if (output.Count >= LiveCardSnapshotRegistry.MaxCards)
                 return false;
-            int resolvedCost = card.EnergyCost.GetResolved();
-            LiveCardField<int> cost = resolvedCost >= 0
-                ? LiveCardField<int>.Available(resolvedCost)
-                : LiveCardField<int>.Unknown();
+            LiveCardField<int> cost = ReadFixedCardCost(
+                card, out LiveCardField<int> rawCost, out LiveCardField<bool> costX);
             int upgradeLevel = card.CurrentUpgradeLevel;
             LiveCardField<ushort> upgrade = upgradeLevel is >= 0 and <= ushort.MaxValue
                 ? LiveCardField<ushort>.Available((ushort)upgradeLevel)
@@ -116,9 +100,36 @@ internal sealed partial class LiveCombatSource
                 LiveCardField<int>.NotObserved(),
                 LiveCardField<IReadOnlyList<string>>.NotObserved(),
                 LiveCardField<IReadOnlyList<string>>.NotObserved(),
-                LiveCardField<IReadOnlyDictionary<string, string>>.NotObserved()));
+                LiveCardField<IReadOnlyDictionary<string, string>>.NotObserved())
+            {
+                RawResolvedCost = rawCost,
+                HasEnergyCostX = costX
+            });
             position++;
         }
         return true;
+    }
+
+    private static LiveCardField<int> ReadFixedCardCost(
+        CardModel card, out LiveCardField<int> rawCost, out LiveCardField<bool> costX)
+    {
+        rawCost = LiveCardField<int>.Unknown();
+        costX = LiveCardField<bool>.Unknown();
+        try
+        {
+            object? value = NativeContentCatalogManifestSourceHelpers.ReadOptionalValue(
+                card, "HasEnergyCostX");
+            if (value is not bool isX) return LiveCardField<int>.Unknown();
+            costX = LiveCardField<bool>.Available(isX);
+            if (isX) return LiveCardField<int>.Unsupported();
+            int resolved = card.EnergyCost.GetResolved();
+            rawCost = LiveCardField<int>.Available(resolved);
+            return resolved >= 0 ? rawCost : LiveCardField<int>.Unknown();
+        }
+        catch (Exception)
+        {
+            rawCost = LiveCardField<int>.Failed();
+            return LiveCardField<int>.Failed();
+        }
     }
 }

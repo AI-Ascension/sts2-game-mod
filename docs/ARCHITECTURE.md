@@ -610,4 +610,4 @@ retries ignore transport correlation and JSON formatting; run/combat/player repl
 invalidates generation. This bounded observation is not a complete game-state revision
 or a game-rule parity claim.
 
-See [ADR 0082](decisions/0082-retained-live-reward-reader.md) for the source-only retained reward reader and its evidence limits.
+See [ADR 0082](decisions/0082-retained-live-reward-reader.md) for retained rewards and [ADR 0084](decisions/0084-owned-live-fixed-card-cost-facts.md) for owned fixed-cost facts, authenticated callbacks 26/27 and full retained fences. Native parity remains unverified.

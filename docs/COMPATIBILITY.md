@@ -413,3 +413,10 @@ The body was `{"error_code":"unsupported_header"}` and is now
 This does not establish that any particular caller introduced an unlisted header, and it does not
 change who may call which route. See AI-Ascension/sts2-game-mod#239 and
 AI-Ascension/sts2-harness#541.
+
+## Bounded live facts source compatibility
+
+[ADR 0084](decisions/0084-owned-live-fixed-card-cost-facts.md) records the additive facts routes and
+fixed-width ABI. Controlled shapes and the real native codec/manifest producer test source behavior,
+not exact-host compatibility. Locale values must match exactly; unsupported locale forms are refused,
+not silently normalized. Fixed cost excludes X-cost. Parent #207 and game-core #13 remain open.

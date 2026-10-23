@@ -9,8 +9,8 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
-- Added immutable Core v2 catalog admission for static game-facts signatures, preserving the generic mapper and its refusals. All sixteen signatures have synthetic tests.
-  Native extraction, parity and downstream adoption remain unverified. See ADR 0083. Refs #278; parent #207 remains open.
+- Added Core v2 static facts catalog admission (#278, ADR 0083) and owned fixed-cost facts/stale-capture refusal (#280, [ADR 0084](docs/decisions/0084-owned-live-fixed-card-cost-facts.md)).
+  Source tests cover signatures and retained capture; native parity and downstream adoption remain unverified. Parent #207 and Core #13 remain open.
 
 - Added a bounded Rust retained live reward reader with parent-scoped references, static definition
   resolution, visibility checks, and explicit invalidation. Synthetic tests exercise its source seam;

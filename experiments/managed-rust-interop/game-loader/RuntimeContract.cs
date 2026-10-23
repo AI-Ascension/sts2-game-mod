@@ -9,6 +9,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
+    private const int RuntimeRequestKindFactsCapabilities = 26;
+    private const int RuntimeRequestKindFactsQuery = 27;
     private const string RuntimeArtifact = "sts2-protocol/runtime-v1";
     private const string RuntimeSchemaSource = "schemas/runtime-v1.schema.json";
     private const string RuntimeGenerator = "hand-authored";
@@ -71,6 +73,11 @@ public static partial class ModEntry
         if (work.Kind == RuntimeRequestKindGameInformationQuery)
         {
             return ProcessGameInformationQueryWork(work.Context, work.Body);
+        }
+        if (work.Kind is RuntimeRequestKindFactsCapabilities or RuntimeRequestKindFactsQuery)
+        {
+            return ProcessLiveFactsWork(work.Context, work.Body,
+                work.Kind == RuntimeRequestKindFactsCapabilities);
         }
         if (work.Kind != RuntimeRequestKindAction)
         {

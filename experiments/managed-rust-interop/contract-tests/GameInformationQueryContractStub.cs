@@ -9,6 +9,9 @@ public static partial class ModEntry
     // callback rather than being omitted from the dispatcher fixture.
     private const uint RuntimeRequestKindGameInformationQuery = 25;
 
+    private static (int Status, string Response) ProcessLiveFactsWork(
+        RuntimeContext _, string __, bool ___) => (503, "{\"error_code\":\"facts_probe_unavailable\"}");
+
     private static (int Status, string Response) ProcessGameInformationQueryWork(
         RuntimeContext _, string __) => (503, "{\"error_code\":\"query_probe_unavailable\"}");
 }

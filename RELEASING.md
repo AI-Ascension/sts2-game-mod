@@ -177,3 +177,8 @@ the claimed host matrix from freshly downloaded bytes. Record this separately fr
 Never rewrite an immutable tag or silently replace an artifact. Withdraw or mark a defective
 release where supported, preserve diagnostic evidence without private data, and issue a corrective
 version through the same gates.
+
+The live fixed-card-cost source slice is not a package/release compatibility claim. Its reviewed
+source inventory includes the new bridge and controlled-source probes, but exact-host/native parity
+and consumer adoption remain unverified. No release should infer completion of game-mod #207 or
+Core #13 from these checks. See [ADR 0084](docs/decisions/0084-owned-live-fixed-card-cost-facts.md).

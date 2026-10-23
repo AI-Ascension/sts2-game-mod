@@ -5,6 +5,8 @@ use std::io::{Read, Write};
 
 const MAX_HEADER_BYTES: usize = 8 * 1024;
 const MAX_BODY_BYTES: usize = 16 * 1024;
+// Only the exact authenticated facts query may use its advertised 256 KiB bound.
+const MAX_FACTS_QUERY_BODY_BYTES: usize = 256 * 1024;
 const MAX_IDENTITY_BYTES: usize = 128;
 
 pub(super) struct Request {
@@ -35,7 +37,7 @@ pub(super) fn read_request(stream: &mut impl Read) -> Result<Request, u16> {
             return Err(400);
         }
         bytes.extend_from_slice(&buffer[..read]);
-        if bytes.len() > MAX_HEADER_BYTES + MAX_BODY_BYTES {
+        if bytes.len() > MAX_HEADER_BYTES + MAX_FACTS_QUERY_BODY_BYTES {
             return Err(413);
         }
     };
@@ -72,7 +74,12 @@ pub(super) fn read_request(stream: &mut impl Read) -> Result<Request, u16> {
         Some(value) => value.parse::<usize>().map_err(|_| 400_u16)?,
         None => 0,
     };
-    if content_length > MAX_BODY_BYTES {
+    let body_limit = if method == "POST" && path == "/api/v1/game-information/facts/query" {
+        MAX_FACTS_QUERY_BODY_BYTES
+    } else {
+        MAX_BODY_BYTES
+    };
+    if content_length > body_limit {
         return Err(413);
     }
     let body_start = header_end + 4;
@@ -214,6 +221,35 @@ mod tests {
     fn detects_complete_http_headers() {
         assert_eq!(find_header_end(b"GET / HTTP/1.1\r\n\r\nbody"), Some(14));
         assert_eq!(find_header_end(b"GET / HTTP/1.1\n\n"), None);
+    }
+
+    #[test]
+    fn facts_query_body_limit_matches_capability_and_other_routes_stay_bounded() {
+        fn request(path: &str, length: usize) -> Vec<u8> {
+            let mut bytes = format!(
+                "POST {path} HTTP/1.1\r\nContent-Length: {length}\r\nContent-Type: application/json\r\n\r\n"
+            )
+            .into_bytes();
+            bytes.extend(vec![b' '; length]);
+            bytes
+        }
+
+        let limit = super::MAX_FACTS_QUERY_BODY_BYTES;
+        let accepted = request("/api/v1/game-information/facts/query", limit);
+        assert_eq!(
+            super::read_request(&mut accepted.as_slice()).map(|request| request.body.len()),
+            Ok(limit)
+        );
+        let oversized = request("/api/v1/game-information/facts/query", limit + 1);
+        assert!(matches!(
+            super::read_request(&mut oversized.as_slice()),
+            Err(413)
+        ));
+        let other_route = request("/api/v1/game-information/query", super::MAX_BODY_BYTES + 1);
+        assert!(matches!(
+            super::read_request(&mut other_route.as_slice()),
+            Err(413)
+        ));
     }
 
     #[test]

@@ -29,6 +29,7 @@ mod core_catalog;
 mod error;
 mod identity;
 mod inventory;
+mod live;
 mod model;
 mod protocol_v1;
 mod validation;
@@ -37,6 +38,7 @@ pub use core_catalog::CoreFactsInventory;
 pub use error::GameFactsError;
 pub use identity::is_opaque_facts_identity;
 pub use inventory::FactsInventory;
+pub use live::{LiveFixedCardFacts, LiveFixedCardObservation, LiveFixedCardValue};
 pub use model::{
     FactsBuildBinding, FactsEvidenceStatus, FactsInputAvailability, FactsInputSource,
     FactsRepresentation, FactsRuleEntry, FactsRuleInput, FactsSourceKind,

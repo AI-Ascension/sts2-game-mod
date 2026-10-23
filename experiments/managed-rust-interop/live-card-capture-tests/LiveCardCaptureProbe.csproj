@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/LiveCombatSource.LiveCards*.cs" />
+    <Compile Include="../game-loader/LiveCardSourceReadAdapter.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotSource.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotRegistry*.cs" />
+    <Compile Include="../game-loader/NativeContentCatalogSemantic.Values.cs" />
+  </ItemGroup>
+</Project>

@@ -37,3 +37,8 @@ Review every Cargo or managed dependency before adding it. Keep the exact lockfi
 information, and required notices aligned with a release. Update
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) when a dependency or fixture introduces notice
 obligations.
+
+The bounded live facts slice (ADR 0084) adds original source and controlled test doubles under the
+repository MIT license. It adds no proprietary assemblies, assets, profiles or copied host source,
+and changes no third-party dependency version. Its source files are listed in the reviewed source
+distribution inventory; testing a native codec does not authorize package publication.

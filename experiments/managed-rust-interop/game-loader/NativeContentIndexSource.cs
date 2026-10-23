@@ -30,7 +30,10 @@ internal sealed record NativeContentIndexDefinition(
 internal sealed record NativeContentIndexSnapshot(
     string ManifestId,
     string Locale,
-    IReadOnlyList<NativeContentIndexDefinition> Definitions);
+    IReadOnlyList<NativeContentIndexDefinition> Definitions)
+{
+    internal NativeContentManifestWitness? ManifestWitness { get; init; }
+}
 
 /// <summary>
 /// One canonical index capture plus the exact owned source JSON used to produce its manifest.
@@ -150,7 +153,10 @@ internal static partial class NativeContentCatalogManifestSource
                 return false;
 
             capture = new NativeContentIndexCapture(
-                new NativeContentIndexSnapshot(manifestId, locale, definitions),
+                new NativeContentIndexSnapshot(manifestId, locale, definitions)
+                {
+                    ManifestWitness = NativeContentManifestWitness.FromManifest(manifest)
+                },
                 sourceJson);
             return true;
         }

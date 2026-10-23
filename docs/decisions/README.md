@@ -8,6 +8,7 @@ decision body and do not reserve another identifier. Local link validation check
 
 | ID | Decision |
 | --- | --- |
+| 0084 | [Owned live fixed-card-cost facts](0084-owned-live-fixed-card-cost-facts.md) |
 | 0001 | [Managed loader and Rust native boundary](0001-managed-loader-rust-native-boundary.md) |
 | 0002 | [Initial game compatibility baseline](0002-initial-game-compatibility-baseline.md) |
 | 0003 | [Rust-first implementation](0003-rust-first-with-managed-loader-exception.md) |

@@ -40,6 +40,28 @@ internal sealed partial class LiveCardSnapshotRegistry
         ulong stateGeneration,
         IReadOnlyList<LiveCardCaptureInput> cards)
     {
+        bool captured = false;
+        try
+        {
+            LiveCardCapturedSnapshot snapshot = CaptureCore(
+                instanceId, runHandle, runKey, contentManifest, stateGeneration, cards);
+            captured = snapshot.Available;
+            return snapshot;
+        }
+        finally
+        {
+            if (!captured) Invalidate();
+        }
+    }
+
+    private LiveCardCapturedSnapshot CaptureCore(
+        string instanceId,
+        object runHandle,
+        string runKey,
+        string contentManifest,
+        ulong stateGeneration,
+        IReadOnlyList<LiveCardCaptureInput> cards)
+    {
         if (!ValidIdentity(instanceId) || !ValidIdentity(contentManifest) || runHandle is null)
             return LiveCardCapturedSnapshot.Unavailable("identity_unavailable");
         if (string.IsNullOrEmpty(runKey))
