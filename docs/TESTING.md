@@ -645,4 +645,4 @@ not a runtime claim or authorization to alter an installation.
 
 ## Profile progress readiness observer
 
-See the [source-linked managed probe commands, coverage, and evidence limits](../experiments/managed-rust-interop/progress-readiness-tests/README.md).
+See the [progress-readiness probe commands and limits](../experiments/managed-rust-interop/progress-readiness-tests/README.md). Separate [owned live facts source checks](LIVE_FACTS_SOURCE.md) exercise capture/retention and the real codec/manifest producer, not native parity.

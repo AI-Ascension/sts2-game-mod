@@ -6,7 +6,7 @@
 //! prove coherent extraction, evaluate rules, or read host state.
 
 mod mapping;
-mod responses;
+pub(super) mod responses;
 
 use super::{CoreFactsInventory, FactsInventory};
 use crate::ContentManifest;

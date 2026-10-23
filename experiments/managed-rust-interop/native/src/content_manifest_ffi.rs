@@ -3,8 +3,8 @@
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use sts2_game_mod::{
-    ContentCatalogSnapshot, ContentCatalogSource, ContentDefinitionInput, ContentManifestProducer,
-    ContentOriginInput, ContentPackageInput, ContentSourceError,
+    ContentCatalogSnapshot, ContentCatalogSource, ContentDefinitionInput, ContentManifest,
+    ContentManifestProducer, ContentOriginInput, ContentPackageInput, ContentSourceError,
 };
 
 const MAX_INPUT_BYTES: usize = 16 * 1024 * 1024;
@@ -14,6 +14,7 @@ const STATUS_UNAVAILABLE: i32 = 503;
 const STATUS_INTERNAL: i32 = 500;
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Input {
     generation_before: u64,
     generation_after: u64,
@@ -26,7 +27,24 @@ struct Input {
     adapter_compatibility: String,
 }
 
+/// Shares the actual manifest producer with facts; never trusts a caller-created digest.
+pub(super) fn produce_manifest(input: &[u8]) -> Result<ContentManifest, ()> {
+    if input.len() > MAX_INPUT_BYTES {
+        return Err(());
+    }
+    let input: Input = serde_json::from_slice(input).map_err(|_| ())?;
+    let producer =
+        ContentManifestProducer::new(input.adapter_compatibility.clone(), vec!["card".to_owned()])
+            .map_err(|_| ())?;
+    producer
+        .produce(&FfiSource {
+            snapshot: convert(input),
+        })
+        .map_err(|_| ())
+}
+
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Package {
     package_id: String,
     package_version: Option<String>,
@@ -34,6 +52,7 @@ struct Package {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Definition {
     entity_kind: String,
     namespaced_id: String,
@@ -44,6 +63,7 @@ struct Definition {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Origin {
     package_id: Option<String>,
     package_version: Option<String>,

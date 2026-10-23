@@ -11,7 +11,7 @@ const MAX_RULE_IDS: u16 = 16;
 const MAX_INPUTS_PER_RULE: u16 = 64;
 const MAX_UNSUPPORTED_COMBINATIONS: u16 = 256;
 
-pub(super) fn capabilities_response(correlation_id: &str) -> Message {
+pub(in crate::game_facts_reference) fn capabilities_response(correlation_id: &str) -> Message {
     Message {
         protocol_version: GAME_FACTS_REFERENCE_V1_PROFILE.to_owned(),
         schema_digest: GAME_FACTS_REFERENCE_V1_SCHEMA_DIGEST.to_owned(),
@@ -33,7 +33,11 @@ pub(super) fn capabilities_response(correlation_id: &str) -> Message {
     }
 }
 
-pub(super) fn query_response(correlation_id: &str, query: &Query, result: QueryResult) -> Message {
+pub(in crate::game_facts_reference) fn query_response(
+    correlation_id: &str,
+    query: &Query,
+    result: QueryResult,
+) -> Message {
     Message {
         protocol_version: GAME_FACTS_REFERENCE_V1_PROFILE.to_owned(),
         schema_digest: GAME_FACTS_REFERENCE_V1_SCHEMA_DIGEST.to_owned(),
@@ -47,7 +51,11 @@ pub(super) fn query_response(correlation_id: &str, query: &Query, result: QueryR
     }
 }
 
-pub(super) fn error_response(correlation_id: &str, query: &Query, code: ErrorCode) -> Message {
+pub(in crate::game_facts_reference) fn error_response(
+    correlation_id: &str,
+    query: &Query,
+    code: ErrorCode,
+) -> Message {
     let reason = match code {
         ErrorCode::InvalidBinding => "The supplied content binding does not match this request.",
         _ => "No supported static inventory is available for this request.",

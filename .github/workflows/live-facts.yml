@@ -1,0 +1,29 @@
+name: Owned live facts source boundary
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {contents: read}
+
+jobs:
+  source-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+      - name: Install exact .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 9.0.317
+      - name: Build actual native codec and canonical manifest producer
+        run: cargo build --locked --package sts2-game-mod-interop
+      - name: Exercise production managed bridge and retained binding association
+        run: dotnet run --project experiments/managed-rust-interop/live-facts-tests/LiveFactsProbe.csproj --configuration Release -- target/debug/libai_ascension_sts2_game_mod_native.so
+      - name: Exercise production capture and retained freshness with controlled source shapes
+        run: dotnet run --project experiments/managed-rust-interop/live-card-capture-tests/LiveCardCaptureProbe.csproj --configuration Release

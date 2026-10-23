@@ -36,6 +36,7 @@ public static partial class ModEntry
             {
                 return (409, LookupBindingError(context, "missing_capability"));
             }
+            _liveCardBinding = null;
             LookupBindingManifest manifest = LookupBindingManifest.Read(context.CorrelationId);
             string bindingId = LookupBindingManifest.Digest(
                 JsonSerializer.Serialize(new SortedDictionary<string, object?>

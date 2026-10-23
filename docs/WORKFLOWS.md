@@ -84,3 +84,8 @@ part of the Workshop payload. Pull-request and ordinary push workflows never cal
 ISteamUGC, or any upload endpoint. An authorized publisher must supply the consumer App ID,
 published file ID, preview image, and credentials outside the repository, then verify the exact
 staged bytes and Steam result separately.
+
+The `Owned live facts source boundary` workflow runs the production managed/native facts bridge
+against controlled source shapes, plus capture/freshness regressions. It requires no game assembly,
+profile or provider. See [testing](TESTING.md) and [ADR 0084](decisions/0084-owned-live-fixed-card-cost-facts.md)
+for commands and limits; existing full Rust and managed gates remain required.

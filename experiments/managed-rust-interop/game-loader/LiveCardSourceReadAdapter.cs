@@ -4,16 +4,14 @@ using System;
 
 namespace AiAscension.Sts2GameMod.Runtime;
 
-/// <summary>
-/// Bounded read adapter for owners that already have a host-thread observation callback.
-/// The adapter owns no CardModel references and returns an unavailable result when the host
-/// thread cannot complete the read synchronously.
-/// </summary>
+/// <summary>Owned synchronous reads; deferred callbacks cannot publish or revive a snapshot.</summary>
 internal sealed class LiveCardSourceReadAdapter
 {
     private readonly LiveCombatSource _source;
     private readonly IRuntimeV3HostThread _thread;
+    private readonly object _gate = new();
     private LiveCardCapturedSnapshot? _retained;
+    private object _request = new();
 
     internal LiveCardSourceReadAdapter(LiveCombatSource source, IRuntimeV3HostThread thread)
     {
@@ -21,60 +19,100 @@ internal sealed class LiveCardSourceReadAdapter
         _thread = thread ?? throw new ArgumentNullException(nameof(thread));
     }
 
-    /// <summary>
-    /// Invokes the source capture through the existing host-thread owner. A caller must provide
-    /// the authenticated instance and content-manifest identities; this adapter invents neither.
-    /// </summary>
     internal LiveCardCapturedSnapshot Read(string instanceId, string contentManifest)
     {
-        if (string.IsNullOrEmpty(instanceId) || string.IsNullOrEmpty(contentManifest))
-            return LiveCardCapturedSnapshot.Unavailable("identity_unavailable");
-
-        LiveCardCapturedSnapshot? result = null;
-        try
+        lock (_gate)
         {
-            _thread.Enqueue(() => result = _source.CaptureLiveCardSnapshot(
-                instanceId, contentManifest));
+            _retained = null;
+            object request = _request = new object();
+            bool open = true;
+            LiveCardCapturedSnapshot? result = null;
+            try
+            {
+                if (string.IsNullOrEmpty(instanceId) || string.IsNullOrEmpty(contentManifest))
+                    return LiveCardCapturedSnapshot.Unavailable("identity_unavailable");
+                _thread.Enqueue(() =>
+                {
+                    lock (_gate)
+                    {
+                        if (open && ReferenceEquals(request, _request))
+                            result = _source.CaptureLiveCardSnapshot(instanceId, contentManifest);
+                    }
+                });
+                _retained = result is { Available: true } ? result : null;
+                return result ?? LiveCardCapturedSnapshot.Unavailable("host_read_outcome_unknown");
+            }
+            catch (Exception)
+            {
+                return LiveCardCapturedSnapshot.Unavailable("host_thread_unavailable");
+            }
+            finally
+            {
+                open = false;
+                if (_retained is null) InvalidateSource(request);
+            }
         }
-        catch (Exception)
-        {
-            return LiveCardCapturedSnapshot.Unavailable("host_thread_unavailable");
-        }
-
-        _retained = result is { Available: true } available ? available : null;
-        return result ?? LiveCardCapturedSnapshot.Unavailable("host_read_outcome_unknown");
     }
 
-    /// <summary>
-    /// Returns the immutable observation retained by the preceding authenticated read. A
-    /// selector carrying an instance epoch must never trigger a fresh capture, because a fresh
-    /// capture advances the source epoch and would invalidate the selector it is checking.
-    /// </summary>
+    /// <summary>Rechecks current host values without capturing or advancing the selected epoch.</summary>
     internal LiveCardCapturedSnapshot ReadRetained(
-        string instanceId,
-        string contentManifest,
-        ulong epoch)
+        string instanceId, string contentManifest, ulong epoch)
     {
-        LiveCardCapturedSnapshot? retained = _retained;
-        return retained is { Available: true }
-            && retained.InstanceId == instanceId
-            && retained.ContentManifest == contentManifest
-            && retained.Epoch == epoch
-            ? retained
-            : LiveCardCapturedSnapshot.Unavailable("stale_snapshot");
+        lock (_gate)
+        {
+            LiveCardCapturedSnapshot? retained = _retained;
+            object request = _request;
+            bool open = true;
+            bool current = false;
+            try
+            {
+                if (retained is { Available: true } && retained.InstanceId == instanceId
+                    && retained.ContentManifest == contentManifest && retained.Epoch == epoch)
+                    _thread.Enqueue(() =>
+                    {
+                        lock (_gate)
+                        {
+                            if (open && ReferenceEquals(request, _request))
+                                current = _source.IsLiveCardSnapshotCurrent(retained);
+                        }
+                    });
+            }
+            catch (Exception) { current = false; }
+            finally { open = false; }
+            if (current) return retained!;
+            _retained = null;
+            _request = new object();
+            InvalidateSource(_request);
+            return LiveCardCapturedSnapshot.Unavailable("stale_snapshot");
+        }
     }
 
-    /// <summary>Invalidates source-owned CardModel occurrence handles on a lifecycle boundary.</summary>
     internal void Invalidate()
     {
+        lock (_gate)
+        {
+            _retained = null;
+            _request = new object();
+            InvalidateSource(_request);
+        }
+    }
+
+    private void InvalidateSource(object request)
+    {
         try
         {
-            _thread.Enqueue(_source.InvalidateLiveCardSnapshot);
-            _retained = null;
+            _thread.Enqueue(() =>
+            {
+                lock (_gate)
+                {
+                    if (ReferenceEquals(request, _request)) _source.InvalidateLiveCardSnapshot();
+                }
+            });
         }
         catch (Exception)
         {
-            // An unavailable host thread is already fail-closed; no stale snapshot is exposed.
+            // Host references can only be released by their owner. Retained DTO is already gone;
+            // a later successful read replaces the fence, and deferred work is token-fenced.
         }
     }
 }

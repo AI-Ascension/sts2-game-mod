@@ -24,6 +24,10 @@ public static partial class ModEntry
               "manifest": {
                 "locale": "en_US",
                 "inventory_revision": "inventory:1",
+                "catalog_generation": 1,
+                "adapter_compatibility": "controlled-adapter",
+                "content_set_revision": "content:1",
+                "localized_text_revision": "text:1",
                 "definitions": [{
                   "entity_kind": "ancient",
                   "namespaced_id": "base:ancient:shrine"

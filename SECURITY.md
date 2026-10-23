@@ -134,3 +134,12 @@ Steam credentials, Steamworks binaries, host assemblies, game data, and local in
 must remain outside the repository and CI. Do not add arbitrary DLL loading, dynamic dependency
 resolution, or upload credentials to the package or workflow. Report a suspected bypass with a
 synthetic package and the exact source revision.
+
+## Live facts reads
+
+Facts callbacks 26/27 use exact authenticated routes and the existing host-thread queue. Query
+requests cannot provide authoritative energy/cost or mint a live snapshot: retained transport,
+lookup, native occurrence, profile, value and canonical content fences must agree. Failed reads or
+invalidation revoke old retention before host work. The native bridge accepts bounded owned JSON,
+not host pointers, paths or credentials; errors disclose fixed safe codes. See
+[ADR 0084](docs/decisions/0084-owned-live-fixed-card-cost-facts.md).

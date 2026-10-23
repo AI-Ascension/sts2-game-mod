@@ -4,6 +4,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
+    private static (int Status, string Response) ProcessLiveFactsWork(
+        RuntimeContext _, string __, bool ___) => (503, "{\"error_code\":\"facts_probe_unavailable\"}");
     // Host-candidate source probes do not load the game-information adapter. Keep callback 25
     // fail-closed while compiling the production dispatcher wiring.
     private static (int Status, string Response) ProcessGameInformationQueryWork(

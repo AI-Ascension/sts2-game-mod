@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../game-loader/LiveFactsInterop.cs" />
+    <Compile Include="../game-loader/LiveFactsNativeBridge.cs" />
+    <Compile Include="../game-loader/LiveCardBindingAssociation.cs" />
+    <Compile Include="../game-loader/LiveCardSnapshotSource.cs" />
+    <Compile Include="../game-loader/RuntimeInterop.Types.cs" />
+    <Compile Include="../game-loader/NativeContentIndexSource.cs" />
+    <Compile Include="../game-loader/ContentManifestNativeBridge.cs" />
+    <Compile Include="../game-loader/ContentManifestInterop.cs" />
+  </ItemGroup>
+</Project>

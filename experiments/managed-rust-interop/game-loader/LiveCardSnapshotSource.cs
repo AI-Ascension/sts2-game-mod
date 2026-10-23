@@ -50,7 +50,7 @@ internal readonly record struct LiveCardLocation(LiveCardZone Zone, int Position
 
 /// <summary>
 /// Owned values copied from one host-thread CardModel before the object is released.
-/// HostCard is used only as an in-thread reference key and never leaves the registry.
+/// HostCard is used only as an in-thread reference key in the source fence and registry.
 /// </summary>
 internal sealed record LiveCardCaptureInput(
     object HostCard,
@@ -68,7 +68,11 @@ internal sealed record LiveCardCaptureInput(
     LiveCardField<int> EffectiveCost,
     LiveCardField<IReadOnlyList<string>> Modifiers,
     LiveCardField<IReadOnlyList<string>> Flags,
-    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters);
+    LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters)
+{
+    internal LiveCardField<int> RawResolvedCost { get; init; } = LiveCardField<int>.NotObserved();
+    internal LiveCardField<bool> HasEnergyCostX { get; init; } = LiveCardField<bool>.NotObserved();
+}
 
 /// <summary>Immutable source-owned card record returned by the host-thread capture.</summary>
 internal sealed record LiveCardCapturedCard(
@@ -90,8 +94,26 @@ internal sealed record LiveCardCapturedCard(
     LiveCardField<IReadOnlyDictionary<string, string>> EffectParameters);
 
 /// <summary>
-/// One immutable owner-local read fence. The run and snapshot IDs are source-owned lifecycle
-/// identities; they are deliberately not presented as native global generations.
+/// Complete owned witness copied from the canonical content-manifest producer.
+/// </summary>
+internal sealed record NativeContentManifestWitness(
+    ulong CatalogGeneration,
+    string AdapterCompatibility,
+    string ContentSetRevision,
+    string LocalizedTextRevision,
+    string InventoryRevision)
+{
+    internal static NativeContentManifestWitness FromManifest(System.Text.Json.JsonElement manifest) =>
+        new(manifest.GetProperty("catalog_generation").GetUInt64(),
+            manifest.GetProperty("adapter_compatibility").GetString()!,
+            manifest.GetProperty("content_set_revision").GetString()!,
+            manifest.GetProperty("localized_text_revision").GetString()!,
+            manifest.GetProperty("inventory_revision").GetString()!);
+}
+
+/// <summary>
+/// One immutable owner-local read fence. Run and snapshot IDs are source-owned lifecycle
+/// identities, not native global generations.
 /// </summary>
 internal sealed record LiveCardCapturedSnapshot(
     string InstanceId,
@@ -105,6 +127,11 @@ internal sealed record LiveCardCapturedSnapshot(
     bool Available,
     string? UnavailableReason)
 {
+    internal LiveCardField<int> Energy { get; init; } = LiveCardField<int>.NotObserved();
+    internal string ModeId { get; init; } = string.Empty;
+    internal string Locale { get; init; } = string.Empty;
+    internal NativeContentManifestWitness? ManifestWitness { get; init; }
+
     internal static LiveCardCapturedSnapshot Unavailable(string reason) =>
         new(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 0, 0,
             Array.Empty<LiveCardCapturedCard>(), false, reason);

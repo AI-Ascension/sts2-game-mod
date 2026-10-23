@@ -15,6 +15,7 @@ mod content_index_ffi;
 mod content_manifest_ffi;
 #[cfg(test)]
 mod content_manifest_semantic_tests;
+mod live_facts_ffi;
 mod runtime;
 
 pub use runtime::{RuntimeCallbacks, RuntimeRequest};
