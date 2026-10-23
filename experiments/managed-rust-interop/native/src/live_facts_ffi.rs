@@ -73,7 +73,11 @@ fn respond(input: &[u8]) -> Result<(i32, Vec<u8>), i32> {
     };
     // An ordinary query with a stale selector must have the same HTTP conflict
     // status as the explicit clear-first stale operation.
-    let status = if response.error.as_ref().is_some_and(|error| error.code == ErrorCode::StaleSnapshot) {
+    let status = if response
+        .error
+        .as_ref()
+        .is_some_and(|error| error.code == ErrorCode::StaleSnapshot)
+    {
         409
     } else {
         status
