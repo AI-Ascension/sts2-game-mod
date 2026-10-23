@@ -2,9 +2,11 @@
 
 use serde::Deserialize;
 use sts2_game_mod::{LiveFixedCardFacts, LiveFixedCardObservation};
-use sts2_protocol::game_facts_reference_v1::{GameFactsReferenceV1Codec, Message};
+use sts2_protocol::game_facts_reference_v1::{ErrorCode, GameFactsReferenceV1Codec, Message};
 
-const MAX_INPUT: u32 = 16 * 1024 * 1024;
+// The canonical source may occupy the full 16 MiB manifest budget; the owned
+// request, observation and JSON envelope need separate headroom.
+const MAX_INPUT: u32 = 17 * 1024 * 1024;
 const MAX_OUTPUT: u32 = 262_144;
 
 #[derive(Deserialize)]
@@ -68,6 +70,13 @@ fn respond(input: &[u8]) -> Result<(i32, Vec<u8>), i32> {
                 .map_err(|_| 400)?
         }
         _ => return Err(400),
+    };
+    // An ordinary query with a stale selector must have the same HTTP conflict
+    // status as the explicit clear-first stale operation.
+    let status = if response.error.as_ref().is_some_and(|error| error.code == ErrorCode::StaleSnapshot) {
+        409
+    } else {
+        status
     };
     GameFactsReferenceV1Codec::encode(&response)
         .map(|bytes| (status, bytes))

@@ -8,7 +8,8 @@ namespace AiAscension.Sts2GameMod.Runtime;
 
 public static partial class ModEntry
 {
-    private const int LiveFactsMaxInputBytes = 16 * 1024 * 1024;
+    // 16 MiB canonical source plus a separately bounded query/observation envelope.
+    private const int LiveFactsMaxInputBytes = 17 * 1024 * 1024;
     private const int LiveFactsMaxOutputBytes = 262_144;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

@@ -82,6 +82,17 @@ public static partial class ModEntry
         stale["query"]!["parent_observation"]!["instance_ref"]!["epoch"] = 2;
         stale["query"]!["parent_observation"]!["snapshot_ref"]!["instance_ref"]!["epoch"] = 2;
         Check(Call(stale).Status == 409, "selected epoch fence");
+        JsonObject staleId = Query();
+        staleId["query"]!["binding"]!["snapshot_ref"]!["snapshot_id"] = "retired";
+        staleId["query"]!["parent_observation"]!["snapshot_ref"]!["snapshot_id"] = "retired";
+        Check(Call(staleId).Status == 409, "selected snapshot-id fence");
+        JsonObject staleGeneration = Query();
+        staleGeneration["query"]!["binding"]!["snapshot_ref"]!["state_generation"] = 5;
+        staleGeneration["query"]!["parent_observation"]!["snapshot_ref"]!["state_generation"] = 5;
+        staleGeneration["query"]!["parent_observation"]!["state_generation"] = 5;
+        Check(Call(staleGeneration).Status == 409, "selected state-generation fence");
+        Check(LiveFactsMaxInputBytes > 16 * 1024 * 1024 + LiveFactsMaxOutputBytes,
+            "native input must fit full source plus request envelope");
         _snapshot = _snapshot with { Energy = LiveCardField<int>.NotObserved() };
         var unavailable = Call(Query());
         Check(unavailable.Status == 200 && !unavailable.Response.Contains("70000"), "missing energy not zero");

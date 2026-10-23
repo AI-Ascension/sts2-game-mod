@@ -22,3 +22,12 @@ and existing source-only managed probes as well; these focused probes do not rep
 These checks do not establish exact-host API compatibility, native parity, consumer adoption or
 parent-issue closure. No game installation, profile, provider or proprietary assembly is needed.
 See [ADR 0084](decisions/0084-owned-live-fixed-card-cost-facts.md) for the boundary decision.
+
+The production facts-query HTTP parser admits at most 262,144 request-body bytes on the exact
+`POST /api/v1/game-information/facts/query` route; unrelated endpoints retain the 16 KiB
+request-body limit. The native facts ABI admits up to 17 MiB of owned serialized input to
+accommodate a fully permitted 16 MiB canonical catalog and a separately bounded query,
+observation and serialization envelope. Its response limit remains 262,144 bytes.
+Ordinary query responses containing `stale_snapshot` return HTTP 409, including retained
+snapshot-ID and generation mismatches; they never silently succeed with HTTP 200.
+The focused Rust parser/ABI and managed bridge probes enforce these limits and refusal statuses.

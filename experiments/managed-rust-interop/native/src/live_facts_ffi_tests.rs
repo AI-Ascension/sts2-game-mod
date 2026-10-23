@@ -160,9 +160,12 @@ fn stale_binding_locale_generation_and_catalog_changes_refuse() -> Result<(), Bo
         *input
             .pointer_mut(pointer)
             .ok_or("missing fixture pointer")? = json!(22);
+        let (status, bytes, _) = call(&serde_json::to_vec(&input)?, MAX_OUTPUT);
+        assert_eq!(status, 409, "{pointer}");
         assert_eq!(
-            serde_json::to_value(response(&input)?)?["error"]["code"],
-            "stale_snapshot"
+            serde_json::to_value(GameFactsReferenceV1Codec::decode(&bytes)?)?["error"]["code"],
+            "stale_snapshot",
+            "{pointer}"
         );
     }
     for (pointer, value) in [
@@ -281,6 +284,14 @@ fn capabilities_declare_single_generation_and_absent_source_never_produces_value
         );
     }
     Ok(())
+}
+
+#[test]
+fn fact_input_bound_has_headroom_for_the_maximum_source_and_query() {
+    assert!(
+        MAX_INPUT as usize > 16 * 1024 * 1024 + MAX_OUTPUT as usize,
+        "composite bridge must fit source plus request and observation"
+    );
 }
 
 #[test]
