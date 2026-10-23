@@ -237,11 +237,8 @@ mod tests {
         let limit = super::MAX_FACTS_QUERY_BODY_BYTES;
         let accepted = request("/api/v1/game-information/facts/query", limit);
         assert_eq!(
-            super::read_request(&mut accepted.as_slice())
-                .expect("facts body at advertised maximum is admitted")
-                .body
-                .len(),
-            limit
+            super::read_request(&mut accepted.as_slice()).map(|request| request.body.len()),
+            Ok(limit)
         );
         let oversized = request("/api/v1/game-information/facts/query", limit + 1);
         assert!(matches!(
