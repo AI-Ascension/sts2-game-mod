@@ -273,10 +273,11 @@ protocol dependency must be justified by a genuinely shared contract and a recor
 
 ## Protocol and data rules
 
-The owner-local HTTP contract remains separate from the copied POC artifact. The runtime adapter owns
-the bounded `runtime-v1` and frozen Runtime-v2 route/ABI mappings and their sanitized errors; MCP
-envelopes and gateway leases remain outside this repository. Broader gameplay routes, semantics,
-ordering, and versioning require a new project-owned profile and fixtures.
+The owner-local HTTP contract remains separate from copied Protocol artifacts.
+Runtime adapters own their bounded route and ABI mappings; MCP envelopes and gateway leases remain
+outside this repository.
+The static game-facts mapper targets accepted game-facts-reference-v1. It checks supplied manifest
+consistency without authenticating source evidence; ADR 0077 records the missing owner inventory.
 
 Host objects never cross the HTTP or native boundary. Convert them to owned, validated values;
 never expose debug strings, panic text, private paths, save contents, or raw host references.

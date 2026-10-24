@@ -115,6 +115,26 @@ impl FactsInputAvailability {
     }
 }
 
+/// Owner-supplied source category for one copied input.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum FactsSourceKind {
+    /// The source reference belongs to GameMod-owned data.
+    GameMod,
+    /// The source reference belongs to a content-manifest record.
+    ContentManifest,
+}
+
+/// Opaque per-input provenance supplied by the caller.
+///
+/// The inventory validates its shape, but this value does not authenticate its origin.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FactsInputSource {
+    /// Owner source category for the reference.
+    pub kind: FactsSourceKind,
+    /// Opaque token copied from an independently trusted owner record.
+    pub reference: String,
+}
+
 /// One input a rule copies: an opaque name, the unit it is stated in, and its availability.
 ///
 /// The unit is carried with the name because a quantity without a unit is a prose tag, not a fact.
@@ -126,6 +146,8 @@ pub struct FactsRuleInput {
     pub unit: String,
     /// Whether this input is required, conditional or explicitly unknown.
     pub availability: FactsInputAvailability,
+    /// Optional caller-supplied owner provenance; presence is not proof of authenticity.
+    pub source: Option<FactsInputSource>,
 }
 
 /// The exact build and mode one inventory was taken from, bound to the content manifest.

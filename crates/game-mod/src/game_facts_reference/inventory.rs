@@ -7,7 +7,8 @@ use super::model::{
     FactsBuildBinding, FactsRepresentation, FactsRuleEntry, FactsUnsupportedCombination,
     GAME_FACTS_REFERENCE_PRODUCER_VERSION,
 };
-use super::validation::validate_inventory;
+use super::validation::{validate_inventory, validate_manifest_binding};
+use crate::ContentManifest;
 
 /// One owner inventory: the build it was taken from, the representation it is carried in, the rules
 /// it supports, and the combinations it declares it cannot represent exactly.
@@ -21,6 +22,7 @@ pub struct FactsInventory {
     representation: FactsRepresentation,
     rules: Vec<FactsRuleEntry>,
     unsupported: Vec<FactsUnsupportedCombination>,
+    captured_inventory_revision: Option<String>,
 }
 
 impl FactsInventory {
@@ -35,6 +37,44 @@ impl FactsInventory {
         rules: Vec<FactsRuleEntry>,
         unsupported: Vec<FactsUnsupportedCombination>,
     ) -> Result<Self, GameFactsError> {
+        Self::validated(build, representation, rules, unsupported, None)
+    }
+
+    /// Binds facts to a supplied manifest value for identity-consistency checks.
+    ///
+    /// This derives build identity and the owner-local cursor from the value and records its
+    /// inventory revision. Since manifest fields are public, this does not authenticate producer
+    /// origin or prove that facts and manifest came from one coherent source read. The caller owns
+    /// that evidence boundary. The mode is supplied separately because ContentManifest has none.
+    pub fn new_for_manifest(
+        manifest: &ContentManifest,
+        mode_id: impl Into<String>,
+        representation: FactsRepresentation,
+        rules: Vec<FactsRuleEntry>,
+        unsupported: Vec<FactsUnsupportedCombination>,
+    ) -> Result<Self, GameFactsError> {
+        validate_manifest_binding(manifest)?;
+        let build = FactsBuildBinding {
+            build_id: manifest.game_build.clone(),
+            mode_id: mode_id.into(),
+            manifest: manifest.cursor_binding(),
+        };
+        Self::validated(
+            build,
+            representation,
+            rules,
+            unsupported,
+            Some(manifest.inventory_revision.clone()),
+        )
+    }
+
+    fn validated(
+        build: FactsBuildBinding,
+        representation: FactsRepresentation,
+        rules: Vec<FactsRuleEntry>,
+        unsupported: Vec<FactsUnsupportedCombination>,
+        captured_inventory_revision: Option<String>,
+    ) -> Result<Self, GameFactsError> {
         validate_inventory(&build, &representation, &rules, &unsupported)?;
         Ok(Self {
             producer_version: GAME_FACTS_REFERENCE_PRODUCER_VERSION.to_owned(),
@@ -42,7 +82,12 @@ impl FactsInventory {
             representation,
             rules,
             unsupported,
+            captured_inventory_revision,
         })
+    }
+
+    pub(super) fn captured_inventory_revision(&self) -> Option<&str> {
+        self.captured_inventory_revision.as_deref()
     }
 
     /// Returns the owner-local producer identity this inventory was built with.

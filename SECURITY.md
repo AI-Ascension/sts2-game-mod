@@ -29,6 +29,15 @@ schemes are refused. This keeps a personal host path out of the request body, th
 headers, and the host's run record. It refines the shared alphabet on the producer side, so the
 pinned schema, its digest, and its goldens are unchanged.
 
+## Static game-facts metadata
+
+The game-facts adapter accepts only bounded ASCII source-reference tokens and never interprets one
+as a filesystem path. It refuses path-like, file-prefixed, control, traversal, and exception text.
+The token grammar is a shape check, not proof that a source exists or that a caller copied it from
+the owner. ContentManifest is publicly constructible and cloneable; manifest and facts equality
+checks establish consistency only. The caller owns authenticity and coherent-snapshot evidence.
+Errors use fixed bounded text and never include caller tokens, paths, or host exceptions.
+
 ## Reporting
 
 Use a private maintainer security channel when one is configured for the hosted repository. Until

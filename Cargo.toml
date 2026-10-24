@@ -24,7 +24,7 @@ serde_json = "=1.0.151"
 getrandom = "=0.4.3"
 jsonschema = { version = "=0.58.1", default-features = false }
 libc = "=0.2.189"
-sts2-protocol = { git = "https://github.com/AI-Ascension/sts2-protocol.git", rev = "24fae515718b58f70db8551c8e93837cbb7b6aa8" }
+sts2-protocol = { git = "https://github.com/AI-Ascension/sts2-protocol.git", rev = "1879e0b00993c9b6d662d1f015ef59d6810d82de" }
 
 [workspace.lints.rust]
 unsafe_code = "deny"
