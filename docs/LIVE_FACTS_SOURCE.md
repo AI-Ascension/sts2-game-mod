@@ -15,9 +15,11 @@ the pinned dependency graph or enabling a different rule/host implementation.
 
 The cross-language probe exercises production binding association, managed ABI, canonical manifest
 producer and facts codec. The capture probe uses original controlled native shapes against actual
-capture/retention source. Rust tests exercise fixed authenticated routes, closed envelopes,
-source-derived input ordering, unavailable values and ABI bounds. Run the full Rust workspace gates
-and existing source-only managed probes as well; these focused probes do not replace them.
+capture/retention source, and checks repeated captures and retained reads preserve controlled
+player/card/profile and RNG seed/draw state. Rust tests exercise fixed authenticated routes, closed
+envelopes, source-derived input ordering, unavailable values and ABI bounds. Run the full Rust
+workspace gates and existing source-only managed probes as well; these focused probes do not replace
+them.
 
 These checks do not establish exact-host API compatibility, native parity, consumer adoption or
 parent-issue closure. No game installation, profile, provider or proprietary assembly is needed.
