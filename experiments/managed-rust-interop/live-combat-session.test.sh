@@ -69,6 +69,8 @@ cat > "$fixture_root/bin/harness" <<'EOF'
 printf '%s\n' "STS2_COMBAT_DEMO=${STS2_COMBAT_DEMO:-}" "STS2_MAX_STEPS=${STS2_MAX_STEPS:-}" \
     "STS2_LIVE_EPISODE=${STS2_LIVE_EPISODE:-}" "STS2_CAMPAIGN_EPISODE=${STS2_CAMPAIGN_EPISODE:-}" \
     > "$FAKE_HARNESS_ENV_FILE"
+printf '%s\n' "STS2_LIVE_EPISODE_SET=${STS2_LIVE_EPISODE+x}" \
+    "STS2_CAMPAIGN_EPISODE_SET=${STS2_CAMPAIGN_EPISODE+x}" >> "$FAKE_HARNESS_ENV_FILE"
 printf '%s\n' '{"stage":"defeat"}'
 EOF
 
@@ -143,6 +145,38 @@ run_case() {
 
 has_arg() { grep -Fx -- "$1" "$2" >/dev/null; }
 missing_arg() { ! has_arg "$1" "$2"; }
+
+# Exercise the full wrapper with both genuinely clean and hostile inherited episode flags.
+# Presence markers distinguish an unset variable from one exported with an empty value.
+for inherited in clean hostile; do
+    for kind in demo campaign; do
+        for provider in ollama astra; do
+            (
+                unset STS2_LIVE_EPISODE STS2_CAMPAIGN_EPISODE
+                if [[ $inherited == hostile ]]; then
+                    export STS2_LIVE_EPISODE=true STS2_CAMPAIGN_EPISODE=true
+                fi
+                label="matrix_${inherited}_${kind}_${provider}"
+                provider_path="$fixture_root/bin/provider"
+                [[ $provider != astra ]] || provider_path="$fixture_root/bin/provider-astra"
+                run_case "$label" --run-kind "$kind" --provider-binary "$provider_path"
+                live_value= live_set= campaign_value= campaign_set=
+                if [[ $provider == astra ]]; then
+                    live_value=true live_set=x
+                elif [[ $kind == campaign ]]; then
+                    campaign_value=true campaign_set=x
+                fi
+                has_arg "STS2_LIVE_EPISODE=$live_value" "$fixture_root/$label.harness"
+                has_arg "STS2_LIVE_EPISODE_SET=$live_set" "$fixture_root/$label.harness"
+                has_arg "STS2_CAMPAIGN_EPISODE=$campaign_value" "$fixture_root/$label.harness"
+                has_arg "STS2_CAMPAIGN_EPISODE_SET=$campaign_set" "$fixture_root/$label.harness"
+                combat_demo=false
+                [[ $kind != demo ]] || combat_demo=true
+                has_arg "STS2_COMBAT_DEMO=$combat_demo" "$fixture_root/$label.harness"
+            )
+        done
+    done
+done
 
 run_case campaign --run-kind campaign --campaign-mode standard --max-runtime-seconds 180
 campaign_args="$fixture_root/campaign.guardian"
