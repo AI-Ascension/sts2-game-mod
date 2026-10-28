@@ -9,12 +9,12 @@ requirements belong here or in a generated release notice derived from the exact
 current policy tool has no third-party Cargo dependency.
 
 The optional mod-loading operator tool uses the locked `serde`/`serde_json` packages (MIT or
-Apache-2.0) and RustCrypto `sha2` 0.10.9 (MIT or Apache-2.0), with their locked transitive
+Apache-2.0) and RustCrypto `sha2` 0.11.0 (MIT or Apache-2.0), with their locked transitive
 dependencies. No dependency implementation is copied into project source. Release notices must
 include the exact locked dependency licenses with the distributed operator binary.
 
-The source-only exact-restore consumer additionally uses `jsonschema` 0.55.0 (MIT),
-`getrandom` 0.3.4 (MIT or Apache-2.0), and `libc` 0.2.189 (MIT or Apache-2.0), with the exact
+The source-only exact-restore consumer additionally uses `jsonschema` 0.60.1 (MIT),
+`getrandom` 0.4.3 (MIT or Apache-2.0), and `libc` 0.2.191 (MIT or Apache-2.0), with the exact
 locked transitive dependency licenses included in any distributed operator binary. The copied
 `exact-restore-v1` artifact is MIT-licensed and retains the protocol owner's checksum inventory.
 
