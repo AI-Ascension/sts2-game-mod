@@ -272,7 +272,10 @@ fn collect_entry_ids(
 ) -> Result<BTreeMap<&str, ShopVisibility>, ShopCatalogError> {
     let mut ids = BTreeMap::new();
     for entry in &input.entries {
-        if ids.insert(entry.entry_id.as_str(), entry.visibility).is_some() {
+        if ids
+            .insert(entry.entry_id.as_str(), entry.visibility)
+            .is_some()
+        {
             return Err(ShopCatalogError::DuplicateEntry {
                 shop_id: input.shop_id.clone(),
                 entry_id: entry.entry_id.clone(),

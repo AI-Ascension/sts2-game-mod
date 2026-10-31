@@ -115,9 +115,16 @@ fn allowed_owner_edges_remain_unavailable_to_public_reads() {
         let catalog = local_catalog(kind, ShopVisibility::OwnerOnly, ShopVisibility::OwnerOnly)
             .expect("owner-to-owner reference");
         let shop = catalog.definition("shop.alpha").expect("shop");
-        let source = shop.entries.get("entry.source").expect("source").reference.clone();
+        let source = shop
+            .entries
+            .get("entry.source")
+            .expect("source")
+            .reference
+            .clone();
         let mut reader = catalog.reader();
-        let public = reader.get(&shop.reference, ShopVisibilityScope::Public).expect("public");
+        let public = reader
+            .get(&shop.reference, ShopVisibilityScope::Public)
+            .expect("public");
         let page = reader
             .list_entries(&ShopEntryListQuery {
                 shop: shop.reference.clone(),
@@ -131,9 +138,14 @@ fn allowed_owner_edges_remain_unavailable_to_public_reads() {
         let public_outputs = format!("{public:?} {page:?} {exact:?}");
         assert!(!public_outputs.contains("target.private"));
         assert!(!public_outputs.contains("restricted-sentinel"));
-        let owner = reader.get_entry(&source, ShopVisibilityScope::Owner).expect("owner");
+        let owner = reader
+            .get_entry(&source, ShopVisibilityScope::Owner)
+            .expect("owner");
         assert_eq!(owner.references[0].id, "target.private");
-        assert_eq!(owner.references[0].label.value(), Some("restricted-sentinel"));
+        assert_eq!(
+            owner.references[0].label.value(),
+            Some("restricted-sentinel")
+        );
     }
 }
 
