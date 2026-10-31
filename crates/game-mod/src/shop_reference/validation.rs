@@ -24,17 +24,10 @@ use super::{
     service::ShopServiceInput,
 };
 
-/// Visibility and identity of one shop definition already collected from the same snapshot.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct ShopTarget {
-    /// Visibility of the referenced shop definition.
-    pub(super) visibility: ShopVisibility,
-}
-
 /// Validates one source-owned shop definition before it enters an immutable catalog.
 pub(super) fn validate_definition(
     input: &ShopDefinitionInput,
-    shop_targets: &BTreeMap<String, ShopTarget>,
+    shop_targets: &BTreeMap<String, ShopVisibility>,
 ) -> Result<(), ShopCatalogError> {
     validate_identity(&input.shop_id, "shop_id")?;
     validate_text_value(&input.label, "shop_label")?;
@@ -65,18 +58,18 @@ pub(super) fn validate_definition(
     scope.validate_references(&input.references, input.visibility)
 }
 
-/// One shop definition's local identity sets and the snapshot-wide visibility targets.
+/// One shop definition's local and snapshot-wide identity-to-visibility indexes.
 struct ShopScope<'a> {
     input: &'a ShopDefinitionInput,
-    entry_ids: BTreeSet<&'a str>,
-    rule_ids: BTreeSet<&'a str>,
-    targets: &'a BTreeMap<String, ShopTarget>,
+    entry_ids: BTreeMap<&'a str, ShopVisibility>,
+    rule_ids: BTreeMap<&'a str, ShopVisibility>,
+    targets: &'a BTreeMap<String, ShopVisibility>,
 }
 
 impl<'a> ShopScope<'a> {
     fn new(
         input: &'a ShopDefinitionInput,
-        targets: &'a BTreeMap<String, ShopTarget>,
+        targets: &'a BTreeMap<String, ShopVisibility>,
     ) -> Result<Self, ShopCatalogError> {
         let entry_ids = collect_entry_ids(input)?;
         let rule_ids = collect_rule_ids(input)?;
@@ -96,6 +89,9 @@ impl<'a> ShopScope<'a> {
         self.validate_kind_agreement(entry)?;
         validate_price(&entry.price, &self.input.shop_id, &entry.entry_id)?;
         validate_sale(&entry.sale, &self.input.shop_id, &entry.entry_id)?;
+        for tier in entry.sale.tiers() {
+            self.validate_references(std::slice::from_ref(&tier.source), entry.visibility)?;
+        }
         validate_stock(&entry.stock)?;
         reject_exposed_value(entry.visibility, &entry.label)?;
         reject_purchase_action(&entry.purchase_action)?;
@@ -150,6 +146,7 @@ impl<'a> ShopScope<'a> {
         }
         for requirement in &restriction.requirements {
             validate_requirement(requirement)?;
+            self.validate_references(&requirement.references, containing)?;
         }
         self.validate_references(&restriction.references, containing)
     }
@@ -168,6 +165,10 @@ impl<'a> ShopScope<'a> {
         }
         for requirement in &service.eligibility {
             validate_requirement(requirement).map_err(|_| invalid())?;
+            self.validate_references(&requirement.references, service.visibility)?;
+        }
+        for limit in &service.limits {
+            self.validate_references(&limit.references, service.visibility)?;
         }
         validate_stock(&service.stock).map_err(|_| invalid())?;
         reject_exposed_value(service.visibility, &service.label).map_err(|_| invalid())?;
@@ -229,26 +230,26 @@ impl<'a> ShopScope<'a> {
             reference_kind,
         };
         match &reference.kind {
-            ShopReferenceKind::Entry => {
-                if self.entry_ids.contains(reference.id.as_str()) {
-                    Ok(())
+            ShopReferenceKind::Entry | ShopReferenceKind::RestockRule => {
+                let targets = if reference.kind == ShopReferenceKind::Entry {
+                    &self.entry_ids
                 } else {
-                    Err(self.dangling(&reference.kind, &reference.id))
+                    &self.rule_ids
+                };
+                let target = targets
+                    .get(reference.id.as_str())
+                    .ok_or_else(|| self.dangling(&reference.kind, &reference.id))?;
+                if visibility_rank(containing) > visibility_rank(*target) {
+                    return Err(leak(reference.kind.clone()));
                 }
-            }
-            ShopReferenceKind::RestockRule => {
-                if self.rule_ids.contains(reference.id.as_str()) {
-                    Ok(())
-                } else {
-                    Err(self.dangling(&reference.kind, &reference.id))
-                }
+                Ok(())
             }
             ShopReferenceKind::Shop if reference.id != self.input.shop_id => {
                 let target = self
                     .targets
                     .get(&reference.id)
                     .ok_or_else(|| self.dangling(&reference.kind, &reference.id))?;
-                if visibility_rank(containing) > visibility_rank(target.visibility) {
+                if visibility_rank(containing) > visibility_rank(*target) {
                     return Err(leak(ShopReferenceKind::Shop));
                 }
                 Ok(())
@@ -266,10 +267,12 @@ impl<'a> ShopScope<'a> {
     }
 }
 
-fn collect_entry_ids(input: &ShopDefinitionInput) -> Result<BTreeSet<&str>, ShopCatalogError> {
-    let mut ids = BTreeSet::new();
+fn collect_entry_ids(
+    input: &ShopDefinitionInput,
+) -> Result<BTreeMap<&str, ShopVisibility>, ShopCatalogError> {
+    let mut ids = BTreeMap::new();
     for entry in &input.entries {
-        if !ids.insert(entry.entry_id.as_str()) {
+        if ids.insert(entry.entry_id.as_str(), entry.visibility).is_some() {
             return Err(ShopCatalogError::DuplicateEntry {
                 shop_id: input.shop_id.clone(),
                 entry_id: entry.entry_id.clone(),
@@ -279,10 +282,12 @@ fn collect_entry_ids(input: &ShopDefinitionInput) -> Result<BTreeSet<&str>, Shop
     Ok(ids)
 }
 
-fn collect_rule_ids(input: &ShopDefinitionInput) -> Result<BTreeSet<&str>, ShopCatalogError> {
-    let mut ids = BTreeSet::new();
+fn collect_rule_ids(
+    input: &ShopDefinitionInput,
+) -> Result<BTreeMap<&str, ShopVisibility>, ShopCatalogError> {
+    let mut ids = BTreeMap::new();
     for rule in &input.restock {
-        if !ids.insert(rule.rule_id.as_str()) {
+        if ids.insert(rule.rule_id.as_str(), rule.visibility).is_some() {
             return Err(ShopCatalogError::InvalidRestock {
                 shop_id: input.shop_id.clone(),
                 rule_id: rule.rule_id.clone(),

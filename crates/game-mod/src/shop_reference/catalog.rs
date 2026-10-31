@@ -14,7 +14,7 @@ use super::{
         SHOP_REFERENCE_PRODUCER_VERSION, ShopCatalogBinding, ShopFamilyCoverage, ShopFamilyState,
         ShopReferenceKind, ShopSemanticReference,
     },
-    validation::{ShopTarget, validate_definition},
+    validation::validate_definition,
 };
 
 /// Bounded source snapshot used to construct one immutable shop catalog.
@@ -151,14 +151,7 @@ fn collect_records(
 ) -> Result<BTreeMap<String, ShopDefinitionInput>, ShopCatalogError> {
     let targets = inputs
         .iter()
-        .map(|input| {
-            (
-                input.shop_id.clone(),
-                ShopTarget {
-                    visibility: input.visibility,
-                },
-            )
-        })
+        .map(|input| (input.shop_id.clone(), input.visibility))
         .collect::<BTreeMap<_, _>>();
     let mut records = BTreeMap::new();
     for input in inputs {
@@ -202,6 +195,9 @@ fn validate_manifest_references(
     validate_reference_list(&input.references, manifest)?;
     for entry in &input.entries {
         validate_reference_list(std::slice::from_ref(&entry.definition), manifest)?;
+        for tier in entry.sale.tiers() {
+            validate_reference_list(std::slice::from_ref(&tier.source), manifest)?;
+        }
         validate_reference_list(&entry.references, manifest)?;
         for restriction in &entry.restrictions {
             for requirement in &restriction.requirements {
