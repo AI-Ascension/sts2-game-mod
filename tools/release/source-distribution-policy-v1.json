@@ -791,6 +791,7 @@
     "crates/game-mod/tests/rest_site_reference_readonly.rs",
     "crates/game-mod/tests/rest_site_reference_validation.rs",
     "crates/game-mod/tests/rest_site_reference_validation_refs.rs",
+    "crates/game-mod/tests/rest_site_reference_validation_visibility.rs",
     "crates/game-mod/tests/retained_map.rs",
     "crates/game-mod/tests/retained_map_capability.rs",
     "crates/game-mod/tests/retained_map_edges.rs",

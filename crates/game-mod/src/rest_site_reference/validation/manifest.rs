@@ -23,6 +23,7 @@ pub(in crate::rest_site_reference) fn validate_manifest_references(
     }
     for option in &input.options {
         ensure_manifest_reference(manifest, &option.definition)?;
+        ensure_all(manifest, &option.availability.references)?;
         ensure_all(manifest, &option.references)?;
         for requirement in &option.requirements {
             ensure_all(manifest, &requirement.references)?;
