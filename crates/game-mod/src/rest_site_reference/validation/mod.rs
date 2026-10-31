@@ -57,11 +57,16 @@ pub(super) fn validate_definition(
     Ok(())
 }
 
-fn collect_option_ids(input: &RestSiteDefinitionInput) -> Result<BTreeSet<String>, RestSiteError> {
-    let mut ids = BTreeSet::new();
+fn collect_option_ids(
+    input: &RestSiteDefinitionInput,
+) -> Result<BTreeMap<String, RestVisibility>, RestSiteError> {
+    let mut ids = BTreeMap::new();
     for option in &input.options {
         validate_identity(&option.option_id, "option_id")?;
-        if !ids.insert(option.option_id.clone()) {
+        if ids
+            .insert(option.option_id.clone(), option.visibility)
+            .is_some()
+        {
             return Err(RestSiteError::DuplicateOption {
                 site_id: input.site_id.clone(),
                 option_id: option.option_id.clone(),
@@ -91,11 +96,11 @@ fn collect_coverage_ids(
 /// with neither a typed record nor a coverage record rejects the whole snapshot.
 fn ensure_observed_options_accounted(
     input: &RestSiteDefinitionInput,
-    option_ids: &BTreeSet<String>,
+    option_ids: &BTreeMap<String, RestVisibility>,
     covered: &BTreeSet<String>,
 ) -> Result<(), RestSiteError> {
     for observed in &input.observed_options {
-        if !option_ids.contains(observed) && !covered.contains(observed) {
+        if !option_ids.contains_key(observed) && !covered.contains(observed) {
             return Err(RestSiteError::UncoveredOption {
                 site_id: input.site_id.clone(),
                 option_id: observed.clone(),
@@ -123,6 +128,8 @@ fn validate_option(
     if let Some(action_kind) = option.action_kind.value() {
         validate_text(action_kind, "action_kind")?;
     }
+    context.check(&option.definition, option.visibility)?;
+    context.check_all(&option.availability.references, option.visibility)?;
     context.check_all(&option.references, option.visibility)?;
     validate_requirements(option, context)?;
     validate_costs(option, context)?;

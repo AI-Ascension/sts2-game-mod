@@ -9,6 +9,11 @@ Completed entries that no longer fit this file's preferred size budget are prese
 
 ## Unreleased
 
+- Corrected source-only rest-site reference validation to retain local option visibility, check
+  reserved rest-site content aliases, and validate option definition and availability references.
+  References to less-visible scoped targets are refused without exposing their identity in the
+  visibility error. Native rest behavior and exact-host acceptance remain unverified. Refs #102.
+
 - Added Core v2 static facts catalog admission (#278, ADR 0083) and owned fixed-cost facts/stale-capture refusal (#280, [ADR 0084](docs/decisions/0084-owned-live-fixed-card-cost-facts.md)).
   Source tests cover signatures and retained capture; native parity and downstream adoption remain unverified. Parent #207 and Core #13 remain open.
 

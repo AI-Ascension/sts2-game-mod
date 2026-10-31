@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use super::super::{
     error::RestSiteError,
     field::RestField,
     identity::{validate_identity, validate_text_value},
     model::{
-        REST_MAX_REFERENCES, RestReferenceKind, RestSemanticReference, RestVisibility,
-        visibility_rank,
+        REST_MAX_REFERENCES, REST_REFERENCE_ENTITY_KIND, RestReferenceKind, RestSemanticReference,
+        RestVisibility, visibility_rank,
     },
 };
 use super::RestTarget;
@@ -17,7 +17,7 @@ use super::RestTarget;
 pub(super) struct RefContext<'a> {
     pub(super) site_id: &'a str,
     sites: &'a BTreeMap<String, RestTarget>,
-    option_ids: &'a BTreeSet<String>,
+    option_ids: &'a BTreeMap<String, RestVisibility>,
 }
 
 impl RefContext<'_> {
@@ -25,7 +25,7 @@ impl RefContext<'_> {
     pub(super) fn new<'a>(
         site_id: &'a str,
         sites: &'a BTreeMap<String, RestTarget>,
-        option_ids: &'a BTreeSet<String>,
+        option_ids: &'a BTreeMap<String, RestVisibility>,
     ) -> RefContext<'a> {
         RefContext {
             site_id,
@@ -47,10 +47,12 @@ impl RefContext<'_> {
                 .sites
                 .get(&reference.id)
                 .map(|target| target.visibility),
-            RestReferenceKind::Option => self
-                .option_ids
-                .contains(&reference.id)
-                .then_some(RestVisibility::Visible),
+            RestReferenceKind::Option => self.option_ids.get(&reference.id).copied(),
+            RestReferenceKind::Content { entity_kind }
+                if entity_kind == REST_REFERENCE_ENTITY_KIND =>
+            {
+                self.sites.get(&reference.id).map(|target| target.visibility)
+            }
             RestReferenceKind::Effect
             | RestReferenceKind::Card
             | RestReferenceKind::Relic
