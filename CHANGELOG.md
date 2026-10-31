@@ -1,12 +1,12 @@
 # Changelog
 
-All notable changes to this target are recorded here. The repository has no released product
-behavior; the dated runtime records below remain scoped to their named STS2 v0.107.1 fixtures and
-do not establish release support.
+All notable changes to this target are recorded here. The repository has no released product behavior; the dated runtime records below remain scoped to their named STS2 v0.107.1 fixtures and do not establish release support.
 
 Completed entries that no longer fit this file's preferred size budget are preserved verbatim in [`docs/CHANGELOG-ARCHIVE.md`](docs/CHANGELOG-ARCHIVE.md).
 
 ## Unreleased
+
+- Fixed source-only shop local-target visibility and nested restriction, service, and discount-tier reference checks, including discount-source manifest membership; native and transport acceptance remain unverified. Refs #101.
 
 - Fixed source-only rest reference visibility for local options, rest-site content aliases, and option definition/availability references, including availability manifest checks; native acceptance remains unverified. Refs #102.
 

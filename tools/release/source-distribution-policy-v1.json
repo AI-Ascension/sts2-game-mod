@@ -859,6 +859,7 @@
     "crates/game-mod/tests/shop_reference.rs",
     "crates/game-mod/tests/shop_reference_projection.rs",
     "crates/game-mod/tests/shop_reference_readonly.rs",
+    "crates/game-mod/tests/shop_reference_scope.rs",
     "crates/game-mod/tests/shop_reference_stock.rs",
     "crates/game-mod/tests/shop_reference_validation.rs",
     "crates/game-mod/tests/support/act_reference.rs",
