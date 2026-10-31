@@ -105,8 +105,10 @@ fn all_site_carriers_include_reserved_content_aliases() {
         for carrier in CARRIERS {
             let mut site = site_with_options(vec![option("option.owner", RestOptionKind::Heal)]);
             attach(&mut site, carrier, reference(kind.clone(), "rest.secret"));
+            let mut hidden = support::gamma();
+            hidden.site_id = "rest.secret".to_owned();
             assert_eq!(
-                produce_sites(vec![site, support::hidden_definition("rest.secret", 3)]),
+                produce_sites(vec![site, hidden]),
                 Err(RestSiteError::HiddenReferenceLeak {
                     site_id: "rest.alpha".to_owned(),
                     reference_kind: kind.clone(),
@@ -122,7 +124,8 @@ fn reserved_alias_requires_a_same_snapshot_site() {
         entity_kind: "rest-site".to_owned(),
     };
     let mut site = definition("rest.alpha", 3);
-    site.references.push(reference(kind.clone(), "rest.missing"));
+    site.references
+        .push(reference(kind.clone(), "rest.missing"));
     let manifest = manifest(&["rest.alpha", "rest.missing"]);
     let mut input = snapshot(&manifest, vec![site]);
     input.family.definition_count = 2;

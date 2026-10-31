@@ -51,7 +51,9 @@ impl RefContext<'_> {
             RestReferenceKind::Content { entity_kind }
                 if entity_kind == REST_REFERENCE_ENTITY_KIND =>
             {
-                self.sites.get(&reference.id).map(|target| target.visibility)
+                self.sites
+                    .get(&reference.id)
+                    .map(|target| target.visibility)
             }
             RestReferenceKind::Effect
             | RestReferenceKind::Card
