@@ -52,7 +52,11 @@ namespace MegaCrit.Sts2.Core.Entities.Players
 }
 namespace MegaCrit.Sts2.Core.Runs
 {
-    internal sealed class Rng { public string StringSeed { get; set; } = "seed"; }
+    internal sealed class Rng
+    {
+        public string StringSeed { get; set; } = "seed";
+        public ulong DrawCount { get; set; }
+    }
     internal sealed class RunState
     {
         public string GameMode { get; set; } = "standard";
