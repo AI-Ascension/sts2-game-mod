@@ -35,6 +35,9 @@ namespace AiAscension.Sts2GameMod.Runtime
                     "current run changed", "current save mutation is included");
                 PersistentMutationChangesDigest(root, "profiles/shader_cache/owned.save",
                     "nested persistent file changed", "nested unknown file is included");
+                FailedCaptureInvalidatesPreviousBaseline(root);
+                LinkedFileIsNotProfileEvidence(root);
+                LinkedDirectoryIsNotProfileEvidence(root);
                 Console.WriteLine("seeded-run profile baseline inventory checks passed");
             }
             finally
@@ -83,6 +86,92 @@ namespace AiAscension.Sts2GameMod.Runtime
             Check(!string.Equals(digest, changedDigest, StringComparison.Ordinal),
                 message);
             Check(!Matches(digest), message);
+        }
+
+        private static void FailedCaptureInvalidatesPreviousBaseline(string root)
+        {
+            string caseRoot = NewCase(root, "missing-root");
+            Write(caseRoot, "settings.save", "settings");
+            string digest = SeededRunProfileBaseline.CaptureInitial();
+            Godot.OS.UserDataDir = Path.Combine(root, "missing-after-good-capture");
+            CheckRejectedAndCleared(digest, "missing root refuses a stale profile digest");
+        }
+
+        private static void LinkedFileIsNotProfileEvidence(string root)
+        {
+            string caseRoot = NewCase(root, "linked-file");
+            Write(caseRoot, "settings.save", "settings");
+            string digest = SeededRunProfileBaseline.CaptureInitial();
+            string outside = Path.Combine(root, "outside-profile-save.txt");
+            File.WriteAllText(outside, "unrelated player data");
+            if (!TryCreateLink(() =>
+                File.CreateSymbolicLink(Path.Combine(caseRoot, "foreign.save"), outside)))
+            {
+                return;
+            }
+
+            CheckRejectedAndCleared(digest, "linked file refuses unrelated player data");
+            Check(File.ReadAllText(outside) == "unrelated player data",
+                "linked-file rejection preserves unrelated data");
+        }
+
+        private static void LinkedDirectoryIsNotProfileEvidence(string root)
+        {
+            string caseRoot = NewCase(root, "linked-directory");
+            Write(caseRoot, "settings.save", "settings");
+            string digest = SeededRunProfileBaseline.CaptureInitial();
+            string outside = Path.Combine(root, "outside-profile-directory");
+            Write(outside, "save.dat", "unrelated player data");
+            if (!TryCreateLink(() =>
+                Directory.CreateSymbolicLink(Path.Combine(caseRoot, "foreign"), outside)))
+            {
+                return;
+            }
+
+            CheckRejectedAndCleared(digest, "linked directory refuses unrelated player data");
+            Check(File.ReadAllText(Path.Combine(outside, "save.dat")) == "unrelated player data",
+                "linked-directory rejection preserves unrelated data");
+        }
+
+        private static bool TryCreateLink(Action create)
+        {
+            try
+            {
+                create();
+                return true;
+            }
+            catch (UnauthorizedAccessException) when (OperatingSystem.IsWindows())
+            {
+                Console.WriteLine("SKIP: Windows runner cannot create test-only symbolic links");
+                return false;
+            }
+            catch (IOException) when (OperatingSystem.IsWindows())
+            {
+                Console.WriteLine("SKIP: Windows runner cannot create test-only symbolic links");
+                return false;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                Console.WriteLine("SKIP: symbolic links unsupported on this test host");
+                return false;
+            }
+        }
+
+        private static void CheckRejectedAndCleared(string digest, string label)
+        {
+            bool refused = false;
+            try
+            {
+                SeededRunProfileBaseline.CaptureInitial();
+            }
+            catch (InvalidOperationException error)
+                when (error.Message.StartsWith("isolated user directory", StringComparison.Ordinal))
+            {
+                refused = true;
+            }
+
+            Check(refused, label);
+            Check(!Matches(digest), label + " clears previously captured evidence");
         }
 
         private static bool Matches(string digest)
