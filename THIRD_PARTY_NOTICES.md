@@ -13,7 +13,7 @@ Apache-2.0) and RustCrypto `sha2` 0.11.0 (MIT or Apache-2.0), with their locked 
 dependencies. No dependency implementation is copied into project source. Release notices must
 include the exact locked dependency licenses with the distributed operator binary.
 
-The source-only exact-restore consumer additionally uses `jsonschema` 0.60.1 (MIT),
+The source-only exact-restore consumer additionally uses `jsonschema` 0.60.2 (MIT),
 `getrandom` 0.4.3 (MIT or Apache-2.0), and `libc` 0.2.191 (MIT or Apache-2.0), with the exact
 locked transitive dependency licenses included in any distributed operator binary. The copied
 `exact-restore-v1` artifact is MIT-licensed and retains the protocol owner's checksum inventory.
