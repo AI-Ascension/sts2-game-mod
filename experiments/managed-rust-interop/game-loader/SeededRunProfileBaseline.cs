@@ -21,23 +21,56 @@ internal static class SeededRunProfileBaseline
 
     internal static string CaptureInitial()
     {
+        // A failed capture must not leave a previous profile's digest admissible.
+        _digest = null;
         string root = Path.GetFullPath(OS.GetUserDataDir());
-        if (!Directory.Exists(root))
+        var rootDirectory = new DirectoryInfo(root);
+        if (!rootDirectory.Exists || IsLink(rootDirectory.Attributes))
         {
             throw new InvalidOperationException("isolated user directory is unavailable");
         }
 
         var inventory = new SortedDictionary<string, string>(StringComparer.Ordinal);
-        foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        var pending = new Stack<DirectoryInfo>();
+        pending.Push(rootDirectory);
+        while (pending.Count > 0)
         {
-            string relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-            if (IsBootDerivedPath(relative))
+            DirectoryInfo directory = pending.Pop();
+            if (IsLink(directory.Attributes))
             {
-                continue;
+                throw new InvalidOperationException("isolated user directory contains a linked profile entry");
             }
 
-            inventory[relative] = Convert.ToHexString(
-                SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+            foreach (DirectoryInfo child in directory.EnumerateDirectories())
+            {
+                string relative = Path.GetRelativePath(root, child.FullName).Replace('\\', '/');
+                if (IsBootDerivedPath(relative))
+                {
+                    continue;
+                }
+
+                if (IsLink(child.Attributes))
+                {
+                    throw new InvalidOperationException("isolated user directory contains a linked profile entry");
+                }
+                pending.Push(child);
+            }
+
+            foreach (FileInfo file in directory.EnumerateFiles())
+            {
+                string relative = Path.GetRelativePath(root, file.FullName).Replace('\\', '/');
+                if (IsBootDerivedPath(relative))
+                {
+                    continue;
+                }
+
+                if (IsLink(file.Attributes))
+                {
+                    throw new InvalidOperationException("isolated user directory contains a linked profile entry");
+                }
+                inventory[relative] = Convert.ToHexString(
+                    SHA256.HashData(File.ReadAllBytes(file.FullName))).ToLowerInvariant();
+            }
         }
 
         if (inventory.Count == 0)
@@ -49,6 +82,9 @@ internal static class SeededRunProfileBaseline
             SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(inventory))).ToLowerInvariant();
         return _digest;
     }
+
+    private static bool IsLink(FileAttributes attributes) =>
+        (attributes & FileAttributes.ReparsePoint) != 0;
 
     private static bool IsBootDerivedPath(string relative)
     {
