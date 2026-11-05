@@ -18,11 +18,13 @@ namespace AiAscension.Sts2GameMod.Runtime;
 internal static class SeededRunProfileBaseline
 {
     private static string? _digest;
+    private static string? _originalRoot;
+    private static SortedDictionary<string, string>? _originalFiles;
 
     internal static string CaptureInitial()
     {
         // A failed capture must not leave a previous profile's digest admissible.
-        _digest = null;
+        ClearCaptured();
         string root = Path.GetFullPath(OS.GetUserDataDir());
         var rootDirectory = new DirectoryInfo(root);
         if (!rootDirectory.Exists || IsLink(rootDirectory.Attributes))
@@ -78,9 +80,61 @@ internal static class SeededRunProfileBaseline
             throw new InvalidOperationException("isolated user directory has no profile files");
         }
 
-        _digest = Convert.ToHexString(
+        string digest = Convert.ToHexString(
             SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(inventory))).ToLowerInvariant();
-        return _digest;
+        _originalRoot = root;
+        _originalFiles = inventory;
+        _digest = digest;
+        return digest;
+    }
+
+    private static void ClearCaptured()
+    {
+        _digest = null;
+        _originalRoot = null;
+        _originalFiles = null;
+    }
+
+    // Only files present before the mock save backend was installed are pinned.
+    // New overlay files are not part of the original profile's identity.
+    // Source-only drift detection does NOT establish an atomic no-follow root witness.
+    private static bool OriginalFilesUnchanged()
+    {
+        if (_originalRoot is null || _originalFiles is null) return false;
+        try
+        {
+            string root = Path.GetFullPath(OS.GetUserDataDir());
+            StringComparison comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            if (!string.Equals(root, _originalRoot, comparison)
+                || !Directory.Exists(root)
+                || IsLink(new DirectoryInfo(root).Attributes)) return false;
+
+            foreach (KeyValuePair<string, string> entry in _originalFiles)
+            {
+                string[] components = entry.Key.Split('/');
+                string directory = root;
+                for (int i = 0; i < components.Length - 1; i++)
+                {
+                    directory = Path.Combine(directory, components[i]);
+                    var parent = new DirectoryInfo(directory);
+                    if (!parent.Exists || IsLink(parent.Attributes)) return false;
+                }
+
+                string path = Path.Combine(directory, components[^1]);
+                var file = new FileInfo(path);
+                if (!file.Exists || IsLink(file.Attributes)) return false;
+                string current = Convert.ToHexString(
+                    SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+                if (!string.Equals(current, entry.Value, StringComparison.Ordinal))
+                    return false;
+            }
+
+            return true;
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+        catch (ArgumentException) { return false; }
     }
 
     private static bool IsLink(FileAttributes attributes) =>
@@ -118,6 +172,13 @@ internal static class SeededRunProfileBaseline
         if (!string.Equals(baseline.Digest, _digest, StringComparison.Ordinal))
         {
             error = "profile_baseline_digest_mismatch";
+            return false;
+        }
+
+        if (!OriginalFilesUnchanged())
+        {
+            ClearCaptured();
+            error = "profile_baseline_original_changed";
             return false;
         }
 
