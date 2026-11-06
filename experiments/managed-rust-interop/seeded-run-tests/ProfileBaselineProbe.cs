@@ -40,8 +40,8 @@ namespace AiAscension.Sts2GameMod.Runtime
                 FailedCaptureInvalidatesPreviousBaseline(root);
                 LinkedFileIsNotProfileEvidence(root);
                 LinkedDirectoryIsNotProfileEvidence(root);
-                LinkedFileAddedAfterCaptureIsRefused(root);
-                LinkedDirectoryAddedAfterCaptureIsRefused(root);
+                LateLinkedEntryAddedAfterCaptureIsRefused(root, directory: false);
+                LateLinkedEntryAddedAfterCaptureIsRefused(root, directory: true);
                 Console.WriteLine("seeded-run profile baseline inventory checks passed");
             }
             finally
@@ -159,42 +159,26 @@ namespace AiAscension.Sts2GameMod.Runtime
                 "linked-directory rejection preserves unrelated data");
         }
 
-        private static void LinkedFileAddedAfterCaptureIsRefused(string root)
+        private static void LateLinkedEntryAddedAfterCaptureIsRefused(string root, bool directory)
         {
-            string caseRoot = NewCase(root, "late-linked-file");
+            string suffix = directory ? "directory" : "file";
+            string caseRoot = NewCase(root, "late-linked-" + suffix);
             Write(caseRoot, "settings.save", "original settings");
             string digest = SeededRunProfileBaseline.CaptureInitial();
-            string outside = Path.Combine(root, "late-outside-save.txt");
-            File.WriteAllText(outside, "unrelated player data");
+            string outside = Path.Combine(root, "late-outside-" + suffix);
+            if (directory) Write(outside, "save.dat", "unrelated player data");
+            else File.WriteAllText(outside, "unrelated player data");
             if (!TryCreateLink(() =>
-                File.CreateSymbolicLink(Path.Combine(caseRoot, "foreign.save"), outside)))
             {
-                return;
-            }
+                if (directory) Directory.CreateSymbolicLink(Path.Combine(caseRoot, "foreign"), outside);
+                else File.CreateSymbolicLink(Path.Combine(caseRoot, "foreign.save"), outside);
+            })) return;
 
-            Check(!Matches(digest), "linked file added after capture refuses admission");
-            Check(!Matches(digest), "late linked-file rejection clears cached evidence");
-            Check(File.ReadAllText(outside) == "unrelated player data",
-                "late linked-file rejection preserves unrelated data");
-        }
-
-        private static void LinkedDirectoryAddedAfterCaptureIsRefused(string root)
-        {
-            string caseRoot = NewCase(root, "late-linked-directory");
-            Write(caseRoot, "settings.save", "original settings");
-            string digest = SeededRunProfileBaseline.CaptureInitial();
-            string outside = Path.Combine(root, "late-outside-directory");
-            Write(outside, "save.dat", "unrelated player data");
-            if (!TryCreateLink(() =>
-                Directory.CreateSymbolicLink(Path.Combine(caseRoot, "foreign"), outside)))
-            {
-                return;
-            }
-
-            Check(!Matches(digest), "linked directory added after capture refuses admission");
-            Check(!Matches(digest), "late linked-directory rejection clears cached evidence");
-            Check(File.ReadAllText(Path.Combine(outside, "save.dat")) == "unrelated player data",
-                "late linked-directory rejection preserves unrelated data");
+            Check(!Matches(digest), "late linked " + suffix + " refuses admission");
+            Check(!Matches(digest), "late linked " + suffix + " clears cached evidence");
+            string outsideFile = directory ? Path.Combine(outside, "save.dat") : outside;
+            Check(File.ReadAllText(outsideFile) == "unrelated player data",
+                "late linked " + suffix + " preserves unrelated data");
         }
 
         private static bool TryCreateLink(Action create)
