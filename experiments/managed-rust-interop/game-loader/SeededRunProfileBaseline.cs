@@ -110,6 +110,10 @@ internal static class SeededRunProfileBaseline
                 || !Directory.Exists(root)
                 || IsLink(new DirectoryInfo(root).Attributes)) return false;
 
+            // New overlay files are allowed, but linked escapes are never evidence.
+            // This metadata scan is NOT an atomic native no-follow path witness.
+            if (!NoLateLinks(root)) return false;
+
             foreach (KeyValuePair<string, string> entry in _originalFiles)
             {
                 string[] components = entry.Key.Split('/');
@@ -135,6 +139,30 @@ internal static class SeededRunProfileBaseline
         catch (IOException) { return false; }
         catch (UnauthorizedAccessException) { return false; }
         catch (ArgumentException) { return false; }
+    }
+
+    private static bool NoLateLinks(string root)
+    {
+        var pending = new Stack<DirectoryInfo>();
+        pending.Push(new DirectoryInfo(root));
+        while (pending.Count > 0)
+        {
+            DirectoryInfo directory = pending.Pop();
+            if (IsLink(directory.Attributes)) return false;
+            foreach (DirectoryInfo child in directory.EnumerateDirectories())
+            {
+                string relative = Path.GetRelativePath(root, child.FullName).Replace('\\', '/');
+                if (IsBootDerivedPath(relative)) continue;
+                if (IsLink(child.Attributes)) return false;
+                pending.Push(child);
+            }
+            foreach (FileInfo file in directory.EnumerateFiles())
+            {
+                string relative = Path.GetRelativePath(root, file.FullName).Replace('\\', '/');
+                if (!IsBootDerivedPath(relative) && IsLink(file.Attributes)) return false;
+            }
+        }
+        return true;
     }
 
     private static bool IsLink(FileAttributes attributes) =>
