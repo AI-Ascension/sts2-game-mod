@@ -1860,7 +1860,8 @@
     "experiments/managed-rust-interop/game-loader/RuntimeV3GameplayFixtures.cs",
     "experiments/managed-rust-interop/hand-host-probe/HandChoiceProbe.cs",
     "experiments/managed-rust-interop/terminal-host-probe/TerminalProbe.cs",
-    "experiments/managed-rust-interop/video-host-probe/VideoMenuProbe.cs"
+    "experiments/managed-rust-interop/video-host-probe/VideoMenuProbe.cs",
+    "paseo.json"
   ],
   "required_paths": [
     ".cargo/config.toml",
