@@ -16,6 +16,7 @@ internal static partial class Program
     private static void Main()
     {
         RawCosts();
+        ReadsPreserveHostStateAndRng();
         Freshness();
         Failures();
         DeferredReads();
@@ -96,6 +97,40 @@ internal static partial class Program
         f.Player.PlayerCombatState = null;
         Check(Read(f.Reader).Energy.Status == LiveCardFieldStatus.NotObserved,
             "absent energy not zero");
+    }
+
+    private static void ReadsPreserveHostStateAndRng()
+    {
+        var f = Setup();
+        var run = RunManager.Instance.State!;
+        var combat = f.Player.PlayerCombatState!;
+        var card = f.Card;
+        var progress = SaveManager.Instance.Progress;
+        combat.Energy = 7;
+        card.EnergyCost.Value = 2;
+        run.Rng.StringSeed = "unchanged-seed";
+        run.Rng.DrawCount = 11;
+        SaveManager.Instance.CurrentProfileId = 23;
+        ulong generation = LiveCombatSource.Generation;
+
+        for (int index = 0; index < 2; index++)
+        {
+            LiveCardCapturedSnapshot snapshot = Read(f.Reader);
+            Check(snapshot.Available && snapshot.Energy.Value == 7
+                && snapshot.Cards[0].ResolvedCost.Value == 2, "owned raw inputs");
+            Check(Retained(f.Reader, snapshot) == snapshot, "retained read stays current");
+            Check(ReferenceEquals(RunManager.Instance.State, run)
+                && ReferenceEquals(f.Player.PlayerCombatState, combat)
+                && ReferenceEquals(combat.Hand.Cards[0], card)
+                && ReferenceEquals(SaveManager.Instance.Progress, progress)
+                && SaveManager.Instance.CurrentProfileId == 23,
+                "capture preserves host state and profile");
+            Check(run.Rng.StringSeed == "unchanged-seed" && run.Rng.DrawCount == 11,
+                "capture preserves RNG state");
+            Check(combat.Energy == 7 && card.EnergyCost.Value == 2
+                && LiveCombatSource.Generation == generation,
+                "capture preserves observed values and generation");
+        }
     }
 
     private static void Freshness()
