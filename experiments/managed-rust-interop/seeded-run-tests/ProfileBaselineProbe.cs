@@ -40,6 +40,8 @@ namespace AiAscension.Sts2GameMod.Runtime
                 FailedCaptureInvalidatesPreviousBaseline(root);
                 LinkedFileIsNotProfileEvidence(root);
                 LinkedDirectoryIsNotProfileEvidence(root);
+                LinkedAncestorIsNotProfileEvidence(root);
+                ReplacedAncestorWithIdenticalLinkedTreeIsRefused(root);
                 BootDerivedLinkMatrix(root);
                 LateLinkedEntryAddedAfterCaptureIsRefused(root, directory: false);
                 LateLinkedEntryAddedAfterCaptureIsRefused(root, directory: true);
@@ -189,6 +191,59 @@ namespace AiAscension.Sts2GameMod.Runtime
             string outsideFile = directory ? Path.Combine(outside, "save.dat") : outside;
             Check(File.ReadAllText(outsideFile) == "unrelated player data",
                 "late linked " + suffix + " preserves unrelated data");
+        }
+
+        private static void LinkedAncestorIsNotProfileEvidence(string root)
+        {
+            string realParent = Path.Combine(root, "real-profile-ancestor");
+            string originalProfile = Path.Combine(realParent, "profile");
+            Write(originalProfile, "settings.save", "original profile");
+            Godot.OS.UserDataDir = originalProfile;
+            string digest = SeededRunProfileBaseline.CaptureInitial();
+            string alias = Path.Combine(root, "linked-profile-ancestor");
+            if (!TryCreateLink(() => Directory.CreateSymbolicLink(alias, realParent))) return;
+            try
+            {
+                Godot.OS.UserDataDir = Path.Combine(alias, "profile");
+                CheckRejectedAndCleared(digest,
+                    "symlinked ancestor refuses an otherwise unchanged original profile");
+                Check(File.ReadAllText(Path.Combine(originalProfile, "settings.save"))
+                    == "original profile", "ancestor refusal preserves original profile bytes");
+            }
+            finally
+            {
+                Directory.Delete(alias);
+            }
+        }
+
+        private static void ReplacedAncestorWithIdenticalLinkedTreeIsRefused(string root)
+        {
+            string ancestor = Path.Combine(root, "late-profile-ancestor");
+            string profile = Path.Combine(ancestor, "profile");
+            Write(profile, "settings.save", "original profile");
+            Godot.OS.UserDataDir = profile;
+            string digest = SeededRunProfileBaseline.CaptureInitial();
+            string moved = ancestor + "-original";
+            Directory.Move(ancestor, moved);
+            if (!TryCreateLink(() => Directory.CreateSymbolicLink(ancestor, moved)))
+            {
+                Directory.Move(moved, ancestor);
+                return;
+            }
+            try
+            {
+                // Original bytes and lexical profile path are unchanged. The parent
+                // became a link after capture; that must invalidate admission.
+                Check(!Matches(digest), "late symlinked ancestor refuses admission");
+                Check(!Matches(digest), "late ancestor refusal clears prior evidence");
+                Check(File.ReadAllText(Path.Combine(moved, "profile", "settings.save"))
+                    == "original profile", "late ancestor refusal preserves original bytes");
+            }
+            finally
+            {
+                Directory.Delete(ancestor);
+                Directory.Move(moved, ancestor);
+            }
         }
 
         private static bool TryCreateLink(Action create)

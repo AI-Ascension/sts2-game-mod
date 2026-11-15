@@ -28,7 +28,7 @@ internal static class SeededRunProfileBaseline
         ClearCaptured();
         string root = Path.GetFullPath(OS.GetUserDataDir());
         var rootDirectory = new DirectoryInfo(root);
-        if (!rootDirectory.Exists || IsLink(rootDirectory.Attributes))
+        if (HasLinkedOrMissingAncestor(rootDirectory))
         {
             throw new InvalidOperationException("isolated user directory is unavailable");
         }
@@ -103,6 +103,18 @@ internal static class SeededRunProfileBaseline
         _originalDirectories = null;
     }
 
+    // Lexical GetFullPath does not resolve linked ancestors. An otherwise ordinary
+    // root below a symlinked parent must never be accepted as isolated profile evidence.
+    // This is a metadata guard, not an atomic no-follow native root attestation.
+    private static bool HasLinkedOrMissingAncestor(DirectoryInfo root)
+    {
+        for (DirectoryInfo? current = root; current is not null; current = current.Parent)
+        {
+            if (!current.Exists || IsLink(current.Attributes)) return true;
+        }
+        return false;
+    }
+
     // Only files present before the mock save backend was installed are pinned.
     // New overlay files are not part of the original profile's identity.
     // Source-only drift detection does NOT establish an atomic no-follow root witness.
@@ -116,8 +128,7 @@ internal static class SeededRunProfileBaseline
             StringComparison comparison = OperatingSystem.IsWindows()
                 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             if (!string.Equals(root, _originalRoot, comparison)
-                || !Directory.Exists(root)
-                || IsLink(new DirectoryInfo(root).Attributes)) return false;
+                || HasLinkedOrMissingAncestor(new DirectoryInfo(root))) return false;
 
             // New overlay files are allowed, but linked escapes are never evidence.
             // This metadata scan is NOT an atomic native no-follow path witness.
