@@ -20,6 +20,7 @@ internal static class SeededRunProfileBaseline
     private static string? _digest;
     private static string? _originalRoot;
     private static SortedDictionary<string, string>? _originalFiles;
+    private static SortedSet<string>? _originalDirectories;
 
     internal static string CaptureInitial()
     {
@@ -33,6 +34,7 @@ internal static class SeededRunProfileBaseline
         }
 
         var inventory = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        var originalDirectories = new SortedSet<string>(StringComparer.Ordinal);
         var pending = new Stack<DirectoryInfo>();
         pending.Push(rootDirectory);
         while (pending.Count > 0)
@@ -55,6 +57,7 @@ internal static class SeededRunProfileBaseline
                 {
                     throw new InvalidOperationException("isolated user directory contains a linked profile entry");
                 }
+                originalDirectories.Add(relative);
                 pending.Push(child);
             }
 
@@ -84,6 +87,7 @@ internal static class SeededRunProfileBaseline
             SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(inventory))).ToLowerInvariant();
         _originalRoot = root;
         _originalFiles = inventory;
+        _originalDirectories = originalDirectories;
         _digest = digest;
         return digest;
     }
@@ -93,6 +97,7 @@ internal static class SeededRunProfileBaseline
         _digest = null;
         _originalRoot = null;
         _originalFiles = null;
+        _originalDirectories = null;
     }
 
     // Only files present before the mock save backend was installed are pinned.
@@ -100,7 +105,8 @@ internal static class SeededRunProfileBaseline
     // Source-only drift detection does NOT establish an atomic no-follow root witness.
     private static bool OriginalFilesUnchanged()
     {
-        if (_originalRoot is null || _originalFiles is null) return false;
+        if (_originalRoot is null || _originalFiles is null
+            || _originalDirectories is null) return false;
         try
         {
             string root = Path.GetFullPath(OS.GetUserDataDir());
@@ -113,6 +119,15 @@ internal static class SeededRunProfileBaseline
             // New overlay files are allowed, but linked escapes are never evidence.
             // This metadata scan is NOT an atomic native no-follow path witness.
             if (!NoLateLinks(root)) return false;
+
+            // Empty original directories are part of the protected baseline, too.
+            // New overlay directories remain permitted, but original removals refuse.
+            foreach (string relative in _originalDirectories)
+            {
+                string path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+                var directory = new DirectoryInfo(path);
+                if (!directory.Exists || IsLink(directory.Attributes)) return false;
+            }
 
             foreach (KeyValuePair<string, string> entry in _originalFiles)
             {

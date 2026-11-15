@@ -100,6 +100,15 @@ namespace AiAscension.Sts2GameMod.Runtime
             Write(caseRoot, "settings.save", "changed after capture, before admission");
             Check(!Matches(digest), "original profile mutation after capture refuses admission");
             Check(!Matches(digest), "changed original invalidates cached admission evidence");
+            string directoryRoot = NewCase(root, "removed-empty-original-directory");
+            Write(directoryRoot, "settings.save", "original settings");
+            string empty = Path.Combine(directoryRoot, "profiles", "reserved");
+            Directory.CreateDirectory(empty);
+            string directoryDigest = SeededRunProfileBaseline.CaptureInitial();
+            Directory.Delete(empty);
+            Check(!Matches(directoryDigest), "removed empty original directory refuses admission");
+            Directory.CreateDirectory(empty);
+            Check(!Matches(directoryDigest), "restoring directory cannot resurrect cached evidence");
         }
 
         private static void OverlayOnlyWritesPreserveOriginalProfile(string root)
