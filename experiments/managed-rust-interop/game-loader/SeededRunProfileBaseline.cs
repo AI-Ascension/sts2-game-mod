@@ -48,14 +48,17 @@ internal static class SeededRunProfileBaseline
             foreach (DirectoryInfo child in directory.EnumerateDirectories())
             {
                 string relative = Path.GetRelativePath(root, child.FullName).Replace('\\', '/');
-                if (IsBootDerivedPath(relative))
-                {
-                    continue;
-                }
-
                 if (IsLink(child.Attributes))
                 {
                     throw new InvalidOperationException("isolated user directory contains a linked profile entry");
+                }
+
+                // Cache/telemetry is not hashed, but it must still be traversed for
+                // linked descendants before admitting a save-profile baseline.
+                if (IsBootDerivedPath(relative))
+                {
+                    pending.Push(child);
+                    continue;
                 }
                 originalDirectories.Add(relative);
                 pending.Push(child);
@@ -64,14 +67,14 @@ internal static class SeededRunProfileBaseline
             foreach (FileInfo file in directory.EnumerateFiles())
             {
                 string relative = Path.GetRelativePath(root, file.FullName).Replace('\\', '/');
-                if (IsBootDerivedPath(relative))
-                {
-                    continue;
-                }
-
                 if (IsLink(file.Attributes))
                 {
                     throw new InvalidOperationException("isolated user directory contains a linked profile entry");
+                }
+
+                if (IsBootDerivedPath(relative))
+                {
+                    continue;
                 }
                 inventory[relative] = Convert.ToHexString(
                     SHA256.HashData(File.ReadAllBytes(file.FullName))).ToLowerInvariant();
@@ -167,14 +170,13 @@ internal static class SeededRunProfileBaseline
             foreach (DirectoryInfo child in directory.EnumerateDirectories())
             {
                 string relative = Path.GetRelativePath(root, child.FullName).Replace('\\', '/');
-                if (IsBootDerivedPath(relative)) continue;
                 if (IsLink(child.Attributes)) return false;
                 pending.Push(child);
             }
             foreach (FileInfo file in directory.EnumerateFiles())
             {
                 string relative = Path.GetRelativePath(root, file.FullName).Replace('\\', '/');
-                if (!IsBootDerivedPath(relative) && IsLink(file.Attributes)) return false;
+                if (IsLink(file.Attributes)) return false;
             }
         }
         return true;
