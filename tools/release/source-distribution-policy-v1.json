@@ -1558,6 +1558,7 @@
     "experiments/managed-rust-interop/rest-action-tests/RuntimeV4ExpertRestActionProbe.csproj",
     "experiments/managed-rust-interop/seeded-run-tests/IsolatedUserDirectoryProbe.cs",
     "experiments/managed-rust-interop/seeded-run-tests/LaunchContractRefusalProbe.cs",
+    "experiments/managed-rust-interop/seeded-run-tests/ProfileBaselineBootLinkProbe.cs",
     "experiments/managed-rust-interop/seeded-run-tests/ProfileBaselineProbe.cs",
     "experiments/managed-rust-interop/seeded-run-tests/Program.cs",
     "experiments/managed-rust-interop/seeded-run-tests/ProtocolSerializationProbe.cs",
